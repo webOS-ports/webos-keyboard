@@ -19,10 +19,12 @@
 // FIXME: this is hacky way of deciding if running on Touch platform or not
 #include <QtCore/qconfig.h>
 
+#ifdef HAVE_UBUNTU
 #ifdef QT_OPENGL_ES_2
 #include <ubuntu/ui/ubuntu_ui_session_service.h>
 #include <ubuntu/application/ui/window_properties.h>
   #define HAVE_UBUNTU_PLATFORM_API
+#endif
 #endif
 
 #include <QByteArray>

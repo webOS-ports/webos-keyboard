@@ -30,7 +30,7 @@
 #include "keyboardsettings.h"
 
 #include <QDebug>
-#include <QGSettings/QGSettings>
+#include <QSettings>
 
 using namespace MaliitKeyboard;
 
@@ -48,11 +48,11 @@ const QLatin1String KEY_PRESS_FEEDBACK_KEY = QLatin1String("keyPressFeedback");
  */
 KeyboardSettings::KeyboardSettings(QObject *parent) :
     QObject(parent)
-  , m_settings(new QGSettings("com.canonical.keyboard.maliit",
-                              "/com/canonical/keyboard/maliit/", this))
+  , m_settings(new QSettings("com.canonical.keyboard.maliit",
+                             "/com/canonical/keyboard/maliit/", this))
 {
-    QObject::connect(m_settings, SIGNAL(changed(QString)),
-                     this, SLOT(settingUpdated(QString)));
+//    QObject::connect(m_settings, SIGNAL(changed(QString)),
+//                     this, SLOT(settingUpdated(QString)));
 }
 
 /*!
@@ -62,7 +62,7 @@ KeyboardSettings::KeyboardSettings(QObject *parent) :
  */
 QStringList KeyboardSettings::enabledLanguages() const
 {
-    return m_settings->get(ENABLED_LANGUAGES_KEY).toStringList();
+    return m_settings->value(ENABLED_LANGUAGES_KEY).toStringList();
 }
 
 /*!
@@ -72,7 +72,7 @@ QStringList KeyboardSettings::enabledLanguages() const
  */
 bool KeyboardSettings::autoCapitalization() const
 {
-    return m_settings->get(AUTO_CAPITALIZATION_KEY).toBool();
+    return m_settings->value(AUTO_CAPITALIZATION_KEY).toBool();
 }
 
 /*!
@@ -82,7 +82,7 @@ bool KeyboardSettings::autoCapitalization() const
  */
 bool KeyboardSettings::autoCompletion() const
 {
-    return m_settings->get(AUTO_COMPLETION_KEY).toBool();
+    return m_settings->value(AUTO_COMPLETION_KEY).toBool();
 }
 
 /*!
@@ -92,7 +92,7 @@ bool KeyboardSettings::autoCompletion() const
  */
 bool KeyboardSettings::predictiveText() const
 {
-    return m_settings->get(PREDICTIVE_TEXT_KEY).toBool();
+    return m_settings->value(PREDICTIVE_TEXT_KEY).toBool();
 }
 
 /*!
@@ -111,7 +111,7 @@ bool KeyboardSettings::spellchecking() const
  */
 bool KeyboardSettings::keyPressFeedback() const
 {
-    return m_settings->get(KEY_PRESS_FEEDBACK_KEY).toBool();
+    return m_settings->value(KEY_PRESS_FEEDBACK_KEY).toBool();
 }
 
 /*!
