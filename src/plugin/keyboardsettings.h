@@ -33,7 +33,7 @@
 #include <QObject>
 #include <QStringList>
 
-class QGSettings;
+class QSettings;
 
 namespace MaliitKeyboard {
 
@@ -59,7 +59,7 @@ Q_SIGNALS:
 private:
     Q_SLOT void settingUpdated(const QString &key);
 
-    QGSettings *m_settings;
+    QSettings *m_settings;
 
     friend class TestKeyboardSettings;
 };
