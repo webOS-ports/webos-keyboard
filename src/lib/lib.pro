@@ -7,8 +7,10 @@ QT += core gui quick
 CONFIG += staticlib
 
 CONFIG += link_pkgconfig
-PKGCONFIG += libpinyin
-LIBS += libpinyin
+enable-pinyin {
+    PKGCONFIG += libpinyin
+    LIBS += libpinyin
+}
 
 include(models/models.pri)
 include(logic/logic.pri)
