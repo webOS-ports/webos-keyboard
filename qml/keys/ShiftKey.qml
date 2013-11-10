@@ -15,14 +15,13 @@
  */
 
 import QtQuick 2.0
-import Ubuntu.Components 0.1
 
 ActionKey {
     iconNormal: "keyboard-caps"
     iconShifted: "keyboard-caps"
     iconCapsLock: "keyboard-caps-lock"
 
-    colorShifted: UbuntuColors.orange
+    colorShifted: "orange"
 
     action: "shift"
 

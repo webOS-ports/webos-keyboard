@@ -15,7 +15,6 @@
  */
 
 import QtQuick 2.0
-import Ubuntu.Components 0.1
 
 Rectangle {
 
@@ -55,7 +54,7 @@ Rectangle {
                 Text {
                     id: wordItem
                     font.pixelSize: units.gu(2);
-                    font.family: "Ubuntu Medium"
+                    font.family: "Prelude"
                     color: "#999999"
                     font.bold: false
                     text: word;

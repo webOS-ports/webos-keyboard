@@ -16,8 +16,6 @@
 
 import QtQuick 2.0
 
-import Ubuntu.Components 0.1
-
 import "key_constants.js" as UI
 
 CharKey {
@@ -43,9 +41,13 @@ CharKey {
     property color colorShifted: "transparent"
     property color colorCapsLock: "transparent"
 
-    Icon {
+    // was: Icon (the source is an image from the icons directory)
+    Image {
+
+        property color color;
+
         id: iconImage
-        name: __icon
+        source: __icon
         anchors.centerIn: parent
         visible: (label == "")
         width: units.gu(2.5)

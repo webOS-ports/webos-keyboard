@@ -93,6 +93,7 @@ OTHER_FILES += \
     maliit-magnifier.qml \
     Keyboard.qml \
     KeyboardContainer.qml \
+    OrientationHelper.qml \
     Popper.qml \
     WordRibbon.qml \
     keys/key_constants.js \

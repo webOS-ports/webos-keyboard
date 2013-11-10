@@ -18,7 +18,7 @@
 
 var keyMargins  =   1.8;    // dp
 var fontSize    =   2;    // gu
-var fontFamily  =   "Ubuntu Medium";
+var fontFamily  =   "Prelude";
 var fontColor   =   "#666666"
 var fontBold    =   true
 
