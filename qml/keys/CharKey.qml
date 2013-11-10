@@ -15,8 +15,6 @@
  */
 
 import QtQuick 2.0
-import Ubuntu.Components 0.1
-import Ubuntu.Components.Popups 0.1
 
 import "key_constants.js" as UI
 

@@ -15,8 +15,6 @@
  */
 
 import QtQuick 2.0
-import Ubuntu.Components 0.1
-import Ubuntu.Components.ListItems 0.1 as ListItem
 
 import "key_constants.js" as UI
 
@@ -52,11 +50,17 @@ Item {
 
         model: maliit_input_method.enabledLanguages
 
-        delegate: ListItem.Standard {
-            text: languageIdToName(modelData)
-            onClicked: {
-                maliit_input_method.activeLanguage = modelData
-                canvas.languageMenuShown = false;
+        delegate: Item {
+            Text {
+                anchors.fill: parent
+                text: languageIdToName(modelData)
+            }
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {
+                    maliit_input_method.activeLanguage = modelData
+                    canvas.languageMenuShown = false;
+                }
             }
          }
     }

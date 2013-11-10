@@ -33,7 +33,6 @@ import QtQuick 2.0
 import "constants.js" as Const
 import "keys/"
 import "keys/key_constants.js" as UI
-import Ubuntu.Components 0.1
 import QtQuick.Window 2.0
 
 Item {
@@ -43,6 +42,25 @@ Item {
     property variant input_method: maliit_input_method
     property variant layout: maliit_layout
     property variant event_handler: maliit_event_handler
+    property QtObject units: QtObject {
+        property real logicalPixelDensity: 12 //hardcoded for gnexus, to be dpi-dependant
+        property real gridUnit: logicalPixelDensity
+        // logicalPixelDensity is the nb of logical pixels per mm
+        // gridUnit is the nb of pixels in a "grid unit"
+
+        // returns the nb of pixels that value represents in grid units
+        function gu(valueInGridUnits) {
+            return valueInGridUnits*gridUnit;
+        }
+        function dp(valueInLogicalPixels) {
+            return valueInLogicalPixels*(gridUnit/logicalPixelDensity);
+        }
+    }
+    property QtObject i18n: QtObject {
+        function tr(inputString) {
+            return inputString;
+        }
+    }
 
 OrientationHelper {
     automaticOrientation: false

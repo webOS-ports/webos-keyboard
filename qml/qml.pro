@@ -94,6 +94,7 @@ OTHER_FILES += \
     maliit-ui-constants.qml \
     Keyboard.qml \
     KeyboardContainer.qml \
+    OrientationHelper.qml \
     Popper.qml \
     WordRibbon.qml \
     keys/key_constants.js \

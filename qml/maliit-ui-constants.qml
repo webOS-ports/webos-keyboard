@@ -1,8 +1,5 @@
-
-
 import QtQuick 2.0
-import Ubuntu.Components 0.1
-
+import QtQuick.Window 2.0
 
 /**
  * these items only hold variables
@@ -11,9 +8,29 @@ import Ubuntu.Components 0.1
 Item {
      id: keyboard_constants
 
+     property QtObject units: QtObject {
+         property real logicalPixelDensity: 12 //hardcoded for gnexus, to be dpi-dependant
+         property real gridUnit: logicalPixelDensity
+         // logicalPixelDensity is the nb of logical pixels per mm
+         // gridUnit is the nb of pixels in a "grid unit"
+
+         // returns the nb of pixels that value represents in grid units
+         function gu(valueInGridUnits) {
+             return valueInGridUnits*gridUnit;
+         }
+         function dp(valueInLogicalPixels) {
+             return valueInLogicalPixels*(gridUnit/logicalPixelDensity);
+         }
+     }
+     property QtObject i18n: QtObject {
+         function tr(inputString) {
+             return inputString;
+         }
+     }
+
      property real key_area_borders:                        units.gu(  1.222    );
      property string font_color:                            "#666666"
-     property string font_family:                           "Ubuntu Medium"
+     property string font_family:                           "Prelude"
 
      property int  reference_width:                         units.gu( 40.0      );
      property int  reference_height:                        units.gu( 26.0      );

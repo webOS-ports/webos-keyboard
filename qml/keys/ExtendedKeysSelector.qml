@@ -16,10 +16,6 @@
 
 import QtQuick 2.0
 
-import Ubuntu.Components 0.1
-import Ubuntu.Components.ListItems 0.1 as ListItem
-import Ubuntu.Components.Popups 0.1
-
 import QtQuick.Window 2.0
 
 import "key_constants.js" as UI
@@ -121,7 +117,7 @@ Item {
                     font.family: UI.fontFamily
                     font.pixelSize: text.length > 2 ? units.gu( UI.smallFontSize ) : units.gu( UI.fontSize )
                     font.bold: UI.fontBold
-                    color: key.highlight ? UbuntuColors.orange  : UI.fontColor
+                    color: key.highlight ? "orange"  : UI.fontColor
                     Component.onCompleted: __width += (textCell.width + units.gu( UI.popoverCellPadding));
                 }
 
