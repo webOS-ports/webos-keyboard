@@ -54,7 +54,7 @@ QQuickView *createWindow(MAbstractInputMethodHost *host)
 {
     QScopedPointer<QQuickView> view(new QQuickView);
 
-    QSurfaceFormat format;
+    QSurfaceFormat format = view->format();
     format.setAlphaBufferSize(8);
     view->setFormat(format);
     view->setColor(QColor(Qt::transparent));
@@ -113,6 +113,8 @@ public:
     {
         applicationApiWrapper->setGeometryItem(m_geometry);
 
+        QQuickWindow::setDefaultAlphaBuffer(true);
+
         view = createWindow(host);
 
         editor.setHost(host);
@@ -154,7 +156,7 @@ public:
     #endif
         view->setWindowState(Qt::WindowNoState);
 
-        QSurfaceFormat format;
+        QSurfaceFormat format = view->format();
         format.setAlphaBufferSize(8);
         view->setFormat(format);
         view->setColor(QColor(Qt::transparent));
