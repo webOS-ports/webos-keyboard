@@ -72,7 +72,7 @@ QStringList KeyboardSettings::enabledLanguages() const
  */
 bool KeyboardSettings::autoCapitalization() const
 {
-    return m_settings->value(AUTO_CAPITALIZATION_KEY).toBool();
+    return m_settings->value(AUTO_CAPITALIZATION_KEY, true).toBool();
 }
 
 /*!
@@ -82,7 +82,7 @@ bool KeyboardSettings::autoCapitalization() const
  */
 bool KeyboardSettings::autoCompletion() const
 {
-    return m_settings->value(AUTO_COMPLETION_KEY).toBool();
+    return m_settings->value(AUTO_COMPLETION_KEY, true).toBool();
 }
 
 /*!
@@ -92,7 +92,7 @@ bool KeyboardSettings::autoCompletion() const
  */
 bool KeyboardSettings::predictiveText() const
 {
-    return m_settings->value(PREDICTIVE_TEXT_KEY).toBool();
+    return m_settings->value(PREDICTIVE_TEXT_KEY, true).toBool();
 }
 
 /*!
@@ -101,7 +101,7 @@ bool KeyboardSettings::predictiveText() const
  */
 bool KeyboardSettings::spellchecking() const
 {
-    return m_settings->get(SPELL_CHECKING_KEY).toBool();
+    return m_settings->value(SPELL_CHECKING_KEY).toBool();
 }
 
 /*!
@@ -111,7 +111,7 @@ bool KeyboardSettings::spellchecking() const
  */
 bool KeyboardSettings::keyPressFeedback() const
 {
-    return m_settings->value(KEY_PRESS_FEEDBACK_KEY).toBool();
+    return m_settings->value(KEY_PRESS_FEEDBACK_KEY, true).toBool();
 }
 
 /*!
