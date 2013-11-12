@@ -47,6 +47,8 @@
 #include <maliit/plugins/updateevent.h>
 #include <maliit/namespace.h>
 
+#include <QScreen>
+#include <QGuiApplication>
 #include <QApplication>
 #include <QWidget>
 #include <QDesktopWidget>
@@ -123,6 +125,7 @@ void InputMethod::show()
 
     QRect rect(d->keyboardVisibleRect);
     rect.moveTop( d->windowGeometryRect.height() - d->keyboardVisibleRect.height() );
+
     inputMethodHost()->setInputMethodArea(rect, d->view);
 
     qDebug() << "keyboard is reporting <x y w h>: <"
@@ -217,6 +220,11 @@ void InputMethod::handleFocusChange(bool focusIn)
 void InputMethod::handleAppOrientationChanged(int angle)
 {
     Q_D(InputMethod);
+
+    QScreen *screen = QGuiApplication::primaryScreen();
+    if (screen && screen->isPortrait(Qt::PrimaryOrientation) ) {
+        angle = (angle + 270) % 360;
+    }
 
     switch (angle) {
         case 0:
