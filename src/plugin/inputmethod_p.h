@@ -205,6 +205,7 @@ public:
         layout.updater.setOrientation(orientation);
 
         windowGeometryRect = uiConst->windowGeometryRect( screenOrientation );
+        view->resize(windowGeometryRect.size());
 
         keyboardVisibleRect = windowGeometryRect.adjusted(0,uiConst->invisibleTouchAreaHeight(orientation),0,0);
 
