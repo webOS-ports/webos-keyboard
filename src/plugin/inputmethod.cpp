@@ -151,6 +151,11 @@ void InputMethod::hide()
     d->closeOskWindow();
 }
 
+void InputMethod::reset()
+{
+    hide();
+}
+
 void InputMethod::setPreedit(const QString &preedit,
                              int cursor_position)
 {
