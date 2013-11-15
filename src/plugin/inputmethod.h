@@ -73,6 +73,7 @@ public:
     //! \reimp
     virtual void show();
     Q_SLOT virtual void hide();
+    virtual void reset();
     virtual void setPreedit(const QString &preedit,
                             int cursor_position);
     virtual void switchContext(Maliit::SwitchDirection direction,
