@@ -45,13 +45,17 @@ Item {
         anchors.centerIn: parent
         width: parent.width - units.gu(UI.languageMenuListViewPadding)
         height: parent.height - units.gu(UI.languageMenuListViewPadding)
+        highlight: Rectangle { color: "lightsteelblue"; radius: 5 }
         interactive: true
         clip: true
 
         model: maliit_input_method.enabledLanguages
 
         delegate: Item {
+            height: languageTextItem.contentHeight
+            width: languageTextItem.contentWidth
             Text {
+                id: languageTextItem
                 anchors.fill: parent
                 text: languageIdToName(modelData)
             }
