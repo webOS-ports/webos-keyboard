@@ -47,7 +47,7 @@ CharKey {
         property color color;
 
         id: iconImage
-        source: __icon
+        source: Qt.resolvedUrl("../images/" + __icon + "-icon.png")
         anchors.centerIn: parent
         visible: (label == "")
         width: units.gu(2.5)

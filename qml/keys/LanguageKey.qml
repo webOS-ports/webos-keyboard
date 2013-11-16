@@ -17,9 +17,9 @@
 import QtQuick 2.0
 
 ActionKey {
-    iconNormal: "language-chooser";
-    iconShifted: "language-chooser";
-    iconCapsLock: "language-chooser";
+    iconNormal: "language";
+    iconShifted: "language";
+    iconCapsLock: "language";
 
     padding: 0
 
