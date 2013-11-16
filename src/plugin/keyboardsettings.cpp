@@ -48,9 +48,12 @@ const QLatin1String KEY_PRESS_FEEDBACK_KEY = QLatin1String("keyPressFeedback");
  */
 KeyboardSettings::KeyboardSettings(QObject *parent) :
     QObject(parent)
-  , m_settings(new QSettings("com.canonical.keyboard.maliit",
-                             "/com/canonical/keyboard/maliit/", this))
+  , m_settings(new QSettings(QSettings::SystemScope,
+                             "webos-ports",
+                             "webos-keyboard", this))
 {
+    qWarning() << "Using configuration file: " << m_settings->fileName();
+
 //    QObject::connect(m_settings, SIGNAL(changed(QString)),
 //                     this, SLOT(settingUpdated(QString)));
 }
