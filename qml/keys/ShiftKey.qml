@@ -17,9 +17,9 @@
 import QtQuick 2.0
 
 ActionKey {
-    iconNormal: "keyboard-caps"
-    iconShifted: "keyboard-caps"
-    iconCapsLock: "keyboard-caps-lock"
+    iconNormal: "shift"
+    iconShifted: "shift"
+    iconCapsLock: "shift-latched"
 
     colorShifted: "orange"
 

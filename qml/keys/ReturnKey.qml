@@ -17,8 +17,8 @@
 import QtQuick 2.0
 
 ActionKey {
-    iconNormal: "keyboard-return"
-    iconShifted: "keyboard-return";
-    iconCapsLock: "keyboard-return";
+    iconNormal: "return"
+    iconShifted: "return";
+    iconCapsLock: "return";
     action: "return"
 }

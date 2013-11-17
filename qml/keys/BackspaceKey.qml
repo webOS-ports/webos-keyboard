@@ -17,8 +17,8 @@
 import QtQuick 2.0
 
 ActionKey {
-    iconNormal: "erase";
-    iconShifted: "erase";
-    iconCapsLock: "erase";
+    iconNormal: "backspace";
+    iconShifted: "backspace";
+    iconCapsLock: "backspace";
     action: "backspace";
 }
