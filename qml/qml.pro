@@ -27,6 +27,9 @@ lang_de.files = languages/de/*.qml languages/de/*.js
 lang_en.path = "$$UBUNTU_KEYBOARD_DATA_DIR/languages/en"
 lang_en.files = languages/en/*.qml languages/en/*.js
 
+lang_en_webos.path = "$$UBUNTU_KEYBOARD_DATA_DIR/languages/en_webos"
+lang_en_webos.files = languages/en_webos/*.qml languages/en_webos/*.js
+
 lang_es.path = "$$UBUNTU_KEYBOARD_DATA_DIR/languages/es"
 lang_es.files = languages/es/*.qml languages/es/*.js
 
@@ -73,6 +76,7 @@ INSTALLS += qml qml_keys qml_languages images \
     lang_da \
     lang_de \
     lang_en \
+    lang_en_webos \
     lang_es \
     lang_fi \
     lang_fr \
@@ -137,6 +141,10 @@ OTHER_FILES += \
     languages/en/Keyboard_en_email.qml \
     languages/en/Keyboard_en_url.qml \
     languages/en/Keyboard_en_url_search.qml \
+    languages/en_webos/Keyboard_en_webos.qml \
+    languages/en_webos/Keyboard_en_webos_email.qml \
+    languages/en_webos/Keyboard_en_webos_url.qml \
+    languages/en_webos/Keyboard_en_webos_url_search.qml \
     languages/es/Keyboard_es.qml \
     languages/es/Keyboard_es_email.qml \
     languages/es/Keyboard_es_url.qml \

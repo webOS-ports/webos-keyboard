@@ -101,6 +101,7 @@ Item {
                         "ru",
                         "sv",
                         "zh",
+                        "en_webos",
                     ];
             return (supportedLocales.indexOf( locale ) > -1);
         }
@@ -108,11 +109,15 @@ Item {
         /// Returns the relative path to the keyboard QML file for a given language for free text
         function freeTextLanguageKeyboard(language)
         {
-            language = language .slice(0,2).toLowerCase();
-
             if (!languageIsSupported(language)) {
-                console.log("Language '"+language+"' not supported - using 'en' instead");
-                language = "en";
+                console.warn("Language '"+language+"' not supported - trying short version instead");
+
+                language = language .slice(0,2).toLowerCase();
+
+                if (!languageIsSupported(language)) {
+                    console.warn("Language '"+language+"' not supported - using 'en' instead");
+                    language = "en";
+                }
             }
 
             if (language === "ar")
@@ -149,6 +154,8 @@ Item {
                 return "languages/sv/Keyboard_sv.qml";
             if (language === "zh")
                 return "languages/zh/Keyboard_zh_cn_pinyin.qml";
+            if (language === "en_webos")
+                return "languages/en_webos/Keyboard_en_webos.qml";
         }
 
         function loadLayout(contentType, systemLanguage, activeLanguage)
@@ -163,10 +170,15 @@ Item {
                 return "languages/Keyboard_telephone.qml";
             }
 
-            var locale = systemLanguage.slice(0,2).toLowerCase();
+            var locale = systemLanguage;
             if (!languageIsSupported(locale)) {
-                console.log("System language '"+locale+"' can't be used in OSK - using 'en' instead")
-                locale = "en"
+                console.warn("Language '"+locale+"' not supported - trying short version instead");
+
+                locale = locale.slice(0,2).toLowerCase();
+                if (!languageIsSupported(locale)) {
+                    console.warn("System language '"+locale+"' can't be used in OSK - using 'en' instead")
+                    locale = "en"
+                }
             }
 
 //            if (contentType === InputMethod.EmailContentType) {

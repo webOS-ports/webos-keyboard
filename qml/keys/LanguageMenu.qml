@@ -76,6 +76,7 @@ Item {
         if (languageId == "da")         return i18n.tr("Danish");
         if (languageId == "de")         return i18n.tr("German");
         if (languageId == "en")         return i18n.tr("English");
+        if (languageId == "en_webos")   return i18n.tr("WebOS");
         if (languageId == "es")         return i18n.tr("Spanish");
         if (languageId == "fi")         return i18n.tr("Finnish");
         if (languageId == "fr")         return i18n.tr("French");
