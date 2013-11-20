@@ -94,6 +94,7 @@ Item {
                         "ru",
                         "sv",
                         "zh",
+                        "wo",
                     ];
             return (supportedLocales.indexOf( locale ) > -1);
         }
@@ -142,6 +143,8 @@ Item {
                 return "languages/sv/Keyboard_sv.qml";
             if (language === "zh")
                 return "languages/zh_cn/Keyboard_zh_cn_pinyin.qml";
+            if (language === "wo")
+                return "languages/en_webos/Keyboard_en_webos.qml";
         }
 
         function loadLayout(contentType, systemLanguage, activeLanguage)

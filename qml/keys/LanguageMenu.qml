@@ -88,6 +88,7 @@ Item {
         if (languageId == "ru")         return i18n.tr("Russian");
         if (languageId == "sv")         return i18n.tr("Swedish");
         if (languageId == "zh")         return i18n.tr("Chinese - Pinyin");
+        if (languageId == "wo")         return i18n.tr("WebOS");
 
         // fallback
         return i18n.tr("language " + languageId);
