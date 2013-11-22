@@ -58,17 +58,18 @@ KeyboardLoader::~KeyboardLoader()
 QStringList KeyboardLoader::ids() const
 {
     QStringList ids;
+    ids << d_ptr->active_id; // don't return an empty list
     return ids;
 }
 
 QString KeyboardLoader::activeId() const
 {
-    return QString();
+    return d_ptr->active_id;
 }
 
 void KeyboardLoader::setActiveId(const QString &id)
 {
-    Q_UNUSED(id);
+    d_ptr->active_id = id;
 }
 
 QString KeyboardLoader::title(const QString &id) const
