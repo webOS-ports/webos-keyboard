@@ -201,6 +201,8 @@ void InputMethod::handleAppOrientationChanged(int angle)
 {
     Q_D(InputMethod);
 
+    // Maliit uses orientations relative to screen, Qt relative to world
+
     QScreen *screen = QGuiApplication::primaryScreen();
     if (screen && screen->isPortrait(Qt::PrimaryOrientation) ) {
         angle = (angle + 270) % 360;
@@ -505,7 +507,7 @@ void InputMethod::onVisibleRectChanged()
 
     inputMethodHost()->setScreenRegion(QRegion(visibleRect));
     inputMethodHost()->setInputMethodArea(visibleRect, d->view);
-    d->view->resize(visibleRect.size());
+    d->view->setHeight(visibleRect.height());
 
     qDebug() << "keyboard is reporting <x y w h>: <"
                 << visibleRect.x()
