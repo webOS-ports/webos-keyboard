@@ -62,8 +62,6 @@ Item {
         }
     }
 
-    onHeightChanged: calculateSize();
-
 OrientationHelper {
     id: orientationHelper
     automaticOrientation: false
@@ -273,19 +271,32 @@ Item {
 
 function calculateSize()
 {
-    // TODO tablet
-    if (orientationHelper.orientationAngle == 270 ||
-        orientationHelper.orientationAngle == 90) {
-        canvas.height = (fullScreenItem.width * UI.phoneKeyboardHeightLandscape) + wordRibbon.height
-    } else if (orientationHelper.orientationAngle == 0 ||
-               orientationHelper.orientationAngle == 180) {
-        canvas.height = (fullScreenItem.height * UI.phoneKeyboardHeightPortrait) + wordRibbon.height
+    var isRotated = (orientationHelper.orientationAngle == 90 ||
+                     orientationHelper.orientationAngle == 270 );
+
+    var isLandscape = (Screen.primaryOrientation === Qt.LandscapeOrientation ||
+                       Screen.primaryOrientation === Qt.InvertedLandscapeOrientation);
+
+    // TODO add tablet ratios
+    var newHeight;
+    if( isLandscape ) {
+        if( !isRotated ) {
+            newHeight = Screen.height * UI.phoneKeyboardHeightLandscape;
+        }
+        else {
+            newHeight = Screen.width * UI.phoneKeyboardHeightPortrait;
+        }
+    }
+    else {
+        if( isRotated ) {
+            newHeight = Screen.width * UI.phoneKeyboardHeightLandscape;
+        }
+        else {
+            newHeight = Screen.height * UI.phoneKeyboardHeightPortrait;
+        }
     }
 
-
-    else { // fallback
-        canvas.height = (fullScreenItem.height * UI.phoneKeyboardHeightPortrait) + wordRibbon.height
-    }
+    canvas.height = newHeight + wordRibbon.height;
 
     reportKeyboardVisibleRect();
 }
