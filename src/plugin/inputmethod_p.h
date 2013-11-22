@@ -250,8 +250,8 @@ public:
 
     void registerFeedbackSetting()
     {
-        QObject::connect(&m_settings, SIGNAL(keyPressFeedbackChanged()),
-                         q, SIGNAL(useAudioFeedbackChanged));
+        QObject::connect(&m_settings, SIGNAL(keyPressFeedbackChanged(bool)),
+                         q, SIGNAL(useAudioFeedbackChanged()));
     }
 
     void registerAutoCorrectSetting()
