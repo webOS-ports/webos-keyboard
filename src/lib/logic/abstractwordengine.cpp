@@ -107,7 +107,7 @@ void AbstractWordEngine::setEnabled(bool enabled)
     if (d->enabled != enabled) {
         clearCandidates();
         d->enabled = enabled;
-        Q_EMIT enabledChanged(d->enabled);
+        Q_EMIT enabledChanged(isEnabled());
     }
 }
 
@@ -157,6 +157,20 @@ void AbstractWordEngine::computeCandidates(Model::Text *text)
 void AbstractWordEngine::addToUserDictionary(const QString &word)
 {
     Q_UNUSED(word);
+}
+
+//!
+void AbstractWordEngine::setWordPredictionEnabled(bool on)
+{
+    Q_UNUSED(on);
+    qDebug() << Q_FUNC_INFO << "should be implemented by inherited class";
+}
+
+//!
+void AbstractWordEngine::setSpellcheckerEnabled(bool on)
+{
+    Q_UNUSED(on);
+    qDebug() << Q_FUNC_INFO << "should be implemented by inherited class";
 }
 
 }} // namespace MaliitKeyboard, Logic

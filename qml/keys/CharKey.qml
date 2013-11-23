@@ -15,6 +15,7 @@
  */
 
 import QtQuick 2.0
+import QtMultimedia 5.0
 
 import "key_constants.js" as UI
 
@@ -134,6 +135,9 @@ Item {
 
         onReleased: {
             if (!extendedKeysShown) {
+                if (maliit_input_method.useAudioFeedback)
+                    audioFeedback.play();
+
                 event_handler.onKeyReleased(valueToSubmit, action);
                 if (!skipAutoCaps)
                     if (panel.activeKeypadState === "SHIFTED" && panel.state === "CHARACTERS")

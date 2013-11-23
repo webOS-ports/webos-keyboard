@@ -57,7 +57,7 @@ void appendToPreedit(Editor *editor,
     Key k;
     QCOMPARE(k.action(), Key::ActionInsert);
 
-    k.rLabel().setText(appendix);
+    k.rLabel() =appendix;
     editor->onKeyReleased(k);
 }
 
@@ -160,6 +160,7 @@ private:
     Q_SLOT void testWordCandidatesChanged()
     {
         Editor editor(EditorOptions(), new Model::Text, new Logic::WordEngineProbe, new Logic::LanguageFeatures);
+        editor.wordEngine()->setWordPredictionEnabled(true);
         QSignalSpy spy(&editor, SIGNAL(wordCandidatesChanged(WordCandidateList)));
 
         InputMethodHostProbe host;
@@ -200,6 +201,7 @@ private:
     Q_SLOT void testWordRibbonVisible()
     {
         Editor editor(EditorOptions(), new Model::Text, new Logic::WordEngineProbe, new Logic::LanguageFeatures);
+        editor.wordEngine()->setWordPredictionEnabled(true);
         InputMethodHostProbe host;
         editor.setHost(&host);
 
@@ -229,7 +231,7 @@ private:
 
         appendToPreedit(&editor, "bcd");
         const WordCandidate &candidate(layout.wordRibbon()->candidates().first());
-        QCOMPARE(candidate.label().text(), QString("dcb"));
+        QCOMPARE(candidate.label(), QString("dcb"));
 
         editor.wordEngine()->setEnabled(false);
         QCOMPARE(spy.count(), 2);

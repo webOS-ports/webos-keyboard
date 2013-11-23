@@ -60,6 +60,9 @@ public:
     Q_SLOT virtual void setEnabled(bool enabled);
     Q_SIGNAL void enabledChanged(bool enabled);
 
+    Q_SLOT virtual void setWordPredictionEnabled(bool on);
+    Q_SLOT virtual void setSpellcheckerEnabled(bool on);
+
     void clearCandidates();
     void computeCandidates(Model::Text *text);
     Q_SIGNAL void candidatesChanged(const WordCandidateList &candidates);

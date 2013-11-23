@@ -15,6 +15,7 @@
  */
 
 import QtQuick 2.0
+import QtMultimedia 5.0
 import QtQuick.Window 2.0
 import "languages/"
 import "keys/"
@@ -44,10 +45,16 @@ Item {
         source: panel.state === "CHARACTERS" ? internal.characterKeypadSource : internal.symbolKeypadSource
         onLoaded: activeKeypadState = "NORMAL"
     }
+
     ExtendedKeysSelector {
         id: extendedKeysSelector
         objectName: "extendedKeysSelector"
         anchors.fill: parent
+    }
+
+    Audio {
+        id: audioFeedback
+        source: Qt.resolvedUrl("styles/ubuntu/sounds/typewriter.wav")
     }
 
     states: [
@@ -94,6 +101,7 @@ Item {
                         "ru",
                         "sv",
                         "zh",
+                        "wo",
                     ];
             return (supportedLocales.indexOf( locale ) > -1);
         }
@@ -141,7 +149,9 @@ Item {
             if (language === "sv")
                 return "languages/sv/Keyboard_sv.qml";
             if (language === "zh")
-                return "languages/zh_cn/Keyboard_zh_cn_pinyin.qml";
+                return "languages/zh/Keyboard_zh_cn_pinyin.qml";
+            if (language === "wo")
+                return "languages/en_webos/Keyboard_en_webos.qml";
         }
 
         function loadLayout(contentType, systemLanguage, activeLanguage)

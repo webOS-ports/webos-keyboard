@@ -1,9 +1,5 @@
 /*
- * This file is part of Maliit Plugins
- *
- * Copyright (C) 2011 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
- *
- * Contact: Mohammad Anwari <Mohammad.Anwari@nokia.com>
+ * Copyright (C) 2013 Canonical, Ltd.
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -29,44 +25,49 @@
  *
  */
 
-#ifndef MALIIT_KEYBOARD_SPELLCHECKER_H
-#define MALIIT_KEYBOARD_SPELLCHECKER_H
+#include "logic/languagefeatures.h"
 
 #include <QtCore>
+#include <QtTest>
 
 namespace MaliitKeyboard {
-namespace Logic {
 
-class SpellCheckerPrivate;
-
-class SpellChecker
+class TestLanguageFeatures : public QObject
 {
-    Q_DISABLE_COPY(SpellChecker)
-    Q_DECLARE_PRIVATE(SpellChecker)
-public:
-    // FIXME: Find better way to discover default dictionaries.
-    // FIXME: Allow changing languages in between.
-    explicit SpellChecker(const QString &user_dictionary = QString("%1/.config/maliit/userwords.txt").arg(QDir::homePath()));
-
-    ~SpellChecker();
-
-    bool enabled() const;
-    bool setEnabled(bool on);
-
-    bool spell(const QString &word);
-    QStringList suggest(const QString &word,
-                        int limit = -1);
-    void ignoreWord(const QString &word);
-    void addToUserWordlist(const QString &word);
-
-    bool setLanguage(const QString& language);
-
-    static QString dictPath();
+    Q_OBJECT
 
 private:
-    const QScopedPointer<SpellCheckerPrivate> d_ptr;
+    Logic::LanguageFeatures m_languageFeatures;
+
+    Q_SLOT void initTestCase()
+    {}
+
+    Q_SLOT void init()
+    {}
+
+    Q_SLOT void cleanup()
+    {}
+
+    Q_SLOT void testAppendixForReplacedPreedit_data()
+    {
+        QTest::addColumn<QString>("preedit");
+        QTest::addColumn<QString>("expectedResult");
+
+        QTest::newRow("usual case") << QString("hello") << QString(" ");
+        QTest::newRow("empty preedit") << QString("") << QString("");
+    }
+
+    Q_SLOT void testAppendixForReplacedPreedit()
+    {
+        QFETCH(QString, preedit);
+        QFETCH(QString, expectedResult);
+
+        QString result = m_languageFeatures.appendixForReplacedPreedit(preedit);
+        QCOMPARE(result, expectedResult);
+    }
 };
 
-}} // namespace Logic, MaliitKeyboard
+} // namespace
 
-#endif // MALIIT_KEYBOARD_SPELLCHECKER_H
+QTEST_MAIN(MaliitKeyboard::TestLanguageFeatures)
+#include "ut_languagefeatures.moc"

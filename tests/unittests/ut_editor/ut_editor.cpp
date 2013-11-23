@@ -72,7 +72,7 @@ namespace {
                 key.setAction(Key::ActionSpace);
             } else {
                 key.setAction(Key::ActionInsert);
-                key.rLabel().setText(QString(c));
+                key.rLabel() = QString(c);
             }
             editor->onKeyPressed(key);
             editor->onKeyReleased(key);
@@ -120,11 +120,12 @@ private:
         Editor editor(EditorOptions(), new Model::Text, word_engine, new Logic::LanguageFeatures);
 
         InputMethodHostProbe host;
+        editor.wordEngine()->setEnabled(true);
         editor.setHost(&host);
 
         initializeWordEngine(word_engine);
 
-        editor.wordEngine()->setEnabled(true);
+        editor.wordEngine()->setWordPredictionEnabled(true);
         editor.setAutoCorrectEnabled(enable_auto_correct);
         editor.setPreeditEnabled(true);
         editor.setAutoCapsEnabled(true);
@@ -195,7 +196,7 @@ private:
 
         initializeWordEngine(word_engine);
 
-        editor.wordEngine()->setEnabled(true);
+        editor.wordEngine()->setWordPredictionEnabled(true);
         editor.setAutoCorrectEnabled(enable_auto_correct);
         editor.setPreeditEnabled(true);
         editor.setAutoCapsEnabled(true);
