@@ -104,7 +104,7 @@ bool KeyboardSettings::predictiveText() const
  */
 bool KeyboardSettings::spellchecking() const
 {
-    return m_settings->get(SPELL_CHECKING_KEY).toBool();
+    return m_settings->value(SPELL_CHECKING_KEY, true).toBool();
 }
 
 /*!
