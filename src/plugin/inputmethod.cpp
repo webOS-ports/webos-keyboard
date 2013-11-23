@@ -37,7 +37,6 @@
 #include "models/wordribbon.h"
 #include "models/layout.h"
 
-#include "logic/keyareaconverter.h"
 #include "logic/layouthelper.h"
 #include "logic/style.h"
 
@@ -66,7 +65,7 @@ Key overrideToKey(const SharedOverride &override)
 {
     Key key;
 
-    key.rLabel().setText(override->label());
+    key.rLabel() = override->label();
     key.setIcon(override->icon().toUtf8());
     // TODO: hightlighted and enabled information are not available in
     // Key. Should we just really create a KeyOverride model?
@@ -93,11 +92,9 @@ InputMethod::InputMethod(MAbstractInputMethodHost *host)
 
     connect(&d->editor,  SIGNAL(autoCapsActivated()), this, SIGNAL(activateAutocaps()));
 
-    connect(this, SIGNAL(wordRibbonEnabledChanged(bool)), uiConst, SLOT(onWordEngineSettingsChanged(bool)));
-
-    connect(this, SIGNAL(predictionEnabledChanged()), this, SLOT(updateWordEngine()));
     connect(this, SIGNAL(contentTypeChanged(TextContentType)), this, SLOT(setContentType(TextContentType)));
     connect(this, SIGNAL(activeLanguageChanged(QString)), d->editor.wordEngine(), SLOT(onLanguageChanged(QString)));
+    connect(d->m_geometry, SIGNAL(visibleRectChanged()), this, SLOT(onVisibleRectChanged()));
 
     d->registerStyleSetting(host);
 
@@ -120,28 +117,6 @@ void InputMethod::show()
     Q_D(InputMethod);
 
     d->view->setVisible(true);
-
-    inputMethodHost()->setScreenRegion(QRegion(d->keyboardVisibleRect));
-
-    QRect rect(d->keyboardVisibleRect);
-    rect.moveTop( d->windowGeometryRect.height() - d->keyboardVisibleRect.height() );
-
-    inputMethodHost()->setInputMethodArea(rect, d->view);
-
-    qDebug() << "keyboard is reporting <x y w h>: <"
-                << d->keyboardVisibleRect.x()
-                << d->keyboardVisibleRect.y()
-                << d->keyboardVisibleRect.width()
-                << d->keyboardVisibleRect.height()
-                << "> to the app manager.";
-
-    d->applicationApiWrapper->reportOSKVisible(
-                d->keyboardVisibleRect.x(),
-                d->keyboardVisibleRect.y(),
-                d->keyboardVisibleRect.width(),
-                d->keyboardVisibleRect.height()
-                );
-
     d->m_geometry->setShown(true);
 }
 
@@ -268,12 +243,6 @@ void InputMethod::onStyleSettingChanged()
     d->layout.model.setImageDirectory(d->style->directory(Style::Images));
 }
 
-void InputMethod::onFeedbackSettingChanged()
-{
-    Q_D(InputMethod);
-    d->feedback.setEnabled(d->m_settings.keyPressFeedback());
-}
-
 void InputMethod::onAutoCorrectSettingChanged()
 {
     Q_D(InputMethod);
@@ -392,8 +361,8 @@ void InputMethod::update()
     if (!valid)
         newPredictionEnabled = true;
 
-    if (d->predictionEnabled != newPredictionEnabled) {
-        d->predictionEnabled = newPredictionEnabled;
+    if (d->wordEngineEnabled != newPredictionEnabled) {
+        d->wordEngineEnabled = newPredictionEnabled;
         emitPredictionEnabled = true;
     }
 
@@ -404,8 +373,7 @@ void InputMethod::update()
     setContentType(newContentType);
 
     if (emitPredictionEnabled) {
-        d->updateWordRibbon();
-        Q_EMIT predictionEnabledChanged();
+        updateWordEngine();
     }
 
     QString text;
@@ -423,28 +391,11 @@ void InputMethod::updateWordEngine()
 {
     Q_D(InputMethod);
 
-    if (!d->m_settings.predictiveText())
-        d->predictionEnabled = false;
-
     if (d->contentType != FreeTextContentType)
-        d->predictionEnabled = false;
+        d->wordEngineEnabled = false;
 
     d->editor.clearPreedit();
-    d->editor.wordEngine()->setEnabled( d->predictionEnabled );
-    d->updateWordRibbon();
-}
-
-bool InputMethod::predictionEnabled()
-{
-    Q_D(InputMethod);
-    return d->predictionEnabled;
-}
-
-//! \brief InputMethod::showWordRibbon returns if the word ribbon should be shown
-bool InputMethod::showWordRibbon()
-{
-    Q_D(InputMethod);
-    return d->showWordRibbon;
+    d->editor.wordEngine()->setEnabled( d->wordEngineEnabled );
 }
 
 //! \brief InputMethod::contentType returns the type, of the input field, like free text, email, url
@@ -512,6 +463,15 @@ const QString &InputMethod::systemLanguage() const
     return d->systemLanguage;
 }
 
+//! \brief InputMethod::useAudioFeedback is true, when keys should play a audio
+//! feedback when pressed
+//! \return
+bool InputMethod::useAudioFeedback() const
+{
+    Q_D(const InputMethod);
+    return d->m_settings.keyPressFeedback();
+}
+
 //! \brief InputMethod::setActiveLanguage
 //! Sets the currently active/used language
 //! \param newLanguage id of the new language. For example "en" or "es"
@@ -530,5 +490,34 @@ void InputMethod::setActiveLanguage(const QString &newLanguage)
 
     d->activeLanguage = newLanguage;
     d->editor.onLanguageChanged(d->activeLanguage);
+    d->host->setLanguage(newLanguage);
     Q_EMIT activeLanguageChanged(d->activeLanguage);
+}
+
+void InputMethod::onVisibleRectChanged()
+{
+    Q_D(InputMethod);
+
+    QRect visibleRect = qGuiApp->primaryScreen()->mapBetween(
+                            d->m_geometry->orientation(),
+                            qGuiApp->primaryScreen()->primaryOrientation(),
+                            d->m_geometry->visibleRect().toRect());
+
+    inputMethodHost()->setScreenRegion(QRegion(visibleRect));
+    inputMethodHost()->setInputMethodArea(visibleRect, d->view);
+    d->view->setHeight(visibleRect.height());
+
+    qDebug() << "keyboard is reporting <x y w h>: <"
+                << visibleRect.x()
+                << visibleRect.y()
+                << visibleRect.width()
+                << visibleRect.height()
+                << "> to the app manager.";
+
+    d->applicationApiWrapper->reportOSKVisible(
+                visibleRect.x(),
+                visibleRect.y(),
+                visibleRect.width(),
+                visibleRect.height()
+                );
 }

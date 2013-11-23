@@ -54,9 +54,11 @@ public:
     virtual ~WordEngine();
 
     //! \reimp
-    virtual void setEnabled(bool enabled);
+    virtual bool isEnabled() const;
+    virtual void setWordPredictionEnabled(bool enabled);
 
     virtual void addToUserDictionary(const QString &word);
+    virtual void setSpellcheckerEnabled(bool enabled);
     //! \reimp_end
 
     Q_SLOT void onWordCandidateSelected(QString word);

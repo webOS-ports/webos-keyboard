@@ -62,13 +62,18 @@ Item {
         }
     }
 
+    onHeightChanged: calculateSize();
+
 OrientationHelper {
+    id: orientationHelper
     automaticOrientation: false
     transitionEnabled: false
 
     orientationAngle: Screen.angleBetween(Screen.primaryOrientation, canvas.contentOrientation);
 
-    onOrientationAngleChanged: fullScreenItem.reportKeyboardVisibleRect();
+    onOrientationAngleChanged: {
+        calculateSize();
+    }
     onXChanged: fullScreenItem.reportKeyboardVisibleRect();
     onYChanged: fullScreenItem.reportKeyboardVisibleRect();
     onWidthChanged: fullScreenItem.reportKeyboardVisibleRect();
@@ -82,11 +87,13 @@ Item {
     anchors.left: parent.left
 
     width: parent.width
-    height: maliit_geometry.canvasHeight
+    height: 0
 
-    property int keypadHeight: maliit_geometry.keypadHeight
+    property int keypadHeight: height;
 
-    visible: layout.visible
+    onRotationChanged: console.log("now rotation has changed!!" + rotation)
+
+    visible: true
 
     // Expose details for use with Autopilot.
     //readonly property var layoutState: layout.keyboard_state
@@ -95,7 +102,8 @@ Item {
     property int contentOrientation: maliit_geometry.orientation
     onContentOrientationChanged: fullScreenItem.reportKeyboardVisibleRect();
 
-    property bool wordribbon_visible: maliit_input_method.showWordRibbon
+    property bool wordribbon_visible: maliit_word_engine.enabled
+    onWordribbon_visibleChanged: calculateSize();
 
     property bool languageMenuShown: false
 
@@ -153,8 +161,8 @@ Item {
                 anchors.bottom: keyboardComp.top
                 width: parent.width;
 
-                height: visible ? layout.wordribbon_height : 0
-                onHeightChanged: fullScreenItem.reportKeyboardVisibleRect();
+                height: canvas.wordribbon_visible ? UI.wordribbonHeight : 0
+                onHeightChanged: calculateSize();
             }
 
             Item {
@@ -263,9 +271,29 @@ Item {
 } // canvas
 } // OrientationHelper
 
+function calculateSize()
+{
+    // TODO tablet
+    if (orientationHelper.orientationAngle == 270 ||
+        orientationHelper.orientationAngle == 90) {
+        canvas.height = (fullScreenItem.width * UI.phoneKeyboardHeightLandscape) + wordRibbon.height
+    } else if (orientationHelper.orientationAngle == 0 ||
+               orientationHelper.orientationAngle == 180) {
+        canvas.height = (fullScreenItem.height * UI.phoneKeyboardHeightPortrait) + wordRibbon.height
+    }
+
+
+    else { // fallback
+        canvas.height = (fullScreenItem.height * UI.phoneKeyboardHeightPortrait) + wordRibbon.height
+    }
+
+    reportKeyboardVisibleRect();
+}
+
 // calculates the size of the visible keyboard to report to the window system
 // FIXME get the correct size for enabled extended keys instead of that big area
 function reportKeyboardVisibleRect() {
+
     var vx = 0;
     var vy = wordRibbon.y;
     var vwidth = keyboardSurface.width;
