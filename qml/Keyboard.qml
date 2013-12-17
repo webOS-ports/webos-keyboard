@@ -179,21 +179,21 @@ Item {
                     anchors.fill: parent
 
                     gradient: Gradient {
-                        GradientStop { position: 0.0; color: "#f1f1f1" }
-                        GradientStop { position: 1.0; color: "#e4e4e4" }
+                        GradientStop { position: 0.0; color: "#6C6C6C" }
+                        GradientStop { position: 1.0; color: "#424242" }
                     }
                 }
 
                 Image {
                     id: borderTop
-                    source: "styles/ubuntu/images/border_top.png"
+                    source: "../ubuntu/images/border_top.png"
                     width: parent.width
                     anchors.top: parent.top.bottom
                 }
 
                 Image {
                     id: borderBottom
-                    source: "styles/ubuntu/images/border_bottom.png"
+                    source: "../ubuntu/images/border_bottom.png"
                     width: parent.width
                     anchors.bottom: background.bottom
                 }
