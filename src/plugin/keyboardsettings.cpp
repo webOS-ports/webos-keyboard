@@ -2,6 +2,7 @@
  * This file is part of Maliit Plugins
  *
  * Copyright (C) 2013 Canonical, Ltd.
+ * Copyright (C) 2014 Simon Busch <morphis@gravedo.de>
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -32,6 +33,10 @@
 #include <QDebug>
 #include <QSettings>
 
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
+
 using namespace MaliitKeyboard;
 
 const QLatin1String ENABLED_LANGUAGES_KEY = QLatin1String("enabledLanguages");
@@ -47,15 +52,165 @@ const QLatin1String KEY_PRESS_FEEDBACK_KEY = QLatin1String("keyPressFeedback");
  * \param parent
  */
 KeyboardSettings::KeyboardSettings(QObject *parent) :
-    QObject(parent)
-  , m_settings(new QSettings(QSettings::SystemScope,
-                             "webos-ports",
-                             "webos-keyboard", this))
+    QObject(parent),
+    mAutoCapitalization(false),
+    mAutoCompletion(false),
+    mPredictiveText(false),
+    mSpellchecing(false),
+    mKeyPressFeedback(false)
 {
-    qWarning() << "Using configuration file: " << m_settings->fileName();
+    LSError error;
+    LSErrorInit(&error);
 
-//    QObject::connect(m_settings, SIGNAL(changed(QString)),
-//                     this, SLOT(settingUpdated(QString)));
+    if (!LSRegister(NULL, &mServiceHandle, &error)) {
+        qWarning("Failed to register service handle: %s", error.message);
+        LSErrorFree(&error);
+        return;
+    }
+
+    if (!LSGmainAttach(mServiceHandle, g_main_loop_new(g_main_context_default(), TRUE), &error)) {
+        qWarning("Failed to attach to glib mainloop: %s", error.message);
+        LSErrorFree(&error);
+        return;
+    }
+
+    if (!LSCall(mServiceHandle, "palm://com.palm.lunabus/signal/registerServerStatus",
+              "{\"serviceName\":\"com.palm.systemservice\"}",
+              systemServiceStatusCallback, this, &mServerStatusToken, &error)) {
+        qWarning("Failed when registering watch for com.palm.systemservice");
+        LSErrorFree(&error);
+        return;
+    }
+
+    g_message("Service setup successfully");
+}
+
+bool KeyboardSettings::systemServiceStatusCallback(LSHandle *handle, LSMessage *message, void *user_data)
+{
+    if (!message)
+        return true;
+
+    const char *payload = LSMessageGetPayload(message);
+    if (!payload)
+        return true;
+
+    QJsonDocument document = QJsonDocument::fromJson(QByteArray(payload));
+
+    QJsonObject root = document.object();
+    if (!root.contains("connected") || !root.value("connected").isBool())
+        return true;
+
+    bool connected = root.value("connected").toBool();
+    if (!connected)
+        return true;
+
+    KeyboardSettings *settings = static_cast<KeyboardSettings*>(user_data);
+    settings->preferenceServiceIsAvailable();
+
+    return true;
+}
+
+void KeyboardSettings::preferenceServiceIsAvailable()
+{
+    LSError error;
+    LSErrorInit(&error);
+
+    g_message("preference service is available");
+
+    if (!LSCall(mServiceHandle, "palm://com.palm.systemservice/getPreferences",
+              "{\"subscribe\":true,\"keys\":[\"keyboard\"]}",
+              preferencesChangedCallback, this, NULL, &error)) {
+        qWarning("Setting up subscription for keyboard preferences failed: %s", error.message);
+        LSErrorFree(&error);
+        return true;
+    }
+}
+
+
+bool KeyboardSettings::preferencesChangedCallback(LSHandle *handle, LSMessage *message, void *user_data)
+{
+    if (!message)
+        return true;
+
+    const char *payload = LSMessageGetPayload(message);
+    if (!payload)
+        return true;
+
+    g_message("Got updated keyboard preferences from service:");
+    g_message("%s", payload);
+
+    QByteArray data(payload);
+    KeyboardSettings *settings = static_cast<KeyboardSettings*>(user_data);
+    settings->preferencesChanged(data);
+
+    return true;
+}
+
+void KeyboardSettings::preferencesChanged(const QByteArray &data)
+{
+    QJsonDocument document = QJsonDocument::fromJson(data);
+
+    QJsonObject root = document.object();
+
+    if (!root.contains("keyboard") || !root.value("keyboard").isObject())
+        return;
+
+    QJsonObject keyboardPref = root.value("keyboard").toObject();
+
+    if (keyboardPref.contains(ENABLED_LANGUAGES_KEY) && keyboardPref.value(ENABLED_LANGUAGES_KEY).isArray()) {
+        QJsonArray languages = keyboardPref.value(ENABLED_LANGUAGES_KEY).toArray();
+        QStringList newLanguages;
+
+        for (int n = 0; n < languages.size(); n++) {
+            QJsonValue value = languages.at(n);
+            newLanguages.append(value.toString());
+        }
+
+        if (newLanguages != mEnabledLanguages) {
+            mEnabledLanguages = newLanguages;
+            Q_EMIT enabledLanguagesChanged(mEnabledLanguages);
+        }
+    }
+
+    if (keyboardPref.contains(AUTO_CAPITALIZATION_KEY) && keyboardPref.value(AUTO_CAPITALIZATION_KEY).isBool()) {
+        bool value = keyboardPref.value(AUTO_CAPITALIZATION_KEY).toBool();
+        if (value != mAutoCapitalization) {
+            mAutoCapitalization = value;
+            Q_EMIT autoCapitalizationChanged(mAutoCapitalization);
+        }
+    }
+
+    if (keyboardPref.contains(AUTO_COMPLETION_KEY) && keyboardPref.value(AUTO_COMPLETION_KEY).isBool()) {
+        bool value = keyboardPref.value(AUTO_COMPLETION_KEY).toBool();
+        if (value != mAutoCompletion) {
+            mAutoCompletion = value;
+            Q_EMIT autoCompletionChanged(mAutoCompletion);
+        }
+    }
+
+    if (keyboardPref.contains(PREDICTIVE_TEXT_KEY) && keyboardPref.value(PREDICTIVE_TEXT_KEY).isBool()) {
+        bool value = keyboardPref.value(PREDICTIVE_TEXT_KEY).toBool();
+        if (value != mPredictiveText) {
+            mPredictiveText = value;
+            Q_EMIT predictiveTextChanged(mPredictiveText);
+        }
+    }
+
+    if (keyboardPref.contains(SPELL_CHECKING_KEY) && keyboardPref.value(SPELL_CHECKING_KEY).isBool()) {
+        bool value = keyboardPref.value(SPELL_CHECKING_KEY).toBool();
+        if (value != mSpellchecing) {
+            mSpellchecing = value;
+            Q_EMIT spellCheckingChanged(mSpellchecing);
+        }
+    }
+
+    if (keyboardPref.contains(KEY_PRESS_FEEDBACK_KEY) && keyboardPref.value(KEY_PRESS_FEEDBACK_KEY).isBool()) {
+        bool value = keyboardPref.value(KEY_PRESS_FEEDBACK_KEY).toBool();
+        if (value != mKeyPressFeedback) {
+            mKeyPressFeedback = value;
+            Q_EMIT spellCheckingChanged(mKeyPressFeedback);
+        }
+    }
 }
 
 /*!
@@ -65,7 +220,7 @@ KeyboardSettings::KeyboardSettings(QObject *parent) :
  */
 QStringList KeyboardSettings::enabledLanguages() const
 {
-    return m_settings->value(ENABLED_LANGUAGES_KEY).toStringList();
+  return mEnabledLanguages;
 }
 
 /*!
@@ -75,7 +230,7 @@ QStringList KeyboardSettings::enabledLanguages() const
  */
 bool KeyboardSettings::autoCapitalization() const
 {
-    return m_settings->value(AUTO_CAPITALIZATION_KEY, true).toBool();
+  return mAutoCapitalization;
 }
 
 /*!
@@ -85,7 +240,7 @@ bool KeyboardSettings::autoCapitalization() const
  */
 bool KeyboardSettings::autoCompletion() const
 {
-    return m_settings->value(AUTO_COMPLETION_KEY, true).toBool();
+  return mAutoCompletion;
 }
 
 /*!
@@ -95,7 +250,7 @@ bool KeyboardSettings::autoCompletion() const
  */
 bool KeyboardSettings::predictiveText() const
 {
-    return m_settings->value(PREDICTIVE_TEXT_KEY, true).toBool();
+  return mPredictiveText;
 }
 
 /*!
@@ -104,7 +259,7 @@ bool KeyboardSettings::predictiveText() const
  */
 bool KeyboardSettings::spellchecking() const
 {
-    return m_settings->value(SPELL_CHECKING_KEY, true).toBool();
+  return mSpellchecing;
 }
 
 /*!
@@ -114,9 +269,10 @@ bool KeyboardSettings::spellchecking() const
  */
 bool KeyboardSettings::keyPressFeedback() const
 {
-    return m_settings->value(KEY_PRESS_FEEDBACK_KEY, true).toBool();
+  return mKeyPressFeedback;
 }
 
+#if 0
 /*!
  * \brief KeyboardSettings::settingUpdated slot to handle changes in the settings backend
  * A specialized signal is emitted for the affected setting
@@ -147,3 +303,4 @@ void KeyboardSettings::settingUpdated(const QString &key)
     qWarning() << Q_FUNC_INFO << "unknown settings key:" << key;
     return;
 }
+#endif

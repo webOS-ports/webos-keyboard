@@ -88,7 +88,6 @@ coverage.commands += make $(MAKEFLAGS) coverage
 
 coverage.clean_commands = rm -rf $$COVERAGE_DIR
 
-
 SUBDIRS = \
     src \
     data \

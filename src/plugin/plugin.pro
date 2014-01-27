@@ -17,6 +17,8 @@ contains(QT_MAJOR_VERSION, 4) {
     QT = core gui widgets quick qml
 }
 
+LIBS += -lluna-service2
+
 CONFIG += \
     plugin \
 
