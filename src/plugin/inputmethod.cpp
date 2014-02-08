@@ -147,6 +147,11 @@ void InputMethod::hide()
     d->closeOskWindow();
 }
 
+void InputMethod::reset()
+{
+    hide();
+}
+
 void InputMethod::setPreedit(const QString &preedit,
                              int cursor_position)
 {
@@ -166,7 +171,14 @@ QList<MAbstractInputMethod::MInputMethodSubView>
 InputMethod::subViews(Maliit::HandlerState state) const
 {
     Q_UNUSED(state)
+    Q_D(const InputMethod);
+
     QList<MInputMethodSubView> views;
+
+	MInputMethodSubView v;
+	v.subViewId = d->activeLanguage;
+	views.append(v);
+
     return views;
 }
 
@@ -176,6 +188,8 @@ void InputMethod::setActiveSubView(const QString &id,
 {
     Q_UNUSED(state)
     Q_UNUSED(id);
+
+	setActiveLanguage(id);
 }
 
 QString InputMethod::activeSubView(Maliit::HandlerState state) const
