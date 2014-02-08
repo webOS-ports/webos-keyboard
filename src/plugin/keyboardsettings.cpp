@@ -39,6 +39,7 @@
 
 using namespace MaliitKeyboard;
 
+const QLatin1String ACTIVE_LANGUAGE_KEY = QLatin1String("activeLanguage");
 const QLatin1String ENABLED_LANGUAGES_KEY = QLatin1String("enabledLanguages");
 const QLatin1String AUTO_CAPITALIZATION_KEY = QLatin1String("autoCapitalization");
 const QLatin1String AUTO_COMPLETION_KEY = QLatin1String("autoCompletion");
@@ -157,6 +158,14 @@ void KeyboardSettings::preferencesChanged(const QByteArray &data)
 
     QJsonObject keyboardPref = root.value("keyboard").toObject();
 
+    if (keyboardPref.contains(ACTIVE_LANGUAGE_KEY) && keyboardPref.value(ACTIVE_LANGUAGE_KEY).isString()) {
+        QString value = keyboardPref.value(ACTIVE_LANGUAGE_KEY).toString();
+        if (value != mActiveLanguage) {
+            mActiveLanguage = value;
+            Q_EMIT activeLanguageChanged(mActiveLanguage);
+        }
+    }
+
     if (keyboardPref.contains(ENABLED_LANGUAGES_KEY) && keyboardPref.value(ENABLED_LANGUAGES_KEY).isArray()) {
         QJsonArray languages = keyboardPref.value(ENABLED_LANGUAGES_KEY).toArray();
         QStringList newLanguages;
@@ -212,6 +221,17 @@ void KeyboardSettings::preferencesChanged(const QByteArray &data)
         }
     }
 }
+
+/*!
+ * \brief KeyboardSettings::activeLanguage returns currently active language
+ * \return active language
+ */
+
+QString KeyboardSettings::activeLanguage() const
+{
+    return mActiveLanguage;
+}
+
 
 /*!
  * \brief KeyboardSettings::enabledLanguages returns a list of languages that are
@@ -280,7 +300,10 @@ bool KeyboardSettings::keyPressFeedback() const
  */
 void KeyboardSettings::settingUpdated(const QString &key)
 {
-    if (key == ENABLED_LANGUAGES_KEY) {
+    if (key == ACTIVE_LANGUAGE_KEY) {
+        Q_EMIT activeLanguageChanged(activeLanguage());
+        return;
+    } else if (key == ENABLED_LANGUAGES_KEY) {
         Q_EMIT enabledLanguagesChanged(enabledLanguages());
         return;
     } else if (key == AUTO_CAPITALIZATION_KEY) {

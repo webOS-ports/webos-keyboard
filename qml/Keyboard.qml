@@ -40,7 +40,6 @@ Item {
     objectName: "fullScreenItem"
 
     property variant input_method: maliit_input_method
-    property variant layout: maliit_layout
     property variant event_handler: maliit_event_handler
     property QtObject units: QtObject {
         property real logicalPixelDensity: 12 //hardcoded for gnexus, to be dpi-dependant
@@ -93,9 +92,6 @@ Item {
 
     visible: true
 
-    // Expose details for use with Autopilot.
-    //readonly property var layoutState: layout.keyboard_state
-    //readonly property string activeView: layout.activeView
 
     property int contentOrientation: maliit_geometry.orientation
     onContentOrientationChanged: fullScreenItem.reportKeyboardVisibleRect();
@@ -186,14 +182,14 @@ Item {
 
                 Image {
                     id: borderTop
-                    source: "../ubuntu/images/border_top.png"
+                    source: "styles/ubuntu/images/border_top.png"
                     width: parent.width
                     anchors.top: parent.top.bottom
                 }
 
                 Image {
                     id: borderBottom
-                    source: "../ubuntu/images/border_bottom.png"
+                    source: "styles/ubuntu/images/border_bottom.png"
                     width: parent.width
                     anchors.bottom: background.bottom
                 }
