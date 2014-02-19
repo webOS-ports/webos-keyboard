@@ -54,6 +54,7 @@ const QLatin1String KEY_PRESS_FEEDBACK_KEY = QLatin1String("keyPressFeedback");
  */
 KeyboardSettings::KeyboardSettings(QObject *parent) :
     QObject(parent),
+    mActiveLanguage("en"),
     mAutoCapitalization(false),
     mAutoCompletion(false),
     mPredictiveText(false),
