@@ -23,13 +23,14 @@ EXAMPLE_FILES = hebrewplugin.json
 PLUGIN_INSTALL_PATH = $${UBUNTU_KEYBOARD_LIB_DIR}/he/
 
 lang_db_he.path = $$PLUGIN_INSTALL_PATH
+lang_db_he.files += $$OUT_PWD/database_he.db
 lang_db_he.commands += \
-  rm -f $$PWD/database_he.db && \
-  text2ngram -n 1 -l -f sqlite -o $$PWD/database_he.db $$PWD/free_ebook.txt && \
-  text2ngram -n 2 -l -f sqlite -o $$PWD/database_he.db $$PWD/free_ebook.txt && \
-  text2ngram -n 3 -l -f sqlite -o $$PWD/database_he.db $$PWD/free_ebook.txt
+  rm -f $$lang_db_he.files && \
+  text2ngram -n 1 -l -f sqlite -o $$lang_db_he.files $$PWD/free_ebook.txt && \
+  text2ngram -n 2 -l -f sqlite -o $$lang_db_he.files $$PWD/free_ebook.txt && \
+  text2ngram -n 3 -l -f sqlite -o $$lang_db_he.files $$PWD/free_ebook.txt && \
+  cp $$lang_db_he.files \"$(INSTALL_ROOT)\"$$PLUGIN_INSTALL_PATH
 
-lang_db_he.files += $$PWD/database_he.db
 QMAKE_EXTRA_TARGETS += lang_db_he
 
 target.path = $$PLUGIN_INSTALL_PATH

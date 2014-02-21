@@ -20,16 +20,17 @@ TARGET          = $$qtLibraryTarget(portugueseplugin)
 EXAMPLE_FILES = portugueseplugin.json
 
 # generate database for presage:
-PLUGIN_INSTALL_PATH = $$UBUNTU_KEYBOARD_LIB_DIR/pt/
+PLUGIN_INSTALL_PATH = $${UBUNTU_KEYBOARD_LIB_DIR}/pt/
 
 lang_db_pt.path = $$PLUGIN_INSTALL_PATH
+lang_db_pt.files += $$OUT_PWD/database_pt.db
 lang_db_pt.commands += \
-  rm -f $$PWD/database_pt.db && \
-  text2ngram -n 1 -l -f sqlite -o $$PWD/database_pt.db $$PWD/historias_sem_data.txt && \
-  text2ngram -n 2 -l -f sqlite -o $$PWD/database_pt.db $$PWD/historias_sem_data.txt && \
-  text2ngram -n 3 -l -f sqlite -o $$PWD/database_pt.db $$PWD/historias_sem_data.txt
+  rm -f $$lang_db_pt.files && \
+  text2ngram -n 1 -l -f sqlite -o $$lang_db_pt.files $$PWD/historias_sem_data.txt && \
+  text2ngram -n 2 -l -f sqlite -o $$lang_db_pt.files $$PWD/historias_sem_data.txt && \
+  text2ngram -n 3 -l -f sqlite -o $$lang_db_pt.files $$PWD/historias_sem_data.txt && \
+  cp $$lang_db_pt.files \"$(INSTALL_ROOT)\"$$PLUGIN_INSTALL_PATH
 
-lang_db_pt.files += $$PWD/database_pt.db
 QMAKE_EXTRA_TARGETS += lang_db_pt
 
 target.path = $$PLUGIN_INSTALL_PATH

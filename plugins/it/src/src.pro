@@ -23,13 +23,14 @@ EXAMPLE_FILES = italianplugin.json
 PLUGIN_INSTALL_PATH = $${UBUNTU_KEYBOARD_LIB_DIR}/it/
 
 lang_db_it.path = $$PLUGIN_INSTALL_PATH
+lang_db_it.files += $$OUT_PWD/database_it.db
 lang_db_it.commands += \
-  rm -f $$PWD/database_it.db && \
-  text2ngram -n 1 -l -f sqlite -o $$PWD/database_it.db $$PWD/la_francia_dal_primo_impero.txt && \
-  text2ngram -n 2 -l -f sqlite -o $$PWD/database_it.db $$PWD/la_francia_dal_primo_impero.txt && \
-  text2ngram -n 3 -l -f sqlite -o $$PWD/database_it.db $$PWD/la_francia_dal_primo_impero.txt
+  rm -f $$lang_db_it.files && \
+  text2ngram -n 1 -l -f sqlite -o $$lang_db_it.files $$PWD/la_francia_dal_primo_impero.txt && \
+  text2ngram -n 2 -l -f sqlite -o $$lang_db_it.files $$PWD/la_francia_dal_primo_impero.txt && \
+  text2ngram -n 3 -l -f sqlite -o $$lang_db_it.files $$PWD/la_francia_dal_primo_impero.txt && \
+  cp $$lang_db_it.files \"$(INSTALL_ROOT)\"$$PLUGIN_INSTALL_PATH
 
-lang_db_it.files += $$PWD/database_it.db
 QMAKE_EXTRA_TARGETS += lang_db_it
 
 target.path = $$PLUGIN_INSTALL_PATH

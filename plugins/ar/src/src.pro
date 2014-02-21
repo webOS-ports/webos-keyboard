@@ -23,13 +23,14 @@ EXAMPLE_FILES = arabicplugin.json
 PLUGIN_INSTALL_PATH = $${UBUNTU_KEYBOARD_LIB_DIR}/ar/
 
 lang_db_ar.path = $$PLUGIN_INSTALL_PATH
+lang_db_ar.files += $$OUT_PWD/database_ar.db
 lang_db_ar.commands += \
-  rm -f $$PWD/database_ar.db && \
-  text2ngram -n 1 -l -f sqlite -o $$PWD/database_ar.db $$PWD/free_ebook.txt && \
-  text2ngram -n 2 -l -f sqlite -o $$PWD/database_ar.db $$PWD/free_ebook.txt && \
-  text2ngram -n 3 -l -f sqlite -o $$PWD/database_ar.db $$PWD/free_ebook.txt
+  rm -f $$lang_db_ar.files && \
+  text2ngram -n 1 -l -f sqlite -o $$lang_db_ar.files $$PWD/free_ebook.txt && \
+  text2ngram -n 2 -l -f sqlite -o $$lang_db_ar.files $$PWD/free_ebook.txt && \
+  text2ngram -n 3 -l -f sqlite -o $$lang_db_ar.files $$PWD/free_ebook.txt && \
+  cp $$lang_db_ar.files \"$(INSTALL_ROOT)\"$$PLUGIN_INSTALL_PATH
 
-lang_db_ar.files += $$PWD/database_ar.db
 QMAKE_EXTRA_TARGETS += lang_db_ar
 
 target.path = $$PLUGIN_INSTALL_PATH

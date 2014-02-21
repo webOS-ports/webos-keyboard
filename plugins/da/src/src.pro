@@ -23,13 +23,14 @@ EXAMPLE_FILES = danishplugin.json
 PLUGIN_INSTALL_PATH = $${UBUNTU_KEYBOARD_LIB_DIR}/da/
 
 lang_db_da.path = $$PLUGIN_INSTALL_PATH
+lang_db_da.files += $$OUT_PWD/database_da.db
 lang_db_da.commands += \
-  rm -f $$PWD/database_da.db && \
-  text2ngram -n 1 -l -f sqlite -o $$PWD/database_da.db $$PWD/free_ebook.txt && \
-  text2ngram -n 2 -l -f sqlite -o $$PWD/database_da.db $$PWD/free_ebook.txt && \
-  text2ngram -n 3 -l -f sqlite -o $$PWD/database_da.db $$PWD/free_ebook.txt
+  rm -f $$lang_db_da.files && \
+  text2ngram -n 1 -l -f sqlite -o $$lang_db_da.files $$PWD/free_ebook.txt && \
+  text2ngram -n 2 -l -f sqlite -o $$lang_db_da.files $$PWD/free_ebook.txt && \
+  text2ngram -n 3 -l -f sqlite -o $$lang_db_da.files $$PWD/free_ebook.txt && \
+  cp $$lang_db_da.files \"$(INSTALL_ROOT)\"$$PLUGIN_INSTALL_PATH
 
-lang_db_da.files += $$PWD/database_da.db
 QMAKE_EXTRA_TARGETS += lang_db_da
 
 target.path = $$PLUGIN_INSTALL_PATH

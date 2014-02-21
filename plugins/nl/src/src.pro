@@ -23,13 +23,14 @@ EXAMPLE_FILES = dutchplugin.json
 PLUGIN_INSTALL_PATH = $${UBUNTU_KEYBOARD_LIB_DIR}/nl/
 
 lang_db_nl.path = $$PLUGIN_INSTALL_PATH
+lang_db_nl.files += $$OUT_PWD/database_nl.db
 lang_db_nl.commands += \
-  rm -f $$PWD/database_nl.db && \
-  text2ngram -n 1 -l -f sqlite -o $$PWD/database_nl.db $$PWD/free_ebook.txt && \
-  text2ngram -n 2 -l -f sqlite -o $$PWD/database_nl.db $$PWD/free_ebook.txt && \
-  text2ngram -n 3 -l -f sqlite -o $$PWD/database_nl.db $$PWD/free_ebook.txt
+  rm -f $$lang_db_nl.files && \
+  text2ngram -n 1 -l -f sqlite -o $$lang_db_nl.files $$PWD/free_ebook.txt && \
+  text2ngram -n 2 -l -f sqlite -o $$lang_db_nl.files $$PWD/free_ebook.txt && \
+  text2ngram -n 3 -l -f sqlite -o $$lang_db_nl.files $$PWD/free_ebook.txt && \
+  cp $$lang_db_nl.files \"$(INSTALL_ROOT)\"$$PLUGIN_INSTALL_PATH
 
-lang_db_nl.files += $$PWD/database_nl.db
 QMAKE_EXTRA_TARGETS += lang_db_nl
 
 target.path = $$PLUGIN_INSTALL_PATH

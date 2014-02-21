@@ -23,13 +23,14 @@ EXAMPLE_FILES = finnishplugin.json
 PLUGIN_INSTALL_PATH = $${UBUNTU_KEYBOARD_LIB_DIR}/fi/
 
 lang_db_fi.path = $$PLUGIN_INSTALL_PATH
+lang_db_fi.files += $$OUT_PWD/database_fi.db
 lang_db_fi.commands += \
-  rm -f $$PWD/database_fi.db && \
-  text2ngram -n 1 -l -f sqlite -o $$PWD/database_fi.db $$PWD/free_ebook.txt && \
-  text2ngram -n 2 -l -f sqlite -o $$PWD/database_fi.db $$PWD/free_ebook.txt && \
-  text2ngram -n 3 -l -f sqlite -o $$PWD/database_fi.db $$PWD/free_ebook.txt
+  rm -f $$lang_db_fi.files && \
+  text2ngram -n 1 -l -f sqlite -o $$lang_db_fi.files $$PWD/free_ebook.txt && \
+  text2ngram -n 2 -l -f sqlite -o $$lang_db_fi.files $$PWD/free_ebook.txt && \
+  text2ngram -n 3 -l -f sqlite -o $$lang_db_fi.files $$PWD/free_ebook.txt && \
+  cp $$lang_db_fi.files \"$(INSTALL_ROOT)\"$$PLUGIN_INSTALL_PATH
 
-lang_db_fi.files += $$PWD/database_fi.db
 QMAKE_EXTRA_TARGETS += lang_db_fi
 
 target.path = $$PLUGIN_INSTALL_PATH

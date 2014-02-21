@@ -23,13 +23,14 @@ EXAMPLE_FILES = frenchplugin.json
 PLUGIN_INSTALL_PATH = $${UBUNTU_KEYBOARD_LIB_DIR}/fr/
 
 lang_db_fr.path = $$PLUGIN_INSTALL_PATH
+lang_db_fr.files += $$OUT_PWD/database_fr.db
 lang_db_fr.commands += \
-  rm -f $$PWD/database_fr.db && \
-  text2ngram -n 1 -l -f sqlite -o $$PWD/database_fr.db $$PWD/les_trois_mousquetaires.txt && \
-  text2ngram -n 2 -l -f sqlite -o $$PWD/database_fr.db $$PWD/les_trois_mousquetaires.txt && \
-  text2ngram -n 3 -l -f sqlite -o $$PWD/database_fr.db $$PWD/les_trois_mousquetaires.txt
+  rm -f $$lang_db_fr.files && \
+  text2ngram -n 1 -l -f sqlite -o $$lang_db_fr.files $$PWD/les_trois_mousquetaires.txt && \
+  text2ngram -n 2 -l -f sqlite -o $$lang_db_fr.files $$PWD/les_trois_mousquetaires.txt && \
+  text2ngram -n 3 -l -f sqlite -o $$lang_db_fr.files $$PWD/les_trois_mousquetaires.txt && \
+  cp $$lang_db_fr.files \"$(INSTALL_ROOT)\"$$PLUGIN_INSTALL_PATH
 
-lang_db_fr.files += $$PWD/database_fr.db
 QMAKE_EXTRA_TARGETS += lang_db_fr
 
 target.path = $$PLUGIN_INSTALL_PATH

@@ -23,13 +23,14 @@ EXAMPLE_FILES = russianplugin.json
 PLUGIN_INSTALL_PATH = $${UBUNTU_KEYBOARD_LIB_DIR}/ru/
 
 lang_db_ru.path = $$PLUGIN_INSTALL_PATH
+lang_db_ru.files += $$OUT_PWD/database_ru.db
 lang_db_ru.commands += \
-  rm -f $$PWD/database_ru.db && \
-  text2ngram -n 1 -l -f sqlite -o $$PWD/database_ru.db $$PWD/free_ebook.txt && \
-  text2ngram -n 2 -l -f sqlite -o $$PWD/database_ru.db $$PWD/free_ebook.txt && \
-  text2ngram -n 3 -l -f sqlite -o $$PWD/database_ru.db $$PWD/free_ebook.txt
+  rm -f $$lang_db_ru.files && \
+  text2ngram -n 1 -l -f sqlite -o $$lang_db_ru.files $$PWD/free_ebook.txt && \
+  text2ngram -n 2 -l -f sqlite -o $$lang_db_ru.files $$PWD/free_ebook.txt && \
+  text2ngram -n 3 -l -f sqlite -o $$lang_db_ru.files $$PWD/free_ebook.txt && \
+  cp $$lang_db_ru.files \"$(INSTALL_ROOT)\"$$PLUGIN_INSTALL_PATH
 
-lang_db_ru.files += $$PWD/database_ru.db
 QMAKE_EXTRA_TARGETS += lang_db_ru
 
 target.path = $$PLUGIN_INSTALL_PATH

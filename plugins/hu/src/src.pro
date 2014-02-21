@@ -23,13 +23,14 @@ EXAMPLE_FILES = hungarianplugin.json
 PLUGIN_INSTALL_PATH = $${UBUNTU_KEYBOARD_LIB_DIR}/hu/
 
 lang_db_hu.path = $$PLUGIN_INSTALL_PATH
+lang_db_hu.files += $$OUT_PWD/database_hu.db
 lang_db_hu.commands += \
-  rm -f $$PWD/database_hu.db && \
-  text2ngram -n 1 -l -f sqlite -o $$PWD/database_hu.db $$PWD/free_ebook.txt && \
-  text2ngram -n 2 -l -f sqlite -o $$PWD/database_hu.db $$PWD/free_ebook.txt && \
-  text2ngram -n 3 -l -f sqlite -o $$PWD/database_hu.db $$PWD/free_ebook.txt
+  rm -f $$lang_db_hu.files && \
+  text2ngram -n 1 -l -f sqlite -o $$lang_db_hu.files $$PWD/free_ebook.txt && \
+  text2ngram -n 2 -l -f sqlite -o $$lang_db_hu.files $$PWD/free_ebook.txt && \
+  text2ngram -n 3 -l -f sqlite -o $$lang_db_hu.files $$PWD/free_ebook.txt && \
+  cp $$lang_db_hu.files \"$(INSTALL_ROOT)\"$$PLUGIN_INSTALL_PATH
 
-lang_db_hu.files += $$PWD/database_hu.db
 QMAKE_EXTRA_TARGETS += lang_db_hu
 
 target.path = $$PLUGIN_INSTALL_PATH

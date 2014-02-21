@@ -23,13 +23,14 @@ EXAMPLE_FILES = czechplugin.json
 PLUGIN_INSTALL_PATH = $${UBUNTU_KEYBOARD_LIB_DIR}/cs/
 
 lang_db_cs.path = $$PLUGIN_INSTALL_PATH
+lang_db_cs.files += $$OUT_PWD/database_cs.db
 lang_db_cs.commands += \
-  rm -f $$PWD/database_cs.db && \
-  text2ngram -n 1 -l -f sqlite -o $$PWD/database_cs.db $$PWD/free_ebook.txt && \
-  text2ngram -n 2 -l -f sqlite -o $$PWD/database_cs.db $$PWD/free_ebook.txt && \
-  text2ngram -n 3 -l -f sqlite -o $$PWD/database_cs.db $$PWD/free_ebook.txt
+  rm -f $$lang_db_cs.files && \
+  text2ngram -n 1 -l -f sqlite -o $$lang_db_cs.files $$PWD/free_ebook.txt && \
+  text2ngram -n 2 -l -f sqlite -o $$lang_db_cs.files $$PWD/free_ebook.txt && \
+  text2ngram -n 3 -l -f sqlite -o $$lang_db_cs.files $$PWD/free_ebook.txt && \
+  cp $$lang_db_cs.files \"$(INSTALL_ROOT)\"$$PLUGIN_INSTALL_PATH
 
-lang_db_cs.files += $$PWD/database_cs.db
 QMAKE_EXTRA_TARGETS += lang_db_cs
 
 target.path = $$PLUGIN_INSTALL_PATH

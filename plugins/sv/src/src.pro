@@ -23,13 +23,14 @@ EXAMPLE_FILES = swedishplugin.json
 PLUGIN_INSTALL_PATH = $${UBUNTU_KEYBOARD_LIB_DIR}/sv/
 
 lang_db_sv.path = $$PLUGIN_INSTALL_PATH
+lang_db_sv.files += $$OUT_PWD/database_sv.db
 lang_db_sv.commands += \
-  rm -f $$PWD/database_sv.db && \
-  text2ngram -n 1 -l -f sqlite -o $$PWD/database_sv.db $$PWD/free_ebook.txt && \
-  text2ngram -n 2 -l -f sqlite -o $$PWD/database_sv.db $$PWD/free_ebook.txt && \
-  text2ngram -n 3 -l -f sqlite -o $$PWD/database_sv.db $$PWD/free_ebook.txt
+  rm -f $$lang_db_sv.files && \
+  text2ngram -n 1 -l -f sqlite -o $$lang_db_sv.files $$PWD/free_ebook.txt && \
+  text2ngram -n 2 -l -f sqlite -o $$lang_db_sv.files $$PWD/free_ebook.txt && \
+  text2ngram -n 3 -l -f sqlite -o $$lang_db_sv.files $$PWD/free_ebook.txt && \
+  cp $$lang_db_sv.files \"$(INSTALL_ROOT)\"$$PLUGIN_INSTALL_PATH
 
-lang_db_sv.files += $$PWD/database_sv.db
 QMAKE_EXTRA_TARGETS += lang_db_sv
 
 target.path = $$PLUGIN_INSTALL_PATH

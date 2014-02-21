@@ -23,13 +23,14 @@ EXAMPLE_FILES = spanishplugin.json
 PLUGIN_INSTALL_PATH = $${UBUNTU_KEYBOARD_LIB_DIR}/es/
 
 lang_db_es.path = $$PLUGIN_INSTALL_PATH
+lang_db_es.files += $$OUT_PWD/database_es.db
 lang_db_es.commands += \
-  rm -f $$PWD/database_es.db && \
-  text2ngram -n 1 -l -f sqlite -o $$PWD/database_es.db $$PWD/el_quijote.txt && \
-  text2ngram -n 2 -l -f sqlite -o $$PWD/database_es.db $$PWD/el_quijote.txt && \
-  text2ngram -n 3 -l -f sqlite -o $$PWD/database_es.db $$PWD/el_quijote.txt
+  rm -f $$lang_db_es.files && \
+  text2ngram -n 1 -l -f sqlite -o $$lang_db_es.files $$PWD/el_quijote.txt && \
+  text2ngram -n 2 -l -f sqlite -o $$lang_db_es.files $$PWD/el_quijote.txt && \
+  text2ngram -n 3 -l -f sqlite -o $$lang_db_es.files $$PWD/el_quijote.txt && \
+  cp $$lang_db_es.files \"$(INSTALL_ROOT)\"$$PLUGIN_INSTALL_PATH
 
-lang_db_es.files += $$PWD/database_es.db
 QMAKE_EXTRA_TARGETS += lang_db_es
 
 target.path = $$PLUGIN_INSTALL_PATH
