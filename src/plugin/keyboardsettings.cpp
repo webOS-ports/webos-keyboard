@@ -218,7 +218,7 @@ void KeyboardSettings::preferencesChanged(const QByteArray &data)
         bool value = keyboardPref.value(KEY_PRESS_FEEDBACK_KEY).toBool();
         if (value != mKeyPressFeedback) {
             mKeyPressFeedback = value;
-            Q_EMIT spellCheckingChanged(mKeyPressFeedback);
+            Q_EMIT keyPressFeedbackChanged(mKeyPressFeedback);
         }
     }
 }
