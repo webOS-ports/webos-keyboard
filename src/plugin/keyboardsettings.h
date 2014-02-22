@@ -35,8 +35,6 @@
 
 #include <luna-service2/lunaservice.h>
 
-class QSettings;
-
 namespace MaliitKeyboard {
 
 class KeyboardSettings : public QObject
@@ -44,7 +42,8 @@ class KeyboardSettings : public QObject
     Q_OBJECT
 public:
     explicit KeyboardSettings(QObject *parent = 0);
-
+    
+    QString activeLanguage() const;
     QStringList enabledLanguages() const;
     bool autoCapitalization() const;
     bool autoCompletion() const;
@@ -59,6 +58,7 @@ public:
     void preferencesChanged(const QByteArray &data);
 
 Q_SIGNALS:
+    void activeLanguageChanged(QString);
     void enabledLanguagesChanged(QStringList);
     void autoCapitalizationChanged(bool);
     void autoCompletionChanged(bool);
@@ -70,6 +70,7 @@ private:
     LSHandle *mServiceHandle;
     LSMessageToken mServerStatusToken;
     QStringList mEnabledLanguages;
+    QString mActiveLanguage;
     bool mAutoCapitalization;
     bool mAutoCompletion;
     bool mPredictiveText;

@@ -54,7 +54,7 @@ Item {
 
     Audio {
         id: audioFeedback
-        source: Qt.resolvedUrl("styles/ubuntu/sounds/typewriter.wav")
+        source: Qt.resolvedUrl("styles/ubuntu/sounds/key_tick2_quiet.wav")
     }
 
     states: [
@@ -71,7 +71,6 @@ Item {
 
         property Item activeKeypad: characterKeypadLoader.item
         property string characterKeypadSource: loadLayout(maliit_input_method.contentType,
-                                                          maliit_input_method.systemLanguage,
                                                           maliit_input_method.activeLanguage)
         property string symbolKeypadSource: activeKeypad ? activeKeypad.symbols : ""
 
@@ -84,25 +83,24 @@ Item {
         function languageIsSupported(locale)
         {
             var supportedLocales = [
-                        "ar",
-                        "cs",
-                        "da",
-                        "de",
-                        "en",
-                        "es",
-                        "fi",
-                        "fr",
-                        "he",
-                        "hu",
-                        "it",
-                        "nl",
-                        "pl",
-                        "pt",
-                        "ru",
-                        "sv",
-                        "zh",
-                        "wo",
-                    ];
+                "ar",
+                "cs",
+                "da",
+                "de",
+                "en",
+                "es",
+                "fi",
+                "fr",
+                "he",
+                "hu",
+                "it",
+                "nl",
+                "pl",
+                "pt",
+                "ru",
+                "sv",
+                "zh",
+            ];
             return (supportedLocales.indexOf( locale ) > -1);
         }
 
@@ -117,69 +115,67 @@ Item {
             }
 
             if (language === "ar")
-                return "languages/ar/Keyboard_ar.qml";
+                return "lib/ar/Keyboard_ar.qml";
             if (language === "cs")
-                return "languages/cs/Keyboard_cs.qml";
+                return "lib/cs/Keyboard_cs.qml";
             if (language === "da")
-                return "languages/da/Keyboard_da.qml";
+                return "lib/da/Keyboard_da.qml";
             if (language === "de")
-                return "languages/de/Keyboard_de.qml";
+                return "lib/de/Keyboard_de.qml";
             if (language === "en")
-                return "languages/en/Keyboard_en.qml";
+                return "lib/en/Keyboard_en.qml";
             if (language === "es")
-                return "languages/es/Keyboard_es.qml";
+                return "lib/es/Keyboard_es.qml";
             if (language === "fi")
-                return "languages/fi/Keyboard_fi.qml";
+                return "lib/fi/Keyboard_fi.qml";
             if (language === "fr")
-                return "languages/fr/Keyboard_fr.qml";
+                return "lib/fr/Keyboard_fr.qml";
             if (language === "he")
-                return "languages/he/Keyboard_he.qml";
+                return "lib/he/Keyboard_he.qml";
             if (language === "hu")
-                return "languages/hu/Keyboard_hu.qml";
+                return "lib/hu/Keyboard_hu.qml";
             if (language === "it")
-                return "languages/it/Keyboard_it.qml";
+                return "lib/it/Keyboard_it.qml";
             if (language === "nl")
-                return "languages/nl/Keyboard_nl.qml";
+                return "lib/nl/Keyboard_nl.qml";
             if (language === "pl")
-                return "languages/pl/Keyboard_pl.qml";
+                return "lib/pl/Keyboard_pl.qml";
             if (language === "pt")
-                return "languages/pt/Keyboard_pt.qml";
+                return "lib/pt/Keyboard_pt.qml";
             if (language === "ru")
-                return "languages/ru/Keyboard_ru.qml";
+                return "lib/ru/Keyboard_ru.qml";
             if (language === "sv")
-                return "languages/sv/Keyboard_sv.qml";
+                return "lib/sv/Keyboard_sv.qml";
             if (language === "zh")
-                return "languages/zh/Keyboard_zh_cn_pinyin.qml";
-            if (language === "wo")
-                return "languages/en_webos/Keyboard_en_webos.qml";
+                return "lib/zh/Keyboard_zh_cn_pinyin.qml";
         }
 
-        function loadLayout(contentType, systemLanguage, activeLanguage)
+        function loadLayout(contentType, activeLanguage)
         {
-//            if (contentType === InputMethod.NumberContentType) {
+            //            if (contentType === InputMethod.NumberContentType) {
             if (contentType === 1) {
                 return "languages/Keyboard_numbers.qml";
             }
 
-//            if (contentType === InputMethod.PhoneNumberContentType) {
+            //            if (contentType === InputMethod.PhoneNumberContentType) {
             if (contentType === 2) {
                 return "languages/Keyboard_telephone.qml";
             }
 
-            var locale = systemLanguage.slice(0,2).toLowerCase();
+            var locale = activeLanguage.slice(0,2).toLowerCase();
             if (!languageIsSupported(locale)) {
                 console.log("System language '"+locale+"' can't be used in OSK - using 'en' instead")
                 locale = "en"
             }
 
-//            if (contentType === InputMethod.EmailContentType) {
+            //            if (contentType === InputMethod.EmailContentType) {
             if (contentType === 3) {
-                return "languages/"+locale+"/Keyboard_"+locale+"_email.qml";
+                return "lib/"+locale+"/Keyboard_"+locale+"_email.qml";
             }
 
-//            if (contentType === InputMethod.UrlContentType) {
+            //            if (contentType === InputMethod.UrlContentType) {
             if (contentType === 4) {
-                return "languages/"+locale+"/Keyboard_"+locale+"_url_search.qml";
+                return "lib/"+locale+"/Keyboard_"+locale+"_url_search.qml";
             }
 
             // FreeTextContentType used as fallback
