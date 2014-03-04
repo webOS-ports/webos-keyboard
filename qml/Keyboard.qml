@@ -61,6 +61,14 @@ Item {
         }
     }
 
+    // When the keyboard initializes, the Screen QML element returns a zero size.
+    // So if no further geometry change event is sent, we might end up with a
+    // keyboard of height=0.
+    // Therefore we need to survey the Screen width and height properties to force
+    // recompute once the Screen singleton is actually initialized with proper values.
+    property real screenSizeSurvey: Screen.width+Screen.height
+    onScreenSizeSurveyChanged: calculateSize();
+
 OrientationHelper {
     id: orientationHelper
     automaticOrientation: false
