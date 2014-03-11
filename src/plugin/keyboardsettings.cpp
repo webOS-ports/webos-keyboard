@@ -124,7 +124,6 @@ void KeyboardSettings::preferenceServiceIsAvailable()
               preferencesChangedCallback, this, NULL, &error)) {
         qWarning("Setting up subscription for keyboard preferences failed: %s", error.message);
         LSErrorFree(&error);
-        return true;
     }
 }
 
