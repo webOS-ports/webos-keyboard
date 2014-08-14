@@ -190,14 +190,14 @@ Item {
 
                 Image {
                     id: borderTop
-                    source: "styles/ubuntu/images/border_top.png"
+                    source: "images/border_top.png"
                     width: parent.width
                     anchors.top: parent.top.bottom
                 }
 
                 Image {
                     id: borderBottom
-                    source: "styles/ubuntu/images/border_bottom.png"
+                    source: "images/border_bottom.png"
                     width: parent.width
                     anchors.bottom: background.bottom
                 }
