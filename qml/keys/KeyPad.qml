@@ -39,6 +39,8 @@ Item {
     onHeightChanged: calculateKeyHeight();
 
     function numberOfRows() {
+        if( !content ) return 1;
+
         return content.children.length;
     }
 

@@ -313,12 +313,11 @@ function reportKeyboardVisibleRect() {
     var vy = wordRibbon.y;
     var vwidth = keyboardSurface.width;
     var vheight = keyboardComp.height + wordRibbon.height;
-    if (!canvas.wordribbon_visible && keypad.popoverEnabled) {
-        vy = 0;
-        vheight = keyboardSurface.height;
-    }
 
-    var obj = mapFromItem(keyboardSurface, vx, vy, vwidth, vheight);
+    // height of the visible region (can be bigger than the height dedicated to the keyboard region)
+    maliit_geometry.canvasHeight = keyboardComp.height + Math.max(wordRibbon.height, keypad.keyHeight);;
+
+    var obj = fullScreenItem.mapFromItem(keyboardSurface, vx, vy, vwidth, vheight);
     maliit_geometry.visibleRect = Qt.rect(obj.x, obj.y, obj.width, obj.height);
 }
 
