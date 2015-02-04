@@ -492,6 +492,7 @@ void InputMethod::onVisibleRectChanged()
     inputMethodHost()->setScreenRegion(QRegion(visibleRect));
     inputMethodHost()->setInputMethodArea(visibleRect, d->view);
     d->view->setHeight(d->m_geometry->canvasHeight());
+    d->view->setMask(QRegion(visibleRect));
 
     qDebug() << "keyboard is reporting <x y w h>: <"
                 << visibleRect.x()
