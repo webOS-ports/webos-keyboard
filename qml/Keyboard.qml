@@ -33,7 +33,6 @@ import QtQuick 2.0
 import "constants.js" as Const
 import "keys/"
 import "keys/key_constants.js" as UI
-import QtQuick.Window 2.0
 
 Item {
     id: fullScreenItem
@@ -61,28 +60,13 @@ Item {
         }
     }
 
-    // When the keyboard initializes, the Screen QML element returns a zero size.
+    // When the keyboard initializes, the root QML element returns a zero size.
     // So if no further geometry change event is sent, we might end up with a
     // keyboard of height=0.
-    // Therefore we need to survey the Screen width and height properties to force
+    // Therefore we need to survey the root width and height properties to force
     // recompute once the Screen singleton is actually initialized with proper values.
-    property real screenSizeSurvey: Screen.width+Screen.height
-    onScreenSizeSurveyChanged: calculateSize();
-
-OrientationHelper {
-    id: orientationHelper
-    automaticOrientation: false
-    transitionEnabled: false
-
-    orientationAngle: Screen.angleBetween(Screen.primaryOrientation, canvas.contentOrientation);
-
-    onOrientationAngleChanged: {
-        calculateSize();
-    }
-    onXChanged: fullScreenItem.reportKeyboardVisibleRect();
-    onYChanged: fullScreenItem.reportKeyboardVisibleRect();
-    onWidthChanged: fullScreenItem.reportKeyboardVisibleRect();
-    onHeightChanged: fullScreenItem.reportKeyboardVisibleRect();
+    property real rootItemSizeSurvey: fullScreenItem.width+fullScreenItem.height
+    onRootItemSizeSurveyChanged: calculateSize();
 
 Item {
     id: canvas
@@ -271,33 +255,20 @@ Item {
     }
 
 } // canvas
-} // OrientationHelper
 
 function calculateSize()
 {
-    var isRotated = (orientationHelper.orientationAngle == 90 ||
-                     orientationHelper.orientationAngle == 270 );
-
-    var isLandscape = (Screen.primaryOrientation === Qt.LandscapeOrientation ||
-                       Screen.primaryOrientation === Qt.InvertedLandscapeOrientation);
+    // warning: the following line is wrong if the vkb height doesn't always cover the screen current height
+    var isLandscape = (fullScreenItem.width > fullScreenItem.height);
 
     // TODO add tablet ratios
     var newHeight;
-    if( isLandscape ) {
-        if( !isRotated ) {
-            newHeight = Screen.height * UI.phoneKeyboardHeightLandscape;
-        }
-        else {
-            newHeight = Screen.width * UI.phoneKeyboardHeightPortrait;
-        }
+    if( isLandscape )
+    {
+        newHeight = fullScreenItem.height * UI.phoneKeyboardHeightLandscape
     }
     else {
-        if( isRotated ) {
-            newHeight = Screen.width * UI.phoneKeyboardHeightLandscape;
-        }
-        else {
-            newHeight = Screen.height * UI.phoneKeyboardHeightPortrait;
-        }
+        newHeight = fullScreenItem.height * UI.phoneKeyboardHeightPortrait
     }
 
     canvas.height = newHeight + wordRibbon.height;
@@ -314,7 +285,7 @@ function reportKeyboardVisibleRect() {
     var vwidth = keyboardSurface.width;
     var vheight = keyboardComp.height + wordRibbon.height;
 
-    // height of the visible region (can be bigger than the height dedicated to the keyboard region)
+    // height of the drawable region (can be bigger than the height dedicated to the clickable region)
     maliit_geometry.canvasHeight = keyboardComp.height + Math.max(wordRibbon.height, keypad.keyHeight);;
 
     var obj = fullScreenItem.mapFromItem(keyboardSurface, vx, vy, vwidth, vheight);
