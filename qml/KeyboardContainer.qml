@@ -100,6 +100,7 @@ Item {
                 "ru",
                 "sv",
                 "zh",
+                "xx"
             ];
             return (supportedLocales.indexOf( locale ) > -1);
         }
@@ -148,6 +149,10 @@ Item {
                 return "lib/sv/Keyboard_sv.qml";
             if (language === "zh")
                 return "lib/zh/Keyboard_zh_cn_pinyin.qml";
+
+             // for testing on desktop
+            if (language === "xx")
+                return "languages/en_webos/Keyboard_en_webos.qml";
         }
 
         function loadLayout(contentType, activeLanguage)
