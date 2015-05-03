@@ -17,9 +17,9 @@ Rectangle {
         id: maliit_event_handler
 
         function onKeyPressed(valueToSubmit, action) { console.log("onKeyPressed : " + valueToSubmit); }
-        function onKeyReleased(valueToSubmit, action) { console.log("onKeyReleased : " + valueToSubmit); }
+        function onKeyReleased(valueToSubmit, action) { console.log("onKeyReleased : " + valueToSubmit); inputtextarea.lastKey = valueToSubmit; }
         function onWordCandidatePressed(word) { console.log("onWordCandidatePressed : " + word); }
-        function onWordCandidateReleased(word) { console.log("onWordCandidateReleased : " + word); }
+        function onWordCandidateReleased(word) { console.log("onWordCandidateReleased : " + word); inputtextarea.lastKey = word; }
     }
     QtObject {
         id: maliit_word_engine
@@ -62,6 +62,13 @@ Rectangle {
                 anchors.top: parent.top
                 anchors.left: parent.left
                 anchors.right: parent.right
+                Text {
+                    id: inputtextarea
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    property string lastKey: ""
+                    text: "Last received text from keyboard: " + lastKey
+                    font.bold:true
+                }
                 Button {
                     anchors.horizontalCenter: parent.horizontalCenter
                     text: "contentType = " + maliit_input_method.contentType
