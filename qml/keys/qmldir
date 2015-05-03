@@ -1,0 +1,23 @@
+module keys
+ActionKey 1.0 ActionKey.qml
+BackspaceKey 1.0 BackspaceKey.qml
+CharKey 1.0 CharKey.qml
+DismissKey 1.0 DismissKey.qml
+DropShadow 1.0 DropShadow.qml
+ExtendedKeysSelector 1.0 ExtendedKeysSelector.qml
+GreyKey 1.0 GreyKey.qml
+Key 1.0 Key.qml
+KeyPad 1.0 KeyPad.qml
+LanguageKey 1.0 LanguageKey.qml
+LanguageMenu 1.0 LanguageMenu.qml
+Magnifier 1.0 Magnifier.qml
+NumKey 1.0 NumKey.qml
+OneTwoKey 1.0 OneTwoKey.qml
+PressArea 1.0 PressArea.qml
+ReturnKey 1.0 ReturnKey.qml
+ShiftKey 1.0 ShiftKey.qml
+SpaceKey 1.0 SpaceKey.qml
+Spacer 1.0 Spacer.qml
+SymbolShiftKey 1.0 SymbolShiftKey.qml
+UrlKey 1.0 UrlKey.qml
+UI 1.0 key_constants.js

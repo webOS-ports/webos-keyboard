@@ -115,44 +115,55 @@ Item {
                 language = "en";
             }
 
-            if (language === "ar")
-                return "lib/ar/Keyboard_ar.qml";
-            if (language === "cs")
-                return "lib/cs/Keyboard_cs.qml";
-            if (language === "da")
-                return "lib/da/Keyboard_da.qml";
-            if (language === "de")
-                return "lib/de/Keyboard_de.qml";
-            if (language === "en")
-                return "lib/en/Keyboard_en.qml";
-            if (language === "es")
-                return "lib/es/Keyboard_es.qml";
-            if (language === "fi")
-                return "lib/fi/Keyboard_fi.qml";
-            if (language === "fr")
-                return "lib/fr/Keyboard_fr.qml";
-            if (language === "he")
-                return "lib/he/Keyboard_he.qml";
-            if (language === "hu")
-                return "lib/hu/Keyboard_hu.qml";
-            if (language === "it")
-                return "lib/it/Keyboard_it.qml";
-            if (language === "nl")
-                return "lib/nl/Keyboard_nl.qml";
-            if (language === "pl")
-                return "lib/pl/Keyboard_pl.qml";
-            if (language === "pt")
-                return "lib/pt/Keyboard_pt.qml";
-            if (language === "ru")
-                return "lib/ru/Keyboard_ru.qml";
-            if (language === "sv")
-                return "lib/sv/Keyboard_sv.qml";
-            if (language === "zh")
-                return "lib/zh/Keyboard_zh_cn_pinyin.qml";
+            var selectedLanguageFile = "lib/en/Keyboard_en.qml";
 
-             // for testing on desktop
-            if (language === "xx")
-                return "languages/en_webos/Keyboard_en_webos.qml";
+            if (language === "ar")
+                selectedLanguageFile = "lib/ar/Keyboard_ar.qml";
+            else if (language === "cs")
+                selectedLanguageFile = "lib/cs/Keyboard_cs.qml";
+            else if (language === "da")
+                selectedLanguageFile = "lib/da/Keyboard_da.qml";
+            else if (language === "de")
+                selectedLanguageFile = "lib/de/Keyboard_de.qml";
+            else if (language === "en")
+                selectedLanguageFile = "lib/en/Keyboard_en.qml";
+            else if (language === "es")
+                selectedLanguageFile = "lib/es/Keyboard_es.qml";
+            else if (language === "fi")
+                selectedLanguageFile = "lib/fi/Keyboard_fi.qml";
+            else if (language === "fr")
+                selectedLanguageFile = "lib/fr/Keyboard_fr.qml";
+            else if (language === "he")
+                selectedLanguageFile = "lib/he/Keyboard_he.qml";
+            else if (language === "hu")
+                selectedLanguageFile = "lib/hu/Keyboard_hu.qml";
+            else if (language === "it")
+                selectedLanguageFile = "lib/it/Keyboard_it.qml";
+            else if (language === "nl")
+                selectedLanguageFile = "lib/nl/Keyboard_nl.qml";
+            else if (language === "pl")
+                selectedLanguageFile = "lib/pl/Keyboard_pl.qml";
+            else if (language === "pt")
+                selectedLanguageFile = "lib/pt/Keyboard_pt.qml";
+            else if (language === "ru")
+                selectedLanguageFile = "lib/ru/Keyboard_ru.qml";
+            else if (language === "sv")
+                selectedLanguageFile = "lib/sv/Keyboard_sv.qml";
+            else if (language === "zh")
+                selectedLanguageFile = "lib/zh/Keyboard_zh_cn_pinyin.qml";
+
+            // for testing on desktop
+            if( maliit_input_method.testEnvironment )
+            {
+                if (language === "xx")
+                    selectedLanguageFile = "languages/en_webos/Keyboard_en_webos.qml";
+
+                // in a test environment, the "lib/<language>/" directory is indeed a "plugins/<language>/qml" directory
+                var regexp = /lib\/(..)\//;
+                selectedLanguageFile = selectedLanguageFile.replace(regexp, '../plugins/$1/qml/');
+            }
+
+            return selectedLanguageFile;
         }
 
         function loadLayout(contentType, activeLanguage)
