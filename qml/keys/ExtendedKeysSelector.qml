@@ -70,8 +70,10 @@ Item {
         height: rowOfKeys.height
 
         source: "../images/keyboard_popover.png"
+        border.left: 18
+        border.right: 18
 
-        onXChanged: {
+        onWidthChanged: {
 
             if (x < UI.popoverEdgeMargin) {
                 anchorItem.x += Math.abs(x) + UI.popoverEdgeMargin;
