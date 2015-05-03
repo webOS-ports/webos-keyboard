@@ -152,50 +152,58 @@ Item {
             else if (language === "zh")
                 selectedLanguageFile = "lib/zh/Keyboard_zh_cn_pinyin.qml";
 
-            // for testing on desktop
-            if( maliit_input_method.testEnvironment )
-            {
-                if (language === "xx")
-                    selectedLanguageFile = "languages/en_webos/Keyboard_en_webos.qml";
-
-                // in a test environment, the "lib/<language>/" directory is indeed a "plugins/<language>/qml" directory
-                var regexp = /lib\/(..)\//;
-                selectedLanguageFile = selectedLanguageFile.replace(regexp, '../plugins/$1/qml/');
-            }
-
             return selectedLanguageFile;
         }
 
         function loadLayout(contentType, activeLanguage)
         {
+            var selectedLayoutFile;
+
             //            if (contentType === InputMethod.NumberContentType) {
             if (contentType === 1) {
-                return "languages/Keyboard_numbers.qml";
+                selectedLayoutFile = "languages/Keyboard_numbers.qml";
             }
 
             //            if (contentType === InputMethod.PhoneNumberContentType) {
-            if (contentType === 2) {
-                return "languages/Keyboard_telephone.qml";
+            else if (contentType === 2) {
+                selectedLayoutFile = "languages/Keyboard_telephone.qml";
             }
 
-            var locale = activeLanguage.slice(0,2).toLowerCase();
-            if (!languageIsSupported(locale)) {
-                console.log("System language '"+locale+"' can't be used in OSK - using 'en' instead")
-                locale = "en"
+            else {
+                var locale = activeLanguage.slice(0,2).toLowerCase();
+                if (!languageIsSupported(locale)) {
+                    console.log("System language '"+locale+"' can't be used in OSK - using 'en' instead")
+                    locale = "en"
+                }
+
+                //            if (contentType === InputMethod.EmailContentType) {
+                if (contentType === 3) {
+                    selectedLayoutFile = "lib/"+locale+"/Keyboard_"+locale+"_email.qml";
+                }
+
+                //            if (contentType === InputMethod.UrlContentType) {
+                if (contentType === 4) {
+                    selectedLayoutFile = "lib/"+locale+"/Keyboard_"+locale+"_url_search.qml";
+                }
+
+                else {
+                    // FreeTextContentType used as fallback
+                    selectedLayoutFile = freeTextLanguageKeyboard(activeLanguage);
+                }
+
+                // for testing on desktop
+                if( maliit_input_method.testEnvironment )
+                {
+                    if (locale === "xx")
+                        selectedLayoutFile = "languages/en_webos/Keyboard_en_webos.qml";
+
+                    // in a test environment, the "lib/<locale>/" directory is indeed a "plugins/<locale>/qml" directory
+                    var regexp = /lib\/(..)\//;
+                    selectedLayoutFile = selectedLayoutFile.replace(regexp, '../plugins/$1/qml/');
+                }
             }
 
-            //            if (contentType === InputMethod.EmailContentType) {
-            if (contentType === 3) {
-                return "lib/"+locale+"/Keyboard_"+locale+"_email.qml";
-            }
-
-            //            if (contentType === InputMethod.UrlContentType) {
-            if (contentType === 4) {
-                return "lib/"+locale+"/Keyboard_"+locale+"_url_search.qml";
-            }
-
-            // FreeTextContentType used as fallback
-            return freeTextLanguageKeyboard(activeLanguage);
+            return selectedLayoutFile;
         }
     }
 }
