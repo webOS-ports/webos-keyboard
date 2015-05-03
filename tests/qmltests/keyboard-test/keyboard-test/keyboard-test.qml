@@ -1,4 +1,5 @@
 import QtQuick 2.3
+import QtQuick.Controls 1.1
 import "../../../../qml"
 
 Rectangle {
@@ -38,6 +39,42 @@ Rectangle {
         property bool testEnvironment: true
         property string activeLanguage: "en"
         property variant enabledLanguages: [ "en", "de", "nl", "fr", "sv", "xx" ]
+    }
+
+    Rectangle {
+        anchors.fill: parent
+        anchors.bottomMargin: maliit_geometry.visibleRect.height
+
+        border {
+            color: "black"
+            width: 10
+        }
+        color: "darkgray"
+        clip: true
+
+        Flickable {
+            anchors.fill: parent
+            anchors.margins: 50
+
+            flickableDirection: Flickable.VerticalFlick
+
+            Column {
+                anchors.top: parent.top
+                anchors.left: parent.left
+                anchors.right: parent.right
+                Button {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: "contentType = " + maliit_input_method.contentType
+                    onClicked: maliit_input_method.contentType = (maliit_input_method.contentType + 1)%5;
+                }
+                CheckBox {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: "word engine : " + (maliit_word_engine.enabled ? "enabled" : "disabled")
+                    checked: maliit_word_engine.enabled
+                    onClicked: maliit_word_engine.enabled = !maliit_word_engine.enabled;
+                }
+            }
+        }
     }
 
     Keyboard {
