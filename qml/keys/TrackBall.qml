@@ -20,8 +20,6 @@ import "key_constants.js" as UI
 
 Item {
 	id: trackBall
-	width: panel.keyWidth * 2
-	anchors.verticalCenter: parent.verticalCenter
 
     property Item highlightedKey;
 
@@ -38,58 +36,6 @@ Item {
         source: "../images/track-center.png"
         width: sourceSize.width * 0.8
         height: sourceSize.height * 0.8
-
-        MouseArea {
-            id: sliderMouseArea
-            anchors.fill: slider
-
-            drag.target: slider
-            drag.axis: Drag.XAndYAxis
-            drag.minimumX: leftArrow.x
-            drag.maximumX: rightArrow.x + rightArrow.width - slider.width
-            drag.minimumY: upArrow.y
-            drag.maximumY: downArrow.y + downArrow.height - slider.height
-            drag.threshold: 0
-
-            property string _currentKey: "";
-            function sendKey(key) {
-                if( _currentKey !== "" ) {
-                    event_handler.onKeyReleased("", _currentKey);
-                }
-                if( key !== "" ) {
-                    event_handler.onKeyPressed("", key);
-                }
-                _currentKey = key;
-            }
-
-            onPositionChanged: {
-                var mousePosInTrackBall = trackBall.mapFromItem(sliderMouseArea, mouse.x, mouse.y);
-                if( mousePosInTrackBall.x-5 > rightArrow.x ) {
-                    highlightedKey = rightArrow;
-                    sendKey("keyRight");
-                }
-                else if( mousePosInTrackBall.x+5 < leftArrow.x + leftArrow.width ) {
-                    highlightedKey = leftArrow;
-                    sendKey("keyLeft");
-                }
-                else if( mousePosInTrackBall.y-5 > downArrow.y ) {
-                    highlightedKey = downArrow;
-                    sendKey("keyDown");
-                }
-                else if( mousePosInTrackBall.y+5 < upArrow.y + upArrow.height ) {
-                    highlightedKey = upArrow;
-                    sendKey("keyUp");
-                }
-                else {
-                    highlightedKey = null;
-                    sendKey("");
-                }
-            }
-            onReleased: {
-                highlightedKey = null;
-                sendKey("");
-            }
-        }
     }
 
     Image{
@@ -126,5 +72,56 @@ Item {
         anchors.horizontalCenter: origin.horizontalCenter
         source: "../images/track-arrow-down.png"
         opacity: highlightedKey === downArrow ? 1.0 : 0.2
+    }
+
+    MouseArea {
+        id: sliderMouseArea
+        anchors.fill: parent
+
+        function sendKey(key) {
+            event_handler.onKeyPressed("", key);
+            event_handler.onKeyReleased("", key);
+        }
+
+        property real _startX;
+        property real _startY;
+
+        onPressed: {
+            _startX = mouse.x;
+            _startY = mouse.y;
+        }
+        onPositionChanged: {
+            if( mouse.x - _startX > 15 ) {
+                highlightedKey = rightArrow;
+                sendKey("keyRight");
+
+                _startX = mouse.x;
+                _startY = mouse.y;
+            }
+            else if( mouse.x - _startX  < -15 ) {
+                highlightedKey = leftArrow;
+                sendKey("keyLeft");
+
+                _startX = mouse.x;
+                _startY = mouse.y;
+            }
+            else if( mouse.y - _startY > 15 ) {
+                highlightedKey = downArrow;
+                sendKey("keyDown");
+
+                _startX = mouse.x;
+                _startY = mouse.y;
+            }
+            else if( mouse.y - _startY < -15 ) {
+                highlightedKey = upArrow;
+                sendKey("keyUp");
+
+                _startX = mouse.x;
+                _startY = mouse.y;
+            }
+        }
+        onReleased: {
+            highlightedKey = null;
+        }
     }
 }

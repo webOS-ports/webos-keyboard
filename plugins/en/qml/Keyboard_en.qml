@@ -42,7 +42,7 @@ KeyPad {
             CharKey { width: panel.keyWidth * 0.9; height: 45; imgNormal: UI.imageGreyKey; imgPressed: UI.imageGreyKeyPressed; label: "8"; shifted: "*"; }
             CharKey { width: panel.keyWidth * 0.9; height: 45; imgNormal: UI.imageGreyKey; imgPressed: UI.imageGreyKeyPressed; label: "9"; shifted: "("; }
             CharKey { width: panel.keyWidth * 0.9; height: 45; imgNormal: UI.imageGreyKey; imgPressed: UI.imageGreyKeyPressed; label: "0"; shifted: ")"; }
-            TrackBall {height: 45; }
+            TrackBall { width: c1.width - (panel.keyWidth*0.9*10); height: 45 }
         }
 
         Row {
