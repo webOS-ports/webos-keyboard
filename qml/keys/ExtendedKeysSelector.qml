@@ -23,6 +23,7 @@ import "key_constants.js" as UI
 Item {
     id: popover
     enabled: false
+    visible: enabled
 
     property variant extendedKeysModel
     property Item currentlyAssignedKey
@@ -34,9 +35,6 @@ Item {
     onCurrentlyAssignedKeyXChanged: __repositionPopoverTo(currentlyAssignedKey)
     onCurrentlyAssignedKeyYChanged: __repositionPopoverTo(currentlyAssignedKey)
     onCurrentlyAssignedKeyParentYChanged: __repositionPopoverTo(currentlyAssignedKey);
-
-    property int __width: 0
-    property string __commitStr: ""
 
     onCurrentlyAssignedKeyChanged:
     {
@@ -59,32 +57,19 @@ Item {
     BorderImage {
         id: popoverBackground
 
-        anchors.centerIn: anchorItem
-        width: {
-            if (rowOfKeys.width < keypad.keyWidth)
-                return keypad.keyWidth;
-            else
-                return rowOfKeys.width;
-        }
+        property bool isOnLeftSideOfScreen: anchorItem.x < (panel.width/2)
 
-        height: rowOfKeys.height
+        y: anchorItem.y
+        x: isOnLeftSideOfScreen ? (anchorItem.x) : (anchorItem.x+anchorItem.width-popoverBackground.width)
+        width: Math.max(keypad.keyWidth, rowOfKeys.width + 10*2)
+        height: 90
 
         source: "../images/keyboard_popover.png"
-        border.left: 18
-        border.right: 18
-
-        onWidthChanged: {
-
-            if (x < UI.popoverEdgeMargin) {
-                anchorItem.x += Math.abs(x) + UI.popoverEdgeMargin;
-                return
-            }
-
-            var rightEdge = (x + width)
-            if ( rightEdge > (panel.width - UI.popoverEdgeMargin)) {
-                var diff = rightEdge - panel.width
-                anchorItem.x -= diff + UI.popoverEdgeMargin;
-            }
+        border {
+            left: isOnLeftSideOfScreen ? 65 : 18
+            right: isOnLeftSideOfScreen ? 18 : 65
+            top: 20
+            bottom: 30
         }
     }
 
@@ -95,32 +80,39 @@ Item {
 
     Row {
         id: rowOfKeys
-        anchors.centerIn: anchorItem
+        anchors.centerIn: popoverBackground
+        anchors.verticalCenterOffset: -5
 
-        Component.onCompleted: __width = 0
-
+        // spacing: units.gu( UI.popoverCellPadding )
         Repeater {
             id: keyRepeater
             model: extendedKeysModel
 
             Item {
                 id: key
-                width: textCell.width + units.gu( UI.popoverCellPadding );
-
-                height: panel.keyHeight;
 
                 property alias commitStr: textCell.text
                 property bool highlight: false
 
+                height: popupKeyImage.height //languageTextItem.contentHeight
+                width: popupKeyImage.width //languageTextItem.contentWidth
+                Image
+                {
+                    anchors.centerIn: parent
+                    id: popupKeyImage
+                    source: "../images/popup_key_inactive.png"
+                    width: 60
+                    height: 60
+                }
+
                 Text {
                     id: textCell
-                    anchors.centerIn: parent;
+                    anchors.centerIn: parent
                     text: modelData
                     font.family: UI.fontFamily
                     font.pixelSize: text.length > 2 ? units.gu( UI.smallFontSize ) : units.gu( UI.fontSize )
                     font.bold: UI.fontBold
                     color: key.highlight ? "orange"  : UI.fontColor
-                    Component.onCompleted: __width += (textCell.width + units.gu( UI.popoverCellPadding));
                 }
 
                 MouseArea {
@@ -153,12 +145,6 @@ Item {
 
         anchorItem.x = item.x + row.x
         anchorItem.y = point.y - (panel.keyHeight + units.dp(UI.popoverTopMargin));
-
-        /// FIXME need to avoid being drawn outside of the keyboard, and clicking
-        /// on the application below
-        // if (!wordRibbon.visible) // TODO possible to do this only when wordribbon is off
-        if (anchorItem.y < -units.gu(UI.top_margin))
-            anchorItem.y = - (units.gu(UI.top_margin) + units.gu(UI.popoverSquat) )
     }
 
     function __restoreAssignedKey()
