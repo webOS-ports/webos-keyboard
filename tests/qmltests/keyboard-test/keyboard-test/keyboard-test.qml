@@ -16,8 +16,8 @@ Rectangle {
     QtObject {
         id: maliit_event_handler
 
-        function onKeyPressed(valueToSubmit, action) { console.log("onKeyPressed : " + valueToSubmit); }
-        function onKeyReleased(valueToSubmit, action) { console.log("onKeyReleased : " + valueToSubmit); inputtextarea.lastKey = valueToSubmit; }
+        function onKeyPressed(valueToSubmit, action) { console.log("onKeyPressed : " + valueToSubmit + " -> action: " + action); }
+        function onKeyReleased(valueToSubmit, action) { console.log("onKeyReleased : " + valueToSubmit + " -> action: " + action); inputtextarea.lastKey = valueToSubmit; }
         function onWordCandidatePressed(word) { console.log("onWordCandidatePressed : " + word); }
         function onWordCandidateReleased(word) { console.log("onWordCandidateReleased : " + word); inputtextarea.lastKey = word; }
     }
