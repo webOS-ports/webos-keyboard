@@ -1,5 +1,6 @@
 module keys
 ActionKey 1.0 ActionKey.qml
+ArrowKeys 1.0 ArrowKeys.qml
 BackspaceKey 1.0 BackspaceKey.qml
 CharKey 1.0 CharKey.qml
 DismissKey 1.0 DismissKey.qml
@@ -19,5 +20,7 @@ ShiftKey 1.0 ShiftKey.qml
 SpaceKey 1.0 SpaceKey.qml
 Spacer 1.0 Spacer.qml
 SymbolShiftKey 1.0 SymbolShiftKey.qml
+TabKey 1.0 TabKey.qml
+TrackBall 1.0 TrackBall.qml
 UrlKey 1.0 UrlKey.qml
 UI 1.0 key_constants.js

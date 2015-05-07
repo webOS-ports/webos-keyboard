@@ -26,12 +26,12 @@ Item {
 
         anchors.centerIn: parent
 
-        onClicked: canvas.languageMenuShown = false
+        onClicked: canvas.keyboardSizeMenuShown = false
     }
 
     BorderImage {
         id: name
-//        anchors.bottom: languageMenuButton.top
+        //anchors.bottom: languageMenuButton.top
         source: "../images/keyboard_popover.png"
 		height: units.gu(9) 
 		width: menuList.width + units.gu(UI.languageMenuListViewPadding) * 0.5
@@ -42,6 +42,14 @@ Item {
         border.right: __corner; border.bottom: __corner;
     }
 
+	ListModel {
+        id: myKBSizeModel
+        ListElement { name: "XS" }
+		ListElement { name: "S" }
+		ListElement { name: "M" }
+		ListElement { name: "L" }
+    }
+	
     ListView {
         id: menuList
         anchors.centerIn: name
@@ -54,7 +62,7 @@ Item {
         clip: true
         orientation: ListView.Horizontal
 
-        model: maliit_input_method.enabledLanguages
+        model: myKBSizeModel
 
         delegate: Item {
             //height: languageTextItem.contentHeight
@@ -83,36 +91,13 @@ Item {
             MouseArea {
                 anchors.fill: parent
                 onClicked: {
-                    maliit_input_method.activeLanguage = modelData
-                    canvas.languageMenuShown = false;
+                    //maliit_input_method.activeLanguage = modelData
+                    //TODO Actual resize of keys + keyboard
+                    canvas.keyboardSizeMenuShown = false;
                 }
             }
          }
     }
 
-    function languageIdToName(languageId)
-    {
-        if (languageId == "ar")         return i18n.tr("Arabic");
-        if (languageId == "cs")         return i18n.tr("Czech");
-        if (languageId == "da")         return i18n.tr("Danish");
-        if (languageId == "de")         return i18n.tr("German");
-        if (languageId == "en")         return i18n.tr("English");
-        if (languageId == "es")         return i18n.tr("Spanish");
-        if (languageId == "fi")         return i18n.tr("Finnish");
-        if (languageId == "fr")         return i18n.tr("French");
-        if (languageId == "he")         return i18n.tr("Hebrew");
-        if (languageId == "hu")         return i18n.tr("Hungarian");
-        if (languageId == "it")         return i18n.tr("Italian");
-        if (languageId == "nl")         return i18n.tr("Dutch");
-        if (languageId == "pl")         return i18n.tr("Polish");
-        if (languageId == "pt")         return i18n.tr("Portuguese");
-        if (languageId == "ru")         return i18n.tr("Russian");
-        if (languageId == "sv")         return i18n.tr("Swedish");
-        if (languageId == "zh")         return i18n.tr("Chinese - Pinyin");
-        if (languageId == "wo")         return i18n.tr("WebOS");
-
-        // fallback
-        return i18n.tr("language " + languageId);
-    }
 
 }

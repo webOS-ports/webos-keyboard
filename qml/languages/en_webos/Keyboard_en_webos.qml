@@ -104,7 +104,8 @@ KeyPad {
             LanguageKey    { id: languageMenuButton;                       anchors.left: symShiftKey.right; }
             SpaceKey       { id: spaceKey;                                 anchors.left: languageMenuButton.right; anchors.right: apostropheKey.left; noMagnifier: true }
             CharKey        { id: apostropheKey; label: "'"; shifted: "\""; anchors.right: minusKey.left; }
-            CharKey        { id: minusKey;      label: "-"; shifted: "_";  anchors.right: parent.right; }
+            CharKey        { id: minusKey;      label: "-"; shifted: "_";  anchors.right: dismissKey.left; }
+            DismissKey     { id: dismissKey;    label: "Hide";             anchors.right: parent.right
         }
     } // column
 }

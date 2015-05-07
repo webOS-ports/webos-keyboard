@@ -92,6 +92,7 @@ Item {
     onWordribbon_visibleChanged: calculateSize();
 
     property bool languageMenuShown: false
+	property bool keyboardSizeMenuShown: false
 
     onXChanged: fullScreenItem.reportKeyboardVisibleRect();
     onYChanged: fullScreenItem.reportKeyboardVisibleRect();
@@ -205,6 +206,16 @@ Item {
                     height: keypad.height;
                     enabled: canvas.languageMenuShown
                     opacity: canvas.languageMenuShown ? 1.0 : 0.0
+                }
+				
+				KeyboardSizeMenu {
+                    id: keyboardSizeMenu
+                    //anchors.centerIn: parent
+					anchors.bottom: dismissKey.top
+                    width: 400;
+                    height: keypad.height;
+                    enabled: canvas.keyboardSizeMenuShown
+                    opacity: canvas.keyboardSizeMenuShown ? 1.0 : 0.0
                 }
             } // keyboardComp
         }

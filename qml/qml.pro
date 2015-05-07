@@ -34,7 +34,8 @@ OTHER_FILES += \
     keys/BackspaceKey.qml \
     keys/DropShadow.qml \
     keys/ExtendedKeysSelector.qml \
-    keys/KeyPad.qml \
+    keys/KeyboardSizeMenu.qml \
+	keys/KeyPad.qml \
     keys/LanguageKey.qml \
     keys/LanguageMenu.qml \
     keys/Magnifier.qml \
@@ -45,6 +46,7 @@ OTHER_FILES += \
     keys/SpaceKey.qml \
     keys/Spacer.qml \
     keys/SymbolShiftKey.qml \
+	keys/TabKey.qml \
     keys/UrlKey.qml \
     keys/qmldir \
     languages/Keyboard_numbers.qml \

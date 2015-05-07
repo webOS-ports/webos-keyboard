@@ -1,5 +1,6 @@
 /*
  * Copyright 2012 Canonical Ltd.
+ * Copyright 2015 Herman van Hazendonk <github.com@herrie.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,7 +21,7 @@ var keyMargins  =   1.8;    // dp
 var fontSize    =   2;    // gu
 var fontFamily  =   "Prelude";
 var fontColor   =   "#464646"
-var fontBold    =   true
+var fontBold    =   false
 
 var annotationFontSize = 1.4; // gu
 var annotationMargins = 0.7; // gu
@@ -67,8 +68,26 @@ var languageMenuCorner = 2.5; // gu
 
 var wordribbonHeight = 50;
 
-var phoneKeyboardHeightPortrait = 0.365;
-var phoneKeyboardHeightLandscape = 0.50;
+//var phoneKeyboardHeightPortrait = 0.365;
+//var phoneKeyboardHeightLandscape = 0.50;
+
+var phoneKeyboardHeightPortrait = 0.49088;  /* 377 / 1024 based on Touchpads resolution, might need adjusting for widescreen tablets*/	
+var phoneKeyboardHeightLandscape = 0.51171875; /* 240 / 1024 based on Touchpads resolution, might need adjusting for widescreen tablets*/	
+
+
+/* some legacy code that might be of use to us in the future for VKB in landscape on phones:
+
+			height = width * 200 / 320;	// arbitrary proportions...
+			if (size.height() < 480)
+				height = 160;	// shrink height for Pixie & Broadway, and some horizontal layout
+			if (height > 300)
+				height = 300;
+
+*/
 
 var tabletKeyboardHeightPortrait = 0.28;
-var tabletKeyboardHeightLandscape = 0.38;
+var tabletKeyboardHeightLandscapeXS = 0.31640625; /* 243 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
+var tabletKeyboardHeightLandscapeS = 0.379557292; /* (340+243 / 2)  / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
+var tabletKeyboardHeightLandscapeM = 0.44270833; /* 340 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
+var tabletKeyboardHeightLandscapeL = 0.51171875; /* 393 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
+

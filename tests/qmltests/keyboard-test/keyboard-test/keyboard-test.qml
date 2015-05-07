@@ -3,8 +3,8 @@ import QtQuick.Controls 1.1
 import "../../../../qml"
 
 Rectangle {
-    width: 768
-    height: 1280
+    width: 1024
+    height: 768
 
     QtObject {
         id: maliit_geometry

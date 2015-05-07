@@ -16,36 +16,19 @@
 
 import QtQuick 2.0
 
-import "key_constants.js" as UI
-
 ActionKey {
-    iconNormal: "icon-hide-keyboard"
-    iconShifted: "icon-hide-keyboard"
-    iconCapsLock: "icon-hide-keyboard"
-
     width: panel.keyWidth;
 
-    Image {
-
-        property color color;
-
-        id: iconImage
-        source: Qt.resolvedUrl("../images/" + __icon + ".png")
-        anchors.centerIn: parent
-        visible: (label == "")
-        width: units.gu(2.5)
-        height: units.gu(2.5)
-    }
+  //  action: "tab"
 
     MouseArea {
         anchors.fill: parent
         preventStealing: true
 
         onClicked: {
-            maliit_geometry.shown = false;
-        }
+		//TODO add tab action
+  	   }
 
-        onPressAndHold: canvas.keyboardSizeMenuShown = true
-
+       
     }
 }
