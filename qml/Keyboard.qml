@@ -46,17 +46,11 @@ Item {
     property string formFactor: Settings.tabletUi ? "tablet" : "phone"
 
     property QtObject units: QtObject {
-        property real logicalPixelDensity: 12 //hardcoded for gnexus, to be dpi-dependant
-        property real gridUnit: logicalPixelDensity
-        // logicalPixelDensity is the nb of logical pixels per mm
-        // gridUnit is the nb of pixels in a "grid unit"
-
-        // returns the nb of pixels that value represents in grid units
         function gu(valueInGridUnits) {
-            return valueInGridUnits*gridUnit;
+            return Units.gu(valueInGridUnits);
         }
         function dp(valueInLogicalPixels) {
-            return valueInLogicalPixels*(gridUnit/logicalPixelDensity);
+            return Units.dp(valueInLogicalPixels);
         }
     }
     property QtObject i18n: QtObject {
