@@ -32,16 +32,16 @@ KeyPad {
             anchors.horizontalCenter: parent.horizontalCenter;
             spacing: 0
 
-            CharKey { width: panel.keyWidth * 0.9; height: 45; imgNormal: UI.imageGreyKey; imgPressed: UI.imageGreyKeyPressed; label: "1"; shifted: "!"; extended: ["1", "!", "\u00B9" /* SUPERSCRIPT ONE ¹ */, "\u00BC" */VULGAR FRACTION ONE QUARTER ¼ */, "\u00BD" /*VULGAR FRACTION ONE HALF ½ *//*, Qt::Key_exclamdown*/]}
-            CharKey { width: panel.keyWidth * 0.9; height: 45; imgNormal: UI.imageGreyKey; imgPressed: UI.imageGreyKeyPressed; label: "2"; shifted: "@"; }
-            CharKey { width: panel.keyWidth * 0.9; height: 45; imgNormal: UI.imageGreyKey; imgPressed: UI.imageGreyKeyPressed; label: "3"; shifted: "#"; }
-            CharKey { width: panel.keyWidth * 0.9; height: 45; imgNormal: UI.imageGreyKey; imgPressed: UI.imageGreyKeyPressed; label: "4"; shifted: "$"; }
-            CharKey { width: panel.keyWidth * 0.9; height: 45; imgNormal: UI.imageGreyKey; imgPressed: UI.imageGreyKeyPressed; label: "5"; shifted: "%"; }
-            CharKey { width: panel.keyWidth * 0.9; height: 45; imgNormal: UI.imageGreyKey; imgPressed: UI.imageGreyKeyPressed; label: "6"; shifted: "^"; }
-            CharKey { width: panel.keyWidth * 0.9; height: 45; imgNormal: UI.imageGreyKey; imgPressed: UI.imageGreyKeyPressed; label: "7"; shifted: "&"; }
-            CharKey { width: panel.keyWidth * 0.9; height: 45; imgNormal: UI.imageGreyKey; imgPressed: UI.imageGreyKeyPressed; label: "8"; shifted: "*"; }
-            CharKey { width: panel.keyWidth * 0.9; height: 45; imgNormal: UI.imageGreyKey; imgPressed: UI.imageGreyKeyPressed; label: "9"; shifted: "("; }
-            CharKey { width: panel.keyWidth * 0.9; height: 45; imgNormal: UI.imageGreyKey; imgPressed: UI.imageGreyKeyPressed; label: "0"; shifted: ")"; }
+            CharKey { width: panel.keyWidth * 0.9; height: 45; imgNormal: UI.imageGreyKey["phone"]; imgPressed: UI.imageGreyKeyPressed["phone"]; label: "1"; shifted: "!"; extended: ["1", "!", "\u00B9" /* SUPERSCRIPT ONE ¹ */, "\u00BC" */VULGAR FRACTION ONE QUARTER ¼ */, "\u00BD" /*VULGAR FRACTION ONE HALF ½ *//*, Qt::Key_exclamdown*/]}
+            CharKey { width: panel.keyWidth * 0.9; height: 45; imgNormal: UI.imageGreyKey["phone"]; imgPressed: UI.imageGreyKeyPressed["phone"]; label: "2"; shifted: "@"; }
+            CharKey { width: panel.keyWidth * 0.9; height: 45; imgNormal: UI.imageGreyKey["phone"]; imgPressed: UI.imageGreyKeyPressed["phone"]; label: "3"; shifted: "#"; }
+            CharKey { width: panel.keyWidth * 0.9; height: 45; imgNormal: UI.imageGreyKey["phone"]; imgPressed: UI.imageGreyKeyPressed["phone"]; label: "4"; shifted: "$"; }
+            CharKey { width: panel.keyWidth * 0.9; height: 45; imgNormal: UI.imageGreyKey["phone"]; imgPressed: UI.imageGreyKeyPressed["phone"]; label: "5"; shifted: "%"; }
+            CharKey { width: panel.keyWidth * 0.9; height: 45; imgNormal: UI.imageGreyKey["phone"]; imgPressed: UI.imageGreyKeyPressed["phone"]; label: "6"; shifted: "^"; }
+            CharKey { width: panel.keyWidth * 0.9; height: 45; imgNormal: UI.imageGreyKey["phone"]; imgPressed: UI.imageGreyKeyPressed["phone"]; label: "7"; shifted: "&"; }
+            CharKey { width: panel.keyWidth * 0.9; height: 45; imgNormal: UI.imageGreyKey["phone"]; imgPressed: UI.imageGreyKeyPressed["phone"]; label: "8"; shifted: "*"; }
+            CharKey { width: panel.keyWidth * 0.9; height: 45; imgNormal: UI.imageGreyKey["phone"]; imgPressed: UI.imageGreyKeyPressed["phone"]; label: "9"; shifted: "("; }
+            CharKey { width: panel.keyWidth * 0.9; height: 45; imgNormal: UI.imageGreyKey["phone"]; imgPressed: UI.imageGreyKeyPressed["phone"]; label: "0"; shifted: ")"; }
             TrackBall { width: c1.width - (panel.keyWidth*0.9*10); height: 45 }
         }
 
