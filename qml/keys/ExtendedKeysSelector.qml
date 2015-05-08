@@ -32,6 +32,8 @@ Item {
     property int currentlyAssignedKeyX: currentlyAssignedKey ? currentlyAssignedKey.x : 0
     property int currentlyAssignedKeyY: currentlyAssignedKey ? currentlyAssignedKey.y : 0
 
+    property bool isTwoLines: keyRepeater.count>5
+
     onCurrentlyAssignedKeyXChanged: __repositionPopoverTo(currentlyAssignedKey)
     onCurrentlyAssignedKeyYChanged: __repositionPopoverTo(currentlyAssignedKey)
     onCurrentlyAssignedKeyParentYChanged: __repositionPopoverTo(currentlyAssignedKey);
@@ -54,22 +56,44 @@ Item {
         height: panel.keyHeight
     }
 
-    BorderImage {
+    Item {
         id: popoverBackground
 
         property bool isOnLeftSideOfScreen: anchorItem.x < (panel.width/2)
 
-        y: anchorItem.y
+        anchors.bottom: anchorItem.bottom
+        anchors.bottomMargin: -8
         x: isOnLeftSideOfScreen ? (anchorItem.x) : (anchorItem.x+anchorItem.width-popoverBackground.width)
         width: Math.max(keypad.keyWidth, rowOfKeys.width + 10*2)
-        height: 90
+        height: isTwoLines ? 150 : 90
 
-        source: "../images/keyboard_popover.png"
-        border {
-            left: isOnLeftSideOfScreen ? 65 : 18
-            right: isOnLeftSideOfScreen ? 18 : 65
-            top: 20
-            bottom: 30
+        Row {
+            x: 0; y: 0; height: parent.height
+            Image {
+                source: isTwoLines ? "../images/popup-bg-2-left.png" : "../images/popup-bg-left.png"
+                height: parent.height
+                width: 21
+            }
+            Image {
+                source: isTwoLines ? "../images/popup-bg-2-between.png" : "../images/popup-bg-between.png"
+                height: parent.height
+                width: popoverBackground.isOnLeftSideOfScreen ? 8 : (popoverBackground.width - 21 - 33 - 8 - 21)
+            }
+            Image {
+                source: isTwoLines ? "../images/popup-bg-2-caret.png" : "../images/popup-bg-caret.png"
+                height: parent.height
+                width: 33
+            }
+            Image {
+                source: isTwoLines ? "../images/popup-bg-2-between.png" : "../images/popup-bg-between.png"
+                height: parent.height
+                width: popoverBackground.isOnLeftSideOfScreen ? (popoverBackground.width - 21 - 33 - 8 - 21) : 8
+            }
+            Image {
+                source: isTwoLines ? "../images/popup-bg-2-right.png" : "../images/popup-bg-right.png"
+                height: parent.height
+                width: 21
+            }
         }
     }
 
@@ -78,10 +102,11 @@ Item {
         onClicked: closePopover();
     }
 
-    Row {
+    Flow {
         id: rowOfKeys
         anchors.centerIn: popoverBackground
         anchors.verticalCenterOffset: -5
+        width: Math.min(keyRepeater.count, 5) * 60
 
         // spacing: units.gu( UI.popoverCellPadding )
         Repeater {

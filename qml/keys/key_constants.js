@@ -40,7 +40,7 @@ var smallFontSize = 1.5; // gu, for keys that show more than one char, e.g. '.co
 
 /* extended keys */
 var popoverCellPadding = 2.2; // gu
-var popoverTopMargin   = 10; // dp
+var popoverTopMargin   = 0; // dp
 var popoverEdgeMargin = 2.2; // gu
 var popoverSquat      = 3; // gu, when no wordribbon, avoid click-through above input trap
 
