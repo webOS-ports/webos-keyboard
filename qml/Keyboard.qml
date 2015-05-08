@@ -34,12 +34,17 @@ import "constants.js" as Const
 import "keys/"
 import "keys/key_constants.js" as UI
 
+import LunaNext.Common 0.1
+
 Item {
     id: fullScreenItem
     objectName: "fullScreenItem"
 
     property variant input_method: maliit_input_method
     property variant event_handler: maliit_event_handler
+
+    property string formFactor: Settings.tabletUi ? "tablet" : "phone"
+
     property QtObject units: QtObject {
         property real logicalPixelDensity: 12 //hardcoded for gnexus, to be dpi-dependant
         property real gridUnit: logicalPixelDensity
@@ -162,15 +167,12 @@ Item {
 
                 onHeightChanged: fullScreenItem.reportKeyboardVisibleRect();
 
-                Rectangle {
+                Image {
                     id: background
 
                     anchors.fill: parent
-
-                    gradient: Gradient {
-                        GradientStop { position: 0.0; color: "#6C6C6C" }
-                        GradientStop { position: 1.0; color: "#424242" }
-                    }
+                    source: "images/"+formFactor+"/keyboard-bg.png"
+                    fillMode: Image.TileHorizontally
                 }
 
                 Image {
@@ -210,8 +212,8 @@ Item {
 				
 				KeyboardSizeMenu {
                     id: keyboardSizeMenu
-                    //anchors.centerIn: parent
-					anchors.bottom: dismissKey.top
+                    anchors.centerIn: parent
+                    //anchors.bottom: dismissKey.top
                     width: 400;
                     height: keypad.height;
                     enabled: canvas.keyboardSizeMenuShown
@@ -274,12 +276,21 @@ function calculateSize()
 
     // TODO add tablet ratios
     var newHeight;
-    if( isLandscape )
-    {
-        newHeight = fullScreenItem.height * UI.phoneKeyboardHeightLandscape
+    if( Settings.tabletUi ) {
+        if( isLandscape ) {
+            newHeight = fullScreenItem.height * UI.tabletKeyboardHeightLandscapeM
+        }
+        else {
+            newHeight = fullScreenItem.height * UI.tabletKeyboardHeightPortrait
+        }
     }
     else {
-        newHeight = fullScreenItem.height * UI.phoneKeyboardHeightPortrait
+        if( isLandscape ) {
+            newHeight = fullScreenItem.height * UI.phoneKeyboardHeightLandscape
+        }
+        else {
+            newHeight = fullScreenItem.height * UI.phoneKeyboardHeightPortrait
+        }
     }
 
     canvas.height = newHeight + wordRibbon.height;

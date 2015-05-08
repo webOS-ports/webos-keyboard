@@ -13,8 +13,12 @@ INSTALLS += lang_cs
 
 # for QtCreator
 OTHER_FILES += \
-    Keyboard_cs.qml \
-    Keyboard_cs_email.qml \
-    Keyboard_cs_url.qml \
-    Keyboard_cs_url_search.qml
+    Keyboard_cs_tablet.qml \
+    Keyboard_cs_tablet_email.qml \
+    Keyboard_cs_tablet_url.qml \
+    Keyboard_cs_tablet_url_search.qml \
+    Keyboard_cs_phone.qml \
+    Keyboard_cs_phone_email.qml \
+    Keyboard_cs_phone_url.qml \
+    Keyboard_cs_phone_url_search.qml
 

@@ -13,8 +13,13 @@ INSTALLS += lang_fr
 
 # for QtCreator
 OTHER_FILES += \
-    Keyboard_fr.qml \
-    Keyboard_fr_email.qml \
-    Keyboard_fr_url.qml \
-    Keyboard_fr_url_search.qml
+    Keyboard_fr_tablet.qml \
+    Keyboard_fr_tablet_email.qml \
+    Keyboard_fr_tablet_url.qml \
+    Keyboard_fr_tablet_url_search.qml \
+    Keyboard_fr_phone.qml \
+    Keyboard_fr_phone_email.qml \
+    Keyboard_fr_phone_url.qml \
+    Keyboard_fr_phone_url_search.qml
+
 

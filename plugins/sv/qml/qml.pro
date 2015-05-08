@@ -13,8 +13,12 @@ INSTALLS += lang_sv
 
 # for QtCreator
 OTHER_FILES += \
-    Keyboard_sv.qml \
-    Keyboard_sv_email.qml \
-    Keyboard_sv_url.qml \
-    Keyboard_sv_url_search.qml
+    Keyboard_sv_tablet.qml \
+    Keyboard_sv_tablet_email.qml \
+    Keyboard_sv_tablet_url.qml \
+    Keyboard_sv_tablet_url_search.qml \
+    Keyboard_sv_tablet.qml \
+    Keyboard_sv_tablet_email.qml \
+    Keyboard_sv_tablet_url.qml \
+    Keyboard_sv_tablet_url_search.qml
 

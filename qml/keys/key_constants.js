@@ -47,8 +47,8 @@ var popoverSquat      = 3; // gu, when no wordribbon, avoid click-through above 
 var imageWhiteKey        = "../images/key_bg_white.png"
 var imageWhiteKeyPressed = "../images/key_bg_white_active.png"
 
-var imageBlackKey        = "../images/key_bg_black"
-var imageBlackKeyPressed = "../images/key_bg_black_active"
+var imageBlackKey        = "../images/key_bg_black.png"
+var imageBlackKeyPressed = "../images/key_bg_black_active.png"
 
 var imageGreyKey        = "../images/key_bg_grey.png"
 var imageGreyKeyPressed = "../images/key_bg_grey_active.png"

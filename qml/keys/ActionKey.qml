@@ -31,8 +31,8 @@ CharKey {
     // action keys are a bit wider
     width: panel.keyWidth + units.gu( padding )
 
-    imgNormal: UI.imageBlackKey + ".png"
-    imgPressed: UI.imageBlackKeyPressed + ".png"
+    imgNormal: UI.imageBlackKey
+    imgPressed: UI.imageBlackKeyPressed
 
     property string __icon: iconNormal
 

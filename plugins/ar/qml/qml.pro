@@ -13,8 +13,12 @@ INSTALLS += lang_ar
 
 # for QtCreator
 OTHER_FILES += \
-    Keyboard_ar.qml \
-    Keyboard_ar_email.qml \
-    Keyboard_ar_url.qml \
-    Keyboard_ar_url_search.qml
+    Keyboard_ar_tablet.qml \
+    Keyboard_ar_tablet_email.qml \
+    Keyboard_ar_tablet_url.qml \
+    Keyboard_ar_tablet_url_search.qml \
+    Keyboard_ar_phone.qml \
+    Keyboard_ar_phone_email.qml \
+    Keyboard_ar_phone_url.qml \
+    Keyboard_ar_phone_url_search.qml
 

@@ -13,8 +13,13 @@ INSTALLS += lang_ru
 
 # for QtCreator
 OTHER_FILES += \
-    Keyboard_ru.qml \
-    Keyboard_ru_email.qml \
-    Keyboard_ru_url.qml \
-    Keyboard_ru_url_search.qml
+    Keyboard_ru_tablet.qml \
+    Keyboard_ru_tablet_email.qml \
+    Keyboard_ru_tablet_url.qml \
+    Keyboard_ru_tablet_url_search.qml \
+    Keyboard_ru_phone.qml \
+    Keyboard_ru_phone_email.qml \
+    Keyboard_ru_phone_url.qml \
+    Keyboard_ru_phone_url_search.qml
+
 
