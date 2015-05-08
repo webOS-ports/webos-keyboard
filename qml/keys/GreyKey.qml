@@ -17,6 +17,8 @@
 import QtQuick 2.0
 import QtMultimedia 5.0
 
+import LunaNext.Common 0.1
+
 import "key_constants.js" as UI
 
 Item {
@@ -40,8 +42,9 @@ Item {
     property bool skipAutoCaps: false
 
     /* design */
-    property string imgNormal: UI.imageGreyKey
-    property string imgPressed: UI.imageGreyKeyPressed
+    property string formFactor: Settings.tabletUi ? "tablet" : "phone"
+    property string imgNormal: UI.imageGreyKey[formFactor]
+    property string imgPressed: UI.imageGreyKeyPressed[formFactor]
     // fontSize can be overwritten when using the component, e.g. SymbolShiftKey uses smaller fontSize
     property int fontSize: units.gu( UI.fontSize );
 

@@ -44,15 +44,20 @@ var popoverTopMargin   = 10; // dp
 var popoverEdgeMargin = 2.2; // gu
 var popoverSquat      = 3; // gu, when no wordribbon, avoid click-through above input trap
 
-var imageWhiteKey        = "../images/key_bg_white.png"
-var imageWhiteKeyPressed = "../images/key_bg_white_active.png"
+var imageWhiteKey        = { "tablet" : "../images/tablet/key_bg_white.png",
+                             "phone"  : "../images/phone/key_bg_white.png"  };
+var imageWhiteKeyPressed = { "tablet" : "../images/tablet/key_bg_white_active.png",
+                             "phone"  : "../images/phone/key_bg_white_active.png"  };
 
-var imageBlackKey        = "../images/key_bg_black.png"
-var imageBlackKeyPressed = "../images/key_bg_black_active.png"
+var imageBlackKey        = { "tablet" : "../images/tablet/key_bg_black.png",
+                             "phone"  : "../images/phone/key_bg_black.png"  };
+var imageBlackKeyPressed = { "tablet" : "../images/tablet/key_bg_black_active.png",
+                             "phone"  : "../images/phone/key_bg_black_active.png"  };
 
-var imageGreyKey        = "../images/key_bg_grey.png"
-var imageGreyKeyPressed = "../images/key_bg_grey_active.png"
-
+var imageGreyKey        = { "tablet" : "../images/tablet/key_bg_grey.png",
+                            "phone"  : "../images/phone/key_bg_grey.png"  };
+var imageGreyKeyPressed = { "tablet" : "../images/tablet/key_bg_grey_active.png",
+                            "phone"  : "../images/phone/key_bg_grey_active.png"  };
 
 var top_margin = 1.35;  // gu
 var bottom_margin = 1.00; // gu

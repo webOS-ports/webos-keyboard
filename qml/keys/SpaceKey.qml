@@ -22,8 +22,8 @@ ActionKey {
     label: " ";
     shifted: " ";
 
-    imgNormal: UI.imageWhiteKey
-    imgPressed: UI.imageWhiteKeyPressed
+    imgNormal: UI.imageWhiteKey[formFactor]
+    imgPressed: UI.imageWhiteKeyPressed[formFactor]
 
     action: "space"
 }
