@@ -1,5 +1,7 @@
 /*
  * Copyright 2013 Canonical Ltd.
+ * Copyright (C) 2015 Christophe Chapuis <chris.chapuis@gmail.com>
+ * Copyright (C) 2015 Herman van Hazendonk <github.com@herrie.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -16,13 +18,19 @@
 
 import QtQuick 2.0
 
+import "key_constants.js" as UI
+
 ActionKey {
     width: panel.keyWidth;
     iconNormal: "shift"
-    iconShifted: "shift"
-    iconCapsLock: "shift-latched"
+    iconShifted: "shift-on"
+    iconCapsLock: "shift-lock"
 
-    colorShifted: "orange"
+    imgNormal: panel.activeKeypadState === "CAPSLOCK" ? UI.imageShiftLockKey[formFactor] : panel.activeKeypadState === "SHIFTED" ? UI.imageShiftKey[formFactor] : UI.imageBlackKey[formFactor]
+    imgPressed: panel.activeKeypadState === "CAPSLOCK" ? UI.imageShiftLockKeyPressed[formFactor] : panel.activeKeypadState === "SHIFTED" ? UI.imageShiftKeyPressed[formFactor] : UI.imageBlackKeyPressed[formFactor]
+	
+    //colorShifted: "#4B97DE"
+	colorCapsLock: "#4B97DE"
 
     action: "shift"
 
@@ -31,22 +39,23 @@ ActionKey {
         preventStealing: true
 
         onClicked: {
-            if (panel.activeKeypadState == "NORMAL")
+            if (panel.activeKeypadState === "NORMAL")
                 panel.activeKeypadState = "SHIFTED";
 
-            else if (panel.activeKeypadState == "SHIFTED")
+            else if (panel.activeKeypadState === "SHIFTED")
                 panel.activeKeypadState = "NORMAL"
 
-            else if (panel.activeKeypadState == "CAPSLOCK")
+            else if (panel.activeKeypadState === "CAPSLOCK")
                 panel.activeKeypadState = "NORMAL"
         }
 
         onPressAndHold: {
             panel.activeKeypadState = "CAPSLOCK"
+            //imgPressed: UI.imageShiftKey[formFactor]
         }
 
         onDoubleClicked: {
-            if (panel.activeKeypadState == "SHIFTED")
+            if (panel.activeKeypadState === "SHIFTED")
                 panel.activeKeypadState = "CAPSLOCK"
         }
     }

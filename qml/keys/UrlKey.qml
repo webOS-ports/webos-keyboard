@@ -1,5 +1,7 @@
 /*
  * Copyright 2013 Canonical Ltd.
+ * Copyright (C) 2015 Christophe Chapuis <chris.chapuis@gmail.com>
+ * Copyright (C) 2015 Herman van Hazendonk <github.com@herrie.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,10 +20,10 @@ import QtQuick 2.0
 import "../keys/key_constants.js" as UI
 
 CharKey {
-    width: panel.keyWidth + units.gu( UI.emailLayoutUrlKeyPadding )
+    width: panel.keyWidth //+ units.gu( UI.emailLayoutUrlKeyPadding )
 
     label: ".com";
     shifted: label
     extendedShifted: extended
-    fontSize: units.gu(UI.smallFontSize);
+    fontSize: UI.smallFontSize;
 }

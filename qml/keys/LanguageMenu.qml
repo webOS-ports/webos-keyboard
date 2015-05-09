@@ -1,5 +1,7 @@
 /*
  * Copyright 2013 Canonical Ltd.
+ * Copyright (C) 2015 Christophe Chapuis <chris.chapuis@gmail.com>
+ * Copyright (C) 2015 Herman van Hazendonk <github.com@herrie.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -32,7 +34,7 @@ Item {
     BorderImage {
         id: name
 //        anchors.bottom: languageMenuButton.top
-        source: "../images/keyboard_popover.png"
+        source: UI.imagePopover[formFactor]
 		height: units.gu(9) 
 		width: menuList.width + units.gu(UI.languageMenuListViewPadding) * 0.5
 
@@ -65,7 +67,7 @@ Item {
             {
                 anchors.top: parent.top
                 id: popupKeyImage
-                source: "../images/popup_key_inactive.png"
+                source: UI.imagePopupKey[formFactor]
                 width: 60
                 height: 60
 				

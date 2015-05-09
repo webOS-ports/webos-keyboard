@@ -2,6 +2,8 @@
  * This file is part of Maliit plugins
  *
  * Copyright (C) 2012 Openismus GmbH
+ * Copyright (C) 2015 Christophe Chapuis <chris.chapuis@gmail.com>
+ * Copyright (C) 2015 Herman van Hazendonk <github.com@herrie.org>
  *
  * Contact: maliit-discuss@lists.maliit.org
  *
@@ -171,14 +173,14 @@ Item {
 
                 Image {
                     id: borderTop
-                    source: "images/border_top.png"
+                    source: "images/"+formFactor+"/border_top.png"
                     width: parent.width
                     anchors.top: parent.top.bottom
                 }
 
                 Image {
                     id: borderBottom
-                    source: "images/border_bottom.png"
+                    source: "images/"+formFactor+"/border_bottom.png"
                     width: parent.width
                     anchors.bottom: background.bottom
                 }
@@ -272,7 +274,7 @@ function calculateSize()
     var newHeight;
     if( Settings.tabletUi ) {
         if( isLandscape ) {
-            newHeight = fullScreenItem.height * UI.tabletKeyboardHeightLandscapeM
+            newHeight = fullScreenItem.height * UI.tabletKeyboardHeightLandscapeL
         }
         else {
             newHeight = fullScreenItem.height * UI.tabletKeyboardHeightPortrait

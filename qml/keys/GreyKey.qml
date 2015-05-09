@@ -1,5 +1,7 @@
 /*
  * Copyright 2013 Canonical Ltd.
+ * Copyright (C) 2015 Christophe Chapuis <chris.chapuis@gmail.com>
+ * Copyright (C) 2015 Herman van Hazendonk <github.com@herrie.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -46,7 +48,7 @@ Item {
     property string imgNormal: UI.imageGreyKey[formFactor]
     property string imgPressed: UI.imageGreyKeyPressed[formFactor]
     // fontSize can be overwritten when using the component, e.g. SymbolShiftKey uses smaller fontSize
-    property int fontSize: units.gu( UI.fontSize );
+    property int fontSize: UI.fontSize
 
     /// annotation shows a small label in the upper right corner
     // if the annotiation property is set, it will be used. If not, the first position in extended[] list or extendedShifted[] list will
@@ -121,7 +123,7 @@ Item {
         anchors.bottom: parent.verticalCenter
         anchors.margins: 0, 0, 0, 5
 
-        font.pixelSize: units.gu( UI.annotationFontSize )
+        font.pixelSize: UI.annotationFontSize
         font.bold: false
         color: UI.annotationFontColor
     }

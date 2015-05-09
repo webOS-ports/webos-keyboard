@@ -1,6 +1,7 @@
 /*
  * Copyright 2012 Canonical Ltd.
- * Copyright 2015 Herman van Hazendonk <github.com@herrie.org>
+ * Copyright (C) 2015 Christophe Chapuis <chris.chapuis@gmail.com>
+ * Copyright (C) 2015 Herman van Hazendonk <github.com@herrie.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,17 +18,18 @@
 
 .pragma library
 
-var keyMargins  =   1.8;    // dp
-var fontSize    =   2;    // gu
-var fontFamily  =   "Prelude";
-var fontColor   =   "#464646"
-var fontBold    =   false
+var keyMargins  	=   0//1 //1.8;    // gu
+var fontSize    	=   22;    // gu
+var fontFamily  	=   "Prelude";
+var fontColor  		=   "#141414"
+var fontBold    	=   false
+var fontBoldAction  =   true
 
-var annotationFontSize = 1.4; // gu
+var annotationFontSize = 14; // gu
 var annotationMargins = 0.7; // gu
-var annotationFontColor = "#575757"
+var annotationFontColor = "#646464"
 
-var greyColor	=	"#C9C9C9"
+var greyColor	=	"#D2D2D2"
 
 /* magnifier */
 var magnifierHorizontalPadding = 1; // gu, stretch the magnifier a little bit in x-axis
@@ -35,12 +37,12 @@ var magnifierVerticalPadding = 1; // gu, stretch the magnifier a little bit in y
 
 /* special keys */
 var actionKeyPadding = 2;  // gu, action keys are a bit bigger
-var symbolShiftKeyFontSize = 2; // gu
-var smallFontSize = 1.5; // gu, for keys that show more than one char, e.g. '.com'
+var symbolShiftKeyFontSize = 22; // gu
+var smallFontSize = 14; // gu, for keys that show more than one char, e.g. '.com'
 
 /* extended keys */
 var popoverCellPadding = 2.2; // gu
-var popoverTopMargin   = 0; // dp
+var popoverTopMargin   = 10; // dp
 var popoverEdgeMargin = 2.2; // gu
 var popoverSquat      = 3; // gu, when no wordribbon, avoid click-through above input trap
 
@@ -51,16 +53,63 @@ var imageWhiteKeyPressed = { "tablet" : "../images/tablet/key_bg_white_active.pn
 
 var imageBlackKey        = { "tablet" : "../images/tablet/key_bg_black.png",
                              "phone"  : "../images/phone/key_bg_black.png"  };
+
 var imageBlackKeyPressed = { "tablet" : "../images/tablet/key_bg_black_active.png",
                              "phone"  : "../images/phone/key_bg_black_active.png"  };
 
-var imageGreyKey        = { "tablet" : "../images/tablet/key_bg_grey.png",
-                            "phone"  : "../images/phone/key_bg_grey.png"  };
-var imageGreyKeyPressed = { "tablet" : "../images/tablet/key_bg_grey_active.png",
-                            "phone"  : "../images/phone/key_bg_grey_active.png"  };
+var imageGreyKey         = { "tablet" : "../images/tablet/key_bg_grey.png",
+                             "phone"  : "../images/phone/key_bg_grey.png"  };
 
-var top_margin = 1.35;  // gu
-var bottom_margin = 1.00; // gu
+var imageGreyKeyPressed  = { "tablet" : "../images/tablet/key_bg_grey_active.png",
+                             "phone"  : "../images/phone/key_bg_grey_active.png"  };
+
+var imagePopover 	     = { "tablet" : "../images/tablet/keyboard_popover.png",
+                             "phone"  : "../images/phone/keyboard_popover.png"  };
+							
+var imagePopupKey        = { "tablet" : "../images/tablet/popup_key_inactive.png",
+                             "phone"  : "../images/phone/popup_key_inactive.png"  };
+
+var imagePopupKeyPressed = { "tablet" : "../images/tablet/popup_key_active.png",
+                             "phone"  : "../images/phone/popup_key_active.png"  };
+
+var imagePopupBgLeft     = { "tablet" : "../images/tablet/popup-bg-left.png",
+                             "phone"  : "../images/phone/popup-bg-left.png"  };
+
+var imagePopupBgBetween  = { "tablet" : "../images/tablet/popup-bg-between.png",
+                             "phone"  : "../images/phone/popup-bg-between.png"  };
+
+var imagePopupBgCaret    = { "tablet" : "../images/tablet/popup-bg-caret.png",
+                             "phone"  : "../images/phone/popup-bg-caret.png"  };
+
+var imagePopupBgRight    = { "tablet" : "../images/tablet/popup-bg-right.png",
+                             "phone"  : "../images/phone/popup-bg-right.png"  };
+
+var imagePopupBgLeft2    = { "tablet" : "../images/tablet/popup-bg-2-left.png",
+                             "phone"  : "../images/phone/popup-bg-2-left.png"  };
+
+var imagePopupBgBetween2 = { "tablet" : "../images/tablet/popup-bg-2-between.png",
+                             "phone"  : "../images/phone/popup-bg-2-between.png"  };
+
+var imagePopupBgCaret2   = { "tablet" : "../images/tablet/popup-bg-2-caret.png",
+                             "phone"  : "../images/phone/popup-bg-2-caret.png"  };
+
+var imagePopupBgRight2   = { "tablet" : "../images/tablet/popup-bg-2-right.png",
+                             "phone"  : "../images/phone/popup-bg-2-right.png"  };
+
+var imageShiftKey        = { "tablet" : "../images/tablet/key_bg_shift_on.png",
+                             "phone"  : "../images/phone/key_bg_shift_on.png"  };
+
+var imageShiftKeyPressed = { "tablet" : "../images/tablet/key_bg_shift_on_active.png",
+                             "phone"  : "../images/phone/key_bg_shift_on_active.png"  };
+
+var imageShiftLockKey    = { "tablet" : "../images/tablet/key_bg_shift.png",
+                             "phone"  : "../images/phone/key_bg_shift.png"  };
+
+var imageShiftLockKeyPressed    = { "tablet" : "../images/tablet/key_bg_shift_active.png",
+                                    "phone"  : "../images/phone/key_bg_shift_active.png"  };
+							 
+var top_margin = 1.1; //.35;  // gu
+var bottom_margin = 0; // gu
 
 
 var urlLayoutLeftSpacerSize = 5; // gu
@@ -76,7 +125,6 @@ var wordribbonHeight = 50;
 //var phoneKeyboardHeightPortrait = 0.365;
 //var phoneKeyboardHeightLandscape = 0.50;
 
-var phoneKeyboardHeightPortrait = 0.49088;  /* 377 / 1024 based on Touchpads resolution, might need adjusting for widescreen tablets*/	
 var phoneKeyboardHeightLandscape = 0.51171875; /* 240 / 1024 based on Touchpads resolution, might need adjusting for widescreen tablets*/	
 
 
