@@ -151,17 +151,19 @@ Item {
 
                 //            if (contentType === InputMethod.EmailContentType) {
                 if (contentType === 3) {
-                    selectedLayoutFile = "lib/"+locale+"/Keyboard_"+locale +"_"+formFactor+"_email.qml";
+					selectedLayoutFile = "lib/"+locale+"/Keyboard_"+locale +"_"+formFactor+"_email.qml";
                 }
 
                 //            if (contentType === InputMethod.UrlContentType) {
                 if (contentType === 4) {
-                    selectedLayoutFile = "lib/"+locale+"/Keyboard_"+locale + "_"+formFactor+"_url_search.qml";
+					selectedLayoutFile = "lib/"+locale+"/Keyboard_"+locale + "_"+formFactor+"_url_search.qml";
                 }
 
                 else {
-                    // FreeTextContentType used as fallback
-                    selectedLayoutFile = freeTextLanguageKeyboard(activeLanguage);
+                    // FreeTextContentType used as fallback (only when we don't have a selectedLayoutFile because for some reason the else kicks in with the 3 )
+					if(!selectedLayoutFile)	{
+						selectedLayoutFile = freeTextLanguageKeyboard(activeLanguage);
+					}
                 }
 
                 // for testing on desktop
