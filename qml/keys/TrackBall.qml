@@ -1,5 +1,7 @@
 /*
  * Copyright 2013 Canonical Ltd.
+ * Copyright (C) 2015 Christophe Chapuis <chris.chapuis@gmail.com>
+ * Copyright (C) 2015 Herman van Hazendonk <github.com@herrie.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -33,7 +35,7 @@ Item {
     Image {
         anchors.centerIn: sliderMouseArea.pressed? undefined : parent
 		id: slider
-        source: "../images/track-center.png"
+        source: "../images/"+formFactor+"/track-center.png"
         width: sourceSize.width * 0.8
         height: sourceSize.height * 0.8
     }
@@ -43,7 +45,7 @@ Item {
         anchors.rightMargin: units.gu(-0.5)
         anchors.right: origin.left
         anchors.verticalCenter: origin.verticalCenter
-        source: "../images/track-arrow-left.png"
+        source: "../images/"+formFactor+"/track-arrow-left.png"
         opacity: highlightedKey === leftArrow ? 1.0 : 0.2
     }
 
@@ -52,7 +54,7 @@ Item {
         anchors.leftMargin: units.gu(-0.5)
         anchors.left: origin.right
         anchors.verticalCenter: origin.verticalCenter
-        source: "../images/track-arrow-right.png"
+        source: "../images/"+formFactor+"/track-arrow-right.png"
         opacity: highlightedKey === rightArrow ? 1.0 : 0.2
     }
 
@@ -61,7 +63,7 @@ Item {
         anchors.bottomMargin: units.gu(-0.5)
         anchors.bottom: origin.top
         anchors.horizontalCenter: origin.horizontalCenter
-        source: "../images/track-arrow-up.png"
+        source: "../images/"+formFactor+"/track-arrow-up.png"
         opacity: highlightedKey === upArrow ? 1.0 : 0.2
     }
 
@@ -70,7 +72,7 @@ Item {
         anchors.topMargin: units.gu(-0.5)
         anchors.top: origin.bottom
         anchors.horizontalCenter: origin.horizontalCenter
-        source: "../images/track-arrow-down.png"
+        source: "../images/"+formFactor+"/track-arrow-down.png"
         opacity: highlightedKey === downArrow ? 1.0 : 0.2
     }
 

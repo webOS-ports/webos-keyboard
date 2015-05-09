@@ -1,5 +1,7 @@
 /*
  * Copyright 2013 Canonical Ltd.
+ * Copyright (C) 2015 Christophe Chapuis <chris.chapuis@gmail.com>
+ * Copyright (C) 2015 Herman van Hazendonk <github.com@herrie.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -46,7 +48,7 @@ Item {
     property string imgNormal: UI.imageWhiteKey[formFactor]
     property string imgPressed: UI.imageWhiteKeyPressed[formFactor]
     // fontSize can be overwritten when using the component, e.g. SymbolShiftKey uses smaller fontSize
-    property int fontSize: units.gu( UI.fontSize );
+    property int fontSize: UI.fontSize;
 
     /// annotation shows a small label in the upper right corner
     // if the annotiation property is set, it will be used. If not, the first position in extended[] list or extendedShifted[] list will
@@ -77,13 +79,26 @@ Item {
 
     Component.onCompleted: {
         if (annotation) {
-            __annotationLabelNormal = annotation
+			__annotationLabelNormal = annotation
             __annotationLabelShifted = annotation
         } else {
-            if (extended)
-                __annotationLabelNormal = extended[0]
-            if (extendedShifted)
-                __annotationLabelShifted = extendedShifted[0]
+     		if (extended) {
+				if(imgNormal === UI.imageGreyKey[formFactor]) {
+					__annotationLabelNormal = extended[0]
+					__annotationLabelShifted = label
+				}
+				else{
+                    __annotationLabelNormal = "..."
+				}
+			}
+            if (extendedShifted) {
+				if(imgNormal === UI.imageGreyKey[formFactor]) {
+					__annotationLabelShifted = extendedShifted[0]
+				}
+				else{
+					__annotationLabelShifted = "..."
+				}
+			}
         }
     }
 
@@ -101,12 +116,16 @@ Item {
 
     Text {
         id: keyLabel
-        text: (panel.activeKeypadState === "NORMAL") ? label : shifted;
-        anchors.centerIn: parent
+        text: (imgNormal === UI.imageGreyKey[formFactor]) ? label : (panel.activeKeypadState === "NORMAL") ? label : shifted;
+        anchors.horizontalCenter: buttonImage.horizontalCenter
+		anchors.verticalCenter: buttonImage.verticalCenter 
+		anchors.verticalCenterOffset: imgNormal === UI.imageGreyKey[formFactor] ? units.gu(0.5) : units.gu(-0.25)
         font.family: UI.fontFamily
-        font.pixelSize: fontSize
+        font.pixelSize: ((imgNormal === UI.imageGreyKey[formFactor])&&(panel.activeKeypadState !== "NORMAL") ) ? UI.annotationFontSize : fontSize
         font.bold: UI.fontBold
-        color: UI.fontColor
+        color: ((imgNormal === UI.imageGreyKey[formFactor])&&(panel.activeKeypadState !== "NORMAL")) ? UI.annotationFontColor : UI.fontColor
+		smooth: true
+		visible: action === ""
     }
 
     /// shows an annotation
@@ -114,16 +133,20 @@ Item {
 
     Text {
         id: annotationLabel
-        text: (panel.activeKeypadState != "NORMAL") ? __annotationLabelShifted : __annotationLabelNormal
+        text: (imgNormal === UI.imageGreyKey[formFactor]) ? shifted : (panel.activeKeypadState !== "NORMAL") ? __annotationLabelShifted : __annotationLabelNormal
 
-        anchors.right: parent.right
-        anchors.bottom: parent.bottom
-        anchors.margins: 10, 0, 0, 10
-        //anchors.margins: units.gu( UI.annotationMargins )
+		anchors.horizontalCenter: buttonImage.horizontalCenter
+		anchors.horizontalCenterOffset: imgNormal === UI.imageGreyKey[formFactor] ? 0 : units.gu(2.75)
+   		anchors.verticalCenter: buttonImage.verticalCenter 
+		anchors.verticalCenterOffset: imgNormal === UI.imageGreyKey[formFactor] ? units.gu(-1.75) : units.gu(1.75)
 
-        font.pixelSize: units.gu( UI.annotationFontSize )
+	    anchors.margins: units.gu( UI.annotationMargins )
+
+        font.pixelSize: ((imgNormal === UI.imageGreyKey[formFactor])&&(panel.activeKeypadState !== "NORMAL")) ? fontSize : UI.annotationFontSize 
         font.bold: false
-        color: UI.annotationFontColor
+        color: ((imgNormal === UI.imageGreyKey[formFactor]) && (panel.activeKeypadState !== "NORMAL")) ? UI.fontColor : UI.annotationFontColor
+		smooth: true
+        visible: !noMagnifier //imgNormal === UI.imageGreyKey[formFactor] ? true : false
     }
 
     PressArea {
@@ -131,11 +154,12 @@ Item {
         anchors.fill: key
 
         onPressAndHold: {
-            if (activeExtendedModel != undefined) {
+            if (activeExtendedModel != undefined && !noMagnifier) {
                 extendedKeysSelector.enabled = true
                 extendedKeysSelector.extendedKeysModel = activeExtendedModel
                 extendedKeysSelector.currentlyAssignedKey = key
-            }
+				annotationLabel.visible = true
+			}
         }
 
         onReleased: {

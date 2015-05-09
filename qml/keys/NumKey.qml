@@ -1,5 +1,7 @@
 /*
  * Copyright 2013 Canonical Ltd.
+ * Copyright (C) 2015 Christophe Chapuis <chris.chapuis@gmail.com>
+ * Copyright (C) 2015 Herman van Hazendonk <github.com@herrie.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -26,8 +28,8 @@ Item {
 
     property int padding: 0
 
-    width: panel.keyWidth
-    height: panel.keyHeight * 0.65
+    width: panel.keyWidth * 0.90
+    height: panel.keyHeight * 0.74
 
     /* to be set in keyboard layouts */
     property string label: ""
@@ -46,7 +48,7 @@ Item {
     property string imgNormal: UI.imageGreyKey[formFactor]
     property string imgPressed: UI.imageGreyKeyPressed[formFactor]
     // fontSize can be overwritten when using the component, e.g. SymbolShiftKey uses smaller fontSize
-    property int fontSize: units.gu( UI.fontSize );
+    property int fontSize: UI.fontSize
 
     /// annotation shows a small label in the upper right corner
     // if the annotiation property is set, it will be used. If not, the first position in extended[] list or extendedShifted[] list will
@@ -80,7 +82,7 @@ Item {
             __annotationLabelShifted = annotation
         } else {
             if (extended)
-                __annotationLabelNormal = extended[0]
+                __annotationLabelNormal = extended[1]
             if (extendedShifted)
                 __annotationLabelShifted = extendedShifted[0]
         }
@@ -91,7 +93,7 @@ Item {
         border { left: 27; top: 29; right: 27; bottom: 29 }
         anchors.centerIn: parent
         anchors.fill: key
-        anchors.margins: units.dp( UI.keyMargins );
+        anchors.margins: units.gu( UI.keyMargins / 3);
         source: key.pressed ? key.imgPressed : key.imgNormal
     }
 
@@ -100,12 +102,20 @@ Item {
 
     Text {
         id: keyLabel
-        text: (panel.activeKeypadState === "NORMAL") ? label : shifted;
-        anchors.centerIn: parent
+        //text: (panel.activeKeypadState === "NORMAL") ? label : shifted;
+		text: label
+        anchors.right: parent.right
+		anchors.rightMargin: units.gu(2.0)
+		
+		//anchors.margins: 0, 0, 0, units.gu(1.5)
+		anchors.verticalCenter: parent.verticalCenter
+		anchors.verticalCenterOffset: units.gu(-0.25)
+		
         font.family: UI.fontFamily
-        font.pixelSize: fontSize
+        font.pixelSize: (panel.activeKeypadState === "NORMAL") ? UI.fontSize : UI.annotationFontSize 
         font.bold: UI.fontBold
-        color: UI.fontColor
+        color: (panel.activeKeypadState === "NORMAL") ? UI.fontColor : UI.annotationFontColor
+		smooth: true
     }
 
     /// shows an annotation
@@ -113,16 +123,38 @@ Item {
 
     Text {
         id: annotationLabel
-        text: (panel.activeKeypadState != "NORMAL") ? __annotationLabelShifted : __annotationLabelNormal
+        //text: (panel.activeKeypadState != "NORMAL") ? __annotationLabelShifted : __annotationLabelNormal
+		text: __annotationLabelNormal
 
         anchors.left: parent.left
         anchors.verticalCenter: parent.verticalCenter
-        anchors.margins: 0, 0, 0, 15
+		anchors.verticalCenterOffset: units.gu(-0.25)
+        anchors.leftMargin: units.gu(2.0)
+		//anchors.margins: 0, 0, 0, units.gu(1.5)
         //anchors.margins: units.gu( UI.annotationMargins )
 
-        font.pixelSize: units.gu( UI.annotationFontSize )
+        font.pixelSize: (panel.activeKeypadState === "NORMAL") ? UI.annotationFontSize : UI.fontSize 
         font.bold: false
-        color: UI.annotationFontColor
+        color: (panel.activeKeypadState != "NORMAL") ? UI.fontColor : UI.annotationFontColor
+		smooth: true
+    }
+	
+	Text {
+        id: annotationLabel2
+        //text: (panel.activeKeypadState != "NORMAL") ? __annotationLabelShifted : __annotationLabelNormal
+		text: "..." //__annotationLabelNormal
+
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+		anchors.verticalCenterOffset: units.gu(1.00)
+        anchors.rightMargin: units.gu(1.0)
+		//anchors.margins: 0, 0, 0, units.gu(1.5)
+        //anchors.margins: units.gu( UI.annotationMargins )
+
+        font.pixelSize: UI.annotationFontSize 
+        font.bold: false
+        color: UI.fontColor //: UI.annotationFontColor
+		smooth: true
     }
 
     PressArea {

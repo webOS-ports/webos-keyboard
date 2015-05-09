@@ -1,5 +1,7 @@
 /*
  * Copyright 2013 Canonical Ltd.
+ * Copyright (C) 2015 Christophe Chapuis <chris.chapuis@gmail.com>
+ * Copyright (C) 2015 Herman van Hazendonk <github.com@herrie.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -30,11 +32,11 @@ ActionKey {
         property color color;
 
         id: iconImage
-        source: Qt.resolvedUrl("../images/" + __icon + ".png")
+        source: Qt.resolvedUrl("../images/" + formFactor + "/" + __icon + ".png")
         anchors.centerIn: parent
         visible: (label == "")
-        width: units.gu(2.5)
-        height: units.gu(2.5)
+		smooth: true
+		fillMode: Image.PreserveAspectFit
     }
 
     MouseArea {

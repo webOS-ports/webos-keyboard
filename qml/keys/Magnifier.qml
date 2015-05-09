@@ -1,5 +1,7 @@
 /*
  * Copyright 2013 Canonical Ltd.
+ * Copyright (C) 2015 Christophe Chapuis <chris.chapuis@gmail.com>
+ * Copyright (C) 2015 Herman van Hazendonk <github.com@herrie.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -52,14 +54,14 @@ Item {
         transformOrigin: Item.Bottom
         opacity: animationStep
 
-        source: Qt.resolvedUrl("../images/keyboard_popover.png")
+        source: UI.imagePopover[formFactor]
 
         Text {
             id: label
             anchors.centerIn: parent
 
             font.family: UI.fontFamily
-            font.pixelSize: units.gu( UI.fontSize )
+            font.pixelSize: UI.fontSize 
             font.bold: UI.fontBold
             color: UI.fontColor
         }

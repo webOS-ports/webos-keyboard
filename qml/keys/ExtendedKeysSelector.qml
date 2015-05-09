@@ -1,5 +1,7 @@
 /*
  * Copyright 2013 Canonical Ltd.
+ * Copyright (C) 2015 Christophe Chapuis <chris.chapuis@gmail.com>
+ * Copyright (C) 2015 Herman van Hazendonk <github.com@herrie.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -70,27 +72,27 @@ Item {
         Row {
             x: 0; y: 0; height: parent.height
             Image {
-                source: isTwoLines ? "../images/popup-bg-2-left.png" : "../images/popup-bg-left.png"
+                source: isTwoLines ? UI.imagePopupBgLeft2[formFactor] : UI.imagePopupBgLeft[formFactor]
                 height: parent.height
                 width: 21
             }
             Image {
-                source: isTwoLines ? "../images/popup-bg-2-between.png" : "../images/popup-bg-between.png"
+                source: isTwoLines ? UI.imagePopupBgBetween2[formFactor] : UI.imagePopupBgBetween[formFactor]
                 height: parent.height
                 width: popoverBackground.isOnLeftSideOfScreen ? 8 : (popoverBackground.width - 21 - 33 - 8 - 21)
             }
             Image {
-                source: isTwoLines ? "../images/popup-bg-2-caret.png" : "../images/popup-bg-caret.png"
+                source: isTwoLines ? UI.imagePopupBgCaret2[formFactor] : UI.imagePopupBgCaret[formFactor]
                 height: parent.height
                 width: 33
             }
             Image {
-                source: isTwoLines ? "../images/popup-bg-2-between.png" : "../images/popup-bg-between.png"
+                source: isTwoLines ? UI.imagePopupBgBetween2[formFactor] : UI.imagePopupBgBetween[formFactor]
                 height: parent.height
                 width: popoverBackground.isOnLeftSideOfScreen ? (popoverBackground.width - 21 - 33 - 8 - 21) : 8
             }
             Image {
-                source: isTwoLines ? "../images/popup-bg-2-right.png" : "../images/popup-bg-right.png"
+                source: isTwoLines ? UI.imagePopupBgRight2[formFactor] : UI.imagePopupBgRight[formFactor]
                 height: parent.height
                 width: 21
             }
@@ -124,8 +126,9 @@ Item {
                 Image
                 {
                     anchors.centerIn: parent
+//                    x: anchorItem.x
                     id: popupKeyImage
-                    source: "../images/popup_key_inactive.png"
+                    source: UI.imagePopupKey[formFactor]
                     width: 60
                     height: 60
                 }
@@ -135,7 +138,7 @@ Item {
                     anchors.centerIn: parent
                     text: modelData
                     font.family: UI.fontFamily
-                    font.pixelSize: text.length > 2 ? units.gu( UI.smallFontSize ) : units.gu( UI.fontSize )
+                    font.pixelSize: text.length > 2 ? UI.smallFontSize : UI.fontSize
                     font.bold: UI.fontBold
                     color: key.highlight ? "orange"  : UI.fontColor
                 }
