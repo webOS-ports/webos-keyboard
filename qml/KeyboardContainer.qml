@@ -155,13 +155,12 @@ Item {
                 }
 
                 //            if (contentType === InputMethod.UrlContentType) {
-                if (contentType === 4) {
+                else if (contentType === 4) {
 					selectedLayoutFile = "lib/"+locale+"/Keyboard_"+locale + "_"+formFactor+"_url_search.qml";
                 }
 
                 else {
                     // FreeTextContentType used as fallback (only when we don't have a selectedLayoutFile because for some reason the else kicks in with the 3 )
-					if(!selectedLayoutFile)	{
 						selectedLayoutFile = freeTextLanguageKeyboard(activeLanguage);
 					}
                 }
