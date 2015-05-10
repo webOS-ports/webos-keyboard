@@ -160,9 +160,7 @@ Item {
                 }
 
                 else {
-                    // FreeTextContentType used as fallback (only when we don't have a selectedLayoutFile because for some reason the else kicks in with the 3 )
-						selectedLayoutFile = freeTextLanguageKeyboard(activeLanguage);
-					}
+                    selectedLayoutFile = freeTextLanguageKeyboard(activeLanguage);
                 }
 
                 // for testing on desktop
