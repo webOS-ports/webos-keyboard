@@ -22,6 +22,8 @@ import keys 1.0
 KeyPad {
     anchors.fill: parent
 
+    nbNumericalRows: 1
+
     content: c1
     symbols: "languages/Keyboard_symbols.qml"
 
