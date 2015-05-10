@@ -15,13 +15,13 @@
  */
 
 import QtQuick 2.0
-import "../../keys"
+import keys 1.0
 
 KeyPad {
     anchors.fill: parent
 
     content: c1
-    symbols: "languages/webos/Keyboard_symbols.qml"
+    symbols: "languages/en_webos/Keyboard_symbols.qml"
 
     Column {
         id: c1
