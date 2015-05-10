@@ -22,8 +22,11 @@ import "../keys/key_constants.js" as UI
 CharKey {
     width: panel.keyWidth //+ units.gu( UI.emailLayoutUrlKeyPadding )
 
+    imgNormal: UI.imageGreyKey[formFactor]
+    imgPressed: UI.imageGreyKeyPressed[formFactor];
+
     label: ".com";
     shifted: label
     extendedShifted: extended
-    fontSize: UI.smallFontSize;
+    fontSize: label.length>1 ? UI.smallFontSize : UI.fontSize;
 }
