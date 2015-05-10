@@ -154,14 +154,14 @@ Item {
 		text: "..." //__annotationLabelNormal
 
         anchors.right: parent.right
-        anchors.verticalCenter: parent.verticalCenter
-		anchors.verticalCenterOffset: units.gu(1.00)
-        anchors.rightMargin: units.gu(1.0)
-		//anchors.margins: 0, 0, 0, units.gu(1.5)
-        //anchors.margins: units.gu( UI.annotationMargins )
+        anchors.rightMargin: useHorizontalLayout ? units.gu(1.0) : units.gu(2.0)
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: useHorizontalLayout ? units.gu(1.4) : units.gu(2.0)
 
         font.pixelSize: UI.annotationFontSize 
         font.bold: false
+        style: Text.Raised
+        styleColor: "white"
         color: UI.fontColor //: UI.annotationFontColor
 		smooth: true
     }

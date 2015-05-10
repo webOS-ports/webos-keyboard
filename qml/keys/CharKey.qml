@@ -135,15 +135,15 @@ Item {
         id: annotationLabel
         text: (panel.activeKeypadState !== "NORMAL") ? __annotationLabelShifted : __annotationLabelNormal
 
-		anchors.horizontalCenter: buttonImage.horizontalCenter
-        anchors.horizontalCenterOffset: units.gu(2.75)
-   		anchors.verticalCenter: buttonImage.verticalCenter 
-        anchors.verticalCenterOffset: units.gu(1.75)
-
-	    anchors.margins: units.gu( UI.annotationMargins )
+        anchors.right: parent.right
+        anchors.rightMargin: units.gu(2.00)
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: units.gu(2.00)
 
         font.pixelSize: UI.annotationFontSize
         font.bold: false
+        style: Text.Raised
+        styleColor: "white"
         color: UI.annotationFontColor
 		smooth: true
         visible: !noMagnifier //imgNormal === UI.imageGreyKey[formFactor] ? true : false
