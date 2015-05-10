@@ -44,16 +44,17 @@ Item {
     property bool skipAutoCaps: false
 
     /* design */
+    property bool useHorizontalLayout: false;
+
     property string formFactor: Settings.tabletUi ? "tablet" : "phone"
-    property string imgNormal: UI.imageWhiteKey[formFactor]
-    property string imgPressed: UI.imageWhiteKeyPressed[formFactor]
+    property string imgNormal: UI.imageGreyKey[formFactor]
+    property string imgPressed: UI.imageGreyKeyPressed[formFactor]
     // fontSize can be overwritten when using the component, e.g. SymbolShiftKey uses smaller fontSize
-    property int fontSize: UI.fontSize;
+    property int fontSize: UI.fontSize
 
     /// annotation shows a small label in the upper right corner
     // if the annotiation property is set, it will be used. If not, the first position in extended[] list or extendedShifted[] list will
     // be used, depending on the state. If no extended/extendedShifted arrays exist, no annotation is shown
-//    property string annotation: "…"
     property string annotation: ""
 
     /*! indicates if te key is currently pressed/down*/
@@ -79,26 +80,13 @@ Item {
 
     Component.onCompleted: {
         if (annotation) {
-			__annotationLabelNormal = annotation
+            __annotationLabelNormal = annotation
             __annotationLabelShifted = annotation
         } else {
-     		if (extended) {
-				if(imgNormal === UI.imageGreyKey[formFactor]) {
-					__annotationLabelNormal = extended[0]
-					__annotationLabelShifted = label
-				}
-				else{
-                    __annotationLabelNormal = "..."
-				}
-			}
-            if (extendedShifted) {
-				if(imgNormal === UI.imageGreyKey[formFactor]) {
-					__annotationLabelShifted = extendedShifted[0]
-				}
-				else{
-					__annotationLabelShifted = "..."
-				}
-			}
+            if (extended)
+                __annotationLabelNormal = extended[1]
+            if (extendedShifted)
+                __annotationLabelShifted = extendedShifted[0]
         }
     }
 
@@ -107,7 +95,7 @@ Item {
         border { left: 27; top: 29; right: 27; bottom: 29 }
         anchors.centerIn: parent
         anchors.fill: key
-        anchors.margins: units.dp( UI.keyMargins );
+        anchors.margins: units.gu( UI.keyMargins / 3);
         source: key.pressed ? key.imgPressed : key.imgNormal
     }
 
@@ -116,16 +104,23 @@ Item {
 
     Text {
         id: keyLabel
-        text: (panel.activeKeypadState === "NORMAL") ? label : shifted;
-        anchors.horizontalCenter: buttonImage.horizontalCenter
-		anchors.verticalCenter: buttonImage.verticalCenter 
-        anchors.verticalCenterOffset: units.gu(-0.25)
+        //text: (panel.activeKeypadState === "NORMAL") ? label : shifted;
+        text: label
+        anchors.right: useHorizontalLayout ? parent.right : undefined
+        anchors.rightMargin:  useHorizontalLayout ? units.gu(2.0) : 0
+
+        anchors.horizontalCenter: useHorizontalLayout ? undefined : buttonImage.horizontalCenter
+
+        anchors.verticalCenter: parent.verticalCenter
+        anchors.verticalCenterOffset: useHorizontalLayout ? units.gu(-0.25) : units.gu(0.5)
+
         font.family: UI.fontFamily
-        font.pixelSize: fontSize
+        font.pixelSize: (panel.activeKeypadState === "NORMAL") ? UI.fontSize : UI.annotationFontSize
         font.bold: UI.fontBold
-        color: UI.fontColor
-		smooth: true
-		visible: action === ""
+        color: (panel.activeKeypadState === "NORMAL") ? UI.fontColor : UI.annotationFontColor
+        style: (panel.activeKeypadState === "NORMAL") ? Text.Raised : Text.Normal
+        styleColor: "white"
+        smooth: true
     }
 
     /// shows an annotation
@@ -133,20 +128,42 @@ Item {
 
     Text {
         id: annotationLabel
-        text: (panel.activeKeypadState !== "NORMAL") ? __annotationLabelShifted : __annotationLabelNormal
+        //text: (panel.activeKeypadState != "NORMAL") ? __annotationLabelShifted : __annotationLabelNormal
+        text: __annotationLabelNormal
 
-		anchors.horizontalCenter: buttonImage.horizontalCenter
-        anchors.horizontalCenterOffset: units.gu(2.75)
-   		anchors.verticalCenter: buttonImage.verticalCenter 
-        anchors.verticalCenterOffset: units.gu(1.75)
+        anchors.left: useHorizontalLayout ? parent.left : undefined
+        anchors.leftMargin: useHorizontalLayout ? units.gu(2.0) : 0
 
-	    anchors.margins: units.gu( UI.annotationMargins )
+        anchors.horizontalCenter: useHorizontalLayout ? undefined : buttonImage.horizontalCenter
+        anchors.horizontalCenterOffset: useHorizontalLayout ? units.gu(2.75) : 0
 
-        font.pixelSize: UI.annotationFontSize
+        anchors.verticalCenter: parent.verticalCenter
+        anchors.verticalCenterOffset: useHorizontalLayout ? units.gu(-0.25) : units.gu(-1.75)
+
+        font.pixelSize: (panel.activeKeypadState === "NORMAL") ? UI.annotationFontSize : UI.fontSize
         font.bold: false
-        color: UI.annotationFontColor
+        color: (panel.activeKeypadState !== "NORMAL") ? UI.fontColor : UI.annotationFontColor
+        style: (panel.activeKeypadState !== "NORMAL") ? Text.Raised : Text.Normal
+        styleColor: "white"
+        smooth: true
+    }
+	
+	Text {
+        id: annotationLabel2
+        //text: (panel.activeKeypadState != "NORMAL") ? __annotationLabelShifted : __annotationLabelNormal
+		text: "..." //__annotationLabelNormal
+
+        anchors.right: parent.right
+        anchors.verticalCenter: parent.verticalCenter
+		anchors.verticalCenterOffset: units.gu(1.00)
+        anchors.rightMargin: units.gu(1.0)
+		//anchors.margins: 0, 0, 0, units.gu(1.5)
+        //anchors.margins: units.gu( UI.annotationMargins )
+
+        font.pixelSize: UI.annotationFontSize 
+        font.bold: false
+        color: UI.fontColor //: UI.annotationFontColor
 		smooth: true
-        visible: !noMagnifier //imgNormal === UI.imageGreyKey[formFactor] ? true : false
     }
 
     PressArea {
@@ -154,12 +171,11 @@ Item {
         anchors.fill: key
 
         onPressAndHold: {
-            if (activeExtendedModel != undefined && !noMagnifier) {
+            if (activeExtendedModel != undefined) {
                 extendedKeysSelector.enabled = true
                 extendedKeysSelector.extendedKeysModel = activeExtendedModel
                 extendedKeysSelector.currentlyAssignedKey = key
-				annotationLabel.visible = true
-			}
+            }
         }
 
         onReleased: {

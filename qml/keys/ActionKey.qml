@@ -67,8 +67,10 @@ CharKey {
         font.family: UI.fontFamily
         font.pixelSize: fontSize
         font.bold: UI.fontBoldAction
+        style: Text.Raised
+        styleColor: "black"
         color: UI.greyColor
-		smooth: true
+        smooth: true
     }
 
     onOskStateChanged: {

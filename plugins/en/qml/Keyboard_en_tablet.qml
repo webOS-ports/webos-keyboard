@@ -92,8 +92,8 @@ KeyPad {
             CharKey { label: "b"; shifted: "B"; }
             CharKey { label: "n"; shifted: "N"; extended: ["n", "ñ", "ń"]; extendedShifted: ["N", "Ñ", "Ń"] }
             CharKey { label: "m"; shifted: "M"; extended: ["m", "μ"]; extendedShifted: ["M", "Μ"]}
-            CharKey { imgNormal: UI.imageGreyKey[formFactor]; imgPressed: UI.imageGreyKeyPressed[formFactor]; label: ","; shifted: "/"; extended: [",", "/", "\\"]; extendedShifted: [",", "/", "\\"];}
-            CharKey { imgNormal: UI.imageGreyKey[formFactor]; imgPressed: UI.imageGreyKeyPressed[formFactor]; label: "."; shifted: "?"; extended: [".", "?", "•", "…", "¿"]; extendedShifted: [".", "?", "•", "…", "¿"]}
+            AnnotatedKey { label: ","; shifted: "/"; extended: [",", "/", "\\"]; extendedShifted: [",", "/", "\\"];}
+            AnnotatedKey { label: "."; shifted: "?"; extended: [".", "?", "•", "…", "¿"]; extendedShifted: [".", "?", "•", "…", "¿"]}
             ShiftKey {}
         }
 
@@ -107,8 +107,8 @@ KeyPad {
 			SymbolShiftKey { id: symShiftKey;                             anchors.left: tabKey.right; }
             LanguageKey    { id: languageMenuButton;                       anchors.left: symShiftKey.right; }
             SpaceKey       { id: spaceKey;                                 anchors.left: languageMenuButton.right; anchors.right: apostropheKey.left; noMagnifier: true }
-            CharKey        { imgNormal: UI.imageGreyKey[formFactor]; imgPressed: UI.imageGreyKeyPressed[formFactor]; id: apostropheKey; label: "'"; shifted: "\""; extended: ["'", "\"", "`", "‘", "’", "“", "”", "«", "»"]; extendedShifted: ["'", "\"", "`", "‘", "’", "“", "”", "«", "»"]; anchors.right: minusKey.left; }
-            CharKey        { imgNormal: UI.imageGreyKey[formFactor]; imgPressed: UI.imageGreyKeyPressed[formFactor]; id: minusKey;      label: "-"; shifted: "_"; extended: ["-", "_", "±", "¬"]; extendedShifted: ["-", "_", "±", "¬"]; anchors.right: dismissKey.left; }
+            AnnotatedKey   { id: apostropheKey; label: "'"; shifted: "\""; extended: ["'", "\"", "`", "‘", "’", "“", "”", "«", "»"]; extendedShifted: ["'", "\"", "`", "‘", "’", "“", "”", "«", "»"]; anchors.right: minusKey.left; }
+            AnnotatedKey   { id: minusKey;      label: "-"; shifted: "_"; extended: ["-", "_", "±", "¬"]; extendedShifted: ["-", "_", "±", "¬"]; anchors.right: dismissKey.left; }
             DismissKey     { id: dismissKey;                               anchors.right: parent.right;}
         }
     } // column
