@@ -29,9 +29,6 @@ ActionKey {
     imgNormal: panel.activeKeypadState === "CAPSLOCK" ? UI.imageShiftLockKey[formFactor] : panel.activeKeypadState === "SHIFTED" ? UI.imageShiftKey[formFactor] : UI.imageBlackKey[formFactor]
     imgPressed: panel.activeKeypadState === "CAPSLOCK" ? UI.imageShiftLockKeyPressed[formFactor] : panel.activeKeypadState === "SHIFTED" ? UI.imageShiftKeyPressed[formFactor] : UI.imageBlackKeyPressed[formFactor]
 	
-    //colorShifted: "#4B97DE"
-	colorCapsLock: "#4B97DE"
-
     action: "shift"
 
     MouseArea {

@@ -69,7 +69,7 @@ CharKey {
         font.bold: UI.fontBoldAction
         style: Text.Raised
         styleColor: "black"
-        color: UI.greyColor
+        color: UI.greyColor[formFactor]
         smooth: true
     }
 

@@ -117,7 +117,7 @@ Item {
         font.family: UI.fontFamily
         font.pixelSize: (panel.activeKeypadState === "NORMAL") ? UI.fontSize : UI.annotationFontSize
         font.bold: UI.fontBold
-        color: (panel.activeKeypadState === "NORMAL") ? UI.fontColor : UI.annotationFontColor
+        color: (panel.activeKeypadState === "NORMAL") ? UI.fontColor[formFactor] : UI.annotationFontColor[formFactor]
         style: (panel.activeKeypadState === "NORMAL") ? Text.Raised : Text.Normal
         styleColor: "white"
         smooth: true
@@ -142,7 +142,7 @@ Item {
 
         font.pixelSize: (panel.activeKeypadState === "NORMAL") ? UI.annotationFontSize : UI.fontSize
         font.bold: false
-        color: (panel.activeKeypadState !== "NORMAL") ? UI.fontColor : UI.annotationFontColor
+        color: (panel.activeKeypadState !== "NORMAL") ? UI.fontColor[formFactor] : UI.annotationFontColor[formFactor]
         style: (panel.activeKeypadState !== "NORMAL") ? Text.Raised : Text.Normal
         styleColor: "white"
         smooth: true
@@ -162,7 +162,7 @@ Item {
         font.bold: false
         style: Text.Raised
         styleColor: "white"
-        color: UI.fontColor //: UI.annotationFontColor
+        color: UI.fontColor[formFactor] //: UI.annotationFontColor
 		smooth: true
     }
 

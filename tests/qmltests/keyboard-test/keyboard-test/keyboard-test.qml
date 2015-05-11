@@ -1,10 +1,11 @@
 import QtQuick 2.3
 import QtQuick.Controls 1.1
+import LunaNext.Common 0.1
 import "../../../../qml"
 
 Rectangle {
-    width: 1024
-    height: 768
+    width: Settings.displayWidth ? Settings.displayWidth : 1024
+    height: Settings.displayHeight ? Settings.displayHeight : 768
 
     QtObject {
         id: maliit_geometry
