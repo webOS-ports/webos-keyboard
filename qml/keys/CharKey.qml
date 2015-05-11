@@ -123,7 +123,7 @@ Item {
         font.family: UI.fontFamily
         font.pixelSize: fontSize
         font.bold: UI.fontBold
-        color: UI.fontColor
+        color: UI.fontColor[formFactor]
 		smooth: true
 		visible: action === ""
     }
@@ -144,7 +144,7 @@ Item {
         font.bold: false
         style: Text.Raised
         styleColor: "white"
-        color: UI.annotationFontColor
+        color: UI.annotationFontColor[formFactor]
 		smooth: true
         visible: !noMagnifier //imgNormal === UI.imageGreyKey[formFactor] ? true : false
     }

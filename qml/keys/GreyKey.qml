@@ -109,7 +109,7 @@ Item {
         font.family: UI.fontFamily
         font.pixelSize: fontSize
         font.bold: UI.fontBold
-        color: UI.fontColor
+        color: UI.fontColor[formFactor]
     }
 
     /// shows an annotation
@@ -125,7 +125,7 @@ Item {
 
         font.pixelSize: UI.annotationFontSize
         font.bold: false
-        color: UI.annotationFontColor
+        color: UI.annotationFontColor[formFactor]
     }
 
     PressArea {

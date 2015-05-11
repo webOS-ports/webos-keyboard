@@ -150,7 +150,7 @@ Item {
                     font.family: UI.fontFamily
                     font.pixelSize: text.length > 2 ? UI.smallFontSize : UI.fontSize
                     font.bold: UI.fontBold
-                    color: key.highlight ? "orange"  : UI.fontColor
+                    color: key.highlight ? "#4B97DE"  : UI.fontColor[formFactor]
                 }
 
                 MouseArea {

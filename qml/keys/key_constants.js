@@ -21,15 +21,20 @@
 var keyMargins  	=   0//1 //1.8;    // gu
 var fontSize    	=   22;    // gu
 var fontFamily  	=   "Prelude";
-var fontColor  		=   "#141414"
+var fontColor  		=   {"tablet" : "#141414",
+                         "phone"  : "#FFFFFF"}
+
 var fontBold    	=   false
 var fontBoldAction  =   true
 
 var annotationFontSize = 14; // gu
 var annotationMargins = 0.7; // gu
-var annotationFontColor = "#646464"
+var annotationFontColor = {"tablet" : "#141414",
+                           "phone"  : "#0004FF"}
 
-var greyColor	=	"#D2D2D2"
+
+var greyColor	=	{"tablet" : "#D2D2D2",
+                     "phone"  : "#0004FF"}
 
 /* magnifier */
 var magnifierHorizontalPadding = 1; // gu, stretch the magnifier a little bit in x-axis

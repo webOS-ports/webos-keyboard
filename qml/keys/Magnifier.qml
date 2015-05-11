@@ -63,7 +63,7 @@ Item {
             font.family: UI.fontFamily
             font.pixelSize: UI.fontSize 
             font.bold: UI.fontBold
-            color: UI.fontColor
+            color: UI.fontColor[formFactor]
         }
 
         NumberAnimation {
