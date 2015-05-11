@@ -17,15 +17,20 @@
  */
 
 import QtQuick 2.0
+import LunaNext.Common 0.1
 
 import "key_constants.js" as UI
 
 ActionKey {
+    id: actionKey
+
     iconNormal: "icon-hide-keyboard"
     iconShifted: "icon-hide-keyboard"
     iconCapsLock: "icon-hide-keyboard"
 
     width: panel.keyWidth;
+
+    property variant keyboardSizesModel: [ "XS", "S", "M", "L" ]
 
     Image {
 
@@ -47,7 +52,12 @@ ActionKey {
             maliit_geometry.shown = false;
         }
 
-        onPressAndHold: canvas.keyboardSizeMenuShown = true
-
+        onPressAndHold: {
+            if (keyboardSizesModel !== null) {
+                keyboardSizeMenu.extendedListModel = keyboardSizesModel;
+                keyboardSizeMenu.currentlyAssignedKey = actionKey;
+                panel.keyboardSizeMenuShown = true;
+            }
+        }
     }
 }

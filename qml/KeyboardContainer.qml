@@ -32,6 +32,9 @@ Item {
 
     property string activeKeypadState: "NORMAL"
     property alias popoverEnabled: extendedKeysSelector.enabled
+    property alias keyboardSizeMenuShown: keyboardSizeMenu.enabled
+    property alias languagesMenuShown: languagesMenu.enabled
+    property string currentKeyboardSize: "M"
 
     state: "CHARACTERS"
 
@@ -49,10 +52,26 @@ Item {
         onLoaded: activeKeypadState = "NORMAL"
     }
 
-    ExtendedKeysSelector {
+    ExtendedListSelector {
         id: extendedKeysSelector
         objectName: "extendedKeysSelector"
         anchors.fill: parent
+
+        onItemSelected: event_handler.onKeyReleased(modelData);
+    }
+
+    ExtendedListSelector {
+        id: keyboardSizeMenu
+        anchors.fill: parent
+
+        onItemSelected: panel.currentKeyboardSize = modelData;
+    }
+
+    ExtendedListSelector {
+        id: languagesMenu
+        anchors.fill: parent
+
+        onItemSelected: maliit_input_method.activeLanguage = modelData;
     }
 
     Audio {

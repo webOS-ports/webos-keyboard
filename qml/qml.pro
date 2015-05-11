@@ -33,11 +33,9 @@ OTHER_FILES += \
     keys/CharKey.qml \
     keys/BackspaceKey.qml \
     keys/DropShadow.qml \
-    keys/ExtendedKeysSelector.qml \
-    keys/KeyboardSizeMenu.qml \
-	keys/KeyPad.qml \
+    keys/ExtendedListSelector.qml \
     keys/LanguageKey.qml \
-    keys/LanguageMenu.qml \
+	keys/KeyPad.qml \
     keys/Magnifier.qml \
     keys/OneTwoKey.qml \
     keys/PressArea.qml \

@@ -120,32 +120,35 @@ var bottom_margin = 0; // gu
 var urlLayoutLeftSpacerSize = 5; // gu
 var emailLayoutUrlKeyPadding = 4; // gu
 
-/* language menu */
-var languageMenuListViewPadding = 2.22; // gu
-var languageMenuCorner = 2.5; // gu
-
-
 var wordribbonHeight = 50;
 
-var phoneKeyboardHeightPortrait = 0.365;
-//var phoneKeyboardHeightLandscape = 0.50;
+function getHeightRatio(formFactor, screenHeight, isLandscape, sizeChoice) {
+    if( isLandscape ) {
+        var keyboardHeightLandscape = { "XS": 0.31640625, /* 243 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
+                                         "S": 0.379557292, /* (340+243 / 2)  / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
+                                         "M": 0.44270833, /* 340 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
+                                         "L": 0.51171875 }; /* 393 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
 
-var phoneKeyboardHeightLandscape = 0.51171875; /* 240 / 1024 based on Touchpads resolution, might need adjusting for widescreen tablets*/	
+        // no differentiation between phone and tablet: good choice?
+        return keyboardHeightLandscape[sizeChoice];
+    }
+    else {
+        if( formFactor === "phone" ) {
+            /* some legacy code that might be of use to us for VKB on phones
 
+            var height = keyboardWidth * 200 / 320;	// arbitrary proportions...
+            if (height < 480)
+                height = 160;	// shrink height for Pixie & Broadway, and some horizontal layout
+            if (height > 300)
+                height = 300;
+            */
 
-/* some legacy code that might be of use to us in the future for VKB in landscape on phones:
+            return 0.365;
+        }
+        else if( formFactor === "tablet" ) {
+            return 0.28;
+        }
+    }
 
-			height = width * 200 / 320;	// arbitrary proportions...
-			if (size.height() < 480)
-				height = 160;	// shrink height for Pixie & Broadway, and some horizontal layout
-			if (height > 300)
-				height = 300;
-
-*/
-
-var tabletKeyboardHeightPortrait = 0.28;
-var tabletKeyboardHeightLandscapeXS = 0.31640625; /* 243 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
-var tabletKeyboardHeightLandscapeS = 0.379557292; /* (340+243 / 2)  / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
-var tabletKeyboardHeightLandscapeM = 0.44270833; /* 340 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
-var tabletKeyboardHeightLandscapeL = 0.51171875; /* 393 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
-
+    return 0.365; // shouldn't come here
+}

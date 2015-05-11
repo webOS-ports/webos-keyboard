@@ -18,8 +18,6 @@
 
 import QtQuick 2.0
 
-import QtQuick.Window 2.0
-
 import "key_constants.js" as UI
 
 Item {
@@ -27,7 +25,7 @@ Item {
     enabled: false
     visible: enabled
 
-    property variant extendedKeysModel
+    property variant extendedListModel
     property Item currentlyAssignedKey
 
     property int currentlyAssignedKeyParentY: currentlyAssignedKey ? currentlyAssignedKey.parent.y : 0
@@ -47,6 +45,8 @@ Item {
 
         __repositionPopoverTo(currentlyAssignedKey);
     }
+
+    signal itemSelected(string modelData);
 
     ///
     // Item gets repositioned above the currently active key on keyboard.
@@ -123,7 +123,7 @@ Item {
         // spacing: units.gu( UI.popoverCellPadding )
         Repeater {
             id: keyRepeater
-            model: extendedKeysModel
+            model: extendedListModel
 
             Item {
                 id: key
@@ -161,18 +161,13 @@ Item {
 
                     onReleased: {
                         key.highlight = false;
-                        event_handler.onKeyReleased(modelData);
+                        popover.itemSelected(modelData);
                         popover.closePopover();
                     }
                 }
 
             }
         }
-    }
-
-    function enableMouseArea()
-    {
-        extendedKeysMouseArea.enabled = true
     }
 
     function __repositionPopoverTo(item)
@@ -192,7 +187,7 @@ Item {
 
     function closePopover()
     {
-        extendedKeysModel = null;
+        extendedListModel = null;
         popover.enabled = false;
     }
 }
