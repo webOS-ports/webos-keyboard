@@ -122,7 +122,7 @@ var languageMenuCorner = 2.5; // gu
 
 var wordribbonHeight = 50;
 
-//var phoneKeyboardHeightPortrait = 0.365;
+var phoneKeyboardHeightPortrait = 0.365;
 //var phoneKeyboardHeightLandscape = 0.50;
 
 var phoneKeyboardHeightLandscape = 0.51171875; /* 240 / 1024 based on Touchpads resolution, might need adjusting for widescreen tablets*/	
