@@ -8,7 +8,7 @@ Rectangle {
 
     QtObject {
         id: maliit_geometry
-        property real canvasHeight: 300
+        property rect popoverRect: Qt.rect(0,0,10,20);
         property rect visibleRect: Qt.rect(0,0,700,300);
         property int orientation: 0
         property bool shown: true

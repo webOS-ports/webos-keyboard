@@ -37,7 +37,7 @@ class KeyboardGeometry : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(int keypadHeight READ keypadHeight NOTIFY keypadHeightChanged)
-    Q_PROPERTY(int canvasHeight READ canvasHeight WRITE setCanvasHeight NOTIFY canvasHeightChanged)
+    Q_PROPERTY(QRectF popoverRect READ popoverRect WRITE setPopoverRect NOTIFY popoverRectChanged)
     Q_PROPERTY(QRectF visibleRect READ visibleRect WRITE setVisibleRect NOTIFY visibleRectChanged)
     Q_PROPERTY(Qt::ScreenOrientation orientation READ orientation NOTIFY orientationChanged)
     Q_PROPERTY(bool shown READ shown WRITE setShown NOTIFY shownChanged)
@@ -48,8 +48,8 @@ public:
     int keypadHeight() const;
     void setKeypadHeight(int height);
 
-    int canvasHeight() const;
-    void setCanvasHeight(int height);
+    const QRectF &popoverRect() const;
+    Q_SLOT void setPopoverRect(const QRectF &rect);
 
     const QRectF &visibleRect() const;
     Q_SLOT void setVisibleRect(const QRectF &rect);
@@ -62,14 +62,14 @@ public:
 
 Q_SIGNALS:
     void keypadHeightChanged();
-    void canvasHeightChanged();
+    void popoverRectChanged();
     void visibleRectChanged();
     void orientationChanged();
     void shownChanged();
     
 private:
     int m_keypadHeight;
-    int m_canvasHeight;
+    QRectF m_popoverRect;
     QRectF m_visibleRect;
     Qt::ScreenOrientation m_orientation;
     bool m_shown;

@@ -69,6 +69,16 @@ Item {
         width: Math.max(keypad.keyWidth, rowOfKeys.width + 10*2)
         height: isTwoLines ? 150 : 90
 
+        function __updatePopoverRect() {
+            var newPopoverRect = popover.mapToItem(null, x, y, width, height);
+            maliit_geometry.popoverRect = Qt.rect(newPopoverRect.x, newPopoverRect.y, newPopoverRect.width, newPopoverRect.height);
+        }
+
+        onXChanged: __updatePopoverRect();
+        onYChanged: __updatePopoverRect();
+        onWidthChanged: __updatePopoverRect();
+        onHeightChanged: __updatePopoverRect();
+
         Row {
             x: 0; y: 0; height: parent.height
             Image {
@@ -183,7 +193,7 @@ Item {
     function closePopover()
     {
         extendedKeysModel = null;
-        popover.enabled = false
+        popover.enabled = false;
     }
 }
 
