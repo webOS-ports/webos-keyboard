@@ -303,9 +303,6 @@ function reportKeyboardVisibleRect() {
     var vwidth = keyboardSurface.width;
     var vheight = keyboardComp.height + wordRibbon.height;
 
-    // height of the drawable region (can be bigger than the height dedicated to the clickable region)
-    maliit_geometry.canvasHeight = keyboardComp.height + Math.max(wordRibbon.height, keypad.keyHeight);;
-
     var obj = fullScreenItem.mapFromItem(keyboardSurface, vx, vy, vwidth, vheight);
     maliit_geometry.visibleRect = Qt.rect(obj.x, obj.y, obj.width, obj.height);
 }
