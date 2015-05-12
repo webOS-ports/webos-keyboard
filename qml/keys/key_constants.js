@@ -29,7 +29,7 @@ var fontBoldAction  =   true
 
 var annotationFontSize = "14pt"; // gu
 var annotationMargins = 0.7; // gu
-var annotationFontColor = {"tablet" : "#141414",
+var annotationFontColor = {"tablet" : "#646464",
                            "phone"  : "#0004FF"}
 
 
