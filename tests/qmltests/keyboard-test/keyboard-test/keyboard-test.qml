@@ -81,12 +81,30 @@ Rectangle {
                     checked: maliit_word_engine.enabled
                     onClicked: maliit_word_engine.enabled = !maliit_word_engine.enabled;
                 }
+                Button {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    property string formFactorStr: Settings.tabletUi ? "tablet" : "phone"
+                    text: "form factor : " + formFactorStr
+                    onClicked: {
+                        keyboardLoader.sourceComponent = undefined;
+                        Settings.tabletUi = !Settings.tabletUi;
+                        formFactorStr = Settings.tabletUi ? "tablet" : "phone";
+                        keyboardLoader.sourceComponent = kbdComponent;
+                    }
+                }
             }
         }
     }
 
-    Keyboard {
-        anchors.fill: parent
+    Component {
+        id: kbdComponent
+        Keyboard {}
     }
+    Loader {
+        id: keyboardLoader
+        anchors.fill: parent
+        sourceComponent: kbdComponent
+    }
+
 }
 
