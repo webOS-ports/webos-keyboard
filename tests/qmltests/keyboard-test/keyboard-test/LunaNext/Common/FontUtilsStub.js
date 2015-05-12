@@ -21,43 +21,43 @@
 Qt.include("UnitsStub.js")
 
 function modularScale(size) {
-    if (size == "xx-small" || size == "8pt") {
+    if (size === "xx-small" || size === "8pt") {
         return 0.5714;
-    } else if (size == "x-small" || size == "10pt") {
+    } else if (size === "x-small" || size === "10pt") {
         return 0.7143;
-    } else if (size == "small" || size == "12pt") {
+    } else if (size === "small" || size === "12pt") {
         return 0.8571;
-    } else if (size == "13pt") {
+    } else if (size === "13pt") {
         return 0.9286;
-    } else if (size == "medium" || size == "14pt") {
+    } else if (size === "medium" || size === "14pt") {
         return 1.0;
-    } else if (size == "15pt") {
+    } else if (size === "15pt") {
         return 1.0714;
-    } else if (size == "16pt") {
+    } else if (size === "16pt") {
         return 1.1429;
-    } else if (size == "17pt") {
+    } else if (size === "17pt") {
         return 1.2143;
-    } else if (size == "18pt") {
+    } else if (size === "18pt") {
         return 1.2857;
-    } else if (size == "large" || size == "20pt") {
+    } else if (size === "large" || size === "20pt") {
         return 1.4286;
-    } else if (size == "22pt") {
+    } else if (size === "22pt") {
         return 1.5714;
-    } else if (size == "24pt") {
+    } else if (size === "24pt") {
         return 1.7143;
-    } else if (size == "26pt") {
+    } else if (size === "26pt") {
         return 1.8571;
-    } else if (size == "28pt") {
+    } else if (size === "28pt") {
         return 2.0;
-    } else if (size == "30pt") {
+    } else if (size === "30pt") {
         return 2.1429;
-    } else if (size == "x-large" || size == "32pt") {
+    } else if (size === "x-large" || size === "32pt") {
         return 2.2857;
-    } else if (size == "36pt") {
+    } else if (size === "36pt") {
         return 2.5714;
-    } else if (size == "48pt") {
+    } else if (size === "48pt") {
         return 3.4286;
-    } else if (size == "72pt") {
+    } else if (size === "72pt") {
         return 5.1429;
     }
     return 0.0;

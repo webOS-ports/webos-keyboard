@@ -65,7 +65,7 @@ CharKey {
         anchors.centerIn: parent
 		anchors.horizontalCenterOffset: action === "return" ? Units.gu(2) : 0
         font.family: UI.fontFamily
-        font.pixelSize: fontSize
+        font.pixelSize: FontUtils.sizeToPixels(fontSize);
         font.bold: UI.fontBoldAction
         style: Text.Raised
         styleColor: "black"
