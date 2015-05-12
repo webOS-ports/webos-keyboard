@@ -156,7 +156,7 @@ Item {
         onPressAndHold: {
             if (activeExtendedModel != undefined && !noMagnifier) {
                 extendedKeysSelector.enabled = true
-                extendedKeysSelector.extendedKeysModel = activeExtendedModel
+                extendedKeysSelector.extendedListModel = activeExtendedModel
                 extendedKeysSelector.currentlyAssignedKey = key
 				annotationLabel.visible = true
 			}

@@ -19,6 +19,8 @@
 import QtQuick 2.0
 
 ActionKey {
+    id: actionKey
+
     iconNormal: "language";
     iconShifted: "language";
     iconCapsLock: "language";
@@ -31,6 +33,10 @@ ActionKey {
     MouseArea {
         anchors.fill: parent
         preventStealing: true
-        onPressAndHold: canvas.languageMenuShown = true
+        onPressAndHold: {
+            languagesMenu.extendedListModel = maliit_input_method.enabledLanguages
+            languagesMenu.currentlyAssignedKey = actionKey
+            panel.languagesMenuShown = true
+        }
     }
 }

@@ -194,26 +194,7 @@ Item {
                     anchors.bottomMargin: units.gu( UI.bottom_margin )
                     width: parent.width
 
-                    onPopoverEnabledChanged: fullScreenItem.reportKeyboardVisibleRect();
-                }
-
-                LanguageMenu {
-                    id: languageMenu
-                    anchors.centerIn: parent
-                    width: 400;
-                    height: keypad.height;
-                    enabled: canvas.languageMenuShown
-                    opacity: canvas.languageMenuShown ? 1.0 : 0.0
-                }
-				
-				KeyboardSizeMenu {
-                    id: keyboardSizeMenu
-                    anchors.centerIn: parent
-                    //anchors.bottom: dismissKey.top
-                    width: 400;
-                    height: keypad.height;
-                    enabled: canvas.keyboardSizeMenuShown
-                    opacity: canvas.keyboardSizeMenuShown ? 1.0 : 0.0
+                    onCurrentKeyboardSizeChanged: fullScreenItem.calculateSize();
                 }
             } // keyboardComp
         }
@@ -270,24 +251,7 @@ function calculateSize()
     // warning: the following line is wrong if the vkb height doesn't always cover the screen current height
     var isLandscape = (fullScreenItem.width > fullScreenItem.height);
 
-    // TODO add tablet ratios
-    var newHeight;
-    if( Settings.tabletUi ) {
-        if( isLandscape ) {
-            newHeight = fullScreenItem.height * UI.tabletKeyboardHeightLandscapeL
-        }
-        else {
-            newHeight = fullScreenItem.height * UI.tabletKeyboardHeightPortrait
-        }
-    }
-    else {
-        if( isLandscape ) {
-            newHeight = fullScreenItem.height * UI.phoneKeyboardHeightLandscape
-        }
-        else {
-            newHeight = fullScreenItem.height * UI.phoneKeyboardHeightPortrait
-        }
-    }
+    var newHeight = fullScreenItem.height * UI.getHeightRatio(Settings.tabletUi ? "tablet" : "phone", fullScreenItem.height, isLandscape, keypad.currentKeyboardSize);
 
     canvas.height = newHeight + wordRibbon.height;
 
