@@ -50,7 +50,7 @@ Item {
     property string imgNormal: UI.imageGreyKey[formFactor]
     property string imgPressed: UI.imageGreyKeyPressed[formFactor]
     // fontSize can be overwritten when using the component, e.g. SymbolShiftKey uses smaller fontSize
-    property int fontSize: UI.fontSize
+    property string fontSize: UI.fontSize
 
     /// annotation shows a small label in the upper right corner
     // if the annotiation property is set, it will be used. If not, the first position in extended[] list or extendedShifted[] list will
@@ -115,7 +115,7 @@ Item {
         anchors.verticalCenterOffset: useHorizontalLayout ? units.gu(-0.25) : units.gu(0.5)
 
         font.family: UI.fontFamily
-        font.pixelSize: (panel.activeKeypadState === "NORMAL") ? UI.fontSize : UI.annotationFontSize
+        font.pixelSize: (panel.activeKeypadState === "NORMAL") ? FontUtils.sizeToPixels(UI.fontSize) : FontUtils.sizeToPixels(UI.annotationFontSize)
         font.bold: UI.fontBold
         color: (panel.activeKeypadState === "NORMAL") ? UI.fontColor[formFactor] : UI.annotationFontColor[formFactor]
         style: (panel.activeKeypadState === "NORMAL") ? Text.Raised : Text.Normal
@@ -140,7 +140,7 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
         anchors.verticalCenterOffset: useHorizontalLayout ? units.gu(-0.25) : units.gu(-1.75)
 
-        font.pixelSize: (panel.activeKeypadState === "NORMAL") ? UI.annotationFontSize : UI.fontSize
+        font.pixelSize: (panel.activeKeypadState === "NORMAL") ? FontUtils.sizeToPixels(UI.annotationFontSize) : FontUtils.sizeToPixels(UI.fontSize)
         font.bold: false
         color: (panel.activeKeypadState !== "NORMAL") ? UI.fontColor[formFactor] : UI.annotationFontColor[formFactor]
         style: (panel.activeKeypadState !== "NORMAL") ? Text.Raised : Text.Normal
@@ -158,7 +158,7 @@ Item {
         anchors.bottom: parent.bottom
         anchors.bottomMargin: useHorizontalLayout ? units.gu(1.4) : units.gu(2.0)
 
-        font.pixelSize: UI.annotationFontSize 
+        font.pixelSize: FontUtils.sizeToPixels(UI.annotationFontSize)
         font.bold: false
         style: Text.Raised
         styleColor: "white"

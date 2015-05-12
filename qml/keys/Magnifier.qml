@@ -17,6 +17,7 @@
  */
 
 import QtQuick 2.0
+import LunaNext.Common 0.1
 import "key_constants.js" as UI
 
 /*!
@@ -61,7 +62,7 @@ Item {
             anchors.centerIn: parent
 
             font.family: UI.fontFamily
-            font.pixelSize: UI.fontSize 
+            font.pixelSize: FontUtils.sizeToPixels(UI.fontSize)
             font.bold: UI.fontBold
             color: UI.fontColor[formFactor]
         }

@@ -48,7 +48,7 @@ Item {
     property string imgNormal: UI.imageGreyKey[formFactor]
     property string imgPressed: UI.imageGreyKeyPressed[formFactor]
     // fontSize can be overwritten when using the component, e.g. SymbolShiftKey uses smaller fontSize
-    property int fontSize: UI.fontSize
+    property string fontSize: UI.fontSize
 
     /// annotation shows a small label in the upper right corner
     // if the annotiation property is set, it will be used. If not, the first position in extended[] list or extendedShifted[] list will
@@ -107,7 +107,7 @@ Item {
         anchors.bottom: parent.verticalCenter
         anchors.margins: 0, 0, 0, -25
         font.family: UI.fontFamily
-        font.pixelSize: fontSize
+        font.pixelSize: FontUtils.sizeToPixels(fontSize);
         font.bold: UI.fontBold
         color: UI.fontColor[formFactor]
     }
@@ -123,7 +123,7 @@ Item {
         anchors.bottom: parent.verticalCenter
         anchors.margins: 0, 0, 0, 5
 
-        font.pixelSize: UI.annotationFontSize
+        font.pixelSize: FontUtils.sizeToPixels(UI.annotationFontSize);
         font.bold: false
         color: UI.annotationFontColor[formFactor]
     }

@@ -19,7 +19,7 @@
 .pragma library
 
 var keyMargins  	=   0//1 //1.8;    // gu
-var fontSize    	=   22;    // gu
+var fontSize    	=   "22pt";    // gu
 var fontFamily  	=   "Prelude";
 var fontColor  		=   {"tablet" : "#141414",
                          "phone"  : "#FFFFFF"}
@@ -27,7 +27,7 @@ var fontColor  		=   {"tablet" : "#141414",
 var fontBold    	=   false
 var fontBoldAction  =   true
 
-var annotationFontSize = 14; // gu
+var annotationFontSize = "14pt"; // gu
 var annotationMargins = 0.7; // gu
 var annotationFontColor = {"tablet" : "#141414",
                            "phone"  : "#0004FF"}
@@ -42,8 +42,8 @@ var magnifierVerticalPadding = 1; // gu, stretch the magnifier a little bit in y
 
 /* special keys */
 var actionKeyPadding = 2;  // gu, action keys are a bit bigger
-var symbolShiftKeyFontSize = 22; // gu
-var smallFontSize = 14; // gu, for keys that show more than one char, e.g. '.com'
+var symbolShiftKeyFontSize = "22pt"; // gu
+var smallFontSize = "14pt"; // gu, for keys that show more than one char, e.g. '.com'
 
 /* extended keys */
 var popoverCellPadding = 2.2; // gu

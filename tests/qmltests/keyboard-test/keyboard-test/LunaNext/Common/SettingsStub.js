@@ -35,8 +35,8 @@ var displayHeight = 800;
 var dpi = 216;
 /**/
 /* Tofe little laptop */
-var displayWidth = 800;
-var displayHeight = 600;
+var displayWidth = 1024;
+var displayHeight = 768 ;
 var dpi = 114;
 /**/
 

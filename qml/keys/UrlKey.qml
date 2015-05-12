@@ -17,6 +17,7 @@
  */
 
 import QtQuick 2.0
+import LunaNext.Common 0.1
 import "../keys/key_constants.js" as UI
 
 CharKey {
