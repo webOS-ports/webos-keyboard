@@ -35,9 +35,9 @@ Item {
 
     property bool isTwoLines: keyRepeater.count>5
 
-    onCurrentlyAssignedKeyXChanged: __repositionPopoverTo(currentlyAssignedKey)
-    onCurrentlyAssignedKeyYChanged: __repositionPopoverTo(currentlyAssignedKey)
-    onCurrentlyAssignedKeyParentYChanged: __repositionPopoverTo(currentlyAssignedKey);
+    onCurrentlyAssignedKeyXChanged: if(currentlyAssignedKey) __repositionPopoverTo(currentlyAssignedKey);
+    onCurrentlyAssignedKeyYChanged: if(currentlyAssignedKey) __repositionPopoverTo(currentlyAssignedKey)
+    onCurrentlyAssignedKeyParentYChanged: if(currentlyAssignedKey) __repositionPopoverTo(currentlyAssignedKey);
 
     onCurrentlyAssignedKeyChanged:
     {
