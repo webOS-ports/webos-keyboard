@@ -151,7 +151,7 @@ Item {
 	Text {
         id: annotationLabel2
         //text: (panel.activeKeypadState != "NORMAL") ? __annotationLabelShifted : __annotationLabelNormal
-		text: "..." //__annotationLabelNormal
+		text: "…" //__annotationLabelNormal
 
         anchors.right: parent.right
         anchors.rightMargin: useHorizontalLayout ? units.gu(1.0) : units.gu(2.0)

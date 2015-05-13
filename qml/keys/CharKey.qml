@@ -88,7 +88,7 @@ Item {
 					__annotationLabelShifted = label
 				}
 				else{
-                    __annotationLabelNormal = "..."
+                    __annotationLabelNormal = "…"
 				}
 			}
             if (extendedShifted) {
@@ -96,7 +96,7 @@ Item {
 					__annotationLabelShifted = extendedShifted[0]
 				}
 				else{
-					__annotationLabelShifted = "..."
+					__annotationLabelShifted = "…"
 				}
 			}
         }
