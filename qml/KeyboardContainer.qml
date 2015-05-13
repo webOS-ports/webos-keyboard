@@ -19,6 +19,7 @@
 import QtQuick 2.0
 import QtMultimedia 5.0
 import QtQuick.Window 2.0
+import LuneOSKeyboard 1.0
 import "languages/"
 import "keys/"
 import LunaNext.Common 0.1
