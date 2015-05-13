@@ -52,9 +52,10 @@ CharKey {
         id: iconImage
         source: Qt.resolvedUrl("../images/" + formFactor + "/" + __icon + ".png")
         anchors.centerIn: parent
+		anchors.verticalCenterOffset: Units.gu(-0.25)
         visible: (label == "")
-       // width: units.gu(2.5)
-       // height: units.gu(2.5)
+        // width: units.gu(2.5)
+        height: parent.height * 0.7
 	   	smooth: true
 		fillMode: Image.PreserveAspectFit
     }
