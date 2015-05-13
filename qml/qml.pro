@@ -12,11 +12,16 @@ qml_keys.files = keys/*.qml keys/qmldir keys/*.js
 qml_languages.path = "$$UBUNTU_KEYBOARD_DATA_DIR/languages"
 qml_languages.files = languages/*.qml languages/*.js
 
-
 images.path = "$$UBUNTU_KEYBOARD_DATA_DIR/images"
-images.files = images/*.png images/*.sci images/phone/*.png images/tablet/*.png
+images.files = images/*.png
 
-INSTALLS += qml qml_keys qml_languages images
+images_phone.path = "$$UBUNTU_KEYBOARD_DATA_DIR/images/phone"
+images_phone.files = images/phone/*.png
+
+images_tablet.path = "$$UBUNTU_KEYBOARD_DATA_DIR/images/tablet"
+images_tablet.files = images/tablet/*.png
+
+INSTALLS += qml qml_keys qml_languages images images_phone images_tablet
 
 # for QtCreator
 OTHER_FILES += \

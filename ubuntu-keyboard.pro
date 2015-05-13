@@ -92,15 +92,5 @@ SUBDIRS = \
     src \
     data \
     qml \
-#    benchmark \
     plugins \
-
-!notests {
-    SUBDIRS += tests
-}
-
-
-tests.target = test
-tests.command = cd tests/editor
-QMAKE_EXTRA_TARGETS += tests
 

@@ -1,7 +1,7 @@
 import QtQuick 2.3
 import QtQuick.Controls 1.1
 import LunaNext.Common 0.1
-import "../../../../qml"
+import "../../qml"
 
 Rectangle {
     width: Settings.displayWidth ? Settings.displayWidth : 1024
