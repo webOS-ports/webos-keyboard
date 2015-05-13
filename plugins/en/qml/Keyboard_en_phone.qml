@@ -23,7 +23,7 @@ KeyPad {
     anchors.fill: parent
 
     content: c1
-    symbols: "languages/en_webos/Keyboard_symbols.qml"
+    symbols: "languages/Keyboard_symbols.qml"
 
     Column {
         id: c1
