@@ -19,31 +19,45 @@
 
 var isTestEnvironment = true;
 
+/* mako
+var displayWidth = 768;
+var displayHeight = 1280;
+var gridUnit = 18;
+var dpi = 264;
+var tabletUi = false;
+/**/
 /* A500 alike
 var displayWidth = 1024;
 var displayHeight = 768;
+var gridUnit = 18;
 var dpi = 148;
+var tabletUi = true;
 /**/
 /*GNex alike
-var displayWidth = 768;
+var displayWidth = 720;
 var displayHeight = 1280;
-var dpi = 311;
+var gridUnit = 18;
+var dpi = 264;
+var tabletUi = false;
 /**/
 /* N7 alike
-var displayWidth = 1280;
-var displayHeight = 800;
+var displayWidth = 800;
+var displayHeight = 1280;
+var gridUnit = 14;
 var dpi = 216;
+var tabletUi = true;
 /**/
-/* Tofe little laptop */
+/* tenderloin alike */
 var displayWidth = 1024;
 var displayHeight = 768 ;
-var dpi = 114;
+var dpi = 132;
+var gridUnit = 10;
+var tabletUi = true;
 /**/
 
 var displayFps = true;
 var fontStatusBar = "Prelude"
 var showReticle = false;
-var tabletUi = true;
 
 // not used
 var lunaSystemResourcesPath = "./resourcesPath";
@@ -54,4 +68,3 @@ var positiveSpaceTopPadding = 0;
 var positiveSpaceBottomPadding = 0;
 
 var layoutScale = dpi/132;
-var gridUnit = 8;
