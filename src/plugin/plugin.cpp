@@ -38,7 +38,7 @@ MaliitKeyboardPlugin::MaliitKeyboardPlugin(QObject *parent)
     : QObject(parent)
     , Maliit::Plugins::InputMethodPlugin()
 {
-    qmlRegisterUncreatableType<InputMethod>("UbuntuKeyboard", 1, 0, "InputMethod",
+    qmlRegisterUncreatableType<InputMethod>("LuneOSKeyboard", 1, 0, "InputMethod",
                                             QString("InputMethod can't be created in QML"));
 }
 
