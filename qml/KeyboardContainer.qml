@@ -21,7 +21,6 @@ import QtMultimedia 5.0
 import QtQuick.Window 2.0
 import "languages/"
 import "keys/"
-import UbuntuKeyboard 1.0
 import LunaNext.Common 0.1
 
 Item {
