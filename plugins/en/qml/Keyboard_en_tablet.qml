@@ -25,7 +25,7 @@ KeyPad {
     nbNumericalRows: 1
 
     content: c1
-    symbols: "languages/Keyboard_symbols.qml"
+    symbols: "languages/Keyboard_symbols_tablet.qml"
 
     Column {
         id: c1

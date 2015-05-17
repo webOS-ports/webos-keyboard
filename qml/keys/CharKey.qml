@@ -40,7 +40,6 @@ Item {
     property alias valueToSubmit: keyLabel.text
 
     property string action
-    property bool noMagnifier: false
     property bool skipAutoCaps: false
 
     /* design */
@@ -49,11 +48,14 @@ Item {
     property string imgPressed: UI.imageWhiteKeyPressed[formFactor]
     // fontSize can be overwritten when using the component, e.g. SymbolShiftKey uses smaller fontSize
     property string fontSize: UI.fontSize;
-
+	
+	//We only want the maginifier for phone, so set the noMagnifier to true for tablets
+	property bool noMagnifier: formFactor==="tablet" ? true : false
+	
     /// annotation shows a small label in the upper right corner
     // if the annotiation property is set, it will be used. If not, the first position in extended[] list or extendedShifted[] list will
     // be used, depending on the state. If no extended/extendedShifted arrays exist, no annotation is shown
-//    property string annotation: "…"
+
     property string annotation: ""
 
     /*! indicates if te key is currently pressed/down*/
@@ -122,7 +124,7 @@ Item {
         anchors.verticalCenterOffset: units.gu(-0.25)
         font.family: UI.fontFamily
         font.pixelSize: FontUtils.sizeToPixels(fontSize)
-        font.bold: UI.fontBold
+        font.bold: UI.fontBold[formFactor]
         color: UI.fontColor[formFactor]
 		smooth: true
 		visible: action === ""
@@ -154,7 +156,7 @@ Item {
         anchors.fill: key
 
         onPressAndHold: {
-            if (activeExtendedModel != undefined && !noMagnifier) {
+            if (activeExtendedModel != undefined) {
                 extendedKeysSelector.enabled = true
                 extendedKeysSelector.extendedListModel = activeExtendedModel
                 extendedKeysSelector.currentlyAssignedKey = key

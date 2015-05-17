@@ -116,7 +116,7 @@ Item {
 
         font.family: UI.fontFamily
         font.pixelSize: (panel.activeKeypadState === "NORMAL") ? FontUtils.sizeToPixels(UI.fontSize) : FontUtils.sizeToPixels(UI.annotationFontSize)
-        font.bold: UI.fontBold
+        font.bold: UI.fontBold[formFactor]
         color: (panel.activeKeypadState === "NORMAL") ? UI.fontColor[formFactor] : UI.annotationFontColor[formFactor]
         style: (panel.activeKeypadState === "NORMAL") ? Text.Raised : Text.Normal
         styleColor: "white"

@@ -24,21 +24,23 @@ var fontFamily  	=   "Prelude";
 var fontColor  		=   {"tablet" : "#141414",
                          "phone"  : "#FFFFFF"}
 
-var fontBold    	=   false
+var fontBold    	=   {"tablet" : false,
+                         "phone"  : true}
+
 var fontBoldAction  =   true
 
 var annotationFontSize = "14pt"; // gu
 var annotationMargins = 0.7; // gu
 var annotationFontColor = {"tablet" : "#646464",
-                           "phone"  : "#0004FF"}
+                           "phone"  : "#505050"}
 
 
 var greyColor	=	{"tablet" : "#D2D2D2",
-                     "phone"  : "#0004FF"}
+                     "phone"  : "#D2D2D2"}
 
 /* magnifier */
-var magnifierHorizontalPadding = 1; // gu, stretch the magnifier a little bit in x-axis
-var magnifierVerticalPadding = 1; // gu, stretch the magnifier a little bit in y-axis
+var magnifierHorizontalPadding = 0; // gu, stretch the magnifier a little bit in x-axis
+var magnifierVerticalPadding = 0; // gu, stretch the magnifier a little bit in y-axis
 
 /* special keys */
 var actionKeyPadding = 2;  // gu, action keys are a bit bigger
@@ -50,6 +52,7 @@ var popoverCellPadding = 2.2; // gu
 var popoverTopMargin   = 10; // dp
 var popoverEdgeMargin = 2.2; // gu
 var popoverSquat      = 3; // gu, when no wordribbon, avoid click-through above input trap
+var popoverFontSize   = "32pt";    // gu 
 
 var imageWhiteKey        = { "tablet" : "../images/tablet/key_bg_white.png",
                              "phone"  : "../images/phone/key_bg_white.png"  };

@@ -17,12 +17,40 @@
  */
 
 import QtQuick 2.0
+import QtMultimedia 5.0
 
-/**
-  * an invisible spacer the size of a regular key.
-  * This component exists to improve readability.
-  */
+import LunaNext.Common 0.1
+
+import "key_constants.js" as UI
 
 Item {
-    width: panel.keyWidth;
+    id: key
+
+    property int padding: 0
+
+    width: panel.keyWidth
+    height: panel.keyHeight
+    property string imgNormal: UI.imageWhiteKey[formFactor]
+    property string imgPressed: UI.imageWhiteKeyPressed[formFactor]
+
+
+  
+    BorderImage {
+        id: buttonImage
+        border { left: 27; top: 29; right: 27; bottom: 29 }
+        anchors.centerIn: parent
+        anchors.fill: key
+        anchors.margins: units.dp( UI.keyMargins );
+        source: key.imgNormal
+    }
+
+
+    Connections {
+        target: swipeArea.drag
+        onActiveChanged: {
+            if (swipeArea.drag.active)
+                keyMouseArea.cancelPress();
+        }
+    }
+
 }

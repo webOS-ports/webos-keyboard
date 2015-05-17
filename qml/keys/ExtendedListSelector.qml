@@ -35,9 +35,9 @@ Item {
 
     property bool isTwoLines: keyRepeater.count>5
 
-    onCurrentlyAssignedKeyXChanged: __repositionPopoverTo(currentlyAssignedKey)
-    onCurrentlyAssignedKeyYChanged: __repositionPopoverTo(currentlyAssignedKey)
-    onCurrentlyAssignedKeyParentYChanged: __repositionPopoverTo(currentlyAssignedKey);
+    onCurrentlyAssignedKeyXChanged: if(currentlyAssignedKey) __repositionPopoverTo(currentlyAssignedKey);
+    onCurrentlyAssignedKeyYChanged: if(currentlyAssignedKey) __repositionPopoverTo(currentlyAssignedKey)
+    onCurrentlyAssignedKeyParentYChanged: if(currentlyAssignedKey) __repositionPopoverTo(currentlyAssignedKey);
 
     onCurrentlyAssignedKeyChanged:
     {
@@ -150,7 +150,7 @@ Item {
                     text: modelData
                     font.family: UI.fontFamily
                     font.pixelSize: text.length > 2 ? FontUtils.sizeToPixels(UI.smallFontSize) : FontUtils.sizeToPixels(UI.fontSize)
-                    font.bold: UI.fontBold
+                    font.bold: UI.fontBold[formFactor]
                     color: key.highlight ? "#4B97DE"  : UI.fontColor[formFactor]
                 }
 

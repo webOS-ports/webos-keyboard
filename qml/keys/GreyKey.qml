@@ -108,7 +108,7 @@ Item {
         anchors.margins: 0, 0, 0, -25
         font.family: UI.fontFamily
         font.pixelSize: FontUtils.sizeToPixels(fontSize);
-        font.bold: UI.fontBold
+        font.bold: UI.fontBold[formFactor]
         color: UI.fontColor[formFactor]
     }
 

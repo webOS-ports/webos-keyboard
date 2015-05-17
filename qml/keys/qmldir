@@ -18,6 +18,7 @@ ReturnKey 1.0 ReturnKey.qml
 ShiftKey 1.0 ShiftKey.qml
 SpaceKey 1.0 SpaceKey.qml
 Spacer 1.0 Spacer.qml
+SpacerLuneOS 1.0 SpacerLuneOS.qml
 SymbolShiftKey 1.0 SymbolShiftKey.qml
 TabKey 1.0 TabKey.qml
 TrackBall 1.0 TrackBall.qml
