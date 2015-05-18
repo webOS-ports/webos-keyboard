@@ -33,7 +33,7 @@ Item {
     property int currentlyAssignedKeyX: currentlyAssignedKey ? currentlyAssignedKey.x : 0
     property int currentlyAssignedKeyY: currentlyAssignedKey ? currentlyAssignedKey.y : 0
 
-    property int numberOfLines: keyRepeater.count % 4 === 0 ? Math.floor(keyRepeater.count / 4)Math.floor(keyRepeater.count / 4) + 1
+    property int numberOfLines: Math.ceil(keyRepeater.count / 4)
 	
     onCurrentlyAssignedKeyXChanged: if(currentlyAssignedKey) __repositionPopoverTo(currentlyAssignedKey);
     onCurrentlyAssignedKeyYChanged: if(currentlyAssignedKey) __repositionPopoverTo(currentlyAssignedKey)
