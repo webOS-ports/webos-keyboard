@@ -23,7 +23,7 @@ KeyPad {
     anchors.fill: parent
 
     content: c1
-    symbols: "languages/Keyboard_symbols.qml"
+    symbols: "languages/Keyboard_symbols_tablet.qml"
 
     nbNumericalRows: 1
 

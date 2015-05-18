@@ -150,7 +150,7 @@ Item {
                     text: modelData
                     font.family: UI.fontFamily
                     font.pixelSize: text.length > 2 ? FontUtils.sizeToPixels(UI.smallFontSize) : FontUtils.sizeToPixels(UI.fontSize)
-                    font.bold: UI.fontBold
+                    font.bold: UI.fontBold[formFactor]
                     color: key.highlight ? "#4B97DE"  : UI.fontColor[formFactor]
                 }
 

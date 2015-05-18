@@ -62,8 +62,8 @@ Item {
             anchors.centerIn: parent
 
             font.family: UI.fontFamily
-            font.pixelSize: FontUtils.sizeToPixels(UI.fontSize)
-            font.bold: UI.fontBold
+            font.pixelSize: FontUtils.sizeToPixels(UI.popoverFontSize)
+            font.bold: UI.fontBold[formFactor]
             color: UI.fontColor[formFactor]
         }
 

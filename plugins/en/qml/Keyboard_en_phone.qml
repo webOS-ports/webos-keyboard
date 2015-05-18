@@ -23,29 +23,12 @@ KeyPad {
     anchors.fill: parent
 
     content: c1
-    symbols: "languages/Keyboard_symbols.qml"
+    symbols: "languages/Keyboard_symbols_phone.qml"
 
     Column {
         id: c1
         anchors.fill: parent
         spacing: 0
-
-        Row {
-            anchors.horizontalCenter: parent.horizontalCenter;
-            spacing: 0
-
-            CharKey { width: panel.keyWidth * 0.9; height: 45; imgNormal: UI.imageGreyKey["phone"]; imgPressed: UI.imageGreyKeyPressed["phone"]; label: "1"; shifted: "!"; extended: ["1", "!", "\u00B9" /* SUPERSCRIPT ONE ¹ */, "\u00BC" */VULGAR FRACTION ONE QUARTER ¼ */, "\u00BD" /*VULGAR FRACTION ONE HALF ½ *//*, Qt::Key_exclamdown*/]}
-            CharKey { width: panel.keyWidth * 0.9; height: 45; imgNormal: UI.imageGreyKey["phone"]; imgPressed: UI.imageGreyKeyPressed["phone"]; label: "2"; shifted: "@"; }
-            CharKey { width: panel.keyWidth * 0.9; height: 45; imgNormal: UI.imageGreyKey["phone"]; imgPressed: UI.imageGreyKeyPressed["phone"]; label: "3"; shifted: "#"; }
-            CharKey { width: panel.keyWidth * 0.9; height: 45; imgNormal: UI.imageGreyKey["phone"]; imgPressed: UI.imageGreyKeyPressed["phone"]; label: "4"; shifted: "$"; }
-            CharKey { width: panel.keyWidth * 0.9; height: 45; imgNormal: UI.imageGreyKey["phone"]; imgPressed: UI.imageGreyKeyPressed["phone"]; label: "5"; shifted: "%"; }
-            CharKey { width: panel.keyWidth * 0.9; height: 45; imgNormal: UI.imageGreyKey["phone"]; imgPressed: UI.imageGreyKeyPressed["phone"]; label: "6"; shifted: "^"; }
-            CharKey { width: panel.keyWidth * 0.9; height: 45; imgNormal: UI.imageGreyKey["phone"]; imgPressed: UI.imageGreyKeyPressed["phone"]; label: "7"; shifted: "&"; }
-            CharKey { width: panel.keyWidth * 0.9; height: 45; imgNormal: UI.imageGreyKey["phone"]; imgPressed: UI.imageGreyKeyPressed["phone"]; label: "8"; shifted: "*"; }
-            CharKey { width: panel.keyWidth * 0.9; height: 45; imgNormal: UI.imageGreyKey["phone"]; imgPressed: UI.imageGreyKeyPressed["phone"]; label: "9"; shifted: "("; }
-            CharKey { width: panel.keyWidth * 0.9; height: 45; imgNormal: UI.imageGreyKey["phone"]; imgPressed: UI.imageGreyKeyPressed["phone"]; label: "0"; shifted: ")"; }
-            TrackBall { width: c1.width - (panel.keyWidth*0.9*10); height: 45 }
-        }
 
         Row {
             anchors.horizontalCenter: parent.horizontalCenter;
@@ -61,40 +44,49 @@ KeyPad {
             CharKey { label: "i"; shifted: "I"; extended: ["î","ï","ì","í"]; extendedShifted: ["Î","Ï","Ì","Í"] }
             CharKey { label: "o"; shifted: "O"; extended: ["ö","ô","ò","ó"]; extendedShifted: ["Ö","Ô","Ò","Ó"] }
             CharKey { label: "p"; shifted: "P"; }
-            BackspaceKey {}
-        }
+         }
 
         Row {
             anchors.horizontalCenter: parent.horizontalCenter;
             spacing: 0
+			//SpacerLuneOS {width: panel.keyWidth * 0.25 }
+            CharKey { label: "a"; shifted: "A"; extended: ["ä","à","â","ª","á","å", "æ"]; extendedShifted: ["Ä","À","Â","ª","Á","Å","Æ"]; width: panel.keyWidth * 8/7 }
+            CharKey { label: "s"; shifted: "S"; extended: ["ß","$"]; extendedShifted: ["$"]; width: panel.keyWidth * 8/7 }
+            CharKey { label: "d"; shifted: "D"; extended: ["ð"]; extendedShifted: ["Ð"]; width: panel.keyWidth * 8/7 }
+            CharKey { label: "f"; shifted: "F"; width: panel.keyWidth * 8/7}
+            CharKey { label: "g"; shifted: "G"; width: panel.keyWidth * 8/7}
+            CharKey { label: "h"; shifted: "H"; width: panel.keyWidth * 8/7}
+            CharKey { label: "j"; shifted: "J"; width: panel.keyWidth * 8/7}
+            CharKey { label: "k"; shifted: "K"; width: panel.keyWidth * 8/7}
+            CharKey { label: "l"; shifted: "L"; width: panel.keyWidth * 8/7}
+			//SpacerLuneOS { width: panel.keyWidth * 0.25 }
+         }
 
-            CharKey { label: "a"; shifted: "A"; extended: ["ä","à","â","ª","á","å", "æ"]; extendedShifted: ["Ä","À","Â","ª","Á","Å","Æ"] }
-            CharKey { label: "s"; shifted: "S"; extended: ["ß","$"]; extendedShifted: ["$"] }
-            CharKey { label: "d"; shifted: "D"; extended: ["ð"]; extendedShifted: ["Ð"] }
-            CharKey { label: "f"; shifted: "F"; }
-            CharKey { label: "g"; shifted: "G"; }
-            CharKey { label: "h"; shifted: "H"; }
-            CharKey { label: "j"; shifted: "J"; }
-            CharKey { label: "k"; shifted: "K"; }
-            CharKey { label: "l"; shifted: "L"; }
-            ReturnKey { id: enterKey; }
-        }
+     //   Row {
+ Item {
+            //anchors.left: parent.left
+			//anchors.horizontalCenter: parent.horizontalCenter;
+            //anchors.margins: 50;
+            //spacing: 0
+            anchors.left: parent.left
+            anchors.right: parent.right
 
-        Row {
-            anchors.horizontalCenter: parent.horizontalCenter;
-            spacing: 0
+            height: panel.keyHeight;
+		    
+	// anchors.horizontalCenter: parent.horizontalCenter;
+        //    spacing: 0
 
-            ShiftKey {}
-            CharKey { label: "z"; shifted: "Z"; }
-            CharKey { label: "x"; shifted: "X"; }
-            CharKey { label: "c"; shifted: "C"; extended: ["ç"]; extendedShifted: ["Ç"] }
-            CharKey { label: "v"; shifted: "V"; }
-            CharKey { label: "b"; shifted: "B"; }
-            CharKey { label: "n"; shifted: "N"; extended: ["ñ"]; extendedShifted: ["Ñ"] }
-            CharKey { label: "m"; shifted: "M"; }
-            CharKey { label: ","; shifted: "/" }
-            CharKey { label: "."; shifted: "?" }
-            ShiftKey {}
+            ShiftKey {id: shiftKey; anchors.left: parent.left; /*anchors.right: zKey.left*/}
+			//SpacerLuneOS { }
+            CharKey { id: zKey; anchors.left: shiftKey.right; /*anchors.right: xKey.left;*/ label: "z"; shifted: "Z"; width: panel.keyWidth * 8/7; }
+            CharKey { id: xKey; anchors.left: zKey.right; /*anchors.right: cKey.left;*/ label: "x"; shifted: "X"; width: panel.keyWidth * 8/7; }
+            CharKey { id: cKey; anchors.left: xKey.right; /*anchors.right: vKey.left;*/ label: "c"; shifted: "C"; extended: ["ç"]; extendedShifted: ["Ç"]; width: panel.keyWidth * 8/7;  }
+            CharKey { id: vKey; anchors.left: cKey.right; /*anchors.right: bKey.left;*/ label: "v"; shifted: "V"; width: panel.keyWidth * 8/7; }
+            CharKey { id: bKey; anchors.left: vKey.right; /*anchors.right: nKey.left;*/ label: "b"; shifted: "B"; width: panel.keyWidth * 8/7; }
+            CharKey { id: nKey; anchors.left: bKey.right; /*anchors.right: mKey.left;*/ label: "n"; shifted: "N"; extended: ["ñ"]; extendedShifted: ["Ñ"]; width: panel.keyWidth * 8/7;  }
+            CharKey { id: mKey; anchors.left: nKey.right; /*anchors.right: backspaveKey.left;*/ label: "m"; shifted: "M"; width: panel.keyWidth * 8/7; }
+			//SpacerLuneOS { }
+            BackspaceKey {id: backspaceKey; anchors.left: mKey.right; anchors.right: parent.right}
         }
 
         Item {
@@ -103,13 +95,12 @@ KeyPad {
 
             height: panel.keyHeight;
 
-            TabKey         { id: tabKey;        label: "Tab";              anchors.left: parent.left; }
-			SymbolShiftKey { id: symShiftKey;                              anchors.left: tabKey.right; }
-            LanguageKey    { id: languageMenuButton;                       anchors.left: symShiftKey.right; }
-            SpaceKey       { id: spaceKey;                                 anchors.left: languageMenuButton.right; anchors.right: apostropheKey.left; noMagnifier: true }
-            CharKey        { id: apostropheKey; label: "'"; shifted: "\""; anchors.right: minusKey.left; }
-            CharKey        { id: minusKey;      label: "-"; shifted: "_";  anchors.right: dismissKey.left; }
-            DismissKey     { id: dismissKey;                               anchors.right: parent.right;}
+			SymbolShiftKey { id: symShiftKey; label: "123"; shifted: "123"; anchors.left: parent.left; }
+			LanguageKey    { id: languageMenuButton;                       anchors.left: symShiftKey.right; }
+            AnnotatedKey   { id: commaKey; label: ","; shifted: "/"; extended: [",", "/", "\\"]; extendedShifted: [",", "/", "\\"]; anchors.left: languageMenuButton.right}
+            SpaceKey       { id: spaceKey;                                 anchors.right: dotKey.left; anchors.left: commaKey.right; noMagnifier: true }
+            AnnotatedKey   { id: dotKey; label: "."; shifted: "?"; extended: [".", "?", "•", "…", "¿"]; extendedShifted: [".", "?", "•", "…", "¿"]; anchors.right: enterKey.left}
+            ReturnKey      { id: enterKey;      label: "Enter"; shifted: "Enter"; extended: "Enter";  anchors.right: parent.right;}
         }
     } // column
 }
