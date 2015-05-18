@@ -60,11 +60,12 @@ Item {
         Text {
             id: label
             anchors.centerIn: parent
+			anchors.verticalCenterOffset: Units.gu(-0.5)
 
             font.family: UI.fontFamily
             font.pixelSize: FontUtils.sizeToPixels(UI.popoverFontSize)
             font.bold: UI.fontBold[formFactor]
-            color: UI.fontColor[formFactor]
+            color: UI.magnifierFontColo[formFactor]
         }
 
         NumberAnimation {
