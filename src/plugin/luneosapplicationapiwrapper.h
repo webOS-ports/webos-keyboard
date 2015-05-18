@@ -14,8 +14,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef UBUNTUAPPLICATIONAPIWRAPPER_H
-#define UBUNTUAPPLICATIONAPIWRAPPER_H
+#ifndef LUNEOSAPPLICATIONAPIWRAPPER_H
+#define LUNEOSAPPLICATIONAPIWRAPPER_H
 
 #include "keyboardgeometry.h"
 
@@ -27,19 +27,19 @@
 #include <QTimer>
 
 /*
- * Class: UbuntuApplicationApiWrapper
- * The OSK-related functions in the ubuntu application api are marked as deprecated.
+ * Class: LuneOSApplicationApiWrapper
+ * The OSK-related functions in the luneos application api are marked as deprecated.
  * To ensure OSK works on platforms with & without (i.e. Mir), check which platform
  * we are running on: if SurfaceFlinger-based, call the deprecated API, else NOOP.
  *
  * Have added other little methods to help smooth the transition.
  */
 
-class UbuntuApplicationApiWrapper : public QObject
+class LuneOSApplicationApiWrapper : public QObject
 {
     Q_OBJECT
 public:
-    UbuntuApplicationApiWrapper();
+    LuneOSApplicationApiWrapper();
 
     int oskWindowRole() const;
 
@@ -79,4 +79,4 @@ private:
     QTimer m_geometryUpdateTimer;
 };
 
-#endif // UBUNTUAPPLICATIONAPIWRAPPER_H
+#endif // LUNEOSAPPLICATIONAPIWRAPPER_H

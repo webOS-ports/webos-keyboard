@@ -6,7 +6,7 @@ include($${TOP_SRCDIR}/config.pri)
 TARGET = dummy
 TEMPLATE = lib
 
-lang_sv.path = "$${UBUNTU_KEYBOARD_LIB_DIR}/sv/"
+lang_sv.path = "$${LUNEOS_KEYBOARD_LIB_DIR}/sv/"
 lang_sv.files = *.qml *.js
 
 INSTALLS += lang_sv
@@ -15,10 +15,8 @@ INSTALLS += lang_sv
 OTHER_FILES += \
     Keyboard_sv_tablet.qml \
     Keyboard_sv_tablet_email.qml \
-    Keyboard_sv_tablet_url.qml \
     Keyboard_sv_tablet_url_search.qml \
     Keyboard_sv_tablet.qml \
     Keyboard_sv_tablet_email.qml \
-    Keyboard_sv_tablet_url.qml \
     Keyboard_sv_tablet_url_search.qml
 

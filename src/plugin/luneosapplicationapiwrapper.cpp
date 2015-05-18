@@ -14,16 +14,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ubuntuapplicationapiwrapper.h"
+#include "luneosapplicationapiwrapper.h"
 
 // FIXME: this is hacky way of deciding if running on Touch platform or not
 #include <QtCore/qconfig.h>
 
-#ifdef HAVE_UBUNTU
+#ifdef HAVE_LUNEOS
 #ifdef QT_OPENGL_ES_2
-#include <ubuntu/ui/ubuntu_ui_session_service.h>
-#include <ubuntu/application/ui/window_properties.h>
-  #define HAVE_UBUNTU_PLATFORM_API
+#include <luneos/ui/luneos_ui_session_service.h>
+#include <luneos/application/ui/window_properties.h>
+  #define HAVE_LUNEOS_PLATFORM_API
 #endif
 #endif
 
@@ -33,15 +33,15 @@
 #include <QtGlobal>
 
 namespace {
-    const char gServerName[] = "ubuntu-keyboard-info";
+    const char gServerName[] = "luneos-keyboard-info";
 }
 
-UbuntuApplicationApiWrapper::UbuntuApplicationApiWrapper()
+LuneOSApplicationApiWrapper::LuneOSApplicationApiWrapper()
     : m_runningOnMir(false)
     , m_clientConnection(0)
     , m_geometry(0)
 {
-    if (qgetenv("QT_QPA_PLATFORM") == "ubuntumirclient") {
+    if (qgetenv("QT_QPA_PLATFORM") == "luneosmirclient") {
         m_runningOnMir = true;
     }
 
@@ -57,7 +57,7 @@ UbuntuApplicationApiWrapper::UbuntuApplicationApiWrapper()
                      this, SLOT(updateSharedInfo()));
 }
 
-void UbuntuApplicationApiWrapper::startLocalServer()
+void LuneOSApplicationApiWrapper::startLocalServer()
 {
     QString socketFilePath = buildSocketFilePath();
 
@@ -68,26 +68,26 @@ void UbuntuApplicationApiWrapper::startLocalServer()
             // The other possibility is that another instance of maliit-server is already
             // running, but that's absolutely unsupported.
             if (!socketFile.remove()) {
-                qWarning() << "UbuntuApplicationApiWrapper: unable to remove pre-existing"
+                qWarning() << "LuneOSApplicationApiWrapper: unable to remove pre-existing"
                            << socketFilePath ;
             }
         }
     }
 
     connect(&m_localServer, &QLocalServer::newConnection,
-            this, &UbuntuApplicationApiWrapper::onNewConnection);
+            this, &LuneOSApplicationApiWrapper::onNewConnection);
     bool ok = m_localServer.listen(socketFilePath);
     if (!ok) {
-        qWarning() << "UbuntuApplicationApiWrapper: failed to listen for connections on"
+        qWarning() << "LuneOSApplicationApiWrapper: failed to listen for connections on"
                    << socketFilePath;
     }
 }
 
-void UbuntuApplicationApiWrapper::reportOSKVisible(const int x, const int y, const int width, const int height)
+void LuneOSApplicationApiWrapper::reportOSKVisible(const int x, const int y, const int width, const int height)
 {
-#ifdef HAVE_UBUNTU_PLATFORM_API
+#ifdef HAVE_LUNEOS_PLATFORM_API
     if (!m_runningOnMir) { // following method not implemented on Mir
-        ubuntu_ui_report_osk_visible(x, y, width, height);
+        luneos_ui_report_osk_visible(x, y, width, height);
     }
 #else
     Q_UNUSED(x)
@@ -101,11 +101,11 @@ void UbuntuApplicationApiWrapper::reportOSKVisible(const int x, const int y, con
     updateSharedInfo();
 }
 
-void UbuntuApplicationApiWrapper::reportOSKInvisible()
+void LuneOSApplicationApiWrapper::reportOSKInvisible()
 {
-#ifdef HAVE_UBUNTU_PLATFORM_API
+#ifdef HAVE_LUNEOS_PLATFORM_API
     if (!m_runningOnMir) { // following method not implemented on Mir
-        ubuntu_ui_report_osk_invisible();
+        luneos_ui_report_osk_invisible();
     }
 #endif
 
@@ -114,16 +114,16 @@ void UbuntuApplicationApiWrapper::reportOSKInvisible()
                         this, SLOT(delayedGeometryUpdate()));
 }
 
-int UbuntuApplicationApiWrapper::oskWindowRole() const
+int LuneOSApplicationApiWrapper::oskWindowRole() const
 {
-#ifdef HAVE_UBUNTU_PLATFORM_API
+#ifdef HAVE_LUNEOS_PLATFORM_API
     return static_cast<int>(U_ON_SCREEN_KEYBOARD_ROLE);
 #else
     return 7;
 #endif
 }
 
-void UbuntuApplicationApiWrapper::sendInfoToClientConnection()
+void LuneOSApplicationApiWrapper::sendInfoToClientConnection()
 {
     if (!m_clientConnection
             || m_clientConnection->state() != QLocalSocket::ConnectedState) {
@@ -142,23 +142,23 @@ void UbuntuApplicationApiWrapper::sendInfoToClientConnection()
                                                     sharedInfoSize);
 
     if (bytesWritten < 0) {
-        qWarning("UbuntuApplicationApiWrapper: Failed to write bytes on client connection");
+        qWarning("LuneOSApplicationApiWrapper: Failed to write bytes on client connection");
     } else if (bytesWritten != sharedInfoSize) {
         // Could try sending the remaining bytes until completion but it's really unlikely that
         // this situation will occur
-        qWarning() << "UbuntuApplicationApiWrapper: tried to write" << sharedInfoSize << "bytes"
+        qWarning() << "LuneOSApplicationApiWrapper: tried to write" << sharedInfoSize << "bytes"
                       "but only" << bytesWritten << "went through";
     }
 
     m_lastInfoShared = m_sharedInfo;
 }
 
-void UbuntuApplicationApiWrapper::onNewConnection()
+void LuneOSApplicationApiWrapper::onNewConnection()
 {
     QLocalSocket *newConnection = m_localServer.nextPendingConnection();
 
     if (m_clientConnection) {
-        qWarning() << "UbuntuApplicationApiWrapper: Refusing incoming connection as we "
+        qWarning() << "LuneOSApplicationApiWrapper: Refusing incoming connection as we "
                       "already have an active one.";
         delete newConnection;
         return; // ignore it. for simplicity we care to serve only one client (unity8-mir)
@@ -167,16 +167,16 @@ void UbuntuApplicationApiWrapper::onNewConnection()
     m_lastInfoShared.reset();
 
     connect(m_clientConnection, &QLocalSocket::disconnected,
-            this, &UbuntuApplicationApiWrapper::onClientDisconnected);
+            this, &LuneOSApplicationApiWrapper::onClientDisconnected);
 }
 
-void UbuntuApplicationApiWrapper::onClientDisconnected()
+void LuneOSApplicationApiWrapper::onClientDisconnected()
 {
     m_clientConnection->deleteLater();
     m_clientConnection = 0;
 }
 
-QString UbuntuApplicationApiWrapper::buildSocketFilePath() const
+QString LuneOSApplicationApiWrapper::buildSocketFilePath() const
 {
     char *xdgRuntimeDir = getenv("XDG_RUNTIME_DIR");
 
@@ -187,7 +187,7 @@ QString UbuntuApplicationApiWrapper::buildSocketFilePath() const
     }
 }
 
-void UbuntuApplicationApiWrapper::updateSharedInfo()
+void LuneOSApplicationApiWrapper::updateSharedInfo()
 {
     const QRectF &keyboardSceneRect = m_geometry->visibleRect();
     m_sharedInfo.keyboardX = keyboardSceneRect.x();
@@ -198,8 +198,8 @@ void UbuntuApplicationApiWrapper::updateSharedInfo()
     sendInfoToClientConnection();
 }
 
-//! \brief UbuntuApplicationApiWrapper::delayedGeometryUpdate
-void UbuntuApplicationApiWrapper::delayedGeometryUpdate()
+//! \brief LuneOSApplicationApiWrapper::delayedGeometryUpdate
+void LuneOSApplicationApiWrapper::delayedGeometryUpdate()
 {
     if (m_geometryUpdateTimer.isActive())
         m_geometryUpdateTimer.stop();
@@ -207,10 +207,10 @@ void UbuntuApplicationApiWrapper::delayedGeometryUpdate()
     m_geometryUpdateTimer.start();
 }
 
-//! \brief UbuntuApplicationApiWrapper::setGeometryItem Set the item that
+//! \brief LuneOSApplicationApiWrapper::setGeometryItem Set the item that
 //! contains the current OKS geometry
 //! \param geometry
-void UbuntuApplicationApiWrapper::setGeometryItem(KeyboardGeometry *geometry)
+void LuneOSApplicationApiWrapper::setGeometryItem(KeyboardGeometry *geometry)
 {
     if (geometry == m_geometry)
         return;
@@ -225,7 +225,7 @@ void UbuntuApplicationApiWrapper::setGeometryItem(KeyboardGeometry *geometry)
 
 // ------------------------------- SharedInfo ----------------------------
 
-bool UbuntuApplicationApiWrapper::SharedInfo::operator ==(const struct SharedInfo &other)
+bool LuneOSApplicationApiWrapper::SharedInfo::operator ==(const struct SharedInfo &other)
 {
     return keyboardX == other.keyboardX
         && keyboardY == other.keyboardY
@@ -233,7 +233,7 @@ bool UbuntuApplicationApiWrapper::SharedInfo::operator ==(const struct SharedInf
         && keyboardHeight == other.keyboardHeight;
 }
 
-void UbuntuApplicationApiWrapper::SharedInfo::reset()
+void LuneOSApplicationApiWrapper::SharedInfo::reset()
 {
     keyboardX = -1;
     keyboardY = -1;

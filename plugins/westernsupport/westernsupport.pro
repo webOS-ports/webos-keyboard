@@ -33,14 +33,14 @@ HEADERS += \
     spellchecker.h
 
 
-target.path = $${UBUNTU_KEYBOARD_LIB_DIR}
+target.path = $${LUNEOS_KEYBOARD_LIB_DIR}
 INSTALLS += target
 
 # for plugins
 API_HEADERS = westernlanguagesplugin.h
 
 api_headers.files = $$API_HEADERS
-api_headers.path = $$UBUNTU_KEYBOARD_HEADERS_DIR
+api_headers.path = $$LUNEOS_KEYBOARD_HEADERS_DIR
 INSTALLS += api_headers
 
 

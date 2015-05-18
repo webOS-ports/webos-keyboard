@@ -20,7 +20,7 @@ TARGET          = $$qtLibraryTarget(danishplugin)
 EXAMPLE_FILES = danishplugin.json
 
 # generate database for presage:
-PLUGIN_INSTALL_PATH = $${UBUNTU_KEYBOARD_LIB_DIR}/da/
+PLUGIN_INSTALL_PATH = $${LUNEOS_KEYBOARD_LIB_DIR}/da/
 
 lang_db_da.path = $$PLUGIN_INSTALL_PATH
 lang_db_da.files += $$OUT_PWD/database_da.db

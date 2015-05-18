@@ -20,7 +20,7 @@ TARGET          = $$qtLibraryTarget(finnishplugin)
 EXAMPLE_FILES = finnishplugin.json
 
 # generate database for presage:
-PLUGIN_INSTALL_PATH = $${UBUNTU_KEYBOARD_LIB_DIR}/fi/
+PLUGIN_INSTALL_PATH = $${LUNEOS_KEYBOARD_LIB_DIR}/fi/
 
 lang_db_fi.path = $$PLUGIN_INSTALL_PATH
 lang_db_fi.files += $$OUT_PWD/database_fi.db
