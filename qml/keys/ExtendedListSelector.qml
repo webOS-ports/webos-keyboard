@@ -33,8 +33,8 @@ Item {
     property int currentlyAssignedKeyX: currentlyAssignedKey ? currentlyAssignedKey.x : 0
     property int currentlyAssignedKeyY: currentlyAssignedKey ? currentlyAssignedKey.y : 0
 
-    property bool isTwoLines: keyRepeater.count>5
-
+    property int numberOfLines: Math.ceil(keyRepeater.count / 4)
+	
     onCurrentlyAssignedKeyXChanged: if(currentlyAssignedKey) __repositionPopoverTo(currentlyAssignedKey);
     onCurrentlyAssignedKeyYChanged: if(currentlyAssignedKey) __repositionPopoverTo(currentlyAssignedKey)
     onCurrentlyAssignedKeyParentYChanged: if(currentlyAssignedKey) __repositionPopoverTo(currentlyAssignedKey);
@@ -68,7 +68,7 @@ Item {
         anchors.bottomMargin: -8
         x: isOnLeftSideOfScreen ? (anchorItem.x) : (anchorItem.x+anchorItem.width-popoverBackground.width)
         width: Math.max(keypad.keyWidth, rowOfKeys.width + 10*2)
-        height: isTwoLines ? 150 : 90
+        height: ((30 + numberOfLines * 60))
 
         function __updatePopoverRect() {
             var newPopoverRect = popover.mapToItem(null, x, y, width, height);
@@ -82,28 +82,37 @@ Item {
 
         Row {
             x: 0; y: 0; height: parent.height
-            Image {
-                source: isTwoLines ? UI.imagePopupBgLeft2[formFactor] : UI.imagePopupBgLeft[formFactor]
-                height: parent.height
-                width: 21
+            BorderImage {
+				source: UI.imagePopupBgLeft[formFactor]
+                border {left: 21; top: 21; bottom: 36;}
+				height: parent.height
+                verticalTileMode: BorderImage.Stretch
+				width: 21
             }
-            Image {
-                source: isTwoLines ? UI.imagePopupBgBetween2[formFactor] : UI.imagePopupBgBetween[formFactor]
+            BorderImage {
+                source: UI.imagePopupBgBetween[formFactor]
                 height: parent.height
+                border {top: 21; bottom: 36;}
+                verticalTileMode: BorderImage.Stretch
                 width: popoverBackground.isOnLeftSideOfScreen ? 8 : (popoverBackground.width - 21 - 33 - 8 - 21)
             }
-            Image {
-                source: isTwoLines ? UI.imagePopupBgCaret2[formFactor] : UI.imagePopupBgCaret[formFactor]
+            BorderImage {
+				source: UI.imagePopupBgCaret[formFactor]
+                border {top: 21; bottom: 36;}
+                verticalTileMode: BorderImage.Stretch
                 height: parent.height
                 width: 33
             }
-            Image {
-                source: isTwoLines ? UI.imagePopupBgBetween2[formFactor] : UI.imagePopupBgBetween[formFactor]
+            BorderImage {
+				source: UI.imagePopupBgBetween[formFactor]
+                border {top: 21; bottom: 36;}
+                verticalTileMode: BorderImage.Stretch
                 height: parent.height
                 width: popoverBackground.isOnLeftSideOfScreen ? (popoverBackground.width - 21 - 33 - 8 - 21) : 8
             }
-            Image {
-                source: isTwoLines ? UI.imagePopupBgRight2[formFactor] : UI.imagePopupBgRight[formFactor]
+            BorderImage {
+                border {right: 21; top: 21; bottom: 36;}
+				source: UI.imagePopupBgRight[formFactor]
                 height: parent.height
                 width: 21
             }
@@ -119,7 +128,7 @@ Item {
         id: rowOfKeys
         anchors.centerIn: popoverBackground
         anchors.verticalCenterOffset: -5
-        width: Math.min(keyRepeater.count, 5) * 60
+        width: Math.min(keyRepeater.count, 4) * 60
 
         // spacing: units.gu( UI.popoverCellPadding )
         Repeater {
@@ -132,12 +141,11 @@ Item {
                 property alias commitStr: textCell.text
                 property bool highlight: false
 
-                height: popupKeyImage.height //languageTextItem.contentHeight
-                width: popupKeyImage.width //languageTextItem.contentWidth
+                height: popupKeyImage.height
+                width: popupKeyImage.width
                 Image
                 {
                     anchors.centerIn: parent
-//                    x: anchorItem.x
                     id: popupKeyImage
                     source: UI.imagePopupKey[formFactor]
                     width: 60
