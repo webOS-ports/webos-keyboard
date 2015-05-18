@@ -173,7 +173,7 @@ Item {
         onPressAndHold: {
             if (activeExtendedModel != undefined) {
                 extendedKeysSelector.enabled = true
-                extendedKeysSelector.extendedKeysModel = activeExtendedModel
+                extendedKeysSelector.extendedListModel = activeExtendedModel
                 extendedKeysSelector.currentlyAssignedKey = key
             }
         }
