@@ -26,7 +26,7 @@ public:
     virtual bool setSpellCheckerLanguage(const QString& languageId) = 0;
 };
 
-#define LanguagePluginInterface_iid "com.canonical.UbuntuKeyboard.LanguagePluginInterface"
+#define LanguagePluginInterface_iid "org.webosports.LuneOSKeyboard.LanguagePluginInterface"
 
 Q_DECLARE_INTERFACE(LanguagePluginInterface, LanguagePluginInterface_iid)
 

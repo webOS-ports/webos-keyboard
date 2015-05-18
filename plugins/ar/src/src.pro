@@ -20,7 +20,7 @@ TARGET          = $$qtLibraryTarget(arabicplugin)
 EXAMPLE_FILES = arabicplugin.json
 
 # generate database for presage:
-PLUGIN_INSTALL_PATH = $${UBUNTU_KEYBOARD_LIB_DIR}/ar/
+PLUGIN_INSTALL_PATH = $${LUNEOS_KEYBOARD_LIB_DIR}/ar/
 
 lang_db_ar.path = $$PLUGIN_INSTALL_PATH
 lang_db_ar.files += $$OUT_PWD/database_ar.db

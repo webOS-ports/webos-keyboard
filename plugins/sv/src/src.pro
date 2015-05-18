@@ -20,7 +20,7 @@ TARGET          = $$qtLibraryTarget(swedishplugin)
 EXAMPLE_FILES = swedishplugin.json
 
 # generate database for presage:
-PLUGIN_INSTALL_PATH = $${UBUNTU_KEYBOARD_LIB_DIR}/sv/
+PLUGIN_INSTALL_PATH = $${LUNEOS_KEYBOARD_LIB_DIR}/sv/
 
 lang_db_sv.path = $$PLUGIN_INSTALL_PATH
 lang_db_sv.files += $$OUT_PWD/database_sv.db

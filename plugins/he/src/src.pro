@@ -20,7 +20,7 @@ TARGET          = $$qtLibraryTarget(hebrewplugin)
 EXAMPLE_FILES = hebrewplugin.json
 
 # generate database for presage:
-PLUGIN_INSTALL_PATH = $${UBUNTU_KEYBOARD_LIB_DIR}/he/
+PLUGIN_INSTALL_PATH = $${LUNEOS_KEYBOARD_LIB_DIR}/he/
 
 lang_db_he.path = $$PLUGIN_INSTALL_PATH
 lang_db_he.files += $$OUT_PWD/database_he.db

@@ -3,22 +3,22 @@ include(../config.pri)
 TARGET = dummy
 TEMPLATE = lib
 
-qml.path = $$UBUNTU_KEYBOARD_DATA_DIR
+qml.path = $$LUNEOS_KEYBOARD_DATA_DIR
 qml.files = *.qml *.js
 
-qml_keys.path = "$$UBUNTU_KEYBOARD_DATA_DIR/keys"
+qml_keys.path = "$$LUNEOS_KEYBOARD_DATA_DIR/keys"
 qml_keys.files = keys/*.qml keys/qmldir keys/*.js
 
-qml_languages.path = "$$UBUNTU_KEYBOARD_DATA_DIR/languages"
+qml_languages.path = "$$LUNEOS_KEYBOARD_DATA_DIR/languages"
 qml_languages.files = languages/*.qml languages/*.js
 
-images.path = "$$UBUNTU_KEYBOARD_DATA_DIR/images"
+images.path = "$$LUNEOS_KEYBOARD_DATA_DIR/images"
 images.files = images/*.png
 
-images_phone.path = "$$UBUNTU_KEYBOARD_DATA_DIR/images/phone"
+images_phone.path = "$$LUNEOS_KEYBOARD_DATA_DIR/images/phone"
 images_phone.files = images/phone/*.png
 
-images_tablet.path = "$$UBUNTU_KEYBOARD_DATA_DIR/images/tablet"
+images_tablet.path = "$$LUNEOS_KEYBOARD_DATA_DIR/images/tablet"
 images_tablet.files = images/tablet/*.png
 
 INSTALLS += qml qml_keys qml_languages images images_phone images_tablet
@@ -48,6 +48,7 @@ OTHER_FILES += \
     keys/ShiftKey.qml \
     keys/SpaceKey.qml \
     keys/Spacer.qml \
+    keys/SpacerLuneOS.qml \	
     keys/SymbolShiftKey.qml \
 	keys/TabKey.qml \
     keys/UrlKey.qml \

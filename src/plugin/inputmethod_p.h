@@ -9,7 +9,7 @@
 #include "logic/eventhandler.h"
 #include "logic/wordengine.h"
 
-#include "ubuntuapplicationapiwrapper.h"
+#include "luneosapplicationapiwrapper.h"
 
 #include <maliit/plugins/abstractinputmethodhost.h>
 #include <maliit/plugins/abstractpluginsetting.h>
@@ -48,7 +48,7 @@ public:
     Logic::EventHandler event_handler;
     MAbstractInputMethodHost* host;
     QQuickView* view;
-    UbuntuApplicationApiWrapper* applicationApiWrapper;
+    LuneOSApplicationApiWrapper* applicationApiWrapper;
 
     bool autocapsEnabled;
     bool wordEngineEnabled;
@@ -70,7 +70,7 @@ public:
         , event_handler()
         , host(host)
         , view(0)
-        , applicationApiWrapper(new UbuntuApplicationApiWrapper)
+        , applicationApiWrapper(new LuneOSApplicationApiWrapper)
         , autocapsEnabled(false)
         , wordEngineEnabled(false)
         , contentType(InputMethod::FreeTextContentType)
@@ -124,7 +124,7 @@ public:
 
         // TODO: Figure out whether two views can share one engine.
         QQmlEngine *const engine(view->engine());
-        engine->addImportPath(UBUNTU_KEYBOARD_DATA_DIR);
+        engine->addImportPath(LUNEOS_KEYBOARD_DATA_DIR);
         setContextProperties(engine->rootContext());
 
         // following used to help shell identify the OSK surface

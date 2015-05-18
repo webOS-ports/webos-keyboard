@@ -20,7 +20,7 @@ TARGET          = $$qtLibraryTarget(hungarianplugin)
 EXAMPLE_FILES = hungarianplugin.json
 
 # generate database for presage:
-PLUGIN_INSTALL_PATH = $${UBUNTU_KEYBOARD_LIB_DIR}/hu/
+PLUGIN_INSTALL_PATH = $${LUNEOS_KEYBOARD_LIB_DIR}/hu/
 
 lang_db_hu.path = $$PLUGIN_INSTALL_PATH
 lang_db_hu.files += $$OUT_PWD/database_hu.db

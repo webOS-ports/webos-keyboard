@@ -34,7 +34,11 @@ var annotationMargins = 0.7; // gu
 var annotationFontColor = {"tablet" : "#646464",
                            "phone"  : "#505050"}
 
+var magnifierFontColor = {"tablet" : "#141414",
+                           "phone"  : "#141414"}
 
+						   
+						   
 var greyColor	=	{"tablet" : "#D2D2D2",
                      "phone"  : "#D2D2D2"}
 
@@ -56,6 +60,7 @@ var popoverFontSize   = "32pt";    // gu
 
 var imageWhiteKey        = { "tablet" : "../images/tablet/key_bg_white.png",
                              "phone"  : "../images/phone/key_bg_white.png"  };
+
 var imageWhiteKeyPressed = { "tablet" : "../images/tablet/key_bg_white_active.png",
                              "phone"  : "../images/phone/key_bg_white_active.png"  };
 

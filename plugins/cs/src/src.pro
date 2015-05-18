@@ -20,7 +20,7 @@ TARGET          = $$qtLibraryTarget(czechplugin)
 EXAMPLE_FILES = czechplugin.json
 
 # generate database for presage:
-PLUGIN_INSTALL_PATH = $${UBUNTU_KEYBOARD_LIB_DIR}/cs/
+PLUGIN_INSTALL_PATH = $${LUNEOS_KEYBOARD_LIB_DIR}/cs/
 
 lang_db_cs.path = $$PLUGIN_INSTALL_PATH
 lang_db_cs.files += $$OUT_PWD/database_cs.db

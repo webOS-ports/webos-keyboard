@@ -2,12 +2,12 @@ include(../config.pri)
 include(../config-plugin.pri)
 
 TOP_BUILDDIR = $${OUT_PWD}/../../
-TARGET = $${UBUNTU_KEYBOARD_PLUGIN_TARGET}
+TARGET = $${LUNEOS_KEYBOARD_PLUGIN_TARGET}
 TEMPLATE = lib
 LIBS += \
-    $${TOP_BUILDDIR}/$${UBUNTU_KEYBOARD_VIEW_LIB} \
-    $${TOP_BUILDDIR}/$${UBUNTU_KEYBOARD_LIB}
-PRE_TARGETDEPS += $${TOP_BUILDDIR}/$${UBUNTU_KEYBOARD_VIEW_LIB} $${TOP_BUILDDIR}/$${UBUNTU_KEYBOARD_LIB}
+    $${TOP_BUILDDIR}/$${LUNEOS_KEYBOARD_VIEW_LIB} \
+    $${TOP_BUILDDIR}/$${LUNEOS_KEYBOARD_LIB}
+PRE_TARGETDEPS += $${TOP_BUILDDIR}/$${LUNEOS_KEYBOARD_VIEW_LIB} $${TOP_BUILDDIR}/$${LUNEOS_KEYBOARD_LIB}
 INCLUDEPATH += ../lib ../
 DEFINES += MALIIT_DEFAULT_PROFILE=\\\"$$MALIIT_DEFAULT_PROFILE\\\"
 
@@ -30,7 +30,7 @@ HEADERS += \
     keyboardgeometry.h \
     keyboardsettings.h \
 #    updatenotifier.h \
-    ubuntuapplicationapiwrapper.h \
+    luneosapplicationapiwrapper.h \
 
 SOURCES += \
     plugin.cpp \
@@ -39,7 +39,7 @@ SOURCES += \
     keyboardgeometry.cpp \
     keyboardsettings.cpp \
 #    updatenotifier.cpp \
-    ubuntuapplicationapiwrapper.cpp \
+    luneosapplicationapiwrapper.cpp \
 
 target.path += $${MALIIT_PLUGINS_DIR}
 INSTALLS += target

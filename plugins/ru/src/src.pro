@@ -20,7 +20,7 @@ TARGET          = $$qtLibraryTarget(russianplugin)
 EXAMPLE_FILES = russianplugin.json
 
 # generate database for presage:
-PLUGIN_INSTALL_PATH = $${UBUNTU_KEYBOARD_LIB_DIR}/ru/
+PLUGIN_INSTALL_PATH = $${LUNEOS_KEYBOARD_LIB_DIR}/ru/
 
 lang_db_ru.path = $$PLUGIN_INSTALL_PATH
 lang_db_ru.files += $$OUT_PWD/database_ru.db

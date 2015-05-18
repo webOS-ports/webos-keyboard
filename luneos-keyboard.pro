@@ -33,7 +33,7 @@ include(config.pri)
 CONFIG += ordered 
 TEMPLATE = subdirs
 
-DIST_NAME = $$UBUNTU_KEYBOARD_PACKAGENAME-$$UBUNTU_KEYBOARD_VERSION
+DIST_NAME = $$LUNEOS_KEYBOARD_PACKAGENAME-$$LUNEOS_KEYBOARD_VERSION
 DIST_PATH = $$OUT_PWD/$$DIST_NAME
 TARBALL_SUFFIX = .tar.bz2
 TARBALL_PATH = $$DIST_PATH$$TARBALL_SUFFIX
@@ -83,7 +83,7 @@ coverage.target = coverage
 
 coverage.commands += $(MKDIR) $$COVERAGE_DIR &&
 coverage.commands += cd $$COVERAGE_DIR &&
-coverage.commands += $(QMAKE) -r PREFIX=\"$$PREFIX\" LIBDIR=\"$$LIBDIR\" MALIIT_DEFAULT_PROFILE=\"$$MALIIT_DEFAULT_PROFILE\" HUNSPELL_DICT_PATH=\"$$HUNSPELL_DICT_PATH\" $$COVERAGE_CONFIG_STRING LIBS+=\"$$LIBS\" INCLUDEPATH+=\"$$INCLUDEPATH\" LIBS+=-lgcov QMAKE_CXXFLAGS_DEBUG+=\"-fprofile-arcs -ftest-coverage\" QMAKE_LFLAGS_DEBUG+=\"-fprofile-arcs -ftest-coverage\" $$PWD/maliit-plugin-ubuntu.pro.coverage &&
+coverage.commands += $(QMAKE) -r PREFIX=\"$$PREFIX\" LIBDIR=\"$$LIBDIR\" MALIIT_DEFAULT_PROFILE=\"$$MALIIT_DEFAULT_PROFILE\" HUNSPELL_DICT_PATH=\"$$HUNSPELL_DICT_PATH\" $$COVERAGE_CONFIG_STRING LIBS+=\"$$LIBS\" INCLUDEPATH+=\"$$INCLUDEPATH\" LIBS+=-lgcov QMAKE_CXXFLAGS_DEBUG+=\"-fprofile-arcs -ftest-coverage\" QMAKE_LFLAGS_DEBUG+=\"-fprofile-arcs -ftest-coverage\" $$PWD/maliit-plugin-luneos.pro.coverage &&
 coverage.commands += make $(MAKEFLAGS) coverage
 
 coverage.clean_commands = rm -rf $$COVERAGE_DIR

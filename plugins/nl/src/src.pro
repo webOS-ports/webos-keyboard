@@ -20,7 +20,7 @@ TARGET          = $$qtLibraryTarget(dutchplugin)
 EXAMPLE_FILES = dutchplugin.json
 
 # generate database for presage:
-PLUGIN_INSTALL_PATH = $${UBUNTU_KEYBOARD_LIB_DIR}/nl/
+PLUGIN_INSTALL_PATH = $${LUNEOS_KEYBOARD_LIB_DIR}/nl/
 
 lang_db_nl.path = $$PLUGIN_INSTALL_PATH
 lang_db_nl.files += $$OUT_PWD/database_nl.db

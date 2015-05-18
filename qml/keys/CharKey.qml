@@ -106,7 +106,7 @@ Item {
 
     BorderImage {
         id: buttonImage
-        border { left: 27; top: 29; right: 27; bottom: 29 }
+        border { left: formFactor==="tablet" ? 27 : 24; top: formFactor==="tablet" ? 29 : 24; right: formFactor==="tablet" ? 27: 24; bottom: formFactor==="tablet" ? 29 : 24;}
         anchors.centerIn: parent
         anchors.fill: key
         anchors.margins: units.dp( UI.keyMargins );
