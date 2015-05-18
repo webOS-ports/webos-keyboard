@@ -92,7 +92,7 @@ public:
         QLocale::setDefault(QLocale::c());
         setlocale(LC_NUMERIC, "C");
 
-        QDir pluginsDir("/usr/share/maliit/plugins/org/webosports/lib/"+subfolder);
+        QDir pluginsDir("/usr/share/maliit/plugins/org/luneos/lib/"+subfolder);
 
         pluginLoader.setFileName(pluginsDir.absoluteFilePath(pluginName));
         QObject *plugin = pluginLoader.instance();
