@@ -65,7 +65,7 @@ Item {
             font.family: UI.fontFamily
             font.pixelSize: FontUtils.sizeToPixels(UI.popoverFontSize)
             font.bold: UI.fontBold[formFactor]
-            color: UI.magnifierFontColo[formFactor]
+            color: UI.magnifierFontColor[formFactor]
         }
 
         NumberAnimation {
