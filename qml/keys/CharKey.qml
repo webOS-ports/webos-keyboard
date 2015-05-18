@@ -148,7 +148,7 @@ Item {
         styleColor: "white"
         color: UI.annotationFontColor[formFactor]
 		smooth: true
-        visible: !noMagnifier //imgNormal === UI.imageGreyKey[formFactor] ? true : false
+        visible: formFactor === "tablet" || !noMagnifier 
     }
 
     PressArea {

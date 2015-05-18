@@ -97,18 +97,6 @@ var imagePopupBgCaret    = { "tablet" : "../images/tablet/popup-bg-caret.png",
 var imagePopupBgRight    = { "tablet" : "../images/tablet/popup-bg-right.png",
                              "phone"  : "../images/phone/popup-bg-right.png"  };
 
-var imagePopupBgLeft2    = { "tablet" : "../images/tablet/popup-bg-2-left.png",
-                             "phone"  : "../images/phone/popup-bg-2-left.png"  };
-
-var imagePopupBgBetween2 = { "tablet" : "../images/tablet/popup-bg-2-between.png",
-                             "phone"  : "../images/phone/popup-bg-2-between.png"  };
-
-var imagePopupBgCaret2   = { "tablet" : "../images/tablet/popup-bg-2-caret.png",
-                             "phone"  : "../images/phone/popup-bg-2-caret.png"  };
-
-var imagePopupBgRight2   = { "tablet" : "../images/tablet/popup-bg-2-right.png",
-                             "phone"  : "../images/phone/popup-bg-2-right.png"  };
-
 var imageShiftKey        = { "tablet" : "../images/tablet/key_bg_shift_on.png",
                              "phone"  : "../images/phone/key_bg_shift_on.png"  };
 
