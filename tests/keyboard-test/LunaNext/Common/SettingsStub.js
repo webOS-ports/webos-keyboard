@@ -64,7 +64,7 @@ var dpi = testEnvs[currentTestEnv].dpi;
 var gridUnit = testEnvs[currentTestEnv].gridUnit;
 var tabletUi = testEnvs[currentTestEnv].tabletUi;
 
-function changeCurrentTestEnv(newTestEnv) {
+function changeCurrentTestEnv(newTestEnv, Units, FontUtils) {
     currentTestEnv = newTestEnv;
 
     displayWidth = testEnvs[currentTestEnv].displayWidth;
@@ -72,6 +72,20 @@ function changeCurrentTestEnv(newTestEnv) {
     dpi = testEnvs[currentTestEnv].dpi;
     gridUnit = testEnvs[currentTestEnv].gridUnit;
     tabletUi = testEnvs[currentTestEnv].tabletUi;
+
+
+    Units.displayWidth = testEnvs[currentTestEnv].displayWidth;
+    Units.displayHeight = testEnvs[currentTestEnv].displayHeight;
+    Units.dpi = testEnvs[currentTestEnv].dpi;
+    Units.gridUnit = testEnvs[currentTestEnv].gridUnit;
+    Units.tabletUi = testEnvs[currentTestEnv].tabletUi;
+
+    FontUtils.displayWidth = testEnvs[currentTestEnv].displayWidth;
+    FontUtils.displayHeight = testEnvs[currentTestEnv].displayHeight;
+    FontUtils.dpi = testEnvs[currentTestEnv].dpi;
+    FontUtils.gridUnit = testEnvs[currentTestEnv].gridUnit;
+    FontUtils.tabletUi = testEnvs[currentTestEnv].tabletUi;
+
 }
 
 var displayFps = true;

@@ -17,6 +17,8 @@ Rectangle {
         property rect visibleRect: Qt.rect(0,0,700,300);
         property int orientation: 0
         property bool shown: true
+
+        onVisibleRectChanged: console.log("visibleRect is now " + visibleRect);
     }
     QtObject {
         id: maliit_event_handler
@@ -97,7 +99,7 @@ Rectangle {
                         exclusiveGroup: tabPositionGroup
                         onClicked: {
                             keyboardLoader.sourceComponent = undefined;
-                            Settings.changeCurrentTestEnv(Object.keys(Settings.testEnvs)[currentEnv])
+                            Settings.changeCurrentTestEnv(Object.keys(Settings.testEnvs)[currentEnv], Units, FontUtils);
                             testRoot.currentTestEnv = Settings.currentTestEnv;
                             keyboardLoader.sourceComponent = kbdComponent;
                         }
