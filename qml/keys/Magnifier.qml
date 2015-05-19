@@ -39,27 +39,97 @@ Item {
     onShownChanged: {
         if (shown) {
             root.visible = true
-            popper.animationStep = 1
+            leftImage.animationStep = 1
+            leftMiddleImage.animationStep = 1
+            middleImage.animationStep = 1
+            rightMiddleImage.animationStep = 1
+            rightImage.animationStep = 1
         } else {
-            hidePopperAnimation.start();
+            hideLeftAnimation.start();
+            hideLeftMiddleAnimation.start();
+            hideMiddleAnimation.start();
+            hideRightMiddleAnimation.start();
+            hideRightAnimation.start();
         }
     }
 
-    Image {
-        id: popper
-        anchors.fill: parent
+    
+	Row {
+        id: borderImageRow
+            anchors.bottom: parent.bottom
+            anchors.horizontalCenter: parent.horizontalCenter
+            height: Units.gu(9)
+            BorderImage {
+				property real animationStep: 0
+                id: leftImage
+				source: UI.imagePopupBgLeft[formFactor]
+                border {left: 21; top: 21; bottom: 36;}
+				height: parent.height
+                verticalTileMode: BorderImage.Stretch
+                scale: animationStep
+                transformOrigin: Item.Bottom
+                opacity: animationStep
 
-        // this property is used to synchronize scale and opacity animation
-        property real animationStep: 0
-        scale: animationStep
-        transformOrigin: Item.Bottom
-        opacity: animationStep
+                width: Units.gu(2.1)
+            }
+            BorderImage {
+				property real animationStep: 0
+                id: leftMiddleImage
+                source: UI.imagePopupBgBetween[formFactor]
+                height: parent.height
+                border {top: 21; bottom: 36;}
+                verticalTileMode: BorderImage.Stretch
+                horizontalTileMode: BorderImage.Stretch
+                scale: animationStep
+                transformOrigin: Item.Bottom
+                opacity: animationStep
 
-        source: UI.imagePopover[formFactor]
+                width: Units.gu(0.8)
+            }
+            BorderImage {
+				property real animationStep: 0
+                id: middleImage
+				source: UI.imagePopupBgCaret[formFactor]
+                border {top: 21; bottom: 36;}
+                verticalTileMode: BorderImage.Stretch
+                height: parent.height
+                scale: animationStep
+                transformOrigin: Item.Bottom
+                opacity: animationStep
 
+                width: Units.gu(3.3)
+            }
+            BorderImage {
+				property real animationStep: 0
+                id: rightMiddleImage
+				source: UI.imagePopupBgBetween[formFactor]
+                border {top: 21; bottom: 36;}
+                horizontalTileMode: BorderImage.Stretch
+                verticalTileMode: BorderImage.Stretch
+                height: parent.height
+                scale: animationStep
+                transformOrigin: Item.Bottom
+                opacity: animationStep
+
+                width: Units.gu(0.8)
+            }
+            BorderImage {
+				property real animationStep: 0
+                id: rightImage
+                border {right: 21; top: 21; bottom: 36;}
+				source: UI.imagePopupBgRight[formFactor]
+                height: parent.height
+                scale: animationStep
+                transformOrigin: Item.Bottom
+                opacity: animationStep
+
+                width: Units.gu(2.1)
+            }
+        }
+		
         Text {
             id: label
-            anchors.centerIn: parent
+            anchors.centerIn: borderImageRow
 			anchors.verticalCenterOffset: Units.gu(-0.5)
 
             font.family: UI.fontFamily
@@ -69,8 +139,8 @@ Item {
         }
 
         NumberAnimation {
-            id: hidePopperAnimation
-            target: popper
+            id: hideLeftAnimation
+            target: leftImage
             property: "animationStep"
             to: 0
             duration: 50
@@ -79,5 +149,51 @@ Item {
                 root.visible = false;
             }
         }
-    }
+        NumberAnimation {
+            id: hideLeftMiddleAnimation
+            target: leftMiddleImage
+            property: "animationStep"
+            to: 0
+            duration: 50
+            easing.type: Easing.InOutQuad
+            onStopped: {
+                root.visible = false;
+            }
+        }
+
+        NumberAnimation {
+            id: hideMiddleAnimation
+            target: middleImage
+            property: "animationStep"
+            to: 0
+            duration: 50
+            easing.type: Easing.InOutQuad
+            onStopped: {
+                root.visible = false;
+            }
+        }
+
+        NumberAnimation {
+            id: hideRightMiddleAnimation
+            target: rightMiddleImage
+            property: "animationStep"
+            to: 0
+            duration: 50
+            easing.type: Easing.InOutQuad
+            onStopped: {
+                root.visible = false;
+            }
+        }
+
+        NumberAnimation {
+            id: hideRightAnimation
+            target: rightImage
+            property: "animationStep"
+            to: 0
+            duration: 50
+            easing.type: Easing.InOutQuad
+            onStopped: {
+                root.visible = false;
+            }
+        }
 }

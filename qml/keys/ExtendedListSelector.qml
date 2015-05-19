@@ -130,7 +130,6 @@ Item {
         anchors.verticalCenterOffset: -5
         width: Math.min(keyRepeater.count, 4) * 60
 
-        // spacing: units.gu( UI.popoverCellPadding )
         Repeater {
             id: keyRepeater
             model: extendedListModel
@@ -186,7 +185,7 @@ Item {
         var point = popover.mapFromItem(item, item.x, item.y)
 
         anchorItem.x = item.x + row.x
-        anchorItem.y = point.y - (panel.keyHeight + units.dp(UI.popoverTopMargin));
+        anchorItem.y = point.y - (panel.keyHeight + Units.gu(UI.popoverTopMargin));
     }
 
     function __restoreAssignedKey()
