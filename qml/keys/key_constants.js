@@ -52,11 +52,8 @@ var symbolShiftKeyFontSize = "22pt"; // gu
 var smallFontSize = "14pt"; // gu, for keys that show more than one char, e.g. '.com'
 
 /* extended keys */
-var popoverCellPadding = 2.2; // gu
-var popoverTopMargin   = 10; // dp
-var popoverEdgeMargin = 2.2; // gu
-var popoverSquat      = 3; // gu, when no wordribbon, avoid click-through above input trap
-var popoverFontSize   = "32pt";    // gu 
+var popoverTopMargin   = 1; // gu
+var popoverFontSize   = "24pt";    // gu 
 
 var imageWhiteKey        = { "tablet" : "../images/tablet/key_bg_white.png",
                              "phone"  : "../images/phone/key_bg_white.png"  };
@@ -119,32 +116,20 @@ var emailLayoutUrlKeyPadding = 4; // gu
 var wordribbonHeight = 50;
 
 function getHeightRatio(formFactor, screenHeight, isLandscape, sizeChoice) {
-    if( isLandscape ) {
-        var keyboardHeightLandscape = { "XS": 0.31640625, /* 243 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
-                                         "S": 0.379557292, /* (340+243 / 2)  / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
-                                         "M": 0.44270833, /* 340 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
-                                         "L": 0.51171875 }; /* 393 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
-
-        // no differentiation between phone and tablet: good choice?
-        return keyboardHeightLandscape[sizeChoice];
+    if( formFactor === "tablet" ){
+        var keyboardHeight = { "XS" : 0.31640625,		/* 243 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
+                                         "S" : 0.379557292, 	/* (340+243 / 2)  / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
+                                         "M" : 0.44270833, 		/* 340 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
+                                         "L" : 0.51171875 }; 	/* 393 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
+        return keyboardHeight[sizeChoice];
     }
-    else {
-        if( formFactor === "phone" ) {
-            /* some legacy code that might be of use to us for VKB on phones
-
-            var height = keyboardWidth * 200 / 320;	// arbitrary proportions...
-            if (height < 480)
-                height = 160;	// shrink height for Pixie & Broadway, and some horizontal layout
-            if (height > 300)
-                height = 300;
-            */
-
-            return 0.365;
-        }
-        else if( formFactor === "tablet" ) {
-            return 0.28;
-        }
-    }
-
-    return 0.365; // shouldn't come here
+	else { //formFactor === "phone"
+	
+		if( isLandscape ) {
+			return 0.3385417
+		}
+		else{
+			return 0.368164
+		}
+	}
 }
