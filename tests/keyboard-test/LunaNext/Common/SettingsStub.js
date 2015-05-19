@@ -19,41 +19,60 @@
 
 var isTestEnvironment = true;
 
-/* mako
-var displayWidth = 768;
-var displayHeight = 1280;
-var gridUnit = 18;
-var dpi = 264;
-var tabletUi = false;
-/**/
-/* A500 alike
-var displayWidth = 1024;
-var displayHeight = 768;
-var gridUnit = 18;
-var dpi = 148;
-var tabletUi = true;
-/**/
-/*GNex alike
-var displayWidth = 720;
-var displayHeight = 1280;
-var gridUnit = 18;
-var dpi = 264;
-var tabletUi = false;
-/**/
-/* N7 alike
-var displayWidth = 800;
-var displayHeight = 1280;
-var gridUnit = 14;
-var dpi = 216;
-var tabletUi = true;
-/**/
-/* tenderloin alike */
-var displayWidth = 1024;
-var displayHeight = 768 ;
-var dpi = 132;
-var gridUnit = 10;
-var tabletUi = true;
-/**/
+var currentTestEnv = "tenderloin";
+var testEnvs = {
+        mako: {
+            displayWidth:768,
+            displayHeight:1280,
+            gridUnit:18,
+            dpi:264,
+            tabletUi:false
+        },
+        a500: {
+            displayWidth:1024,
+            displayHeight:768,
+            gridUnit:18,
+            dpi:148,
+            tabletUi:true
+        },
+        gnexus: {
+            displayWidth:720,
+            displayHeight:1280,
+            gridUnit:18,
+            dpi:264,
+            tabletUi:false
+        },
+        grouper: {
+            displayWidth:1280,
+            displayHeight:800,
+            gridUnit:14,
+            dpi:216,
+            tabletUi:true
+        },
+        tenderloin: {
+            displayWidth:1024,
+            displayHeight:768,
+            gridUnit:10,
+            dpi:132,
+            tabletUi:true
+        }
+    }
+
+var displayWidth = testEnvs[currentTestEnv].displayWidth;
+var displayHeight = testEnvs[currentTestEnv].displayHeight;
+var dpi = testEnvs[currentTestEnv].dpi;
+var gridUnit = testEnvs[currentTestEnv].gridUnit;
+var tabletUi = testEnvs[currentTestEnv].tabletUi;
+
+function changeCurrentTestEnv(newTestEnv) {
+    currentTestEnv = newTestEnv;
+
+    displayWidth = testEnvs[currentTestEnv].displayWidth;
+    displayHeight = testEnvs[currentTestEnv].displayHeight;
+    dpi = testEnvs[currentTestEnv].dpi;
+    gridUnit = testEnvs[currentTestEnv].gridUnit;
+    tabletUi = testEnvs[currentTestEnv].tabletUi;
+}
 
 var displayFps = true;
 var fontStatusBar = "Prelude"
