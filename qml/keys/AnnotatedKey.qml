@@ -40,7 +40,7 @@ Item {
     property alias valueToSubmit: keyLabel.text
 
     property string action
-    property bool noMagnifier: false
+	property bool noMagnifier: formFactor==="tablet" ? true : false
     property bool skipAutoCaps: false
 
     /* design */
