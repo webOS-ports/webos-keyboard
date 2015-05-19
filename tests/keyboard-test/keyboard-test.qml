@@ -4,8 +4,12 @@ import LunaNext.Common 0.1
 import "../../qml"
 
 Rectangle {
-    width: Settings.displayWidth ? Settings.displayWidth : 1024
-    height: Settings.displayHeight ? Settings.displayHeight : 768
+    id: testRoot
+
+    property string currentTestEnv: Settings.currentTestEnv
+
+    width: Settings.testEnvs[currentTestEnv].displayWidth
+    height: Settings.displayHeight
 
     QtObject {
         id: maliit_geometry
@@ -81,15 +85,22 @@ Rectangle {
                     checked: maliit_word_engine.enabled
                     onClicked: maliit_word_engine.enabled = !maliit_word_engine.enabled;
                 }
-                Button {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    property string formFactorStr: Settings.tabletUi ? "tablet" : "phone"
-                    text: "form factor : " + formFactorStr
-                    onClicked: {
-                        keyboardLoader.sourceComponent = undefined;
-                        Settings.tabletUi = !Settings.tabletUi;
-                        formFactorStr = Settings.tabletUi ? "tablet" : "phone";
-                        keyboardLoader.sourceComponent = kbdComponent;
+                ExclusiveGroup { id: tabPositionGroup }
+                Repeater {
+                    id: listSimulatedEnvs
+                    model: Object.keys(Settings.testEnvs)
+                    delegate: RadioButton {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        property int currentEnv: index
+                        property string simulatedEnvStr: Object.keys(Settings.testEnvs)[currentEnv]
+                        text: "switch to : " + simulatedEnvStr
+                        exclusiveGroup: tabPositionGroup
+                        onClicked: {
+                            keyboardLoader.sourceComponent = undefined;
+                            Settings.changeCurrentTestEnv(Object.keys(Settings.testEnvs)[currentEnv])
+                            testRoot.currentTestEnv = Settings.currentTestEnv;
+                            keyboardLoader.sourceComponent = kbdComponent;
+                        }
                     }
                 }
             }
@@ -102,7 +113,13 @@ Rectangle {
     }
     Loader {
         id: keyboardLoader
-        anchors.fill: parent
+
+        // make it depend on currentTestEnv property binding
+        width: Settings.testEnvs[currentTestEnv].displayWidth
+        height: Settings.testEnvs[currentTestEnv].displayHeight
+
+        anchors.bottom: parent.bottom
+        anchors.horizontalCenter: parent.horizontalCenter
         sourceComponent: kbdComponent
     }
 
