@@ -17,8 +17,10 @@
  */
 
 import QtQuick 2.0
+import "key_constants.js" as UI
 
 ActionKey {
 	width: panel.keyWidth * 1.5;
     action: "return"
+	fontSize: UI.symbolShiftKeyFontSize[formFactor];
 }

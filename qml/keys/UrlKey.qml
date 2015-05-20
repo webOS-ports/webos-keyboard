@@ -21,7 +21,7 @@ import LunaNext.Common 0.1
 import "../keys/key_constants.js" as UI
 
 CharKey {
-    width: panel.keyWidth //+ units.gu( UI.emailLayoutUrlKeyPadding )
+    width: panel.keyWidth
 
     imgNormal: UI.imageGreyKey[formFactor]
     imgPressed: UI.imageGreyKeyPressed[formFactor];
@@ -29,5 +29,5 @@ CharKey {
     label: ".com";
     shifted: label
     extendedShifted: extended
-    fontSize: label.length>1 ? UI.smallFontSize : UI.fontSize;
+    fontSize: label.length>1 ? UI.smallFontSize[formFactor] : UI.fontSize[formFactor];
 }

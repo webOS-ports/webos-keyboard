@@ -47,7 +47,7 @@ Item {
     property string imgNormal: UI.imageWhiteKey[formFactor]
     property string imgPressed: UI.imageWhiteKeyPressed[formFactor]
     // fontSize can be overwritten when using the component, e.g. SymbolShiftKey uses smaller fontSize
-    property string fontSize: UI.fontSize;
+    property string fontSize: UI.fontSize[formFactor];
 	
 	//We only want the maginifier for phone, so set the noMagnifier to true for tablets
 	property bool noMagnifier: formFactor==="tablet" ? true : false
@@ -106,10 +106,11 @@ Item {
 
     BorderImage {
         id: buttonImage
-        border { left: formFactor==="tablet" ? 27 : 24; top: formFactor==="tablet" ? 29 : 24; right: formFactor==="tablet" ? 27: 24; bottom: formFactor==="tablet" ? 29 : 24;}
+        //border { left: formFactor==="tablet" ? 27 : 24; top: formFactor==="tablet" ? 29 : 24; right: formFactor==="tablet" ? 27: 24; bottom: formFactor==="tablet" ? 29 : 24;}
+		border { left: formFactor==="tablet" ? 14 : 24; top: formFactor==="tablet" ? 13 : 24; right: formFactor==="tablet" ? 14: 24; bottom: formFactor==="tablet" ? 17 : 24;}
         anchors.centerIn: parent
         anchors.fill: key
-        anchors.margins: units.dp( UI.keyMargins );
+        anchors.margins: Units.gu( UI.keyMargins );
         source: key.pressed ? key.imgPressed : key.imgNormal
     }
 
@@ -138,11 +139,11 @@ Item {
         text: (panel.activeKeypadState !== "NORMAL") ? __annotationLabelShifted : __annotationLabelNormal
 
         anchors.right: parent.right
-        anchors.rightMargin: units.gu(2.00)
+        anchors.rightMargin: units.gu(1.00)
         anchors.bottom: parent.bottom
-        anchors.bottomMargin: units.gu(2.00)
+        anchors.bottomMargin: units.gu(1.00)
 
-        font.pixelSize: FontUtils.sizeToPixels(UI.annotationFontSize)
+        font.pixelSize: FontUtils.sizeToPixels(UI.annotationFontSize[formFactor])
         font.bold: false
         style: Text.Raised
         styleColor: "white"

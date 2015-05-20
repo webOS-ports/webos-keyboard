@@ -25,7 +25,7 @@ ActionKey {
     shifted: "+=[]";
     action: "symbols";
 
-    fontSize: UI.symbolShiftKeyFontSize;
+    fontSize: UI.symbolShiftKeyFontSize[formFactor];
     width: panel.keyWidth //* 2
     
     MouseArea {

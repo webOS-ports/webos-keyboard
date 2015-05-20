@@ -18,29 +18,40 @@
 
 .pragma library
 
-var keyMargins  	=   0//1 //1.8;    // gu
-var fontSize    	=   "22pt";    // gu
+var keyMargins  	=   0 //gu
+
+var fontSize    	=   {"tablet" : "22pt",
+                         "phone"  : "16pt"};    
+
 var fontFamily  	=   "Prelude";
+
 var fontColor  		=   {"tablet" : "#141414",
-                         "phone"  : "#FFFFFF"}
+                         "phone"  : "#FFFFFF"};
 
 var fontBold    	=   {"tablet" : false,
-                         "phone"  : true}
+                         "phone"  : true};
 
 var fontBoldAction  =   true
 
-var annotationFontSize = "14pt"; // gu
+var annotationFontSize = {"tablet" : "14pt",
+                         "phone"  : "14pt"};
+						 
 var annotationMargins = 0.7; // gu
+
 var annotationFontColor = {"tablet" : "#646464",
-                           "phone"  : "#505050"}
+                           "phone"  : "#646464"};
 
 var magnifierFontColor = {"tablet" : "#141414",
-                           "phone"  : "#141414"}
+                           "phone"  : "#141414"};
 
-						   
+var extendedHighLightColor = {"tablet" : "#4B97DE",
+                           "phone"  : "#4B97DE"};						   
+
+var extendedFontColor = {"tablet" : "#141414",
+                         "phone"  : "#141414"};							   
 						   
 var greyColor	=	{"tablet" : "#D2D2D2",
-                     "phone"  : "#D2D2D2"}
+                     "phone"  : "#D2D2D2"};
 
 /* magnifier */
 var magnifierHorizontalPadding = 0; // gu, stretch the magnifier a little bit in x-axis
@@ -48,12 +59,19 @@ var magnifierVerticalPadding = 0; // gu, stretch the magnifier a little bit in y
 
 /* special keys */
 var actionKeyPadding = 2;  // gu, action keys are a bit bigger
-var symbolShiftKeyFontSize = "22pt"; // gu
-var smallFontSize = "14pt"; // gu, for keys that show more than one char, e.g. '.com'
+
+var symbolShiftKeyFontSize = {"tablet" : "22pt",
+							  "phone"  : "12pt"};
+
+
+var smallFontSize = {"tablet" : "14pt",
+				     "phone"  : "14pt"}; 
 
 /* extended keys */
 var popoverTopMargin   = 1; // gu
-var popoverFontSize   = "24pt";    // gu 
+
+var popoverFontSize   = {"tablet" : "14pt",
+                         "phone"  : "14pt"};    // gu 
 
 var imageWhiteKey        = { "tablet" : "../images/tablet/key_bg_white.png",
                              "phone"  : "../images/phone/key_bg_white.png"  };
@@ -106,14 +124,10 @@ var imageShiftLockKey    = { "tablet" : "../images/tablet/key_bg_shift.png",
 var imageShiftLockKeyPressed    = { "tablet" : "../images/tablet/key_bg_shift_active.png",
                                     "phone"  : "../images/phone/key_bg_shift_active.png"  };
 							 
-var top_margin = 1.1; //.35;  // gu
+var top_margin = 1.1;  // gu
 var bottom_margin = 0; // gu
 
-
-var urlLayoutLeftSpacerSize = 5; // gu
-var emailLayoutUrlKeyPadding = 4; // gu
-
-var wordribbonHeight = 50;
+var wordribbonHeight = 5; //gu
 
 function getHeightRatio(formFactor, screenHeight, isLandscape, sizeChoice) {
     if( formFactor === "tablet" ){

@@ -1,11 +1,33 @@
+/*
+ * Copyright (C) 2015 Christophe Chapuis <chris.chapuis@gmail.com>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ */
+
+
 import QtQuick 2.3
 import QtQuick.Controls 1.1
 import LunaNext.Common 0.1
 import "../../qml"
 
 Rectangle {
-    width: Settings.displayWidth ? Settings.displayWidth : 1024
-    height: Settings.displayHeight ? Settings.displayHeight : 768
+    id: testRoot
+
+    property string currentTestEnv: Settings.currentTestEnv
+
+    width: Settings.testEnvs[currentTestEnv].displayWidth
+    height: Settings.displayHeight
 
     QtObject {
         id: maliit_geometry
@@ -13,6 +35,8 @@ Rectangle {
         property rect visibleRect: Qt.rect(0,0,700,300);
         property int orientation: 0
         property bool shown: true
+
+        onVisibleRectChanged: console.log("visibleRect is now " + visibleRect);
     }
     QtObject {
         id: maliit_event_handler
@@ -81,15 +105,22 @@ Rectangle {
                     checked: maliit_word_engine.enabled
                     onClicked: maliit_word_engine.enabled = !maliit_word_engine.enabled;
                 }
-                Button {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    property string formFactorStr: Settings.tabletUi ? "tablet" : "phone"
-                    text: "form factor : " + formFactorStr
-                    onClicked: {
-                        keyboardLoader.sourceComponent = undefined;
-                        Settings.tabletUi = !Settings.tabletUi;
-                        formFactorStr = Settings.tabletUi ? "tablet" : "phone";
-                        keyboardLoader.sourceComponent = kbdComponent;
+                ExclusiveGroup { id: tabPositionGroup }
+                Repeater {
+                    id: listSimulatedEnvs
+                    model: Object.keys(Settings.testEnvs)
+                    delegate: RadioButton {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        property int currentEnv: index
+                        property string simulatedEnvStr: Object.keys(Settings.testEnvs)[currentEnv]
+                        text: "switch to : " + simulatedEnvStr
+                        exclusiveGroup: tabPositionGroup
+                        onClicked: {
+                            keyboardLoader.sourceComponent = undefined;
+                            Settings.changeCurrentTestEnv(Object.keys(Settings.testEnvs)[currentEnv], Units, FontUtils);
+                            testRoot.currentTestEnv = Settings.currentTestEnv;
+                            keyboardLoader.sourceComponent = kbdComponent;
+                        }
                     }
                 }
             }
@@ -102,7 +133,13 @@ Rectangle {
     }
     Loader {
         id: keyboardLoader
-        anchors.fill: parent
+
+        // make it depend on currentTestEnv property binding
+        width: Settings.testEnvs[currentTestEnv].displayWidth
+        height: Settings.testEnvs[currentTestEnv].displayHeight
+
+        anchors.bottom: parent.bottom
+        anchors.horizontalCenter: parent.horizontalCenter
         sourceComponent: kbdComponent
     }
 
