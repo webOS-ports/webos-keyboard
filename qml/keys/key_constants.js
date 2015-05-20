@@ -70,8 +70,8 @@ var smallFontSize = {"tablet" : "14pt",
 /* extended keys */
 var popoverTopMargin   = 1; // gu
 
-var popoverFontSize   = {"tablet" : "14pt",
-                         "phone"  : "14pt"};    // gu 
+var popoverFontSize   = {"tablet" : "24pt",
+                         "phone"  : "24pt"};    // gu
 
 var imageWhiteKey        = { "tablet" : "../images/tablet/key_bg_white.png",
                              "phone"  : "../images/phone/key_bg_white.png"  };
