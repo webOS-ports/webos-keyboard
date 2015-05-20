@@ -1,5 +1,7 @@
 /*
  * Copyright 2013 Canonical Ltd.
+ * Copyright (C) 2015 Christophe Chapuis <chris.chapuis@gmail.com>
+ * Copyright (C) 2015 Herman van Hazendonk <github.com@herrie.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -15,26 +17,31 @@
  */
 
 import QtQuick 2.0
+import LunaNext.Common 0.1
 
 import "key_constants.js" as UI
 
 ActionKey {
+    id: actionKey
+
     iconNormal: "icon-hide-keyboard"
     iconShifted: "icon-hide-keyboard"
     iconCapsLock: "icon-hide-keyboard"
 
     width: panel.keyWidth;
 
+    property variant keyboardSizesModel: [ "XS", "S", "M", "L" ]
+
     Image {
 
         property color color;
 
         id: iconImage
-        source: Qt.resolvedUrl("../images/" + __icon + ".png")
+        source: Qt.resolvedUrl("../images/" + formFactor + "/" + __icon + ".png")
         anchors.centerIn: parent
         visible: (label == "")
-        width: units.gu(2.5)
-        height: units.gu(2.5)
+		smooth: true
+		fillMode: Image.PreserveAspectFit
     }
 
     MouseArea {
@@ -45,5 +52,12 @@ ActionKey {
             maliit_geometry.shown = false;
         }
 
+        onPressAndHold: {
+            if (keyboardSizesModel !== null) {
+                keyboardSizeMenu.extendedListModel = keyboardSizesModel;
+                keyboardSizeMenu.currentlyAssignedKey = actionKey;
+                panel.keyboardSizeMenuShown = true;
+            }
+        }
     }
 }

@@ -2,6 +2,8 @@
  * This file is part of Maliit plugins
  *
  * Copyright (C) 2012 Openismus GmbH
+ * Copyright (C) 2015 Christophe Chapuis <chris.chapuis@gmail.com>
+ * Copyright (C) 2015 Herman van Hazendonk <github.com@herrie.org>
  *
  * Contact: maliit-discuss@lists.maliit.org
  *
@@ -34,24 +36,23 @@ import "constants.js" as Const
 import "keys/"
 import "keys/key_constants.js" as UI
 
+import LunaNext.Common 0.1
+
 Item {
     id: fullScreenItem
     objectName: "fullScreenItem"
 
     property variant input_method: maliit_input_method
     property variant event_handler: maliit_event_handler
-    property QtObject units: QtObject {
-        property real logicalPixelDensity: 12 //hardcoded for gnexus, to be dpi-dependant
-        property real gridUnit: logicalPixelDensity
-        // logicalPixelDensity is the nb of logical pixels per mm
-        // gridUnit is the nb of pixels in a "grid unit"
 
-        // returns the nb of pixels that value represents in grid units
+    property string formFactor: Settings.tabletUi ? "tablet" : "phone"
+
+    property QtObject units: QtObject {
         function gu(valueInGridUnits) {
-            return valueInGridUnits*gridUnit;
+            return Units.gu(valueInGridUnits);
         }
         function dp(valueInLogicalPixels) {
-            return valueInLogicalPixels*(gridUnit/logicalPixelDensity);
+            return Units.dp(valueInLogicalPixels);
         }
     }
     property QtObject i18n: QtObject {
@@ -70,7 +71,7 @@ Item {
 
 Item {
     id: canvas
-    objectName: "ubuntuKeyboard" // Allow us to specify a specific keyboard within autopilot.
+    objectName: "luneOSKeyboard" // Allow us to specify a specific keyboard within autopilot.
 
     anchors.bottom: parent.bottom
     anchors.left: parent.left
@@ -92,6 +93,7 @@ Item {
     onWordribbon_visibleChanged: calculateSize();
 
     property bool languageMenuShown: false
+	property bool keyboardSizeMenuShown: false
 
     onXChanged: fullScreenItem.reportKeyboardVisibleRect();
     onYChanged: fullScreenItem.reportKeyboardVisibleRect();
@@ -147,7 +149,7 @@ Item {
                 anchors.bottom: keyboardComp.top
                 width: parent.width;
 
-                height: canvas.wordribbon_visible ? UI.wordribbonHeight : 0
+                height: canvas.wordribbon_visible ? Units.gu(UI.wordribbonHeight) : 0
                 onHeightChanged: calculateSize();
             }
 
@@ -161,27 +163,24 @@ Item {
 
                 onHeightChanged: fullScreenItem.reportKeyboardVisibleRect();
 
-                Rectangle {
+                Image {
                     id: background
 
                     anchors.fill: parent
-
-                    gradient: Gradient {
-                        GradientStop { position: 0.0; color: "#6C6C6C" }
-                        GradientStop { position: 1.0; color: "#424242" }
-                    }
+                    source: "images/"+formFactor+"/keyboard-bg.png"
+                    fillMode: Image.TileHorizontally
                 }
 
                 Image {
                     id: borderTop
-                    source: "images/border_top.png"
+                    source: "images/"+formFactor+"/border_top.png"
                     width: parent.width
                     anchors.top: parent.top.bottom
                 }
 
                 Image {
                     id: borderBottom
-                    source: "images/border_bottom.png"
+                    source: "images/"+formFactor+"/border_bottom.png"
                     width: parent.width
                     anchors.bottom: background.bottom
                 }
@@ -195,16 +194,7 @@ Item {
                     anchors.bottomMargin: units.gu( UI.bottom_margin )
                     width: parent.width
 
-                    onPopoverEnabledChanged: fullScreenItem.reportKeyboardVisibleRect();
-                }
-
-                LanguageMenu {
-                    id: languageMenu
-                    anchors.centerIn: parent
-                    width: 400;
-                    height: keypad.height;
-                    enabled: canvas.languageMenuShown
-                    opacity: canvas.languageMenuShown ? 1.0 : 0.0
+                    onCurrentKeyboardSizeChanged: fullScreenItem.calculateSize();
                 }
             } // keyboardComp
         }
@@ -261,15 +251,7 @@ function calculateSize()
     // warning: the following line is wrong if the vkb height doesn't always cover the screen current height
     var isLandscape = (fullScreenItem.width > fullScreenItem.height);
 
-    // TODO add tablet ratios
-    var newHeight;
-    if( isLandscape )
-    {
-        newHeight = fullScreenItem.height * UI.phoneKeyboardHeightLandscape
-    }
-    else {
-        newHeight = fullScreenItem.height * UI.phoneKeyboardHeightPortrait
-    }
+    var newHeight = fullScreenItem.height * UI.getHeightRatio(Settings.tabletUi ? "tablet" : "phone", fullScreenItem.height, isLandscape, keypad.currentKeyboardSize);
 
     canvas.height = newHeight + wordRibbon.height;
 
@@ -284,9 +266,6 @@ function reportKeyboardVisibleRect() {
     var vy = wordRibbon.y;
     var vwidth = keyboardSurface.width;
     var vheight = keyboardComp.height + wordRibbon.height;
-
-    // height of the drawable region (can be bigger than the height dedicated to the clickable region)
-    maliit_geometry.canvasHeight = keyboardComp.height + Math.max(wordRibbon.height, keypad.keyHeight);;
 
     var obj = fullScreenItem.mapFromItem(keyboardSurface, vx, vy, vwidth, vheight);
     maliit_geometry.visibleRect = Qt.rect(obj.x, obj.y, obj.width, obj.height);

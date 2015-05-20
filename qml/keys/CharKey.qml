@@ -1,5 +1,7 @@
 /*
  * Copyright 2013 Canonical Ltd.
+ * Copyright (C) 2015 Christophe Chapuis <chris.chapuis@gmail.com>
+ * Copyright (C) 2015 Herman van Hazendonk <github.com@herrie.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -16,6 +18,8 @@
 
 import QtQuick 2.0
 import QtMultimedia 5.0
+
+import LunaNext.Common 0.1
 
 import "key_constants.js" as UI
 
@@ -36,19 +40,22 @@ Item {
     property alias valueToSubmit: keyLabel.text
 
     property string action
-    property bool noMagnifier: false
     property bool skipAutoCaps: false
 
     /* design */
-    property string imgNormal: UI.imageWhiteKey
-    property string imgPressed: UI.imageWhiteKeyPressed
+    property string formFactor: Settings.tabletUi ? "tablet" : "phone"
+    property string imgNormal: UI.imageWhiteKey[formFactor]
+    property string imgPressed: UI.imageWhiteKeyPressed[formFactor]
     // fontSize can be overwritten when using the component, e.g. SymbolShiftKey uses smaller fontSize
-    property int fontSize: units.gu( UI.fontSize );
-
+    property string fontSize: UI.fontSize[formFactor];
+	
+	//We only want the maginifier for phone, so set the noMagnifier to true for tablets
+	property bool noMagnifier: formFactor==="tablet" ? true : false
+	
     /// annotation shows a small label in the upper right corner
     // if the annotiation property is set, it will be used. If not, the first position in extended[] list or extendedShifted[] list will
     // be used, depending on the state. If no extended/extendedShifted arrays exist, no annotation is shown
-//    property string annotation: "…"
+
     property string annotation: ""
 
     /*! indicates if te key is currently pressed/down*/
@@ -74,22 +81,36 @@ Item {
 
     Component.onCompleted: {
         if (annotation) {
-            __annotationLabelNormal = annotation
+			__annotationLabelNormal = annotation
             __annotationLabelShifted = annotation
         } else {
-            if (extended)
-                __annotationLabelNormal = extended[0]
-            if (extendedShifted)
-                __annotationLabelShifted = extendedShifted[0]
+     		if (extended) {
+				if(imgNormal === UI.imageGreyKey[formFactor]) {
+					__annotationLabelNormal = extended[0]
+					__annotationLabelShifted = label
+				}
+				else{
+                    __annotationLabelNormal = "…"
+				}
+			}
+            if (extendedShifted) {
+				if(imgNormal === UI.imageGreyKey[formFactor]) {
+					__annotationLabelShifted = extendedShifted[0]
+				}
+				else{
+					__annotationLabelShifted = "…"
+				}
+			}
         }
     }
 
     BorderImage {
         id: buttonImage
-        border { left: 27; top: 29; right: 27; bottom: 29 }
+        //border { left: formFactor==="tablet" ? 27 : 24; top: formFactor==="tablet" ? 29 : 24; right: formFactor==="tablet" ? 27: 24; bottom: formFactor==="tablet" ? 29 : 24;}
+		border { left: formFactor==="tablet" ? 14 : 24; top: formFactor==="tablet" ? 13 : 24; right: formFactor==="tablet" ? 14: 24; bottom: formFactor==="tablet" ? 17 : 24;}
         anchors.centerIn: parent
         anchors.fill: key
-        anchors.margins: units.dp( UI.keyMargins );
+        anchors.margins: Units.gu( UI.keyMargins );
         source: key.pressed ? key.imgPressed : key.imgNormal
     }
 
@@ -99,11 +120,15 @@ Item {
     Text {
         id: keyLabel
         text: (panel.activeKeypadState === "NORMAL") ? label : shifted;
-        anchors.centerIn: parent
+        anchors.horizontalCenter: buttonImage.horizontalCenter
+		anchors.verticalCenter: buttonImage.verticalCenter 
+        anchors.verticalCenterOffset: units.gu(-0.25)
         font.family: UI.fontFamily
-        font.pixelSize: fontSize
-        font.bold: UI.fontBold
-        color: UI.fontColor
+        font.pixelSize: FontUtils.sizeToPixels(fontSize)
+        font.bold: UI.fontBold[formFactor]
+        color: UI.fontColor[formFactor]
+		smooth: true
+		visible: action === ""
     }
 
     /// shows an annotation
@@ -111,16 +136,20 @@ Item {
 
     Text {
         id: annotationLabel
-        text: (panel.activeKeypadState != "NORMAL") ? __annotationLabelShifted : __annotationLabelNormal
+        text: (panel.activeKeypadState !== "NORMAL") ? __annotationLabelShifted : __annotationLabelNormal
 
         anchors.right: parent.right
+        anchors.rightMargin: units.gu(1.00)
         anchors.bottom: parent.bottom
-        anchors.margins: 10, 0, 0, 10
-        //anchors.margins: units.gu( UI.annotationMargins )
+        anchors.bottomMargin: units.gu(1.00)
 
-        font.pixelSize: units.gu( UI.annotationFontSize )
+        font.pixelSize: FontUtils.sizeToPixels(UI.annotationFontSize[formFactor])
         font.bold: false
-        color: UI.annotationFontColor
+        style: Text.Raised
+        styleColor: "white"
+        color: UI.annotationFontColor[formFactor]
+		smooth: true
+        visible: formFactor === "tablet" || !noMagnifier 
     }
 
     PressArea {
@@ -130,9 +159,10 @@ Item {
         onPressAndHold: {
             if (activeExtendedModel != undefined) {
                 extendedKeysSelector.enabled = true
-                extendedKeysSelector.extendedKeysModel = activeExtendedModel
+                extendedKeysSelector.extendedListModel = activeExtendedModel
                 extendedKeysSelector.currentlyAssignedKey = key
-            }
+				annotationLabel.visible = true
+			}
         }
 
         onReleased: {

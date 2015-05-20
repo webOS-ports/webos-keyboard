@@ -27,7 +27,7 @@ TARGET          = $$qtLibraryTarget(pinyinplugin)
 EXAMPLE_FILES = pinyinplugin.json
 
 # install
-target.path = $${UBUNTU_KEYBOARD_LIB_DIR}/zh/
+target.path = $${LUNEOS_KEYBOARD_LIB_DIR}/zh/
 INSTALLS += target
 
 OTHER_FILES += \

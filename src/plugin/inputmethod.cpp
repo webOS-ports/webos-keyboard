@@ -83,7 +83,7 @@ Qt::ScreenOrientation rotationAngleToScreenOrientation(int angle)
     }
 }
 
-const QString g_maliit_keyboard_qml(UBUNTU_KEYBOARD_DATA_DIR "/Keyboard.qml");
+const QString g_maliit_keyboard_qml(LUNEOS_KEYBOARD_DATA_DIR "/Keyboard.qml");
 
 Key overrideToKey(const SharedOverride &override)
 {
@@ -112,6 +112,7 @@ InputMethod::InputMethod(MAbstractInputMethodHost *host)
     connect(this, SIGNAL(contentTypeChanged(TextContentType)), this, SLOT(setContentType(TextContentType)));
     connect(this, SIGNAL(activeLanguageChanged(QString)), d->editor.wordEngine(), SLOT(onLanguageChanged(QString)));
     connect(d->m_geometry, SIGNAL(visibleRectChanged()), this, SLOT(onVisibleRectChanged()));
+    connect(d->m_geometry, SIGNAL(popoverRectChanged()), this, SLOT(updateWindowMask()));
     d->registerFeedbackSetting();
     d->registerAutoCorrectSetting();
     d->registerAutoCapsSetting();
@@ -480,6 +481,16 @@ void InputMethod::setActiveLanguage(const QString &newLanguage)
     Q_EMIT activeLanguageChanged(d->activeLanguage);
 }
 
+void InputMethod::updateWindowMask()
+{
+    Q_D(InputMethod);
+
+    QRegion vkbMask(d->m_geometry->visibleRect().toRect());
+    vkbMask += d->m_geometry->popoverRect().toRect();
+
+    d->view->setMask(vkbMask);
+}
+
 void InputMethod::onVisibleRectChanged()
 {
     Q_D(InputMethod);
@@ -495,7 +506,9 @@ void InputMethod::onVisibleRectChanged()
 
     inputMethodHost()->setScreenRegion(QRegion(visibleRect));
     inputMethodHost()->setInputMethodArea(visibleRect, d->view);
-    d->view->setMask(QRegion(d->m_geometry->visibleRect().toRect()));
+
+    // update window mask
+    updateWindowMask();
 
     d->applicationApiWrapper->reportOSKVisible(
                 visibleRect.x(),

@@ -27,7 +27,7 @@ isEmpty(LIBDIR) {
 }
 
 isEmpty(MALIIT_DEFAULT_PROFILE) {
-    MALIIT_DEFAULT_PROFILE = ubuntu
+    MALIIT_DEFAULT_PROFILE = luneos
 }
 
 isEmpty(HUNSPELL_DICT_PATH) {
@@ -48,14 +48,14 @@ enable-opengl {
     DEFINES += MALIIT_KEYBOARD_HAVE_OPENGL
 }
 
-UBUNTU_KEYBOARD_PACKAGENAME = ubuntu-keyboard
-UBUNTU_KEYBOARD_VERSION = $$system(cat $$PWD/VERSION)
-UBUNTU_KEYBOARD_DATA_DIR = "$${MALIIT_PLUGINS_DATA_DIR}/com/ubuntu"
-UBUNTU_KEYBOARD_LIB_DIR = "$${MALIIT_PLUGINS_DATA_DIR}/com/ubuntu/lib"
-UBUNTU_KEYBOARD_TEST_DIR = "/usr/share/maliit/tests/ubuntu-keyboard"
-UBUNTU_KEYBOARD_HEADERS_DIR = "$${MALIIT_PLUGINS_DATA_DIR}/com/ubuntu/include"
+LUNEOS_KEYBOARD_PACKAGENAME = luneos-keyboard
+LUNEOS_KEYBOARD_VERSION = $$system(cat $$PWD/VERSION)
+LUNEOS_KEYBOARD_DATA_DIR = "$${MALIIT_PLUGINS_DATA_DIR}/org/luneos"
+LUNEOS_KEYBOARD_LIB_DIR = "$${MALIIT_PLUGINS_DATA_DIR}/org/luneos/lib"
+LUNEOS_KEYBOARD_TEST_DIR = "/usr/share/maliit/tests/luneos-keyboard"
+LUNEOS_KEYBOARD_HEADERS_DIR = "$${MALIIT_PLUGINS_DATA_DIR}/org/luneos/include"
 
-DEFINES += UBUNTU_KEYBOARD_DATA_DIR=\\\"$${UBUNTU_KEYBOARD_DATA_DIR}\\\"
+DEFINES += LUNEOS_KEYBOARD_DATA_DIR=\\\"$${LUNEOS_KEYBOARD_DATA_DIR}\\\"
 DEFINES += MALIIT_PLUGINS_DATA_DIR=\\\"$${MALIIT_PLUGINS_DATA_DIR}\\\"
 enable-pinyin {
     PINYIN_DATA_DIR = "$$system(pkg-config --variable pkgdatadir libpinyin)/data"
@@ -92,10 +92,10 @@ defineReplace(maliitDynamicLib) {
     return($${MALIIT_DYNAMIC_PREFIX}$${1}$${MALIIT_DYNAMIC_SUFFIX})
 }
 
-UBUNTU_KEYBOARD_TARGET = ubuntu-keyboard
-UBUNTU_KEYBOARD_VIEW_TARGET = ubuntu-keyboard-view
-UBUNTU_KEYBOARD_PLUGIN_TARGET = ubuntu-keyboard-plugin
+LUNEOS_KEYBOARD_TARGET = luneos-keyboard
+LUNEOS_KEYBOARD_VIEW_TARGET = luneos-keyboard-view
+LUNEOS_KEYBOARD_PLUGIN_TARGET = luneos-keyboard-plugin
 
-UBUNTU_KEYBOARD_LIB = src/lib/$$maliitStaticLib($${UBUNTU_KEYBOARD_TARGET})
-UBUNTU_KEYBOARD_VIEW_LIB = src/view/$$maliitStaticLib($${UBUNTU_KEYBOARD_VIEW_TARGET})
-UBUNTU_KEYBOARD_PLUGIN_LIB = src/plugin/$$maliitDynamicLib($${UBUNTU_KEYBOARD_PLUGIN_TARGET})
+LUNEOS_KEYBOARD_LIB = src/lib/$$maliitStaticLib($${LUNEOS_KEYBOARD_TARGET})
+LUNEOS_KEYBOARD_VIEW_LIB = src/view/$$maliitStaticLib($${LUNEOS_KEYBOARD_VIEW_TARGET})
+LUNEOS_KEYBOARD_PLUGIN_LIB = src/plugin/$$maliitDynamicLib($${LUNEOS_KEYBOARD_PLUGIN_TARGET})

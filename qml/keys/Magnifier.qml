@@ -1,5 +1,7 @@
 /*
  * Copyright 2013 Canonical Ltd.
+ * Copyright (C) 2015 Christophe Chapuis <chris.chapuis@gmail.com>
+ * Copyright (C) 2015 Herman van Hazendonk <github.com@herrie.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,6 +17,7 @@
  */
 
 import QtQuick 2.0
+import LunaNext.Common 0.1
 import "key_constants.js" as UI
 
 /*!
@@ -32,48 +35,95 @@ Item {
     property bool shown: false
 
     visible: false
+    opacity: 0
+    scale: 0
+    transformOrigin: Item.Bottom
 
-    onShownChanged: {
-        if (shown) {
-            root.visible = true
-            popper.animationStep = 1
-        } else {
-            hidePopperAnimation.start();
+    states: [
+        State {
+            when: shown
+            name: "VISIBLE"
+            PropertyChanges { target: root; visible: true; opacity: 1; scale: 1 }
+        },
+        State {
+            when: !shown
+            name: "HIDDEN"
+            PropertyChanges { target: root; visible: false; opacity: 0; scale: 0 }
+        }
+    ]
+
+    transitions: [
+        Transition {
+            from: "VISIBLE"; to: "HIDDEN"
+            SequentialAnimation {
+                NumberAnimation {
+                    target: root
+                    properties: "opacity,scale"
+                    to: 0
+                    duration: 100
+                    easing.type: Easing.InOutQuad
+                }
+                PropertyAction { target: root; property: "visible" }
+            }
+        }
+    ]
+    
+	Row {
+        id: borderImageRow
+        anchors.bottom: parent.bottom
+        anchors.horizontalCenter: parent.horizontalCenter
+        height: Units.gu(9)
+        BorderImage {
+            id: leftImage
+            source: UI.imagePopupBgLeft[formFactor]
+            border {left: 21; top: 21; bottom: 36;}
+            height: parent.height
+            verticalTileMode: BorderImage.Stretch
+            width: Units.gu(2.1)
+        }
+        BorderImage {
+            id: leftMiddleImage
+            source: UI.imagePopupBgBetween[formFactor]
+            height: parent.height
+            border {top: 21; bottom: 36;}
+            verticalTileMode: BorderImage.Stretch
+            horizontalTileMode: BorderImage.Stretch
+            width: Units.gu(0.8)
+        }
+        BorderImage {
+            id: middleImage
+            source: UI.imagePopupBgCaret[formFactor]
+            border {top: 21; bottom: 36;}
+            verticalTileMode: BorderImage.Stretch
+            height: parent.height
+            width: Units.gu(3.3)
+        }
+        BorderImage {
+            id: rightMiddleImage
+            source: UI.imagePopupBgBetween[formFactor]
+            border {top: 21; bottom: 36;}
+            horizontalTileMode: BorderImage.Stretch
+            verticalTileMode: BorderImage.Stretch
+            height: parent.height
+            width: Units.gu(0.8)
+        }
+        BorderImage {
+            id: rightImage
+            border {right: 21; top: 21; bottom: 36;}
+            source: UI.imagePopupBgRight[formFactor]
+            height: parent.height
+            width: Units.gu(2.1)
         }
     }
 
-    Image {
-        id: popper
-        anchors.fill: parent
+    Text {
+        id: label
+        anchors.centerIn: borderImageRow
+        anchors.verticalCenterOffset: Units.gu(-0.5)
 
-        // this property is used to synchronize scale and opacity animation
-        property real animationStep: 0
-        scale: animationStep
-        transformOrigin: Item.Bottom
-        opacity: animationStep
-
-        source: Qt.resolvedUrl("../images/keyboard_popover.png")
-
-        Text {
-            id: label
-            anchors.centerIn: parent
-
-            font.family: UI.fontFamily
-            font.pixelSize: units.gu( UI.fontSize )
-            font.bold: UI.fontBold
-            color: UI.fontColor
-        }
-
-        NumberAnimation {
-            id: hidePopperAnimation
-            target: popper
-            property: "animationStep"
-            to: 0
-            duration: 50
-            easing.type: Easing.InOutQuad
-            onStopped: {
-                root.visible = false;
-            }
-        }
+        font.family: UI.fontFamily
+        font.pixelSize: FontUtils.sizeToPixels(UI.popoverFontSize[formFactor])
+        font.bold: UI.fontBold[formFactor]
+        color: UI.magnifierFontColor[formFactor]
     }
 }

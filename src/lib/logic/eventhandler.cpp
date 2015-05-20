@@ -66,6 +66,14 @@ void EventHandler::onKeyPressed(QString label, QString action)
 
     if (action == "backspace")
         key.setAction(Key::ActionBackspace);
+    else if (action == "keyRight")
+        key.setAction(Key::ActionRight);
+    else if (action == "keyLeft")
+        key.setAction(Key::ActionLeft);
+    else if (action == "keyDown")
+        key.setAction(Key::ActionUp);
+    else if (action == "keyUp")
+        key.setAction(Key::ActionLeft);
 
     Q_EMIT keyPressed(key);
 }
@@ -83,6 +91,14 @@ void EventHandler::onKeyReleased(QString label, QString action)
         key.setAction(Key::ActionSpace);
     else if (action == "shift")
         key.setAction(Key::ActionShift);
+    else if (action == "keyRight")
+        key.setAction(Key::ActionRight);
+    else if (action == "keyLeft")
+        key.setAction(Key::ActionLeft);
+    else if (action == "keyDown")
+        key.setAction(Key::ActionUp);
+    else if (action == "keyUp")
+        key.setAction(Key::ActionLeft);
     else
         key.setAction(Key::ActionInsert);
 

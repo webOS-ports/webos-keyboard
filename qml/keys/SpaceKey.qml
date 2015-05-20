@@ -1,5 +1,7 @@
 /*
  * Copyright 2013 Canonical Ltd.
+ * Copyright (C) 2015 Christophe Chapuis <chris.chapuis@gmail.com>
+ * Copyright (C) 2015 Herman van Hazendonk <github.com@herrie.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -22,8 +24,8 @@ ActionKey {
     label: " ";
     shifted: " ";
 
-    imgNormal: UI.imageWhiteKey
-    imgPressed: UI.imageWhiteKeyPressed
+    imgNormal: formFactor === "tablet" ? UI.imageWhiteKey[formFactor] : UI.imageBlackKey[formFactor]
+    imgPressed: formFactor === "tablet" ? UI.imageWhiteKeyPressed[formFactor] : UI.imageBlackKeyPressed[formFactor]
 
     action: "space"
 }

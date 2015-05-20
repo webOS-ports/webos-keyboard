@@ -3,20 +3,25 @@ include(../config.pri)
 TARGET = dummy
 TEMPLATE = lib
 
-qml.path = $$UBUNTU_KEYBOARD_DATA_DIR
+qml.path = $$LUNEOS_KEYBOARD_DATA_DIR
 qml.files = *.qml *.js
 
-qml_keys.path = "$$UBUNTU_KEYBOARD_DATA_DIR/keys"
+qml_keys.path = "$$LUNEOS_KEYBOARD_DATA_DIR/keys"
 qml_keys.files = keys/*.qml keys/qmldir keys/*.js
 
-qml_languages.path = "$$UBUNTU_KEYBOARD_DATA_DIR/languages"
+qml_languages.path = "$$LUNEOS_KEYBOARD_DATA_DIR/languages"
 qml_languages.files = languages/*.qml languages/*.js
 
+images.path = "$$LUNEOS_KEYBOARD_DATA_DIR/images"
+images.files = images/*.png
 
-images.path = "$$UBUNTU_KEYBOARD_DATA_DIR/images"
-images.files = images/*.png images/*.sci
+images_phone.path = "$$LUNEOS_KEYBOARD_DATA_DIR/images/phone"
+images_phone.files = images/phone/*.png
 
-INSTALLS += qml qml_keys qml_languages images
+images_tablet.path = "$$LUNEOS_KEYBOARD_DATA_DIR/images/tablet"
+images_tablet.files = images/tablet/*.png
+
+INSTALLS += qml qml_keys qml_languages images images_phone images_tablet
 
 # for QtCreator
 OTHER_FILES += \
@@ -33,10 +38,9 @@ OTHER_FILES += \
     keys/CharKey.qml \
     keys/BackspaceKey.qml \
     keys/DropShadow.qml \
-    keys/ExtendedKeysSelector.qml \
-    keys/KeyPad.qml \
+    keys/ExtendedListSelector.qml \
     keys/LanguageKey.qml \
-    keys/LanguageMenu.qml \
+	keys/KeyPad.qml \
     keys/Magnifier.qml \
     keys/OneTwoKey.qml \
     keys/PressArea.qml \
@@ -44,7 +48,9 @@ OTHER_FILES += \
     keys/ShiftKey.qml \
     keys/SpaceKey.qml \
     keys/Spacer.qml \
+    keys/SpacerLuneOS.qml \	
     keys/SymbolShiftKey.qml \
+	keys/TabKey.qml \
     keys/UrlKey.qml \
     keys/qmldir \
     languages/Keyboard_numbers.qml \

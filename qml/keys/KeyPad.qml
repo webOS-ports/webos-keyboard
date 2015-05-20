@@ -1,5 +1,7 @@
 /*
  * Copyright 2013 Canonical Ltd.
+ * Copyright (C) 2015 Christophe Chapuis <chris.chapuis@gmail.com>
+ * Copyright (C) 2015 Herman van Hazendonk <github.com@herrie.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -24,6 +26,8 @@ Item {
     property var content: c1
     property string symbols: "languages/Keyboard_symbols.qml"
     property bool capsLock: false
+
+    property int nbNumericalRows: 0
 
     Column {
         id: c1
@@ -60,6 +64,8 @@ Item {
     }
 
     function calculateKeyHeight() {
-        panel.keyHeight = panel.height / numberOfRows();
+        // numKey height ratio is 0.74 (see NumKey.qml) and normal key height ratio is 1, so we get
+        // panel.height = (0.74 + (nbRows-1)*1) * panel.keyHeight
+        panel.keyHeight = panel.height / (0.74*nbNumericalRows + (numberOfRows()-nbNumericalRows));
     }
 }

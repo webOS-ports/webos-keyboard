@@ -1,5 +1,7 @@
 /*
  * Copyright 2013 Canonical Ltd.
+ * Copyright (C) 2015 Christophe Chapuis <chris.chapuis@gmail.com>
+ * Copyright (C) 2015 Herman van Hazendonk <github.com@herrie.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -17,6 +19,8 @@
 import QtQuick 2.0
 
 ActionKey {
+    id: actionKey
+
     iconNormal: "language";
     iconShifted: "language";
     iconCapsLock: "language";
@@ -29,6 +33,10 @@ ActionKey {
     MouseArea {
         anchors.fill: parent
         preventStealing: true
-        onPressAndHold: canvas.languageMenuShown = true
+        onPressAndHold: {
+            languagesMenu.extendedListModel = maliit_input_method.enabledLanguages
+            languagesMenu.currentlyAssignedKey = actionKey
+            panel.languagesMenuShown = true
+        }
     }
 }

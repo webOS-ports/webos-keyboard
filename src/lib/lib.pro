@@ -1,7 +1,7 @@
 include(../config.pri)
 
 VERSION = 0.2.0
-TARGET = $${UBUNTU_KEYBOARD_TARGET}
+TARGET = $${LUNEOS_KEYBOARD_TARGET}
 TEMPLATE = lib
 QT += core gui quick
 CONFIG += staticlib
@@ -24,5 +24,5 @@ include(../word-prediction.pri)
 API_HEADERS = logic/languageplugininterface.h
 
 api_headers.files = $$API_HEADERS
-api_headers.path = $$UBUNTU_KEYBOARD_HEADERS_DIR
+api_headers.path = $$LUNEOS_KEYBOARD_HEADERS_DIR
 INSTALLS += api_headers

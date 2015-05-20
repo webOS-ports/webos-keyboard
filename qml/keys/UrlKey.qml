@@ -1,5 +1,7 @@
 /*
  * Copyright 2013 Canonical Ltd.
+ * Copyright (C) 2015 Christophe Chapuis <chris.chapuis@gmail.com>
+ * Copyright (C) 2015 Herman van Hazendonk <github.com@herrie.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -15,13 +17,17 @@
  */
 
 import QtQuick 2.0
+import LunaNext.Common 0.1
 import "../keys/key_constants.js" as UI
 
 CharKey {
-    width: panel.keyWidth + units.gu( UI.emailLayoutUrlKeyPadding )
+    width: panel.keyWidth
+
+    imgNormal: UI.imageGreyKey[formFactor]
+    imgPressed: UI.imageGreyKeyPressed[formFactor];
 
     label: ".com";
     shifted: label
     extendedShifted: extended
-    fontSize: units.gu(UI.smallFontSize);
+    fontSize: label.length>1 ? UI.smallFontSize[formFactor] : UI.fontSize[formFactor];
 }

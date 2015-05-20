@@ -32,7 +32,7 @@
 KeyboardGeometry::KeyboardGeometry(QObject *parent) :
     QObject(parent)
   , m_keypadHeight(0)
-  , m_canvasHeight(0)
+  , m_popoverRect()
   , m_visibleRect()
   , m_orientation(Qt::PrimaryOrientation)
   , m_shown(false)
@@ -64,21 +64,21 @@ void KeyboardGeometry::setKeypadHeight(int height)
 //! \brief KeyboardGeometry::canvasHeight height for the canvas item
 //! FIXME this should not be needed, and calculated in QML directly
 //! \return
-int KeyboardGeometry::canvasHeight() const
+const QRectF &KeyboardGeometry::popoverRect() const
 {
-    return m_canvasHeight;
+    return m_popoverRect;
 }
 
 //! \brief KeyboardGeometry::setCanvasHeight
 //! FIXME this should not be needed, and calculated in QML directly
 //! \param height
-void KeyboardGeometry::setCanvasHeight(int height)
+void KeyboardGeometry::setPopoverRect(const QRectF &rect)
 {
-    if (height == m_canvasHeight)
+    if (rect == m_popoverRect)
         return;
 
-    m_canvasHeight = height;
-    Q_EMIT canvasHeightChanged();
+    m_popoverRect = rect;
+    Q_EMIT popoverRectChanged();
 }
 
 //! \brief KeyboardGeometry::visibleRect returns the size and position of the total

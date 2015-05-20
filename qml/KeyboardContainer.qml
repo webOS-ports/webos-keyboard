@@ -1,5 +1,7 @@
 /*
  * Copyright 2013 Canonical Ltd.
+ * Copyright (C) 2015 Christophe Chapuis <chris.chapuis@gmail.com>
+ * Copyright (C) 2015 Herman van Hazendonk <github.com@herrie.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -17,9 +19,10 @@
 import QtQuick 2.0
 import QtMultimedia 5.0
 import QtQuick.Window 2.0
+import LuneOSKeyboard 1.0
 import "languages/"
 import "keys/"
-import UbuntuKeyboard 1.0
+import LunaNext.Common 0.1
 
 Item {
     id: panel
@@ -29,6 +32,9 @@ Item {
 
     property string activeKeypadState: "NORMAL"
     property alias popoverEnabled: extendedKeysSelector.enabled
+    property alias keyboardSizeMenuShown: keyboardSizeMenu.enabled
+    property alias languagesMenuShown: languagesMenu.enabled
+    property string currentKeyboardSize: "M"
 
     state: "CHARACTERS"
 
@@ -46,10 +52,26 @@ Item {
         onLoaded: activeKeypadState = "NORMAL"
     }
 
-    ExtendedKeysSelector {
+    ExtendedListSelector {
         id: extendedKeysSelector
         objectName: "extendedKeysSelector"
         anchors.fill: parent
+
+        onItemSelected: event_handler.onKeyReleased(modelData);
+    }
+
+    ExtendedListSelector {
+        id: keyboardSizeMenu
+        anchors.fill: parent
+
+        onItemSelected: panel.currentKeyboardSize = modelData;
+    }
+
+    ExtendedListSelector {
+        id: languagesMenu
+        anchors.fill: parent
+
+        onItemSelected: maliit_input_method.activeLanguage = modelData;
     }
 
     Audio {
@@ -99,8 +121,7 @@ Item {
                 "pt",
                 "ru",
                 "sv",
-                "zh",
-                "xx"
+                "zh"
             ];
             return (supportedLocales.indexOf( locale ) > -1);
         }
@@ -116,41 +137,10 @@ Item {
             }
 
             var selectedLanguageFile = "lib/en/Keyboard_en.qml";
+            var formFactor = Settings.tabletUi ? "tablet" : "phone";
 
-            if (language === "ar")
-                selectedLanguageFile = "lib/ar/Keyboard_ar.qml";
-            else if (language === "cs")
-                selectedLanguageFile = "lib/cs/Keyboard_cs.qml";
-            else if (language === "da")
-                selectedLanguageFile = "lib/da/Keyboard_da.qml";
-            else if (language === "de")
-                selectedLanguageFile = "lib/de/Keyboard_de.qml";
-            else if (language === "en")
-                selectedLanguageFile = "lib/en/Keyboard_en.qml";
-            else if (language === "es")
-                selectedLanguageFile = "lib/es/Keyboard_es.qml";
-            else if (language === "fi")
-                selectedLanguageFile = "lib/fi/Keyboard_fi.qml";
-            else if (language === "fr")
-                selectedLanguageFile = "lib/fr/Keyboard_fr.qml";
-            else if (language === "he")
-                selectedLanguageFile = "lib/he/Keyboard_he.qml";
-            else if (language === "hu")
-                selectedLanguageFile = "lib/hu/Keyboard_hu.qml";
-            else if (language === "it")
-                selectedLanguageFile = "lib/it/Keyboard_it.qml";
-            else if (language === "nl")
-                selectedLanguageFile = "lib/nl/Keyboard_nl.qml";
-            else if (language === "pl")
-                selectedLanguageFile = "lib/pl/Keyboard_pl.qml";
-            else if (language === "pt")
-                selectedLanguageFile = "lib/pt/Keyboard_pt.qml";
-            else if (language === "ru")
-                selectedLanguageFile = "lib/ru/Keyboard_ru.qml";
-            else if (language === "sv")
-                selectedLanguageFile = "lib/sv/Keyboard_sv.qml";
-            else if (language === "zh")
-                selectedLanguageFile = "lib/zh/Keyboard_zh_cn_pinyin.qml";
+            // results in something like "lib/en/Keyboard_en_tablet.qml"
+            selectedLanguageFile = "lib/" + language + "/Keyboard_" + language + "_" + formFactor + ".qml";
 
             return selectedLanguageFile;
         }
@@ -176,27 +166,25 @@ Item {
                     locale = "en"
                 }
 
+                var formFactor = Settings.tabletUi ? "tablet" : "phone";
+
                 //            if (contentType === InputMethod.EmailContentType) {
                 if (contentType === 3) {
-                    selectedLayoutFile = "lib/"+locale+"/Keyboard_"+locale+"_email.qml";
+					selectedLayoutFile = "lib/"+locale+"/Keyboard_"+locale +"_"+formFactor+"_email.qml";
                 }
 
                 //            if (contentType === InputMethod.UrlContentType) {
-                if (contentType === 4) {
-                    selectedLayoutFile = "lib/"+locale+"/Keyboard_"+locale+"_url_search.qml";
+                else if (contentType === 4) {
+					selectedLayoutFile = "lib/"+locale+"/Keyboard_"+locale + "_"+formFactor+"_url_search.qml";
                 }
 
                 else {
-                    // FreeTextContentType used as fallback
                     selectedLayoutFile = freeTextLanguageKeyboard(activeLanguage);
                 }
 
                 // for testing on desktop
                 if( maliit_input_method.testEnvironment )
                 {
-                    if (locale === "xx")
-                        selectedLayoutFile = "languages/en_webos/Keyboard_en_webos.qml";
-
                     // in a test environment, the "lib/<locale>/" directory is indeed a "plugins/<locale>/qml" directory
                     var regexp = /lib\/(..)\//;
                     selectedLayoutFile = selectedLayoutFile.replace(regexp, '../plugins/$1/qml/');

@@ -1,5 +1,7 @@
 /*
  * Copyright 2013 Canonical Ltd.
+ * Copyright (C) 2015 Christophe Chapuis <chris.chapuis@gmail.com>
+ * Copyright (C) 2015 Herman van Hazendonk <github.com@herrie.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -15,7 +17,7 @@
  */
 
 import QtQuick 2.0
-
+import LunaNext.Common 0.1
 import "key_constants.js" as UI
 
 ActionKey {
@@ -23,14 +25,14 @@ ActionKey {
     shifted: "+=[]";
     action: "symbols";
 
-    fontSize: units.gu(UI.symbolShiftKeyFontSize);
-    width: panel.keyWidth * 2
+    fontSize: UI.symbolShiftKeyFontSize[formFactor];
+    width: panel.keyWidth //* 2
     
     MouseArea {
         anchors.fill: parent
         preventStealing: true
         onClicked: {
-            if (panel.state == "CHARACTERS")
+            if (panel.state === "CHARACTERS")
                 panel.state = "SYMBOLS";
             else
                 panel.state = "CHARACTERS";

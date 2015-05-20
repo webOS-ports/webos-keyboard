@@ -103,6 +103,7 @@ public:
     const QString &activeLanguage() const;
     Q_SLOT void setActiveLanguage(const QString& newLanguage);
 
+    Q_SLOT void updateWindowMask();
     Q_SLOT void onVisibleRectChanged();
     bool useAudioFeedback() const;
 

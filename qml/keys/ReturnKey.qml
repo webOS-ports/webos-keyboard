@@ -1,5 +1,7 @@
 /*
  * Copyright 2013 Canonical Ltd.
+ * Copyright (C) 2015 Christophe Chapuis <chris.chapuis@gmail.com>
+ * Copyright (C) 2015 Herman van Hazendonk <github.com@herrie.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -15,8 +17,10 @@
  */
 
 import QtQuick 2.0
+import "key_constants.js" as UI
 
 ActionKey {
 	width: panel.keyWidth * 1.5;
     action: "return"
+	fontSize: UI.symbolShiftKeyFontSize[formFactor];
 }

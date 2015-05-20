@@ -20,7 +20,7 @@ TARGET          = $$qtLibraryTarget(portugueseplugin)
 EXAMPLE_FILES = portugueseplugin.json
 
 # generate database for presage:
-PLUGIN_INSTALL_PATH = $${UBUNTU_KEYBOARD_LIB_DIR}/pt/
+PLUGIN_INSTALL_PATH = $${LUNEOS_KEYBOARD_LIB_DIR}/pt/
 
 lang_db_pt.path = $$PLUGIN_INSTALL_PATH
 lang_db_pt.files += $$OUT_PWD/database_pt.db

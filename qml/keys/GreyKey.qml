@@ -1,5 +1,7 @@
 /*
  * Copyright 2013 Canonical Ltd.
+ * Copyright (C) 2015 Christophe Chapuis <chris.chapuis@gmail.com>
+ * Copyright (C) 2015 Herman van Hazendonk <github.com@herrie.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -16,6 +18,8 @@
 
 import QtQuick 2.0
 import QtMultimedia 5.0
+
+import LunaNext.Common 0.1
 
 import "key_constants.js" as UI
 
@@ -40,10 +44,11 @@ Item {
     property bool skipAutoCaps: false
 
     /* design */
-    property string imgNormal: UI.imageGreyKey
-    property string imgPressed: UI.imageGreyKeyPressed
+    property string formFactor: Settings.tabletUi ? "tablet" : "phone"
+    property string imgNormal: UI.imageGreyKey[formFactor]
+    property string imgPressed: UI.imageGreyKeyPressed[formFactor]
     // fontSize can be overwritten when using the component, e.g. SymbolShiftKey uses smaller fontSize
-    property int fontSize: units.gu( UI.fontSize );
+    property string fontSize: UI.fontSize[formFactor]
 
     /// annotation shows a small label in the upper right corner
     // if the annotiation property is set, it will be used. If not, the first position in extended[] list or extendedShifted[] list will
@@ -102,9 +107,9 @@ Item {
         anchors.bottom: parent.verticalCenter
         anchors.margins: 0, 0, 0, -25
         font.family: UI.fontFamily
-        font.pixelSize: fontSize
-        font.bold: UI.fontBold
-        color: UI.fontColor
+        font.pixelSize: FontUtils.sizeToPixels(fontSize);
+        font.bold: UI.fontBold[formFactor]
+        color: UI.fontColor[formFactor]
     }
 
     /// shows an annotation
@@ -118,9 +123,9 @@ Item {
         anchors.bottom: parent.verticalCenter
         anchors.margins: 0, 0, 0, 5
 
-        font.pixelSize: units.gu( UI.annotationFontSize )
+        font.pixelSize: FontUtils.sizeToPixels(UI.annotationFontSize[formFactor]);
         font.bold: false
-        color: UI.annotationFontColor
+        color: UI.annotationFontColor[formFactor]
     }
 
     PressArea {

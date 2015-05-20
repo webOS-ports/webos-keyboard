@@ -1,5 +1,7 @@
 /*
  * Copyright 2013 Canonical Ltd.
+ * Copyright (C) 2015 Christophe Chapuis <chris.chapuis@gmail.com>
+ * Copyright (C) 2015 Herman van Hazendonk <github.com@herrie.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -15,6 +17,7 @@
  */
 
 import QtQuick 2.0
+import LunaNext.Common 0.1
 
 import "key_constants.js" as UI
 
@@ -29,10 +32,10 @@ CharKey {
     property int padding: UI.actionKeyPadding
 
     // action keys are a bit wider
-    width: panel.keyWidth + units.gu( padding )
+    width: panel.keyWidth + Units.gu( padding )
 
-    imgNormal: UI.imageBlackKey + ".png"
-    imgPressed: UI.imageBlackKeyPressed + ".png"
+    imgNormal: UI.imageBlackKey[formFactor]
+    imgPressed: UI.imageBlackKeyPressed[formFactor]
 
     property string __icon: iconNormal
 
@@ -41,37 +44,47 @@ CharKey {
     property color colorShifted: "transparent"
     property color colorCapsLock: "transparent"
 
+    // fontSize can be overwritten when using the component, e.g. SymbolShiftKey uses smaller fontSize
+    property string fontSize: UI.fontSize[formFactor]
+	
+	
     // was: Icon (the source is an image from the icons directory)
     Image {
 
         property color color;
 
         id: iconImage
-        source: Qt.resolvedUrl("../images/" + __icon + ".png")
+        source: Qt.resolvedUrl("../images/" + formFactor + "/" + __icon + ".png")
         anchors.centerIn: parent
+        anchors.verticalCenterOffset: formFactor === "tablet" ? Units.gu(-0.25) : Units.gu(0.15)
         visible: (label == "")
-        width: units.gu(2.5)
-        height: units.gu(2.5)
+        height: formFactor === "tablet" ? parent.height * 0.7 : actionKeyRoot.height > actionKeyRoot.width ? parent.height * 0.5 : parent.width * 0.5
+	   	smooth: true
+		fillMode: Image.PreserveAspectFit
     }
 
     Text {
         id: keyLabel
         text: (panel.activeKeypadState === "NORMAL") ? label : shifted;
         anchors.centerIn: parent
+		anchors.horizontalCenterOffset: action === "return" && formFactor === "tablet" ? Units.gu(2) : 0
         font.family: UI.fontFamily
-        font.pixelSize: fontSize
-        font.bold: UI.fontBold
-        color: UI.greyColor
+        font.pixelSize: FontUtils.sizeToPixels(fontSize);
+        font.bold: UI.fontBoldAction
+        style: Text.Raised
+        styleColor: "black"
+        color: UI.greyColor[formFactor]
+        smooth: true
     }
 
     onOskStateChanged: {
-        if (panel.activeKeypadState == "NORMAL") {
+        if (panel.activeKeypadState === "NORMAL") {
             __icon = iconNormal;
             iconImage.color = colorNormal;
-        } else if (panel.activeKeypadState == "SHIFTED") {
+        } else if (panel.activeKeypadState === "SHIFTED") {
             __icon = iconShifted;
             iconImage.color = colorShifted;
-        } else if (panel.activeKeypadState == "CAPSLOCK") {
+        } else if (panel.activeKeypadState === "CAPSLOCK") {
             __icon = iconCapsLock;
             iconImage.color = colorCapsLock;
         }

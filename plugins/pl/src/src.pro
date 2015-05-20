@@ -20,7 +20,7 @@ TARGET          = $$qtLibraryTarget(polishplugin)
 EXAMPLE_FILES = polishplugin.json
 
 # generate database for presage:
-PLUGIN_INSTALL_PATH = $${UBUNTU_KEYBOARD_LIB_DIR}/pl/
+PLUGIN_INSTALL_PATH = $${LUNEOS_KEYBOARD_LIB_DIR}/pl/
 
 lang_db_pl.path = $$PLUGIN_INSTALL_PATH
 lang_db_pl.files += $$OUT_PWD/database_pl.db
