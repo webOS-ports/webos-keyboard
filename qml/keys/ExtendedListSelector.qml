@@ -154,11 +154,13 @@ Item {
                 Text {
                     id: textCell
                     anchors.centerIn: parent
+					//anchors.verticalCenterOffset: formFactor === "phone" ? Units.gu (-0.15) : 0
+					anchors.verticalCenterOffset: Units.gu(-0.15)
                     text: modelData
                     font.family: UI.fontFamily
-                    font.pixelSize: text.length > 2 ? FontUtils.sizeToPixels(UI.smallFontSize) : FontUtils.sizeToPixels(UI.fontSize)
-                    font.bold: UI.fontBold[formFactor]
-                    color: key.highlight ? "#4B97DE"  : UI.fontColor[formFactor]
+                    font.pixelSize: text.length > 2 ? FontUtils.sizeToPixels(UI.smallFontSize[formFactor]) : FontUtils.sizeToPixels(UI.fontSize[formFactor])
+                    font.bold: false //UI.fontBold[formFactor]
+                    color: key.highlight ? UI.extendedHighLightColor[formFactor] : UI.extendedFontColor[formFactor]
                 }
 
                 MouseArea {

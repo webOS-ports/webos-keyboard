@@ -50,7 +50,7 @@ Item {
     property string imgNormal: UI.imageGreyKey[formFactor]
     property string imgPressed: UI.imageGreyKeyPressed[formFactor]
     // fontSize can be overwritten when using the component, e.g. SymbolShiftKey uses smaller fontSize
-    property string fontSize: UI.fontSize
+    property string fontSize: UI.fontSize[formFactor]
 
     /// annotation shows a small label in the upper right corner
     // if the annotiation property is set, it will be used. If not, the first position in extended[] list or extendedShifted[] list will
@@ -95,7 +95,7 @@ Item {
         border { left: 27; top: 29; right: 27; bottom: 29 }
         anchors.centerIn: parent
         anchors.fill: key
-        anchors.margins: units.gu( UI.keyMargins / 3);
+        anchors.margins: Units.gu( UI.keyMargins / 3);
         source: key.pressed ? key.imgPressed : key.imgNormal
     }
 
@@ -107,15 +107,17 @@ Item {
         //text: (panel.activeKeypadState === "NORMAL") ? label : shifted;
         text: label
         anchors.right: useHorizontalLayout ? parent.right : undefined
-        anchors.rightMargin:  useHorizontalLayout ? units.gu(2.0) : 0
+        anchors.rightMargin:  useHorizontalLayout ? Units.gu(2.0) : 0
 
         anchors.horizontalCenter: useHorizontalLayout ? undefined : buttonImage.horizontalCenter
 
+		//anchors.bottom: parent.bottom
+		//anchors.bottomMargin: Units.gu(-0.5)
         anchors.verticalCenter: parent.verticalCenter
-        anchors.verticalCenterOffset: useHorizontalLayout ? units.gu(-0.25) : units.gu(0.5)
+        anchors.verticalCenterOffset: useHorizontalLayout ? Units.gu(-0.25) : Units.gu(0.5)
 
         font.family: UI.fontFamily
-        font.pixelSize: (panel.activeKeypadState === "NORMAL") ? FontUtils.sizeToPixels(UI.fontSize) : FontUtils.sizeToPixels(UI.annotationFontSize)
+        font.pixelSize: (panel.activeKeypadState === "NORMAL") ? FontUtils.sizeToPixels(UI.fontSize[formFactor]) : FontUtils.sizeToPixels(UI.annotationFontSize[formFactor])
         font.bold: UI.fontBold[formFactor]
         color: (panel.activeKeypadState === "NORMAL") ? UI.fontColor[formFactor] : UI.annotationFontColor[formFactor]
         style: (panel.activeKeypadState === "NORMAL") ? Text.Raised : Text.Normal
@@ -132,15 +134,15 @@ Item {
         text: __annotationLabelNormal
 
         anchors.left: useHorizontalLayout ? parent.left : undefined
-        anchors.leftMargin: useHorizontalLayout ? units.gu(2.0) : 0
+        anchors.leftMargin: useHorizontalLayout ? Units.gu(2.0) : 0
 
         anchors.horizontalCenter: useHorizontalLayout ? undefined : buttonImage.horizontalCenter
-        anchors.horizontalCenterOffset: useHorizontalLayout ? units.gu(2.75) : 0
+        anchors.horizontalCenterOffset: useHorizontalLayout ? Units.gu(2.75) : 0
 
         anchors.verticalCenter: parent.verticalCenter
-        anchors.verticalCenterOffset: useHorizontalLayout ? units.gu(-0.25) : units.gu(-1.75)
+        anchors.verticalCenterOffset: useHorizontalLayout ? Units.gu(-0.25) : Units.gu(-1.75)
 
-        font.pixelSize: (panel.activeKeypadState === "NORMAL") ? FontUtils.sizeToPixels(UI.annotationFontSize) : FontUtils.sizeToPixels(UI.fontSize)
+        font.pixelSize: (panel.activeKeypadState === "NORMAL") ? FontUtils.sizeToPixels(UI.annotationFontSize[formFactor]) : FontUtils.sizeToPixels(UI.fontSize[formFactor])
         font.bold: false
         color: (panel.activeKeypadState !== "NORMAL") ? UI.fontColor[formFactor] : UI.annotationFontColor[formFactor]
         style: (panel.activeKeypadState !== "NORMAL") ? Text.Raised : Text.Normal
@@ -153,12 +155,19 @@ Item {
         //text: (panel.activeKeypadState != "NORMAL") ? __annotationLabelShifted : __annotationLabelNormal
 		text: "…" //__annotationLabelNormal
 
-        anchors.right: parent.right
-        anchors.rightMargin: useHorizontalLayout ? units.gu(1.0) : units.gu(2.0)
-        anchors.bottom: parent.bottom
-        anchors.bottomMargin: useHorizontalLayout ? units.gu(1.4) : units.gu(2.0)
+  //              anchors.right: parent.right
+//        anchors.rightMargin: units.gu(1.00)
 
-        font.pixelSize: FontUtils.sizeToPixels(UI.annotationFontSize)
+		anchors.right: parent.right
+        anchors.rightMargin: useHorizontalLayout ? Units.gu(1.0) : formFactor === "phone" ? Units.gu(0.5) : Units.gu(1.0)
+        //anchors.horizontalCenter: parent.horizontalCenter
+		//anchors.horizontalCenterOffset: useHorizontalLayout ? Units.gu(1.0) : Units.gu(2.0)
+		
+		anchors.bottom: parent.bottom
+        //anchors.bottomMargin: useHorizontalLayout ? Units.gu(0.5) : Units.gu(2.0)
+		anchors.bottomMargin: useHorizontalLayout || formFactor === "phone" ? Units.gu(0.5) : Units.gu(1.0)
+
+        font.pixelSize: FontUtils.sizeToPixels(UI.annotationFontSize[formFactor])
         font.bold: false
         style: Text.Raised
         styleColor: "white"
@@ -205,8 +214,8 @@ Item {
     Magnifier {
         anchors.horizontalCenter: buttonImage.horizontalCenter
         anchors.bottom: buttonImage.top
-        width: key.width + units.gu(UI.magnifierHorizontalPadding)
-        height: key.height + units.gu(UI.magnifierVerticalPadding)
+        width: key.width + Units.gu(UI.magnifierHorizontalPadding)
+        height: key.height + Units.gu(UI.magnifierVerticalPadding)
         text: keyLabel.text
         shown: key.pressed && !noMagnifier && !extendedKeysShown
     }
