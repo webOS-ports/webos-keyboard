@@ -23,34 +23,29 @@ Item {
 
     state: "NORMAL"
 
-    property var content: c1
     property string symbols: "languages/Keyboard_symbols.qml"
     property bool capsLock: false
 
-    property int nbNumericalRows: 0
+    height: content.height
 
-    Column {
-        id: c1
-    }
+    property Column content: Column {}
+
+    property int keyHeight: 0
 
     Component.onCompleted:
     {
         calculateKeyWidth();
-        calculateKeyHeight();
     }
 
     onWidthChanged: calculateKeyWidth()
-    onHeightChanged: calculateKeyHeight();
 
     function numberOfRows() {
-        if( !content ) return 1;
-
         return content.children.length;
     }
 
     // we don´t use a QML layout, because we want all keys to be equally sized
     function calculateKeyWidth() {
-        var width = panel.width;
+        var width = keyPadRoot.width;
 
         var maxNrOfKeys = 0;
         for (var i = 0; i < numberOfRows(); ++i) {
@@ -58,14 +53,6 @@ Item {
                 maxNrOfKeys = content.children[i].children.length;
         }
 
-        var maxSpaceForKeys = panel.width / maxNrOfKeys;
-
-        panel.keyWidth = maxSpaceForKeys;
-    }
-
-    function calculateKeyHeight() {
-        // numKey height ratio is 0.74 (see NumKey.qml) and normal key height ratio is 1, so we get
-        // panel.height = (0.74 + (nbRows-1)*1) * panel.keyHeight
-        panel.keyHeight = panel.height / (0.74*nbNumericalRows + (numberOfRows()-nbNumericalRows));
+        panel.keyWidth = keyPadRoot.width / maxNrOfKeys;
     }
 }

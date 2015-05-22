@@ -61,23 +61,15 @@ Item {
         }
     }
 
-    // When the keyboard initializes, the root QML element returns a zero size.
-    // So if no further geometry change event is sent, we might end up with a
-    // keyboard of height=0.
-    // Therefore we need to survey the root width and height properties to force
-    // recompute once the Screen singleton is actually initialized with proper values.
-    property real rootItemSizeSurvey: fullScreenItem.width+fullScreenItem.height
-    onRootItemSizeSurveyChanged: calculateSize();
-
 Item {
     id: canvas
     objectName: "luneOSKeyboard" // Allow us to specify a specific keyboard within autopilot.
 
     anchors.bottom: parent.bottom
     anchors.left: parent.left
+    anchors.right: parent.right
 
-    width: parent.width
-    height: 0
+    height: keyboardSurface.height
 
     property int keypadHeight: height;
 
@@ -88,9 +80,6 @@ Item {
 
     property int contentOrientation: maliit_geometry.orientation
     onContentOrientationChanged: fullScreenItem.reportKeyboardVisibleRect();
-
-    property bool wordribbon_visible: maliit_word_engine.enabled
-    onWordribbon_visibleChanged: calculateSize();
 
     property bool languageMenuShown: false
 	property bool keyboardSizeMenuShown: false
@@ -108,8 +97,7 @@ Item {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: parent.top
-        height: (parent.height - canvas.keypadHeight) + wordRibbon.height +
-                borderTop.height + units.gu(UI.top_margin) * 3
+        height: (parent.height - keypad.height) + wordRibbon.height
 
         drag.target: keyboardSurface
         drag.axis: Drag.YAxis;
@@ -133,7 +121,7 @@ Item {
             x:0
             y:0
             width: parent.width
-            height: canvas.height
+            height: wordRibbon.height + keyboardComp.height
 
             onXChanged: fullScreenItem.reportKeyboardVisibleRect();
             onYChanged: fullScreenItem.reportKeyboardVisibleRect();
@@ -144,20 +132,19 @@ Item {
                 id: wordRibbon
                 objectName: "wordRibbon"
 
-                visible: canvas.wordribbon_visible
+                visible: maliit_word_engine.enabled
 
                 anchors.bottom: keyboardComp.top
                 width: parent.width;
 
-                height: canvas.wordribbon_visible ? Units.gu(UI.wordribbonHeight) : 0
-                onHeightChanged: calculateSize();
+                height: visible ? Units.gu(UI.wordribbonHeight) : 0
             }
 
             Item {
                 id: keyboardComp
                 objectName: "keyboardComp"
 
-                height: canvas.keypadHeight - wordRibbon.height
+                height: keyboardCompColumn.height
                 width: parent.width
                 anchors.bottom: parent.bottom
 
@@ -171,30 +158,31 @@ Item {
                     fillMode: Image.TileHorizontally
                 }
 
-                Image {
-                    id: borderTop
-                    source: "images/"+formFactor+"/border_top.png"
-                    width: parent.width
-                    anchors.top: parent.top.bottom
-                }
-
-                Image {
-                    id: borderBottom
-                    source: "images/"+formFactor+"/border_bottom.png"
-                    width: parent.width
-                    anchors.bottom: background.bottom
-                }
-
-                KeyboardContainer {
-                    id: keypad
-
-                    anchors.top: borderTop.bottom
-                    anchors.bottom: borderBottom.top
-                    anchors.topMargin: units.gu( UI.top_margin )
-                    anchors.bottomMargin: units.gu( UI.bottom_margin )
+                Column {
+                    id: keyboardCompColumn
                     width: parent.width
 
-                    onCurrentKeyboardSizeChanged: fullScreenItem.calculateSize();
+                    Image {
+                        source: "images/"+formFactor+"/border_top.png"
+                        width: parent.width
+                    }
+                    Item {
+                        width: parent.width
+                        height: units.gu( UI.top_margin )
+                    }
+                    KeyboardContainer {
+                        id: keypad
+                        isLandscape: fullScreenItem.width > fullScreenItem.height;
+                        width: parent.width
+                    }
+                    Item {
+                        width: parent.width
+                        height: units.gu( UI.bottom_margin )
+                    }
+                    Image {
+                        source: "images/"+formFactor+"/border_bottom.png"
+                        width: parent.width
+                    }
                 }
             } // keyboardComp
         }
@@ -245,18 +233,6 @@ Item {
     }
 
 } // canvas
-
-function calculateSize()
-{
-    // warning: the following line is wrong if the vkb height doesn't always cover the screen current height
-    var isLandscape = (fullScreenItem.width > fullScreenItem.height);
-
-    var newHeight = fullScreenItem.height * UI.getHeightRatio(Settings.tabletUi ? "tablet" : "phone", fullScreenItem.height, isLandscape, keypad.currentKeyboardSize);
-
-    canvas.height = newHeight + wordRibbon.height;
-
-    reportKeyboardVisibleRect();
-}
 
 // calculates the size of the visible keyboard to report to the window system
 // FIXME get the correct size for enabled extended keys instead of that big area

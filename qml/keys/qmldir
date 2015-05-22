@@ -5,7 +5,7 @@ ArrowKeys 1.0 ArrowKeys.qml
 BackspaceKey 1.0 BackspaceKey.qml
 CharKey 1.0 CharKey.qml
 DismissKey 1.0 DismissKey.qml
-ExtendedKeysSelector 1.0 ExtendedKeysSelector.qml
+ExtendedListSelector 1.0 ExtendedListSelector.qml
 GreyKey 1.0 GreyKey.qml
 Key 1.0 Key.qml
 KeyPad 1.0 KeyPad.qml

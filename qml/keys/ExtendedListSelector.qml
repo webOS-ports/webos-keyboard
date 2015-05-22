@@ -29,6 +29,9 @@ Item {
     property variant extendedListModel
     property Item currentlyAssignedKey
 
+    property int keyHeight: currentlyAssignedKey ? currentlyAssignedKey.height : 0
+    property int keyWidth:  currentlyAssignedKey ? currentlyAssignedKey.width : 0
+
     property int currentlyAssignedKeyParentY: currentlyAssignedKey ? currentlyAssignedKey.parent.y : 0
     property int currentlyAssignedKeyX: currentlyAssignedKey ? currentlyAssignedKey.x : 0
     property int currentlyAssignedKeyY: currentlyAssignedKey ? currentlyAssignedKey.y : 0
@@ -55,8 +58,8 @@ Item {
 
     Item {
         id: anchorItem
-        width: panel.keyWidth
-        height: panel.keyHeight
+        width: popover.keyWidth
+        height: popover.keyHeight
     }
 
     Item {
@@ -187,7 +190,7 @@ Item {
         var point = popover.mapFromItem(item, item.x, item.y)
 
         anchorItem.x = item.x + row.x
-        anchorItem.y = point.y - (panel.keyHeight + Units.gu(UI.popoverTopMargin));
+        anchorItem.y = point.y - popover.keyHeight;
     }
 
     function __restoreAssignedKey()

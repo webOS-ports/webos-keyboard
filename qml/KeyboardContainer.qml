@@ -21,20 +21,23 @@ import QtMultimedia 5.0
 import QtQuick.Window 2.0
 import LuneOSKeyboard 1.0
 import "languages/"
-import "keys/"
+import keys 1.0
 import LunaNext.Common 0.1
 
 Item {
     id: panel
 
     property int keyWidth: 0
-    property int keyHeight: 0
+    height: characterKeypadLoader.height
 
     property string activeKeypadState: "NORMAL"
     property alias popoverEnabled: extendedKeysSelector.enabled
     property alias keyboardSizeMenuShown: keyboardSizeMenu.enabled
     property alias languagesMenuShown: languagesMenu.enabled
     property string currentKeyboardSize: "M"
+
+    property string formFactor: Settings.tabletUi ? "tablet" : "phone";
+    property bool isLandscape: false
 
     state: "CHARACTERS"
 
@@ -46,10 +49,18 @@ Item {
     Loader {
         id: characterKeypadLoader
         objectName: "characterKeyPadLoader"
-        anchors.fill: parent
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        height: item ? item.height : 0
         asynchronous: false
         source: panel.state === "CHARACTERS" ? internal.characterKeypadSource : internal.symbolKeypadSource
-        onLoaded: activeKeypadState = "NORMAL"
+        onLoaded: {
+            activeKeypadState = "NORMAL"
+            item.keyHeight = Qt.binding(function() { return Units.gu(UI.keyHeight[panel.formFactor + (panel.isLandscape ? "Landscape" : "Portrait")]); } );
+        }
+
+//        property int keyHeight: Units.gu(UI.keyHeight[formFactor]);
     }
 
     ExtendedListSelector {
@@ -137,7 +148,6 @@ Item {
             }
 
             var selectedLanguageFile = "lib/en/Keyboard_en.qml";
-            var formFactor = Settings.tabletUi ? "tablet" : "phone";
 
             // results in something like "lib/en/Keyboard_en_tablet.qml"
             selectedLanguageFile = "lib/" + language + "/Keyboard_" + language + "_" + formFactor + ".qml";

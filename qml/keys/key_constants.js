@@ -19,6 +19,10 @@
 .pragma library
 
 var keyMargins  	=   0 //gu
+var keyHeight       =   {"tabletLandscape" : "6.6",
+                                    "tabletPortrait"  : "7",
+                                    "phonePortrait"  : "6.1",
+                                    "phoneLandscape"  : "5.5"};   // gu
 
 var fontSize    	=   {"tablet" : "22pt",
                          "phone"  : "16pt"};    

@@ -29,7 +29,7 @@ Item {
     property int padding: 0
 
     width: panel.keyWidth
-    height: panel.keyHeight
+    height: parent.height
 
     /* to be set in keyboard layouts */
     property string label: ""

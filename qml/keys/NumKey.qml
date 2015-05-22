@@ -24,7 +24,7 @@ AnnotatedKey {
     property int padding: 0
 
     width: panel.keyWidth * 0.90
-    height: panel.keyHeight * 0.74
+    height: parent.height
 
     useHorizontalLayout: true
 }
