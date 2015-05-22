@@ -29,9 +29,9 @@ var testEnvs = {
             tabletUi:false
         },
         a500: {
-            displayWidth:1024,
-            displayHeight:768,
-            gridUnit:18,
+            displayWidth:1280,
+            displayHeight:800,
+            gridUnit:12,
             dpi:148,
             tabletUi:true
         },

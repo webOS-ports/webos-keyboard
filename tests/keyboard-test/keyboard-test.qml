@@ -25,6 +25,7 @@ Rectangle {
     id: testRoot
 
     property string currentTestEnv: Settings.currentTestEnv
+    property bool isRotated: false
 
     width: Settings.testEnvs[currentTestEnv].displayWidth
     height: Settings.displayHeight
@@ -59,6 +60,7 @@ Rectangle {
         id: maliit_input_method
 
         signal activateAutocaps();
+        signal hide();
 
         property int contentType: 0 // 0 ->  text, 1 -> number, 2 -> telephone, 3 -> email, 4 -> url
         property bool testEnvironment: true
@@ -105,6 +107,11 @@ Rectangle {
                     checked: maliit_word_engine.enabled
                     onClicked: maliit_word_engine.enabled = !maliit_word_engine.enabled;
                 }
+                Button {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: "rotate orientation (current is " + ((!isRotated && Settings.testEnvs[currentTestEnv].displayWidth > Settings.testEnvs[currentTestEnv].displayHeight) ? "landscape" : "portrait") + ")";
+                    onClicked: testRoot.isRotated = !testRoot.isRotated
+                }
                 ExclusiveGroup { id: tabPositionGroup }
                 Repeater {
                     id: listSimulatedEnvs
@@ -135,8 +142,8 @@ Rectangle {
         id: keyboardLoader
 
         // make it depend on currentTestEnv property binding
-        width: Settings.testEnvs[currentTestEnv].displayWidth
-        height: Settings.testEnvs[currentTestEnv].displayHeight
+        width: isRotated ? Settings.testEnvs[currentTestEnv].displayHeight : Settings.testEnvs[currentTestEnv].displayWidth
+        height: isRotated ? Settings.testEnvs[currentTestEnv].displayWidth : Settings.testEnvs[currentTestEnv].displayHeight
 
         anchors.bottom: parent.bottom
         anchors.horizontalCenter: parent.horizontalCenter
