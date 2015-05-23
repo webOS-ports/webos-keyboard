@@ -18,17 +18,18 @@
 
 import QtQuick 2.3
 import QtQuick.Controls 1.1
+
 import LunaNext.Common 0.1
+
 import "../../qml"
 
 Rectangle {
     id: testRoot
 
-    property string currentTestEnv: Settings.currentTestEnv
     property bool isRotated: false
 
-    width: Settings.testEnvs[currentTestEnv].displayWidth
-    height: Settings.displayHeight
+  //  width: Settings.displayWidth
+  //  height: Settings.displayHeight
 
     QtObject {
         id: maliit_geometry
@@ -109,23 +110,20 @@ Rectangle {
                 }
                 Button {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    text: "rotate orientation (current is " + ((!isRotated && Settings.testEnvs[currentTestEnv].displayWidth > Settings.testEnvs[currentTestEnv].displayHeight) ? "landscape" : "portrait") + ")";
+                    text: "rotate orientation (current is " + (((!isRotated) && (Settings.displayWidth > Settings.displayHeight)) ? "landscape" : "portrait") + ")";
                     onClicked: testRoot.isRotated = !testRoot.isRotated
                 }
                 ExclusiveGroup { id: tabPositionGroup }
                 Repeater {
                     id: listSimulatedEnvs
-                    model: Object.keys(Settings.testEnvs)
+                    model: Settings.testEnvs
                     delegate: RadioButton {
                         anchors.horizontalCenter: parent.horizontalCenter
-                        property int currentEnv: index
-                        property string simulatedEnvStr: Object.keys(Settings.testEnvs)[currentEnv]
-                        text: "switch to : " + simulatedEnvStr
+                        text: "switch to : " + model.name
                         exclusiveGroup: tabPositionGroup
                         onClicked: {
                             keyboardLoader.sourceComponent = undefined;
-                            Settings.changeCurrentTestEnv(Object.keys(Settings.testEnvs)[currentEnv], Units, FontUtils);
-                            testRoot.currentTestEnv = Settings.currentTestEnv;
+                            Settings.currentTestEnv = index;
                             keyboardLoader.sourceComponent = kbdComponent;
                         }
                     }
@@ -142,8 +140,8 @@ Rectangle {
         id: keyboardLoader
 
         // make it depend on currentTestEnv property binding
-        width: isRotated ? Settings.testEnvs[currentTestEnv].displayHeight : Settings.testEnvs[currentTestEnv].displayWidth
-        height: isRotated ? Settings.testEnvs[currentTestEnv].displayWidth : Settings.testEnvs[currentTestEnv].displayHeight
+        width: isRotated ? Settings.displayHeight : Settings.displayWidth
+        height: isRotated ? Settings.displayWidth : Settings.displayHeight
 
         anchors.bottom: parent.bottom
         anchors.horizontalCenter: parent.horizontalCenter
