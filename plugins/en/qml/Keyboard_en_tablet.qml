@@ -48,7 +48,7 @@ KeyPad {
             NumKey { label: "8"; shifted: "*"; extended: ["8", "*"]}
             NumKey { label: "9"; shifted: "("; extended: ["9", "(", "[", "{"]}
             NumKey { label: "0"; shifted: ")"; extended: ["0", ")", "]", "}"]}
-            TrackBall { width: keypadRoot.width - (panel.keyWidth*0.9*10); height: keyHeight }
+            TrackBall { width: keypadRoot.width - (panel.keyWidth*0.9*10); anchors.verticalCenter: parent.verticalCenter }
         }
 
         Row {

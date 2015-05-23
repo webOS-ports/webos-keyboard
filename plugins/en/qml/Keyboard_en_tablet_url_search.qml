@@ -20,22 +20,21 @@ import QtQuick 2.0
 import keys 1.0
 
 KeyPad {
-    anchors.fill: parent
-
-    nbNumericalRows: 1
-	
 	content: c1
     symbols: "languages/Keyboard_symbols_tablet.qml"
 	
     Column {
         id: c1
-        anchors.fill: parent
+        anchors.right: parent.right
+        anchors.left: parent.left
 
         spacing: 0
 
         Row {
             anchors.horizontalCenter: parent.horizontalCenter;
             spacing: 0
+
+            height: keyHeight * 0.74
 
             NumKey { label: "1"; shifted: "!"; extended: ["1", "!", "¹", "¼", "½", "¡"]}
             NumKey { label: "2"; shifted: "@"; extended: ["2", "@", "²"]}
@@ -47,12 +46,14 @@ KeyPad {
             NumKey { label: "8"; shifted: "*"; extended: ["8", "*"]}
             NumKey { label: "9"; shifted: "("; extended: ["9", "(", "[", "{"]}
             NumKey { label: "0"; shifted: ")"; extended: ["0", ")", "]", "}"]}
-            TrackBall { width: c1.width - (panel.keyWidth*0.9*10); height: 45 }
+            TrackBall { width: c1.width - (panel.keyWidth*0.9*10); anchors.verticalCenter: parent.verticalCenter }
         }
 
         Row {
             anchors.horizontalCenter: parent.horizontalCenter;
             spacing: 0
+
+            height: keyHeight
 
             CharKey { label: "q"; shifted: "Q"; }
             CharKey { label: "w"; shifted: "W"; }
@@ -71,6 +72,8 @@ KeyPad {
             anchors.right: parent.right
             spacing: 0
 
+            height: keyHeight
+
             CharKey { label: "a"; shifted: "A"; extended: ["a", "à", "á", "â", "ã" , "ä", "å", "æ", "ª"]; extendedShifted: ["A", "À", "Á", "Â", "Ã", "Ä", "Å", "Æ", "ª"] }
             CharKey { label: "s"; shifted: "S"; extended: ["s", "š", "ş", "ß", "σ", "$"]; extendedShifted: ["S", "Š", "Ş", "ß", "Σ", "$"] }
             CharKey { label: "d"; shifted: "D"; extended: ["d", "ð", "†", "‡"]; extendedShifted: ["D", "Ð", "†", "‡"] }
@@ -86,6 +89,8 @@ KeyPad {
         Row {
             anchors.horizontalCenter: parent.horizontalCenter;
             spacing: 0
+
+            height: keyHeight
 
             ShiftKey {}
             CharKey { label: "z"; shifted: "Z"; extended: ["z", "ž", "ź", "ż"]; extendedShifted: ["Z", "Ž", "Ź", "Ż"] }
@@ -104,7 +109,8 @@ KeyPad {
             anchors.left: parent.left
             anchors.right: parent.right
 
-            height: panel.keyHeight;
+            height: keyHeight
+
             TabKey         { id: tabKey; extended: "Tab";  shifted: "Tab";       label: "Tab";              anchors.left: parent.left; }
 			SymbolShiftKey { id: symShiftKey;                             anchors.left: tabKey.right; }
             LanguageKey    { id: languageMenuButton;                       anchors.left: symShiftKey.right; }

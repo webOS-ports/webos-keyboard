@@ -27,13 +27,16 @@ KeyPad {
 
     Column {
         id: c1
-        anchors.fill: parent
+        anchors.right: parent.right
+        anchors.left: parent.left
 
         spacing: 0
 
         Row {
             anchors.horizontalCenter: parent.horizontalCenter;
             spacing: 0
+
+            height: keyHeight
 
             CharKey { label: "q"; shifted: "Q"; }
             CharKey { label: "w"; shifted: "W"; }
@@ -51,6 +54,8 @@ KeyPad {
             anchors.horizontalCenter: parent.horizontalCenter;
             spacing: 0
 
+            height: keyHeight
+
             CharKey { label: "a"; shifted: "A"; extended: ["ä","à","â","á","ã","å"]; extendedShifted: ["Ä","À","Â","Á","Ã","Å"] }
             CharKey { label: "s"; shifted: "S"; extended: ["ß","$"]; extendedShifted: ["$"] }
             CharKey { label: "d"; shifted: "D"; extended: ["ð"]; extendedShifted: ["Ð"] }
@@ -65,6 +70,8 @@ KeyPad {
         Row {
             anchors.horizontalCenter: parent.horizontalCenter;
             spacing: 0
+
+            height: keyHeight
 
             ShiftKey {}
             CharKey { label: "z"; shifted: "Z"; }
@@ -81,7 +88,7 @@ KeyPad {
             anchors.left: parent.left
             anchors.right: parent.right
 
-            height: panel.keyHeight;
+            height: keyHeight
 
             SymbolShiftKey { id: symShiftKey;                            anchors.left: parent.left; }
             CharKey        { id: slashKey;    label: "/"; shifted: "/";  anchors.left: symShiftKey.right; }

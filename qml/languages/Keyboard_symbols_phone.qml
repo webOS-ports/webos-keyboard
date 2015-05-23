@@ -21,13 +21,12 @@ import QtQuick 2.0
 import keys 1.0
 
 KeyPad {
-    anchors.fill: parent
-
     content: c1
 
     Column {
         id: c1
-        anchors.fill: parent
+        anchors.right: parent.right
+        anchors.left: parent.left
         anchors.margins: 0;
 
         spacing: 0

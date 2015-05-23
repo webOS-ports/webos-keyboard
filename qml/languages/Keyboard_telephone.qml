@@ -20,14 +20,13 @@ import QtQuick 2.0
 import "../keys"
 
 KeyPad {
-    anchors.fill: parent
-
     content: c1
     symbols: ""
 
     Column {
         id: c1
-        anchors.fill: parent
+        anchors.right: parent.right
+        anchors.left: parent.left
         anchors.margins: 0;
 
         spacing: 0
@@ -36,6 +35,8 @@ KeyPad {
             anchors.horizontalCenter: parent.horizontalCenter;
             anchors.margins: 50;
             spacing: 0
+
+            height: keyHeight
 
             CharKey { label: "1"; }
             CharKey { label: "2"; }
@@ -47,6 +48,8 @@ KeyPad {
             anchors.margins: 50;
             spacing: 0
 
+            height: keyHeight
+
             CharKey { label: "4"; }
             CharKey { label: "5"; }
             CharKey { label: "6"; }
@@ -57,6 +60,8 @@ KeyPad {
             anchors.margins: 50;
             spacing: 0
 
+            height: keyHeight
+
             CharKey { label: "7"; }
             CharKey { label: "8"; }
             CharKey { label: "9"; }
@@ -66,6 +71,8 @@ KeyPad {
             anchors.horizontalCenter: parent.horizontalCenter;
             anchors.margins: 50;
             spacing: 0
+
+            height: keyHeight
 
             CharKey { label: "+"; annotation: "+*#"; extended: ["*", "#", "(", ")"] }
             CharKey { label: "0"; }

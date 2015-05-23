@@ -24,6 +24,7 @@ import LunaNext.Common 0.1
 Item {
 	id: trackBall
 
+    height: 45
     property Item highlightedKey;
 
     Item {
