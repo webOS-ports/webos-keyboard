@@ -17,6 +17,7 @@
  */
 
 import QtQuick 2.0
+import LunaNext.Common 0.1
 
 Rectangle {
 
@@ -45,17 +46,17 @@ Rectangle {
         id: wordCandidateDelegate
         Item {
             id: wordCandidateItem
-            width: wordItem.width + units.gu(2);
+            width: wordItem.width + Units.gu(2);
             height: wordRibbonCanvas.height
             property alias word_text: wordItem // For testing in Autopilot
 
             Item {
                 anchors.fill: parent
-                anchors.margins: units.gu(1);
+                anchors.margins: Units.gu(1);
 
                 Text {
                     id: wordItem
-                    font.pixelSize: units.gu(2);
+                    font.pixelSize: Units.gu(2);
                     font.family: "Prelude"
                     color: "#999999"
                     font.bold: false

@@ -17,9 +17,9 @@
  */
 
 import QtQuick 2.0
-import LunaNext.Common 0.1
 
-import "key_constants.js" as UI
+import keys 1.0
+import LunaNext.Common 0.1
 
 CharKey {
     id: actionKeyRoot
@@ -34,8 +34,8 @@ CharKey {
     // action keys are a bit wider
     width: panel.keyWidth + Units.gu( padding )
 
-    imgNormal: UI.imageBlackKey[formFactor]
-    imgPressed: UI.imageBlackKeyPressed[formFactor]
+    imgNormal: UI.imageBlackKey
+    imgPressed: UI.imageBlackKeyPressed
 
     property string __icon: iconNormal
 
@@ -45,7 +45,7 @@ CharKey {
     property color colorCapsLock: "transparent"
 
     // fontSize can be overwritten when using the component, e.g. SymbolShiftKey uses smaller fontSize
-    property string fontSize: UI.fontSize[formFactor]
+    property string fontSize: UI.fontSize
 	
 	
     // was: Icon (the source is an image from the icons directory)
@@ -54,11 +54,11 @@ CharKey {
         property color color;
 
         id: iconImage
-        source: Qt.resolvedUrl("../images/" + formFactor + "/" + __icon + ".png")
+        source: Qt.resolvedUrl("../images/" + UI.formFactor + "/" + __icon + ".png")
         anchors.centerIn: parent
-        anchors.verticalCenterOffset: formFactor === "tablet" ? Units.gu(-0.25) : Units.gu(0.15)
+        anchors.verticalCenterOffset: UI.formFactor === "tablet" ? Units.gu(-0.25) : Units.gu(0.15)
         visible: (label == "")
-        height: formFactor === "tablet" ? parent.height * 0.7 : actionKeyRoot.height > actionKeyRoot.width ? parent.height * 0.5 : parent.width * 0.5
+        height: UI.formFactor === "tablet" ? parent.height * 0.7 : actionKeyRoot.height > actionKeyRoot.width ? parent.height * 0.5 : parent.width * 0.5
 	   	smooth: true
 		fillMode: Image.PreserveAspectFit
     }
@@ -67,13 +67,13 @@ CharKey {
         id: keyLabel
         text: (panel.activeKeypadState === "NORMAL") ? label : shifted;
         anchors.centerIn: parent
-		anchors.horizontalCenterOffset: action === "return" && formFactor === "tablet" ? Units.gu(2) : 0
+        anchors.horizontalCenterOffset: action === "return" && UI.formFactor === "tablet" ? Units.gu(2) : 0
         font.family: UI.fontFamily
         font.pixelSize: FontUtils.sizeToPixels(fontSize);
         font.bold: UI.fontBoldAction
         style: Text.Raised
         styleColor: "black"
-        color: UI.greyColor[formFactor]
+        color: UI.greyColor
         smooth: true
     }
 

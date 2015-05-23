@@ -18,7 +18,7 @@
 
 import QtQuick 2.0
 
-import "key_constants.js" as UI
+import keys 1.0
 
 ActionKey {
     width: panel.keyWidth;
@@ -26,8 +26,8 @@ ActionKey {
     iconShifted: "shift-on"
     iconCapsLock: "shift-lock"
 
-    imgNormal: panel.activeKeypadState === "CAPSLOCK" ? UI.imageShiftLockKey[formFactor] : panel.activeKeypadState === "SHIFTED" ? UI.imageShiftKey[formFactor] : UI.imageBlackKey[formFactor]
-    imgPressed: panel.activeKeypadState === "CAPSLOCK" ? UI.imageShiftLockKeyPressed[formFactor] : panel.activeKeypadState === "SHIFTED" ? UI.imageShiftKeyPressed[formFactor] : UI.imageBlackKeyPressed[formFactor]
+    imgNormal: panel.activeKeypadState === "CAPSLOCK" ? UI.imageShiftLockKey : panel.activeKeypadState === "SHIFTED" ? UI.imageShiftKey : UI.imageBlackKey
+    imgPressed: panel.activeKeypadState === "CAPSLOCK" ? UI.imageShiftLockKeyPressed : panel.activeKeypadState === "SHIFTED" ? UI.imageShiftKeyPressed : UI.imageBlackKeyPressed
 	
     action: "shift"
 
@@ -48,7 +48,7 @@ ActionKey {
 
         onPressAndHold: {
             panel.activeKeypadState = "CAPSLOCK"
-            //imgPressed: UI.imageShiftKey[formFactor]
+            //imgPressed: UI.imageShiftKey
         }
 
         onDoubleClicked: {

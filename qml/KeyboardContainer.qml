@@ -36,9 +36,6 @@ Item {
     property alias languagesMenuShown: languagesMenu.enabled
     property string currentKeyboardSize: "M"
 
-    property string formFactor: Settings.tabletUi ? "tablet" : "phone";
-    property bool isLandscape: false
-
     state: "CHARACTERS"
 
     function closeExtendedKeys()
@@ -55,12 +52,7 @@ Item {
         height: item ? item.height : 0
         asynchronous: false
         source: panel.state === "CHARACTERS" ? internal.characterKeypadSource : internal.symbolKeypadSource
-        onLoaded: {
-            activeKeypadState = "NORMAL"
-            item.keyHeight = Qt.binding(function() { return Units.gu(UI.keyHeight[panel.formFactor + (panel.isLandscape ? "Landscape" : "Portrait")]); } );
-        }
-
-//        property int keyHeight: Units.gu(UI.keyHeight[formFactor]);
+        onLoaded: activeKeypadState = "NORMAL"
     }
 
     ExtendedListSelector {
@@ -150,7 +142,7 @@ Item {
             var selectedLanguageFile = "lib/en/Keyboard_en.qml";
 
             // results in something like "lib/en/Keyboard_en_tablet.qml"
-            selectedLanguageFile = "lib/" + language + "/Keyboard_" + language + "_" + formFactor + ".qml";
+            selectedLanguageFile = "lib/" + language + "/Keyboard_" + language + "_" + UI.formFactor + ".qml";
 
             return selectedLanguageFile;
         }
@@ -176,16 +168,14 @@ Item {
                     locale = "en"
                 }
 
-                var formFactor = Settings.tabletUi ? "tablet" : "phone";
-
                 //            if (contentType === InputMethod.EmailContentType) {
                 if (contentType === 3) {
-					selectedLayoutFile = "lib/"+locale+"/Keyboard_"+locale +"_"+formFactor+"_email.qml";
+                    selectedLayoutFile = "lib/"+locale+"/Keyboard_"+locale +"_"+UI.formFactor+"_email.qml";
                 }
 
                 //            if (contentType === InputMethod.UrlContentType) {
                 else if (contentType === 4) {
-					selectedLayoutFile = "lib/"+locale+"/Keyboard_"+locale + "_"+formFactor+"_url_search.qml";
+                    selectedLayoutFile = "lib/"+locale+"/Keyboard_"+locale + "_"+UI.formFactor+"_url_search.qml";
                 }
 
                 else {

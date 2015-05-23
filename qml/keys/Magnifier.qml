@@ -17,8 +17,9 @@
  */
 
 import QtQuick 2.0
+
+import keys 1.0
 import LunaNext.Common 0.1
-import "key_constants.js" as UI
 
 /*!
   Item to show a "bubble" with a text in the center.
@@ -75,7 +76,7 @@ Item {
         height: Units.gu(9)
         BorderImage {
             id: leftImage
-            source: UI.imagePopupBgLeft[formFactor]
+            source: UI.imagePopupBgLeft
             border {left: 21; top: 21; bottom: 36;}
             height: parent.height
             verticalTileMode: BorderImage.Stretch
@@ -83,7 +84,7 @@ Item {
         }
         BorderImage {
             id: leftMiddleImage
-            source: UI.imagePopupBgBetween[formFactor]
+            source: UI.imagePopupBgBetween
             height: parent.height
             border {top: 21; bottom: 36;}
             verticalTileMode: BorderImage.Stretch
@@ -92,7 +93,7 @@ Item {
         }
         BorderImage {
             id: middleImage
-            source: UI.imagePopupBgCaret[formFactor]
+            source: UI.imagePopupBgCaret
             border {top: 21; bottom: 36;}
             verticalTileMode: BorderImage.Stretch
             height: parent.height
@@ -100,7 +101,7 @@ Item {
         }
         BorderImage {
             id: rightMiddleImage
-            source: UI.imagePopupBgBetween[formFactor]
+            source: UI.imagePopupBgBetween
             border {top: 21; bottom: 36;}
             horizontalTileMode: BorderImage.Stretch
             verticalTileMode: BorderImage.Stretch
@@ -110,7 +111,7 @@ Item {
         BorderImage {
             id: rightImage
             border {right: 21; top: 21; bottom: 36;}
-            source: UI.imagePopupBgRight[formFactor]
+            source: UI.imagePopupBgRight
             height: parent.height
             width: Units.gu(2.1)
         }
@@ -122,8 +123,8 @@ Item {
         anchors.verticalCenterOffset: Units.gu(-0.5)
 
         font.family: UI.fontFamily
-        font.pixelSize: FontUtils.sizeToPixels(UI.popoverFontSize[formFactor])
-        font.bold: UI.fontBold[formFactor]
-        color: UI.magnifierFontColor[formFactor]
+        font.pixelSize: FontUtils.sizeToPixels(UI.popoverFontSize)
+        font.bold: UI.fontBold
+        color: UI.magnifierFontColor
     }
 }

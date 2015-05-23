@@ -17,8 +17,8 @@
  */
 
 import QtQuick 2.0
-import "../keys"
-import "../keys/key_constants.js" as UI
+
+import keys 1.0
 
 KeyPad {
     anchors.fill: parent
@@ -96,8 +96,8 @@ KeyPad {
 			SymbolShiftKey { id: symShiftKey; label: "ABC"; shifted: "ABC"; anchors.left: parent.left; }
             LanguageKey    { id: languageMenuButton;                       anchors.left: symShiftKey.right; }
             SpaceKey       { id: spaceKey;                                 anchors.left: languageMenuButton.right; anchors.right: smileyKey.left; noMagnifier: true }
-            //CharKey        { imgNormal: UI.imageGreyKey[formFactor]; imgPressed: UI.imageGreyKeyPressed[formFactor]; id: apostropheKey; label: "'"; extended: "\""; shifted: "\""; anchors.right: minusKey.left; }
-            CharKey        { imgNormal: UI.imageGreyKey[formFactor]; imgPressed: UI.imageGreyKeyPressed[formFactor]; id: smileyKey;      label: "..."; /*extended: "_"; shifted: "_";*/  anchors.right: enterKey.left; }
+            //CharKey        { imgNormal: UI.imageGreyKey; imgPressed: UI.imageGreyKeyPressed; id: apostropheKey; label: "'"; extended: "\""; shifted: "\""; anchors.right: minusKey.left; }
+            CharKey        { imgNormal: UI.imageGreyKey; imgPressed: UI.imageGreyKeyPressed; id: smileyKey;      label: "..."; /*extended: "_"; shifted: "_";*/  anchors.right: enterKey.left; }
             ReturnKey      { id: enterKey;      label: "Enter"; shifted: "Enter"; extended: "Enter";  anchors.right: parent.right;}
 	        }
        

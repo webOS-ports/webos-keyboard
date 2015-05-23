@@ -17,15 +17,16 @@
  */
 
 import QtQuick 2.0
+
+import keys 1.0
 import LunaNext.Common 0.1
-import "key_constants.js" as UI
 
 ActionKey {
     label: "+=[]";
     shifted: "+=[]";
     action: "symbols";
 
-    fontSize: UI.symbolShiftKeyFontSize[formFactor];
+    fontSize: UI.symbolShiftKeyFontSize;
     width: panel.keyWidth //* 2
     
     MouseArea {

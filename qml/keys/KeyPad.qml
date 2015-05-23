@@ -18,6 +18,9 @@
 
 import QtQuick 2.0
 
+import keys 1.0
+import LunaNext.Common 0.1
+
 Item {
     id: keyPadRoot
 
@@ -30,7 +33,7 @@ Item {
 
     property Column content: Column {}
 
-    property int keyHeight: 0
+    property int keyHeight: Units.gu(UI.keyHeight);
 
     Component.onCompleted:
     {

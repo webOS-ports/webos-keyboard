@@ -21,8 +21,6 @@ import QtMultimedia 5.0
 
 import LunaNext.Common 0.1
 
-import "key_constants.js" as UI
-
 Item {
     id: key
 
@@ -44,11 +42,10 @@ Item {
     property bool skipAutoCaps: false
 
     /* design */
-    property string formFactor: Settings.tabletUi ? "tablet" : "phone"
-    property string imgNormal: UI.imageGreyKey[formFactor]
-    property string imgPressed: UI.imageGreyKeyPressed[formFactor]
+    property string imgNormal: UI.imageGreyKey
+    property string imgPressed: UI.imageGreyKeyPressed
     // fontSize can be overwritten when using the component, e.g. SymbolShiftKey uses smaller fontSize
-    property string fontSize: UI.fontSize[formFactor]
+    property string fontSize: UI.fontSize
 
     /// annotation shows a small label in the upper right corner
     // if the annotiation property is set, it will be used. If not, the first position in extended[] list or extendedShifted[] list will
@@ -93,7 +90,7 @@ Item {
         border { left: 27; top: 29; right: 27; bottom: 29 }
         anchors.centerIn: parent
         anchors.fill: key
-        anchors.margins: units.dp( UI.keyMargins );
+        anchors.margins: Units.dp( UI.keyMargins );
         source: key.pressed ? key.imgPressed : key.imgNormal
     }
 
@@ -108,8 +105,8 @@ Item {
         anchors.margins: 0, 0, 0, -25
         font.family: UI.fontFamily
         font.pixelSize: FontUtils.sizeToPixels(fontSize);
-        font.bold: UI.fontBold[formFactor]
-        color: UI.fontColor[formFactor]
+        font.bold: UI.fontBold
+        color: UI.fontColor
     }
 
     /// shows an annotation
@@ -123,9 +120,9 @@ Item {
         anchors.bottom: parent.verticalCenter
         anchors.margins: 0, 0, 0, 5
 
-        font.pixelSize: FontUtils.sizeToPixels(UI.annotationFontSize[formFactor]);
+        font.pixelSize: FontUtils.sizeToPixels(UI.annotationFontSize);
         font.bold: false
-        color: UI.annotationFontColor[formFactor]
+        color: UI.annotationFontColor
     }
 
     PressArea {
@@ -167,8 +164,8 @@ Item {
     Magnifier {
         anchors.horizontalCenter: buttonImage.horizontalCenter
         anchors.bottom: buttonImage.top
-        width: key.width + units.gu(UI.magnifierHorizontalPadding)
-        height: key.height + units.gu(UI.magnifierVerticalPadding)
+        width: key.width + Units.gu(UI.magnifierHorizontalPadding)
+        height: key.height + Units.gu(UI.magnifierVerticalPadding)
         text: keyLabel.text
         shown: key.pressed && !noMagnifier && !extendedKeysShown
     }

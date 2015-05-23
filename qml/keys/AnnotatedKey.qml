@@ -19,9 +19,8 @@
 import QtQuick 2.0
 import QtMultimedia 5.0
 
+import keys 1.0
 import LunaNext.Common 0.1
-
-import "key_constants.js" as UI
 
 Item {
     id: key
@@ -40,17 +39,16 @@ Item {
     property alias valueToSubmit: keyLabel.text
 
     property string action
-    property bool noMagnifier: formFactor==="tablet" ? true : false
+    property bool noMagnifier: UI.formFactor==="tablet" ? true : false
     property bool skipAutoCaps: false
 
     /* design */
     property bool useHorizontalLayout: false;
 
-    property string formFactor: Settings.tabletUi ? "tablet" : "phone"
-    property string imgNormal: UI.imageGreyKey[formFactor]
-    property string imgPressed: UI.imageGreyKeyPressed[formFactor]
+    property string imgNormal: UI.imageGreyKey
+    property string imgPressed: UI.imageGreyKeyPressed
     // fontSize can be overwritten when using the component, e.g. SymbolShiftKey uses smaller fontSize
-    property string fontSize: UI.fontSize[formFactor]
+    property string fontSize: UI.fontSize
 
     /// annotation shows a small label in the upper right corner
     // if the annotiation property is set, it will be used. If not, the first position in extended[] list or extendedShifted[] list will
@@ -117,9 +115,9 @@ Item {
         anchors.verticalCenterOffset: useHorizontalLayout ? Units.gu(-0.25) : Units.gu(0.5)
 
         font.family: UI.fontFamily
-        font.pixelSize: (panel.activeKeypadState === "NORMAL") ? FontUtils.sizeToPixels(UI.fontSize[formFactor]) : FontUtils.sizeToPixels(UI.annotationFontSize[formFactor])
-        font.bold: UI.fontBold[formFactor]
-        color: (panel.activeKeypadState === "NORMAL") ? UI.fontColor[formFactor] : UI.annotationFontColor[formFactor]
+        font.pixelSize: (panel.activeKeypadState === "NORMAL") ? FontUtils.sizeToPixels(UI.fontSize) : FontUtils.sizeToPixels(UI.annotationFontSize)
+        font.bold: UI.fontBold
+        color: (panel.activeKeypadState === "NORMAL") ? UI.fontColor : UI.annotationFontColor
         style: (panel.activeKeypadState === "NORMAL") ? Text.Raised : Text.Normal
         styleColor: "white"
         smooth: true
@@ -142,9 +140,9 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
         anchors.verticalCenterOffset: useHorizontalLayout ? Units.gu(-0.25) : Units.gu(-1.75)
 
-        font.pixelSize: (panel.activeKeypadState === "NORMAL") ? FontUtils.sizeToPixels(UI.annotationFontSize[formFactor]) : FontUtils.sizeToPixels(UI.fontSize[formFactor])
+        font.pixelSize: (panel.activeKeypadState === "NORMAL") ? FontUtils.sizeToPixels(UI.annotationFontSize) : FontUtils.sizeToPixels(UI.fontSize)
         font.bold: false
-        color: (panel.activeKeypadState !== "NORMAL") ? UI.fontColor[formFactor] : UI.annotationFontColor[formFactor]
+        color: (panel.activeKeypadState !== "NORMAL") ? UI.fontColor : UI.annotationFontColor
         style: (panel.activeKeypadState !== "NORMAL") ? Text.Raised : Text.Normal
         styleColor: "white"
         smooth: true
@@ -156,22 +154,22 @@ Item {
 		text: "…" //__annotationLabelNormal
 
   //              anchors.right: parent.right
-//        anchors.rightMargin: units.gu(1.00)
+//        anchors.rightMargin: Units.gu(1.00)
 
 		anchors.right: parent.right
-        anchors.rightMargin: useHorizontalLayout ? Units.gu(1.0) : formFactor === "phone" ? Units.gu(0.5) : Units.gu(1.0)
+        anchors.rightMargin: useHorizontalLayout ? Units.gu(1.0) : UI.formFactor === "phone" ? Units.gu(0.5) : Units.gu(1.0)
         //anchors.horizontalCenter: parent.horizontalCenter
 		//anchors.horizontalCenterOffset: useHorizontalLayout ? Units.gu(1.0) : Units.gu(2.0)
 		
 		anchors.bottom: parent.bottom
         //anchors.bottomMargin: useHorizontalLayout ? Units.gu(0.5) : Units.gu(2.0)
-		anchors.bottomMargin: useHorizontalLayout || formFactor === "phone" ? Units.gu(0.5) : Units.gu(1.0)
+        anchors.bottomMargin: useHorizontalLayout || UI.formFactor === "phone" ? Units.gu(0.5) : Units.gu(1.0)
 
-        font.pixelSize: FontUtils.sizeToPixels(UI.annotationFontSize[formFactor])
+        font.pixelSize: FontUtils.sizeToPixels(UI.annotationFontSize)
         font.bold: false
         style: Text.Raised
         styleColor: "white"
-        color: UI.fontColor[formFactor] //: UI.annotationFontColor
+        color: UI.fontColor //: UI.annotationFontColor
 		smooth: true
     }
 

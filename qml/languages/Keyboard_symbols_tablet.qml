@@ -17,8 +17,8 @@
  */
 
 import QtQuick 2.0
-import "../keys"
-import "../keys/key_constants.js" as UI
+
+import keys 1.0
 
 KeyPad {
     anchors.fill: parent
@@ -99,8 +99,8 @@ KeyPad {
             CharKey { label: ":-P"; shifted: ":-P"; }
             CharKey { label: ":-O"; shifted: ":-O"; }
             CharKey { label: "<3"; shifted: "<3"; }
-            CharKey { imgNormal: UI.imageGreyKey[formFactor]; imgPressed: UI.imageGreyKeyPressed[formFactor]; label: ","; shifted: "/"; extended:"/";}
-            CharKey { imgNormal: UI.imageGreyKey[formFactor]; imgPressed: UI.imageGreyKeyPressed[formFactor]; label: "."; shifted: "?"; extended:"?";}
+            CharKey { imgNormal: UI.imageGreyKey; imgPressed: UI.imageGreyKeyPressed; label: ","; shifted: "/"; extended:"/";}
+            CharKey { imgNormal: UI.imageGreyKey; imgPressed: UI.imageGreyKeyPressed; label: "."; shifted: "?"; extended:"?";}
             ShiftKey {}
         }
         Item {
@@ -113,8 +113,8 @@ KeyPad {
 			SymbolShiftKey { id: symShiftKey; label: "ABC"; shifted: "ABC"; anchors.left: tabKey.right; }
             LanguageKey    { id: languageMenuButton;                       anchors.left: symShiftKey.right; }
             SpaceKey       { id: spaceKey;                                 anchors.left: languageMenuButton.right; anchors.right: apostropheKey.left; noMagnifier: true }
-            CharKey        { imgNormal: UI.imageGreyKey[formFactor]; imgPressed: UI.imageGreyKeyPressed[formFactor]; id: apostropheKey; label: "'"; extended: "\""; shifted: "\""; anchors.right: minusKey.left; }
-            CharKey        { imgNormal: UI.imageGreyKey[formFactor]; imgPressed: UI.imageGreyKeyPressed[formFactor]; id: minusKey;      label: "-"; extended: "_"; shifted: "_";  anchors.right: dismissKey.left; }
+            CharKey        { imgNormal: UI.imageGreyKey; imgPressed: UI.imageGreyKeyPressed; id: apostropheKey; label: "'"; extended: "\""; shifted: "\""; anchors.right: minusKey.left; }
+            CharKey        { imgNormal: UI.imageGreyKey; imgPressed: UI.imageGreyKeyPressed; id: minusKey;      label: "-"; extended: "_"; shifted: "_";  anchors.right: dismissKey.left; }
             DismissKey     { id: dismissKey;                               anchors.right: parent.right;}
         }
        
