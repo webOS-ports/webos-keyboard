@@ -28,8 +28,8 @@ Rectangle {
 
     property bool isRotated: false
 
-  //  width: Settings.displayWidth
-  //  height: Settings.displayHeight
+    width: 1024
+    height: 800
 
     QtObject {
         id: maliit_geometry
