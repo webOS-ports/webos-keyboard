@@ -31,6 +31,30 @@ Rectangle {
     width: 1024
     height: 800
 
+    Rectangle {
+        z: 10
+
+        id: deviceScreenRect
+
+        color: "black"
+
+        x: 15; y: 15
+
+        height: 200
+        width: keyboardLoader.width * 200 / keyboardLoader.height
+
+        Rectangle {
+            color: "blue"
+
+            property real widthRatio: keyboardLoader.width / deviceScreenRect.width
+            property real heightRatio: keyboardLoader.height / deviceScreenRect.height
+            x: maliit_geometry.visibleRect.x / widthRatio
+            y: maliit_geometry.visibleRect.y / heightRatio
+            width:  maliit_geometry.visibleRect.width / widthRatio
+            height: maliit_geometry.visibleRect.height / heightRatio
+        }
+    }
+
     QtObject {
         id: maliit_geometry
         property rect popoverRect: Qt.rect(0,0,10,20);

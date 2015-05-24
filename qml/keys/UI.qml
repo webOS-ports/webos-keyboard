@@ -24,13 +24,13 @@ import "key_constants.js" as DesignConstants
 QtObject {
     // set from keyboard
     property bool isLandscape: false
+    property string keyboardSizeChoice: "M"
     // internal helper
     property string formFactor: Settings.tabletUi ? "tablet" : "phone";
-    onFormFactorChanged: console.log("formFactor = " + formFactor);
 
     // UI design values (taken from key_constants.js)
     property real keyMargins: DesignConstants.keyMargins;
-    property real keyHeight: DesignConstants.keyHeight[formFactor + (isLandscape ? "Landscape" : "Portrait")];
+    property real keyHeight: DesignConstants.keyHeightRatio[keyboardSizeChoice] * DesignConstants.keyHeight[formFactor + (isLandscape ? "Landscape" : "Portrait")];
 
     property string fontSize: DesignConstants.fontSize[formFactor];
     property string fontFamily: DesignConstants.fontFamily;
@@ -85,23 +85,4 @@ QtObject {
     property real top_margin: DesignConstants.top_margin;
     property real bottom_margin: DesignConstants.bottom_margin;
     property real wordribbonHeight: DesignConstants.wordribbonHeight;
-
-    function getHeightRatio(screenHeight, isLandscape, sizeChoice) {
-        if( formFactor === "tablet" ){
-            var keyboardHeight = { "XS" : 0.31640625,		/* 243 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
-                                    "S" : 0.379557292, 	/* (340+243 / 2)  / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
-                                    "M" : 0.44270833, 		/* 340 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
-                                    "L" : 0.51171875 }; 	/* 393 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
-            return keyboardHeight[sizeChoice];
-        }
-        else { //formFactor === "phone"
-
-            if( isLandscape ) {
-                return 0.3385417
-            }
-            else{
-                return 0.368164
-            }
-        }
-    }
 }

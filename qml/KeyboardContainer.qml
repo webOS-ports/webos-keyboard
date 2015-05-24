@@ -67,7 +67,7 @@ Item {
         id: keyboardSizeMenu
         anchors.fill: parent
 
-        onItemSelected: panel.currentKeyboardSize = modelData;
+        onItemSelected: UI.keyboardSizeChoice = modelData;
     }
 
     ExtendedListSelector {

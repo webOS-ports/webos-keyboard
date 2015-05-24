@@ -20,9 +20,14 @@
 
 var keyMargins  	=   0 //gu
 var keyHeight       =   {"tabletLandscape" : "6.6",
-                                    "tabletPortrait"  : "7",
-                                    "phonePortrait"  : "6.1",
-                                    "phoneLandscape"  : "5.5"};   // gu
+                         "tabletPortrait"  : "7",
+                         "phonePortrait"   : "6.1",
+                         "phoneLandscape"  : "4.3"};   // gu
+
+var keyHeightRatio = { "XS" : 0.7147058877,		/* 243 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
+                        "S" : 0.857352948, 	/* (340+243 / 2)  / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
+                        "M" : 1.0,       		/* 340 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
+                        "L" : 1.15588236 }; 	/* 393 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
 
 var fontSize    	=   {"tablet" : "22pt",
                          "phone"  : "16pt"};    
