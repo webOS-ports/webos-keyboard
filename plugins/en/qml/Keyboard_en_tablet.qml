@@ -24,7 +24,7 @@ KeyPad {
     id: keypadRoot
 
     content: c1
-    symbols: "languages/Keyboard_symbols_phone.qml"
+    symbols: "languages/Keyboard_symbols_tablet.qml"
 
     Column {
         id: c1

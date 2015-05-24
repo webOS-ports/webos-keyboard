@@ -18,19 +18,20 @@ import QtQuick 2.0
 import keys 1.0
 
 KeyPad {
-    anchors.fill: parent
-
     content: c1
     symbols: "languages/Keyboard_symbols_tablet.qml"
 
     Column {
         id: c1
-        anchors.fill: parent
+        anchors.right: parent.right
+        anchors.left: parent.left
         spacing: 0
 
         Row {
             anchors.horizontalCenter: parent.horizontalCenter;
             spacing: 0
+
+            height: keyHeight;
 
             CharKey { label: "a"; shifted: "A"; extended: ["à","â","æ","á","ã","ä"]; extendedShifted: ["À","Â","Æ","Á","Ã","Ä"] }
             CharKey { label: "z"; shifted: "Z"; }
@@ -47,6 +48,9 @@ KeyPad {
         Row {
             anchors.horizontalCenter: parent.horizontalCenter;
             spacing: 0
+
+            height: keyHeight;
+
             CharKey { label: "q"; shifted: "Q"; }
             CharKey { label: "s"; shifted: "S"; extended: ["ß","$"]; extendedShifted: ["$"] }
             CharKey { label: "d"; shifted: "D"; extended: ["ð"]; extendedShifted: ["Ð"] }
@@ -63,8 +67,9 @@ KeyPad {
             anchors.horizontalCenter: parent.horizontalCenter;
             spacing: 0
 
-            ShiftKey {}
+            height: keyHeight;
 
+            ShiftKey {}
             CharKey { label: "w"; shifted: "W"; }
             CharKey { label: "x"; shifted: "X"; }
             CharKey { label: "c"; shifted: "C"; extended: ["ç"]; extendedShifted: ["Ç"] }
@@ -79,7 +84,7 @@ KeyPad {
             anchors.left: parent.left
             anchors.right: parent.right
 
-            height: panel.keyHeight;
+            height: keyHeight;
 
             SymbolShiftKey { id: symShiftKey;                            anchors.left: parent.left; }
             CharKey        { id: slashKey;    label: "/"; shifted: "/";  anchors.left: symShiftKey.right; }

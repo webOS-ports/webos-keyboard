@@ -35,6 +35,8 @@ KeyPad {
             anchors.horizontalCenter: parent.horizontalCenter;
             spacing: 0
 
+            height: keyHeight
+
             CharKey { label: "1"; /*shifted: "!"; extended: ["1", "!", "¹", "¼", "½", "¡"]*/	}
             CharKey { label: "2"; /*shifted: "@"; extended: ["2", "@", "²"]*/}
             CharKey { label: "3"; /*shifted: "#"; extended: ["3", "#", "³", "¾"]*/}
@@ -51,6 +53,8 @@ KeyPad {
             anchors.horizontalCenter: parent.horizontalCenter;
            // anchors.margins: 50;
             spacing: 0
+
+            height: keyHeight
 
             CharKey { label: "!";}
             CharKey { label: "@";}
@@ -71,7 +75,7 @@ KeyPad {
             anchors.left: parent.left
             anchors.right: parent.right
 
-            height: panel.keyHeight;
+            height: keyHeight;
 			
 			ShiftKey {id: shiftKey; anchors.left: parent.left;}
             CharKey {width: panel.keyWidth * 8/7; id: semicolonKey; anchors.left: shiftKey.right; label: ";"; }
@@ -90,7 +94,7 @@ KeyPad {
             anchors.left: parent.left
             anchors.right: parent.right
 
-            height: panel.keyHeight;
+            height: keyHeight;
 
 			SymbolShiftKey { id: symShiftKey; label: "ABC"; shifted: "ABC"; anchors.left: parent.left; }
             LanguageKey    { id: languageMenuButton;                       anchors.left: symShiftKey.right; }
