@@ -97,10 +97,16 @@ Item {
         property Item activeKeypad: characterKeypadLoader.item
         property string characterKeypadSource: loadLayout(maliit_input_method.contentType,
                                                           maliit_input_method.activeLanguage)
-        property string symbolKeypadSource: activeKeypad ? activeKeypad.symbols : ""
+        property string symbolKeypadSource: ""
 
         onCharacterKeypadSourceChanged: {
             panel.state = "CHARACTERS";
+        }
+        onActiveKeypadChanged: {
+            // don't do property binding, to avoid a binding loop with characterKeypadLoader.source
+            if( panel.state === "CHARACTERS" ) {
+                symbolKeypadSource = activeKeypad ? activeKeypad.symbols : "";
+            }
         }
 
         /// Returns if the given language is supported
