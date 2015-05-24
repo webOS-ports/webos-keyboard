@@ -20,6 +20,7 @@ import QtQuick 2.0
 import "../keys"
 
 KeyPad {
+    id: keypadRoot
     content: c1
     symbols: ""
 

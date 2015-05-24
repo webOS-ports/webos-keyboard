@@ -65,12 +65,12 @@ Item {
     Item {
         id: popoverBackground
 
-        property bool isOnLeftSideOfScreen: anchorItem.x < (panel.width/2)
+        property bool isOnLeftSideOfScreen: anchorItem.x < (popover.width/2)
 
         anchors.bottom: anchorItem.bottom
         anchors.bottomMargin: -8
         x: isOnLeftSideOfScreen ? (anchorItem.x) : (anchorItem.x+anchorItem.width-popoverBackground.width)
-        width: Math.max(keypad.keyWidth, rowOfKeys.width + 10*2)
+        width: Math.max(UI.keyWidth, rowOfKeys.width + 10*2)
         height: ((30 + numberOfLines * 60))
 
         function __updatePopoverRect() {

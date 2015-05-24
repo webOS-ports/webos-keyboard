@@ -18,12 +18,14 @@
 
 import QtQuick 2.0
 
+import keys 1.0
+
 AnnotatedKey {
     id: key
 
     property int padding: 0
 
-    width: panel.keyWidth * 0.90
+    width: UI.keyWidth * 0.90
     height: parent.height
 
     useHorizontalLayout: true

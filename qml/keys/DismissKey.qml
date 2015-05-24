@@ -28,9 +28,7 @@ ActionKey {
     iconShifted: "icon-hide-keyboard"
     iconCapsLock: "icon-hide-keyboard"
 
-    width: panel.keyWidth;
-
-    property variant keyboardSizesModel: [ "XS", "S", "M", "L" ]
+    width: UI.keyWidth;
 
     Image {
 
@@ -53,11 +51,7 @@ ActionKey {
         }
 
         onPressAndHold: {
-            if (keyboardSizesModel !== null) {
-                keyboardSizeMenu.extendedListModel = keyboardSizesModel;
-                keyboardSizeMenu.currentlyAssignedKey = actionKey;
-                panel.keyboardSizeMenuShown = true;
-            }
+            UI.showKeyboardSizeMenu(actionKey);
         }
     }
 }

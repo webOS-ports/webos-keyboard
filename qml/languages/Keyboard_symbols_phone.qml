@@ -21,6 +21,7 @@ import QtQuick 2.0
 import keys 1.0
 
 KeyPad {
+    id: keypadRoot
     content: c1
 
     Column {
@@ -78,13 +79,13 @@ KeyPad {
             height: keyHeight;
 			
 			ShiftKey {id: shiftKey; anchors.left: parent.left;}
-            CharKey {width: panel.keyWidth * 8/7; id: semicolonKey; anchors.left: shiftKey.right; label: ";"; }
-            CharKey {width: panel.keyWidth * 8/7; id: colonKey; anchors.left: semicolonKey.right; label: ":"; }
-            CharKey {width: panel.keyWidth * 8/7; id: equalKey; anchors.left: colonKey.right; label: "="; }
-            CharKey {width: panel.keyWidth * 8/7; id: plusKey; anchors.left: equalKey.right; label: "+"; }
-            CharKey {width: panel.keyWidth * 8/7; id: minusKey; anchors.left: plusKey.right; label: "-"; }
-            CharKey {width: panel.keyWidth * 8/7; id: apostropheKeyM; anchors.left: minusKey.right; label: "'"; }
-            CharKey {width: panel.keyWidth * 8/7; id: quoteKey; anchors.left: apostropheKeyM.right; label: "\""; }
+            CharKey {width: UI.keyWidth * 8/7; id: semicolonKey; anchors.left: shiftKey.right; label: ";"; }
+            CharKey {width: UI.keyWidth * 8/7; id: colonKey; anchors.left: semicolonKey.right; label: ":"; }
+            CharKey {width: UI.keyWidth * 8/7; id: equalKey; anchors.left: colonKey.right; label: "="; }
+            CharKey {width: UI.keyWidth * 8/7; id: plusKey; anchors.left: equalKey.right; label: "+"; }
+            CharKey {width: UI.keyWidth * 8/7; id: minusKey; anchors.left: plusKey.right; label: "-"; }
+            CharKey {width: UI.keyWidth * 8/7; id: apostropheKeyM; anchors.left: minusKey.right; label: "'"; }
+            CharKey {width: UI.keyWidth * 8/7; id: quoteKey; anchors.left: apostropheKeyM.right; label: "\""; }
 
             BackspaceKey {id: backspaceKey; anchors.right: parent.right; anchors.left: quoteKey.right 	}
 

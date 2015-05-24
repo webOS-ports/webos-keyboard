@@ -19,24 +19,16 @@
 import QtQuick 2.0
 import QtMultimedia 5.0
 import QtQuick.Window 2.0
-import LuneOSKeyboard 1.0
-import "languages/"
+
 import keys 1.0
 import LunaNext.Common 0.1
 
 Item {
     id: panel
 
-    property int keyWidth: 0
     height: characterKeypadLoader.height
 
-    property string activeKeypadState: "NORMAL"
-    property alias popoverEnabled: extendedKeysSelector.enabled
-    property alias keyboardSizeMenuShown: keyboardSizeMenu.enabled
-    property alias languagesMenuShown: languagesMenu.enabled
     property string currentKeyboardSize: "M"
-
-    state: "CHARACTERS"
 
     function closeExtendedKeys()
     {
@@ -45,51 +37,19 @@ Item {
 
     Loader {
         id: characterKeypadLoader
-        objectName: "characterKeyPadLoader"
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: parent.bottom
         height: item ? item.height : 0
         asynchronous: false
-        source: panel.state === "CHARACTERS" ? internal.characterKeypadSource : internal.symbolKeypadSource
-        onLoaded: activeKeypadState = "NORMAL"
-    }
-
-    ExtendedListSelector {
-        id: extendedKeysSelector
-        objectName: "extendedKeysSelector"
-        anchors.fill: parent
-
-        onItemSelected: event_handler.onKeyReleased(modelData);
-    }
-
-    ExtendedListSelector {
-        id: keyboardSizeMenu
-        anchors.fill: parent
-
-        onItemSelected: UI.keyboardSizeChoice = modelData;
-    }
-
-    ExtendedListSelector {
-        id: languagesMenu
-        anchors.fill: parent
-
-        onItemSelected: maliit_input_method.activeLanguage = modelData;
+        source: UI.currentSymbolState === "CHARACTERS" ? internal.characterKeypadSource : internal.symbolKeypadSource
+        onLoaded: UI.currentShiftState = "NORMAL"
     }
 
     Audio {
         id: audioFeedback
         source: Qt.resolvedUrl("styles/ubuntu/sounds/key_tick2_quiet.wav")
     }
-
-    states: [
-        State {
-            name: "CHARACTERS"
-        },
-        State {
-            name: "SYMBOLS"
-        }
-    ]
 
     QtObject {
         id: internal
@@ -100,11 +60,11 @@ Item {
         property string symbolKeypadSource: ""
 
         onCharacterKeypadSourceChanged: {
-            panel.state = "CHARACTERS";
+            UI.currentSymbolState = "CHARACTERS";
         }
         onActiveKeypadChanged: {
             // don't do property binding, to avoid a binding loop with characterKeypadLoader.source
-            if( panel.state === "CHARACTERS" ) {
+            if( UI.currentSymbolState === "CHARACTERS" ) {
                 symbolKeypadSource = activeKeypad ? activeKeypad.symbols : "";
             }
         }

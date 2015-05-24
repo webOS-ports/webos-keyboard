@@ -26,8 +26,8 @@ Item {
 
     property int padding: 0
 
-    width: panel.keyWidth
-    height: panel.keyHeight
+    width: UI.keyWidth
+    height: UI.keyHeight
     property string imgNormal: UI.imageWhiteKey
     property string imgPressed: UI.imageWhiteKeyPressed
 

@@ -25,12 +25,27 @@ QtObject {
     // set from keyboard
     property bool isLandscape: false
     property string keyboardSizeChoice: "M"
+    property real keyWidth: 5 // arbitrary value, will be overwritten when KeyPad computes the ideal key width
+    property bool extendedKeysShown: false
+    property string currentShiftState: "NORMAL"  // can be "NORMAL", "SHIFTED" or "CAPSLOCK"
+    property string currentSymbolState: "CHARACTER" // can be "CHARACTER" or "SYMBOL"
+
+    // keyboard-wide signals
+    signal showExtendedKeys(variant keysExtendedModel, Item keyItem);
+    signal hideExtendedKeys();
+    signal showKeyboardSizeMenu(Item keyItem);
+    signal hideKeyboardSizeMenu();
+    signal showLanguagesMenu(Item keyItem);
+    signal hideLanguagesMenu();
+
     // internal helper
     property string formFactor: Settings.tabletUi ? "tablet" : "phone";
 
     // UI design values (taken from key_constants.js)
     property real keyMargins: DesignConstants.keyMargins;
     property real keyHeight: DesignConstants.keyHeightRatio[keyboardSizeChoice] * DesignConstants.keyHeight[formFactor + (isLandscape ? "Landscape" : "Portrait")];
+
+    property variant keyboardSizeChoices: Object.keys(DesignConstants.keyHeightRatio);
 
     property string fontSize: DesignConstants.fontSize[formFactor];
     property string fontFamily: DesignConstants.fontFamily;

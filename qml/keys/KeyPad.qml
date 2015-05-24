@@ -28,19 +28,71 @@ Item {
 
     property string symbols: "languages/Keyboard_symbols.qml"
     property bool capsLock: false
-
-    height: content.height
+    property int keyHeight: Units.gu(UI.keyHeight); // as a convenience for the objects inheriting KeyPad
 
     property Column content: Column {}
 
-    property int keyHeight: Units.gu(UI.keyHeight);
+    height: content.height
 
     Component.onCompleted:
     {
         calculateKeyWidth();
     }
-
     onWidthChanged: calculateKeyWidth()
+
+    Connections {
+        target: UI
+        onShowExtendedKeys: {
+            extendedKeysSelector.extendedListModel = keysExtendedModel;
+            extendedKeysSelector.currentlyAssignedKey = keyItem;
+            extendedKeysSelector.enabled = true;
+            UI.extendedKeysShown = true;
+        }
+        onShowKeyboardSizeMenu: {
+            keyboardSizeMenu.extendedListModel = UI.keyboardSizeChoices;
+            keyboardSizeMenu.currentlyAssignedKey = keyItem;
+            keyboardSizeMenu.enabled = true;
+        }
+        onShowLanguagesMenu: {
+            languagesMenu.extendedListModel = maliit_input_method.enabledLanguages;
+            languagesMenu.currentlyAssignedKey = keyItem;
+            languagesMenu.enabled = true;
+        }
+        onHideExtendedKeys : {
+            extendedKeysSelector.closePopover();
+            UI.extendedKeysShown = false;
+        }
+        onHideKeyboardSizeMenu : {
+            keyboardSizeMenu.closePopover();
+        }
+        onHideLanguagesMenu : {
+            languagesMenu.closePopover();
+        }
+    }
+
+    ExtendedListSelector {
+        id: extendedKeysSelector
+        anchors.fill: parent
+        z: 2;
+
+        onItemSelected: event_handler.onKeyReleased(modelData);
+    }
+
+    ExtendedListSelector {
+        id: keyboardSizeMenu
+        anchors.fill: parent
+        z: 2;
+
+        onItemSelected: UI.keyboardSizeChoice = modelData;
+    }
+
+    ExtendedListSelector {
+        id: languagesMenu
+        anchors.fill: parent
+        z: 2;
+
+        onItemSelected: maliit_input_method.activeLanguage = modelData;
+    }
 
     function numberOfRows() {
         return content.children.length;
@@ -56,6 +108,6 @@ Item {
                 maxNrOfKeys = content.children[i].children.length;
         }
 
-        panel.keyWidth = keyPadRoot.width / maxNrOfKeys;
+        UI.keyWidth = keyPadRoot.width / maxNrOfKeys;
     }
 }

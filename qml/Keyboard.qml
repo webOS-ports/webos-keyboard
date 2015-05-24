@@ -185,11 +185,12 @@ Item {
                 name: "HIDDEN"
                 PropertyChanges { target: canvas; y: height; }
                 onCompleted: {
-                    canvas.languageMenuShown = false;
                     keyboardSurface.y = 0;
-                    keypad.closeExtendedKeys();
-                    keypad.activeKeypadState = "NORMAL";
-                    keypad.state = "CHARACTERS";
+                    UI.hideExtendedKeys();
+                    UI.hideKeyboardSizeMenu();
+                    UI.hideLanguagesMenu();
+                    UI.currentShiftState = "NORMAL";
+                    UI.currentSymbolState = "CHARACTERS";
                     maliit_input_method.hide();
                 }
                 when: maliit_geometry.shown === false
@@ -203,7 +204,7 @@ Item {
             target: input_method
             onActivateAutocaps: {
                 keypad.state = "CHARACTERS";
-                keypad.activeKeypadState = "SHIFTED";
+                UI.currentShiftState = "SHIFTED";
             }
         }
 

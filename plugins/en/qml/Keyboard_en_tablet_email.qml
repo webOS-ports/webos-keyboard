@@ -20,6 +20,8 @@ import QtQuick 2.0
 import keys 1.0
 
 KeyPad {
+    id: keypadRoot
+
     content: c1
     symbols: "languages/Keyboard_symbols_tablet.qml"
 
@@ -46,7 +48,7 @@ KeyPad {
             NumKey { label: "8"; shifted: "*"; extended: ["8", "*"]}
             NumKey { label: "9"; shifted: "("; extended: ["9", "(", "[", "{"]}
             NumKey { label: "0"; shifted: ")"; extended: ["0", ")", "]", "}"]}
-            TrackBall { width: c1.width - (panel.keyWidth*0.9*10); anchors.verticalCenter: parent.verticalCenter }
+            TrackBall { width: c1.width - (UI.keyWidth*0.9*10); anchors.verticalCenter: parent.verticalCenter }
         }
 
         Row {

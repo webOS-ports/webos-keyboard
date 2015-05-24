@@ -27,16 +27,16 @@ ActionKey {
     action: "symbols";
 
     fontSize: UI.symbolShiftKeyFontSize;
-    width: panel.keyWidth //* 2
+    width: UI.keyWidth //* 2
     
     MouseArea {
         anchors.fill: parent
         preventStealing: true
         onClicked: {
-            if (panel.state === "CHARACTERS")
-                panel.state = "SYMBOLS";
+            if (UI.currentSymbolState === "CHARACTERS")
+                UI.currentSymbolState = "SYMBOLS";
             else
-                panel.state = "CHARACTERS";
+                UI.currentSymbolState = "CHARACTERS";
         }
     }
 }

@@ -26,14 +26,14 @@ ActionKey {
         anchors.fill: parent
         preventStealing: true
         onClicked: {
-            if (panel.activeKeypadState == "NORMAL")
-                panel.activeKeypadState = "SHIFTED";
+            if (UI.currentShiftState == "NORMAL")
+                UI.currentShiftState = "SHIFTED";
 
-            else if (panel.activeKeypadState == "SHIFTED")
-                panel.activeKeypadState = "NORMAL"
+            else if (UI.currentShiftState == "SHIFTED")
+                UI.currentShiftState = "NORMAL"
 
-            else if (panel.activeKeypadState == "CAPSLOCK")
-                panel.activeKeypadState = "NORMAL"
+            else if (UI.currentShiftState == "CAPSLOCK")
+                UI.currentShiftState = "NORMAL"
         }
     }
 }

@@ -21,13 +21,13 @@ import QtQuick 2.0
 import keys 1.0
 
 ActionKey {
-    width: panel.keyWidth;
+    width: UI.keyWidth;
     iconNormal: "shift"
     iconShifted: "shift-on"
     iconCapsLock: "shift-lock"
 
-    imgNormal: panel.activeKeypadState === "CAPSLOCK" ? UI.imageShiftLockKey : panel.activeKeypadState === "SHIFTED" ? UI.imageShiftKey : UI.imageBlackKey
-    imgPressed: panel.activeKeypadState === "CAPSLOCK" ? UI.imageShiftLockKeyPressed : panel.activeKeypadState === "SHIFTED" ? UI.imageShiftKeyPressed : UI.imageBlackKeyPressed
+    imgNormal: UI.currentShiftState === "CAPSLOCK" ? UI.imageShiftLockKey : UI.currentShiftState === "SHIFTED" ? UI.imageShiftKey : UI.imageBlackKey
+    imgPressed: UI.currentShiftState === "CAPSLOCK" ? UI.imageShiftLockKeyPressed : UI.currentShiftState === "SHIFTED" ? UI.imageShiftKeyPressed : UI.imageBlackKeyPressed
 	
     action: "shift"
 
@@ -36,24 +36,24 @@ ActionKey {
         preventStealing: true
 
         onClicked: {
-            if (panel.activeKeypadState === "NORMAL")
-                panel.activeKeypadState = "SHIFTED";
+            if (UI.currentShiftState === "NORMAL")
+                UI.currentShiftState = "SHIFTED";
 
-            else if (panel.activeKeypadState === "SHIFTED")
-                panel.activeKeypadState = "NORMAL"
+            else if (UI.currentShiftState === "SHIFTED")
+                UI.currentShiftState = "NORMAL"
 
-            else if (panel.activeKeypadState === "CAPSLOCK")
-                panel.activeKeypadState = "NORMAL"
+            else if (UI.currentShiftState === "CAPSLOCK")
+                UI.currentShiftState = "NORMAL"
         }
 
         onPressAndHold: {
-            panel.activeKeypadState = "CAPSLOCK"
+            UI.currentShiftState = "CAPSLOCK"
             //imgPressed: UI.imageShiftKey
         }
 
         onDoubleClicked: {
-            if (panel.activeKeypadState === "SHIFTED")
-                panel.activeKeypadState = "CAPSLOCK"
+            if (UI.currentShiftState === "SHIFTED")
+                UI.currentShiftState = "CAPSLOCK"
         }
     }
 }

@@ -27,7 +27,7 @@ Item {
 
     property int padding: 0
 
-    width: panel.keyWidth
+    width: UI.keyWidth
     height: parent.height
 
     /* to be set in keyboard layouts */
@@ -66,15 +66,15 @@ Item {
      * this property specifies if the key can submit its value or not (e.g. when the popover is shown, it does not commit its value)
      */
 
-    property bool extendedKeysShown: extendedKeysSelector.enabled
+    property bool extendedKeysShown: UI.extendedKeysShown
 
     /*
      * label changes when keyboard is in shifted mode
      * extended keys change as well when shifting keyboard, typically lower-uppercase: ê vs Ê
      */
 
-    property string oskState: panel.activeKeypadState
-    property var activeExtendedModel: (panel.activeKeypadState === "NORMAL") ? extended : extendedShifted
+    property string oskState: UI.currentShiftState
+    property var activeExtendedModel: (UI.currentShiftState === "NORMAL") ? extended : extendedShifted
 
     Component.onCompleted: {
         if (annotation) {
@@ -102,7 +102,7 @@ Item {
 
     Text {
         id: keyLabel
-        //text: (panel.activeKeypadState === "NORMAL") ? label : shifted;
+        //text: (UI.currentShiftState === "NORMAL") ? label : shifted;
         text: label
         anchors.right: useHorizontalLayout ? parent.right : undefined
         anchors.rightMargin:  useHorizontalLayout ? Units.gu(2.0) : 0
@@ -115,10 +115,10 @@ Item {
         anchors.verticalCenterOffset: useHorizontalLayout ? Units.gu(-0.25) : Units.gu(0.5)
 
         font.family: UI.fontFamily
-        font.pixelSize: (panel.activeKeypadState === "NORMAL") ? FontUtils.sizeToPixels(UI.fontSize) : FontUtils.sizeToPixels(UI.annotationFontSize)
+        font.pixelSize: (UI.currentShiftState === "NORMAL") ? FontUtils.sizeToPixels(UI.fontSize) : FontUtils.sizeToPixels(UI.annotationFontSize)
         font.bold: UI.fontBold
-        color: (panel.activeKeypadState === "NORMAL") ? UI.fontColor : UI.annotationFontColor
-        style: (panel.activeKeypadState === "NORMAL") ? Text.Raised : Text.Normal
+        color: (UI.currentShiftState === "NORMAL") ? UI.fontColor : UI.annotationFontColor
+        style: (UI.currentShiftState === "NORMAL") ? Text.Raised : Text.Normal
         styleColor: "white"
         smooth: true
     }
@@ -128,7 +128,7 @@ Item {
 
     Text {
         id: annotationLabel
-        //text: (panel.activeKeypadState != "NORMAL") ? __annotationLabelShifted : __annotationLabelNormal
+        //text: (UI.currentShiftState != "NORMAL") ? __annotationLabelShifted : __annotationLabelNormal
         text: __annotationLabelNormal
 
         anchors.left: useHorizontalLayout ? parent.left : undefined
@@ -140,17 +140,17 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
         anchors.verticalCenterOffset: useHorizontalLayout ? Units.gu(-0.25) : Units.gu(-1.75)
 
-        font.pixelSize: (panel.activeKeypadState === "NORMAL") ? FontUtils.sizeToPixels(UI.annotationFontSize) : FontUtils.sizeToPixels(UI.fontSize)
+        font.pixelSize: (UI.currentShiftState === "NORMAL") ? FontUtils.sizeToPixels(UI.annotationFontSize) : FontUtils.sizeToPixels(UI.fontSize)
         font.bold: false
-        color: (panel.activeKeypadState !== "NORMAL") ? UI.fontColor : UI.annotationFontColor
-        style: (panel.activeKeypadState !== "NORMAL") ? Text.Raised : Text.Normal
+        color: (UI.currentShiftState !== "NORMAL") ? UI.fontColor : UI.annotationFontColor
+        style: (UI.currentShiftState !== "NORMAL") ? Text.Raised : Text.Normal
         styleColor: "white"
         smooth: true
     }
 	
 	Text {
         id: annotationLabel2
-        //text: (panel.activeKeypadState != "NORMAL") ? __annotationLabelShifted : __annotationLabelNormal
+        //text: (UI.currentShiftState != "NORMAL") ? __annotationLabelShifted : __annotationLabelNormal
 		text: "…" //__annotationLabelNormal
 
   //              anchors.right: parent.right
@@ -179,9 +179,7 @@ Item {
 
         onPressAndHold: {
             if (activeExtendedModel != undefined) {
-                extendedKeysSelector.enabled = true
-                extendedKeysSelector.extendedListModel = activeExtendedModel
-                extendedKeysSelector.currentlyAssignedKey = key
+                UI.showExtendedKeys(activeExtendedModel, key);
             }
         }
 
@@ -192,8 +190,8 @@ Item {
 
                 event_handler.onKeyReleased(valueToSubmit, action);
                 if (!skipAutoCaps)
-                    if (panel.activeKeypadState === "SHIFTED" && panel.state === "CHARACTERS")
-                        panel.activeKeypadState = "NORMAL"
+                    if (UI.currentShiftState === "SHIFTED" && UI.currentSymbolState === "CHARACTERS")
+                        UI.currentShiftState = "NORMAL"
             }
         }
         onPressed: {

@@ -18,6 +18,8 @@
 
 import QtQuick 2.0
 
+import keys 1.0
+
 ActionKey {
     id: actionKey
 
@@ -28,15 +30,13 @@ ActionKey {
     padding: 0
 
     visible: maliit_input_method.enabledLanguages.length > 1 ? true : false
-    width: visible ? panel.keyWidth : 0
+    width: visible ? UI.keyWidth : 0
 
     MouseArea {
         anchors.fill: parent
         preventStealing: true
         onPressAndHold: {
-            languagesMenu.extendedListModel = maliit_input_method.enabledLanguages
-            languagesMenu.currentlyAssignedKey = actionKey
-            panel.languagesMenuShown = true
+            UI.showLanguagesMenu(actionKey);
         }
     }
 }

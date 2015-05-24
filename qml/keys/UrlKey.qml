@@ -22,7 +22,7 @@ import LunaNext.Common 0.1
 import keys 1.0
 
 CharKey {
-    width: panel.keyWidth
+    width: UI.keyWidth
 
     imgNormal: UI.imageGreyKey
     imgPressed: UI.imageGreyKeyPressed;

@@ -32,7 +32,7 @@ CharKey {
     property int padding: UI.actionKeyPadding
 
     // action keys are a bit wider
-    width: panel.keyWidth + Units.gu( padding )
+    width: UI.keyWidth + Units.gu( padding )
 
     imgNormal: UI.imageBlackKey
     imgPressed: UI.imageBlackKeyPressed
@@ -65,7 +65,7 @@ CharKey {
 
     Text {
         id: keyLabel
-        text: (panel.activeKeypadState === "NORMAL") ? label : shifted;
+        text: (UI.currentShiftState === "NORMAL") ? label : shifted;
         anchors.centerIn: parent
         anchors.horizontalCenterOffset: action === "return" && UI.formFactor === "tablet" ? Units.gu(2) : 0
         font.family: UI.fontFamily
@@ -78,13 +78,13 @@ CharKey {
     }
 
     onOskStateChanged: {
-        if (panel.activeKeypadState === "NORMAL") {
+        if (UI.currentShiftState === "NORMAL") {
             __icon = iconNormal;
             iconImage.color = colorNormal;
-        } else if (panel.activeKeypadState === "SHIFTED") {
+        } else if (UI.currentShiftState === "SHIFTED") {
             __icon = iconShifted;
             iconImage.color = colorShifted;
-        } else if (panel.activeKeypadState === "CAPSLOCK") {
+        } else if (UI.currentShiftState === "CAPSLOCK") {
             __icon = iconCapsLock;
             iconImage.color = colorCapsLock;
         }

@@ -21,7 +21,7 @@ import QtQuick 2.0
 import keys 1.0
 
 ActionKey {
-	width: panel.keyWidth * 1.5;
+	width: UI.keyWidth * 1.5;
     action: "return"
     fontSize: UI.symbolShiftKeyFontSize;
 }
