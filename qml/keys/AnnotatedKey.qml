@@ -19,17 +19,16 @@
 import QtQuick 2.0
 import QtMultimedia 5.0
 
+import keys 1.0
 import LunaNext.Common 0.1
-
-import "key_constants.js" as UI
 
 Item {
     id: key
 
     property int padding: 0
 
-    width: panel.keyWidth
-    height: panel.keyHeight
+    width: UI.keyWidth
+    height: parent.height
 
     /* to be set in keyboard layouts */
     property string label: ""
@@ -40,17 +39,16 @@ Item {
     property alias valueToSubmit: keyLabel.text
 
     property string action
-    property bool noMagnifier: formFactor==="tablet" ? true : false
+    property bool noMagnifier: UI.formFactor==="tablet" ? true : false
     property bool skipAutoCaps: false
 
     /* design */
     property bool useHorizontalLayout: false;
 
-    property string formFactor: Settings.tabletUi ? "tablet" : "phone"
-    property string imgNormal: UI.imageGreyKey[formFactor]
-    property string imgPressed: UI.imageGreyKeyPressed[formFactor]
+    property string imgNormal: UI.imageGreyKey
+    property string imgPressed: UI.imageGreyKeyPressed
     // fontSize can be overwritten when using the component, e.g. SymbolShiftKey uses smaller fontSize
-    property string fontSize: UI.fontSize[formFactor]
+    property string fontSize: UI.fontSize
 
     /// annotation shows a small label in the upper right corner
     // if the annotiation property is set, it will be used. If not, the first position in extended[] list or extendedShifted[] list will
@@ -68,15 +66,15 @@ Item {
      * this property specifies if the key can submit its value or not (e.g. when the popover is shown, it does not commit its value)
      */
 
-    property bool extendedKeysShown: extendedKeysSelector.enabled
+    property bool extendedKeysShown: UI.extendedKeysShown
 
     /*
      * label changes when keyboard is in shifted mode
      * extended keys change as well when shifting keyboard, typically lower-uppercase: ê vs Ê
      */
 
-    property string oskState: panel.activeKeypadState
-    property var activeExtendedModel: (panel.activeKeypadState === "NORMAL") ? extended : extendedShifted
+    property string oskState: UI.currentShiftState
+    property var activeExtendedModel: (UI.currentShiftState === "NORMAL") ? extended : extendedShifted
 
     Component.onCompleted: {
         if (annotation) {
@@ -104,7 +102,7 @@ Item {
 
     Text {
         id: keyLabel
-        //text: (panel.activeKeypadState === "NORMAL") ? label : shifted;
+        //text: (UI.currentShiftState === "NORMAL") ? label : shifted;
         text: label
         anchors.right: useHorizontalLayout ? parent.right : undefined
         anchors.rightMargin:  useHorizontalLayout ? Units.gu(2.0) : 0
@@ -117,10 +115,10 @@ Item {
         anchors.verticalCenterOffset: useHorizontalLayout ? Units.gu(-0.25) : Units.gu(0.5)
 
         font.family: UI.fontFamily
-        font.pixelSize: (panel.activeKeypadState === "NORMAL") ? FontUtils.sizeToPixels(UI.fontSize[formFactor]) : FontUtils.sizeToPixels(UI.annotationFontSize[formFactor])
-        font.bold: UI.fontBold[formFactor]
-        color: (panel.activeKeypadState === "NORMAL") ? UI.fontColor[formFactor] : UI.annotationFontColor[formFactor]
-        style: (panel.activeKeypadState === "NORMAL") ? Text.Raised : Text.Normal
+        font.pixelSize: (UI.currentShiftState === "NORMAL") ? FontUtils.sizeToPixels(UI.fontSize) : FontUtils.sizeToPixels(UI.annotationFontSize)
+        font.bold: UI.fontBold
+        color: (UI.currentShiftState === "NORMAL") ? UI.fontColor : UI.annotationFontColor
+        style: (UI.currentShiftState === "NORMAL") ? Text.Raised : Text.Normal
         styleColor: "white"
         smooth: true
     }
@@ -130,7 +128,7 @@ Item {
 
     Text {
         id: annotationLabel
-        //text: (panel.activeKeypadState != "NORMAL") ? __annotationLabelShifted : __annotationLabelNormal
+        //text: (UI.currentShiftState != "NORMAL") ? __annotationLabelShifted : __annotationLabelNormal
         text: __annotationLabelNormal
 
         anchors.left: useHorizontalLayout ? parent.left : undefined
@@ -142,36 +140,36 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
         anchors.verticalCenterOffset: useHorizontalLayout ? Units.gu(-0.25) : Units.gu(-1.75)
 
-        font.pixelSize: (panel.activeKeypadState === "NORMAL") ? FontUtils.sizeToPixels(UI.annotationFontSize[formFactor]) : FontUtils.sizeToPixels(UI.fontSize[formFactor])
+        font.pixelSize: (UI.currentShiftState === "NORMAL") ? FontUtils.sizeToPixels(UI.annotationFontSize) : FontUtils.sizeToPixels(UI.fontSize)
         font.bold: false
-        color: (panel.activeKeypadState !== "NORMAL") ? UI.fontColor[formFactor] : UI.annotationFontColor[formFactor]
-        style: (panel.activeKeypadState !== "NORMAL") ? Text.Raised : Text.Normal
+        color: (UI.currentShiftState !== "NORMAL") ? UI.fontColor : UI.annotationFontColor
+        style: (UI.currentShiftState !== "NORMAL") ? Text.Raised : Text.Normal
         styleColor: "white"
         smooth: true
     }
 	
 	Text {
         id: annotationLabel2
-        //text: (panel.activeKeypadState != "NORMAL") ? __annotationLabelShifted : __annotationLabelNormal
+        //text: (UI.currentShiftState != "NORMAL") ? __annotationLabelShifted : __annotationLabelNormal
 		text: "…" //__annotationLabelNormal
 
   //              anchors.right: parent.right
-//        anchors.rightMargin: units.gu(1.00)
+//        anchors.rightMargin: Units.gu(1.00)
 
 		anchors.right: parent.right
-        anchors.rightMargin: useHorizontalLayout ? Units.gu(1.0) : formFactor === "phone" ? Units.gu(0.5) : Units.gu(1.0)
+        anchors.rightMargin: useHorizontalLayout ? Units.gu(1.0) : UI.formFactor === "phone" ? Units.gu(0.5) : Units.gu(1.0)
         //anchors.horizontalCenter: parent.horizontalCenter
 		//anchors.horizontalCenterOffset: useHorizontalLayout ? Units.gu(1.0) : Units.gu(2.0)
 		
 		anchors.bottom: parent.bottom
         //anchors.bottomMargin: useHorizontalLayout ? Units.gu(0.5) : Units.gu(2.0)
-		anchors.bottomMargin: useHorizontalLayout || formFactor === "phone" ? Units.gu(0.5) : Units.gu(1.0)
+        anchors.bottomMargin: useHorizontalLayout || UI.formFactor === "phone" ? Units.gu(0.5) : Units.gu(1.0)
 
-        font.pixelSize: FontUtils.sizeToPixels(UI.annotationFontSize[formFactor])
+        font.pixelSize: FontUtils.sizeToPixels(UI.annotationFontSize)
         font.bold: false
         style: Text.Raised
         styleColor: "white"
-        color: UI.fontColor[formFactor] //: UI.annotationFontColor
+        color: UI.fontColor //: UI.annotationFontColor
 		smooth: true
     }
 
@@ -181,9 +179,7 @@ Item {
 
         onPressAndHold: {
             if (activeExtendedModel != undefined) {
-                extendedKeysSelector.enabled = true
-                extendedKeysSelector.extendedListModel = activeExtendedModel
-                extendedKeysSelector.currentlyAssignedKey = key
+                UI.showExtendedKeys(activeExtendedModel, key);
             }
         }
 
@@ -194,8 +190,8 @@ Item {
 
                 event_handler.onKeyReleased(valueToSubmit, action);
                 if (!skipAutoCaps)
-                    if (panel.activeKeypadState === "SHIFTED" && panel.state === "CHARACTERS")
-                        panel.activeKeypadState = "NORMAL"
+                    if (UI.currentShiftState === "SHIFTED" && UI.currentSymbolState === "CHARACTERS")
+                        UI.currentShiftState = "NORMAL"
             }
         }
         onPressed: {

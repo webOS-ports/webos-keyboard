@@ -18,19 +18,20 @@ import QtQuick 2.0
 import keys 1.0
 
 KeyPad {
-    anchors.fill: parent
-
     content: c1
     symbols: "languages/Keyboard_symbols_phone.qml"
 
     Column {
         id: c1
-        anchors.fill: parent
+        anchors.right: parent.right
+        anchors.left: parent.left
         spacing: 0
 
         Row {
             anchors.horizontalCenter: parent.horizontalCenter;
             spacing: 0
+
+            height: keyHeight;
 
             CharKey { label: "q"; }
             CharKey { label: "w"; }
@@ -48,6 +49,8 @@ KeyPad {
             anchors.horizontalCenter: parent.horizontalCenter;
             spacing: 0
 
+            height: keyHeight;
+
             CharKey { label: "a"; }
             CharKey { label: "s"; }
             CharKey { label: "d"; }
@@ -62,6 +65,8 @@ KeyPad {
         Row {
             anchors.horizontalCenter: parent.horizontalCenter;
             spacing: 0
+
+            height: keyHeight;
 
             ShiftKey {}
             CharKey { label: "z"; }
@@ -78,7 +83,7 @@ KeyPad {
             anchors.left: parent.left
             anchors.right: parent.right
 
-            height: panel.keyHeight;
+            height: keyHeight;
 
             SymbolShiftKey { id: symShiftKey; label: "符号";              anchors.left: parent.left; }
             LanguageKey    { id: languageMenuButton;                     anchors.left: symShiftKey.right; }

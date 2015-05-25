@@ -18,19 +18,20 @@ import QtQuick 2.0
 import keys 1.0
 
 KeyPad {
-    anchors.fill: parent
-
     content: c1
     symbols: "languages/Keyboard_symbols_tablet.qml"
 
     Column {
         id: c1
-        anchors.fill: parent
+        anchors.right: parent.right
+        anchors.left: parent.left
         spacing: 0
 
         Row {
             anchors.horizontalCenter: parent.horizontalCenter;
             spacing: 0
+
+            height: keyHeight;
 
             CharKey { label: "ק"; shifted: ""; }
             CharKey { label: "ר"; shifted: ""; }
@@ -45,6 +46,8 @@ KeyPad {
         Row {
             anchors.horizontalCenter: parent.horizontalCenter;
             spacing: 0
+
+            height: keyHeight;
 
             CharKey { label: "ש"; shifted: ""; }
             CharKey { label: "ד"; shifted: ""; }
@@ -62,6 +65,8 @@ KeyPad {
             anchors.horizontalCenter: parent.horizontalCenter;
             spacing: 0
 
+            height: keyHeight;
+
             CharKey { label: "ז"; shifted: ""; }
             CharKey { label: "ס"; shifted: ""; }
             CharKey { label: "ב"; shifted: ""; }
@@ -78,7 +83,7 @@ KeyPad {
             anchors.left: parent.left
             anchors.right: parent.right
 
-            height: panel.keyHeight;
+            height: keyHeight;
 
             SymbolShiftKey { id: symShiftKey;                            anchors.left: parent.left; }
             CharKey        { id: slashKey;    label: "/"; shifted: "/";  anchors.left: symShiftKey.right; }

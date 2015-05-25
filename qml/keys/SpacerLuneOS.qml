@@ -21,17 +21,15 @@ import QtMultimedia 5.0
 
 import LunaNext.Common 0.1
 
-import "key_constants.js" as UI
-
 Item {
     id: key
 
     property int padding: 0
 
-    width: panel.keyWidth
-    height: panel.keyHeight
-    property string imgNormal: UI.imageWhiteKey[formFactor]
-    property string imgPressed: UI.imageWhiteKeyPressed[formFactor]
+    width: UI.keyWidth
+    height: UI.keyHeight
+    property string imgNormal: UI.imageWhiteKey
+    property string imgPressed: UI.imageWhiteKeyPressed
 
 
   
@@ -40,7 +38,7 @@ Item {
         border { left: 27; top: 29; right: 27; bottom: 29 }
         anchors.centerIn: parent
         anchors.fill: key
-        anchors.margins: units.dp( UI.keyMargins );
+        anchors.margins: Units.dp( UI.keyMargins );
         source: key.imgNormal
     }
 

@@ -17,25 +17,26 @@
  */
 
 import QtQuick 2.0
+
+import keys 1.0
 import LunaNext.Common 0.1
-import "key_constants.js" as UI
 
 ActionKey {
     label: "+=[]";
     shifted: "+=[]";
     action: "symbols";
 
-    fontSize: UI.symbolShiftKeyFontSize[formFactor];
-    width: panel.keyWidth //* 2
+    fontSize: UI.symbolShiftKeyFontSize;
+    width: UI.keyWidth //* 2
     
     MouseArea {
         anchors.fill: parent
         preventStealing: true
         onClicked: {
-            if (panel.state === "CHARACTERS")
-                panel.state = "SYMBOLS";
+            if (UI.currentSymbolState === "CHARACTERS")
+                UI.currentSymbolState = "SYMBOLS";
             else
-                panel.state = "CHARACTERS";
+                UI.currentSymbolState = "CHARACTERS";
         }
     }
 }

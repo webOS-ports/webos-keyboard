@@ -17,9 +17,9 @@
  */
 
 import QtQuick 2.0
-import LunaNext.Common 0.1
 
-import "key_constants.js" as UI
+import keys 1.0
+import LunaNext.Common 0.1
 
 ActionKey {
     id: actionKey
@@ -28,16 +28,14 @@ ActionKey {
     iconShifted: "icon-hide-keyboard"
     iconCapsLock: "icon-hide-keyboard"
 
-    width: panel.keyWidth;
-
-    property variant keyboardSizesModel: [ "XS", "S", "M", "L" ]
+    width: UI.keyWidth;
 
     Image {
 
         property color color;
 
         id: iconImage
-        source: Qt.resolvedUrl("../images/" + formFactor + "/" + __icon + ".png")
+        source: Qt.resolvedUrl("../images/" + UI.formFactor + "/" + __icon + ".png")
         anchors.centerIn: parent
         visible: (label == "")
 		smooth: true
@@ -53,11 +51,7 @@ ActionKey {
         }
 
         onPressAndHold: {
-            if (keyboardSizesModel !== null) {
-                keyboardSizeMenu.extendedListModel = keyboardSizesModel;
-                keyboardSizeMenu.currentlyAssignedKey = actionKey;
-                panel.keyboardSizeMenuShown = true;
-            }
+            UI.showKeyboardSizeMenu(actionKey);
         }
     }
 }

@@ -17,9 +17,9 @@
  */
 
 import QtQuick 2.0
-import LunaNext.Common 0.1
 
-import "key_constants.js" as UI
+import keys 1.0
+import LunaNext.Common 0.1
 
 Item {
     id: popover
@@ -28,6 +28,9 @@ Item {
 
     property variant extendedListModel
     property Item currentlyAssignedKey
+
+    property int keyHeight: currentlyAssignedKey ? currentlyAssignedKey.height : 0
+    property int keyWidth:  currentlyAssignedKey ? currentlyAssignedKey.width : 0
 
     property int currentlyAssignedKeyParentY: currentlyAssignedKey ? currentlyAssignedKey.parent.y : 0
     property int currentlyAssignedKeyX: currentlyAssignedKey ? currentlyAssignedKey.x : 0
@@ -55,19 +58,19 @@ Item {
 
     Item {
         id: anchorItem
-        width: panel.keyWidth
-        height: panel.keyHeight
+        width: popover.keyWidth
+        height: popover.keyHeight
     }
 
     Item {
         id: popoverBackground
 
-        property bool isOnLeftSideOfScreen: anchorItem.x < (panel.width/2)
+        property bool isOnLeftSideOfScreen: anchorItem.x < (popover.width/2)
 
         anchors.bottom: anchorItem.bottom
         anchors.bottomMargin: -8
         x: isOnLeftSideOfScreen ? (anchorItem.x) : (anchorItem.x+anchorItem.width-popoverBackground.width)
-        width: Math.max(keypad.keyWidth, rowOfKeys.width + 10*2)
+        width: Math.max(UI.keyWidth, rowOfKeys.width + 10*2)
         height: ((30 + numberOfLines * 60))
 
         function __updatePopoverRect() {
@@ -83,28 +86,28 @@ Item {
         Row {
             x: 0; y: 0; height: parent.height
             BorderImage {
-				source: UI.imagePopupBgLeft[formFactor]
+                source: UI.imagePopupBgLeft
                 border {left: 21; top: 21; bottom: 36;}
 				height: parent.height
                 verticalTileMode: BorderImage.Stretch
 				width: 21
             }
             BorderImage {
-                source: UI.imagePopupBgBetween[formFactor]
+                source: UI.imagePopupBgBetween
                 height: parent.height
                 border {top: 21; bottom: 36;}
                 verticalTileMode: BorderImage.Stretch
                 width: popoverBackground.isOnLeftSideOfScreen ? 8 : (popoverBackground.width - 21 - 33 - 8 - 21)
             }
             BorderImage {
-				source: UI.imagePopupBgCaret[formFactor]
+                source: UI.imagePopupBgCaret
                 border {top: 21; bottom: 36;}
                 verticalTileMode: BorderImage.Stretch
                 height: parent.height
                 width: 33
             }
             BorderImage {
-				source: UI.imagePopupBgBetween[formFactor]
+                source: UI.imagePopupBgBetween
                 border {top: 21; bottom: 36;}
                 verticalTileMode: BorderImage.Stretch
                 height: parent.height
@@ -112,7 +115,7 @@ Item {
             }
             BorderImage {
                 border {right: 21; top: 21; bottom: 36;}
-				source: UI.imagePopupBgRight[formFactor]
+                source: UI.imagePopupBgRight
                 height: parent.height
                 width: 21
             }
@@ -146,7 +149,7 @@ Item {
                 {
                     anchors.centerIn: parent
                     id: popupKeyImage
-                    source: UI.imagePopupKey[formFactor]
+                    source: UI.imagePopupKey
                     width: 60
                     height: 60
                 }
@@ -154,13 +157,13 @@ Item {
                 Text {
                     id: textCell
                     anchors.centerIn: parent
-					//anchors.verticalCenterOffset: formFactor === "phone" ? Units.gu (-0.15) : 0
+                    //anchors.verticalCenterOffset: UI.formFactor === "phone" ? Units.gu (-0.15) : 0
 					anchors.verticalCenterOffset: Units.gu(-0.15)
                     text: modelData
                     font.family: UI.fontFamily
-                    font.pixelSize: text.length > 2 ? FontUtils.sizeToPixels(UI.smallFontSize[formFactor]) : FontUtils.sizeToPixels(UI.fontSize[formFactor])
-                    font.bold: false //UI.fontBold[formFactor]
-                    color: key.highlight ? UI.extendedHighLightColor[formFactor] : UI.extendedFontColor[formFactor]
+                    font.pixelSize: text.length > 2 ? FontUtils.sizeToPixels(UI.smallFontSize) : FontUtils.sizeToPixels(UI.fontSize)
+                    font.bold: false //UI.fontBold
+                    color: key.highlight ? UI.extendedHighLightColor : UI.extendedFontColor
                 }
 
                 MouseArea {
@@ -187,7 +190,7 @@ Item {
         var point = popover.mapFromItem(item, item.x, item.y)
 
         anchorItem.x = item.x + row.x
-        anchorItem.y = point.y - (panel.keyHeight + Units.gu(UI.popoverTopMargin));
+        anchorItem.y = point.y - popover.keyHeight;
     }
 
     function __restoreAssignedKey()

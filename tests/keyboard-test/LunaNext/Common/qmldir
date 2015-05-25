@@ -1,6 +1,5 @@
 module LunaNext.Common
-Settings 0.1 SettingsStub.js
-Units 0.1 UnitsStub.js
-FontUtils 0.1 FontUtilsStub.js
 
-typeinfo LunaNext.Common.qmltypes
+singleton Settings 0.1 SettingsStub.qml
+singleton Units 0.1 UnitsStub.qml
+singleton FontUtils 0.1 FontUtilsStub.qml

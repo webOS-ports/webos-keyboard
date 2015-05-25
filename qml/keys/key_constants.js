@@ -19,6 +19,15 @@
 .pragma library
 
 var keyMargins  	=   0 //gu
+var keyHeight       =   {"tabletLandscape" : "6.6",
+                         "tabletPortrait"  : "7",
+                         "phonePortrait"   : "6.1",
+                         "phoneLandscape"  : "4.3"};   // gu
+
+var keyHeightRatio = { "XS" : 0.7147058877,		/* 243 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
+                        "S" : 0.857352948, 	/* (340+243 / 2)  / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
+                        "M" : 1.0,       		/* 340 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
+                        "L" : 1.15588236 }; 	/* 393 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
 
 var fontSize    	=   {"tablet" : "22pt",
                          "phone"  : "16pt"};    
@@ -70,8 +79,8 @@ var smallFontSize = {"tablet" : "14pt",
 /* extended keys */
 var popoverTopMargin   = 1; // gu
 
-var popoverFontSize   = {"tablet" : "24pt",
-                         "phone"  : "24pt"};    // gu
+var popoverFontSize   = {"tablet" : "32pt",
+                         "phone"  : "32pt"};    // gu
 
 var imageWhiteKey        = { "tablet" : "../images/tablet/key_bg_white.png",
                              "phone"  : "../images/phone/key_bg_white.png"  };
@@ -129,21 +138,3 @@ var bottom_margin = 0; // gu
 
 var wordribbonHeight = 5; //gu
 
-function getHeightRatio(formFactor, screenHeight, isLandscape, sizeChoice) {
-    if( formFactor === "tablet" ){
-        var keyboardHeight = { "XS" : 0.31640625,		/* 243 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
-                                         "S" : 0.379557292, 	/* (340+243 / 2)  / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
-                                         "M" : 0.44270833, 		/* 340 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
-                                         "L" : 0.51171875 }; 	/* 393 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
-        return keyboardHeight[sizeChoice];
-    }
-	else { //formFactor === "phone"
-	
-		if( isLandscape ) {
-			return 0.3385417
-		}
-		else{
-			return 0.368164
-		}
-	}
-}

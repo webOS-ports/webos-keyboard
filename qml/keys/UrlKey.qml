@@ -17,17 +17,18 @@
  */
 
 import QtQuick 2.0
+
 import LunaNext.Common 0.1
-import "../keys/key_constants.js" as UI
+import keys 1.0
 
 CharKey {
-    width: panel.keyWidth
+    width: UI.keyWidth
 
-    imgNormal: UI.imageGreyKey[formFactor]
-    imgPressed: UI.imageGreyKeyPressed[formFactor];
+    imgNormal: UI.imageGreyKey
+    imgPressed: UI.imageGreyKeyPressed;
 
     label: ".com";
     shifted: label
     extendedShifted: extended
-    fontSize: label.length>1 ? UI.smallFontSize[formFactor] : UI.fontSize[formFactor];
+    fontSize: label.length>1 ? UI.smallFontSize : UI.fontSize;
 }

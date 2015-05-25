@@ -17,17 +17,18 @@
  */
 
 import QtQuick 2.0
-import "../keys"
-import "../keys/key_constants.js" as UI
+
+import keys 1.0
 
 KeyPad {
-    anchors.fill: parent
+    id: keypadRoot
 
     content: c1
 
     Column {
         id: c1
-        anchors.fill: parent
+        anchors.right: parent.right
+        anchors.left: parent.left
         anchors.margins: 0;
 
         spacing: 0
@@ -35,6 +36,8 @@ KeyPad {
         Row {
             anchors.horizontalCenter: parent.horizontalCenter;
             spacing: 0
+
+            height: keyHeight * 0.74
 
             NumKey { label: "1"; shifted: "!"; extended: ["1", "!", "¹", "¼", "½", "¡"]}
             NumKey { label: "2"; shifted: "@"; extended: ["2", "@", "²"]}
@@ -46,13 +49,15 @@ KeyPad {
             NumKey { label: "8"; shifted: "*"; extended: ["8", "*"]}
             NumKey { label: "9"; shifted: "("; extended: ["9", "(", "[", "{"]}
             NumKey { label: "0"; shifted: ")"; extended: ["0", ")", "]", "}"]}
-            TrackBall { width: c1.width - (panel.keyWidth*0.9*10); height: 45 }
+            TrackBall { width: c1.width - (UI.keyWidth*0.9*10); anchors.verticalCenter: parent.verticalCenter }
         }
 
         Row {
             anchors.horizontalCenter: parent.horizontalCenter;
            // anchors.margins: 50;
             spacing: 0
+
+            height: keyHeight
 
             CharKey { label: "`"; shifted: "`"}
             CharKey { label: "~"; shifted: "~"; }
@@ -73,6 +78,8 @@ KeyPad {
             //anchors.margins: 50;
             spacing: 0
 
+            height: keyHeight
+
             CharKey { label: "<"; shifted: "<";}
             CharKey { label: ">"; shifted: ">";}
             CharKey { label: "="; shifted: "=";}
@@ -91,6 +98,8 @@ KeyPad {
             //anchors.margins: 50;
             spacing: 0
 
+            height: keyHeight
+
 			ShiftKey {}
             CharKey { label: ":-)"; shifted: ":-)";}
             CharKey { label: ";-)"; shifted: ";-)";}
@@ -99,22 +108,22 @@ KeyPad {
             CharKey { label: ":-P"; shifted: ":-P"; }
             CharKey { label: ":-O"; shifted: ":-O"; }
             CharKey { label: "<3"; shifted: "<3"; }
-            CharKey { imgNormal: UI.imageGreyKey[formFactor]; imgPressed: UI.imageGreyKeyPressed[formFactor]; label: ","; shifted: "/"; extended:"/";}
-            CharKey { imgNormal: UI.imageGreyKey[formFactor]; imgPressed: UI.imageGreyKeyPressed[formFactor]; label: "."; shifted: "?"; extended:"?";}
+            CharKey { imgNormal: UI.imageGreyKey; imgPressed: UI.imageGreyKeyPressed; label: ","; shifted: "/"; extended:"/";}
+            CharKey { imgNormal: UI.imageGreyKey; imgPressed: UI.imageGreyKeyPressed; label: "."; shifted: "?"; extended:"?";}
             ShiftKey {}
         }
         Item {
             anchors.left: parent.left
             anchors.right: parent.right
 
-            height: panel.keyHeight;
+            height: keyHeight
 
             TabKey         { id: tabKey; extended: "Tab";  shifted: "Tab";       label: "Tab";              anchors.left: parent.left; }
 			SymbolShiftKey { id: symShiftKey; label: "ABC"; shifted: "ABC"; anchors.left: tabKey.right; }
             LanguageKey    { id: languageMenuButton;                       anchors.left: symShiftKey.right; }
             SpaceKey       { id: spaceKey;                                 anchors.left: languageMenuButton.right; anchors.right: apostropheKey.left; noMagnifier: true }
-            CharKey        { imgNormal: UI.imageGreyKey[formFactor]; imgPressed: UI.imageGreyKeyPressed[formFactor]; id: apostropheKey; label: "'"; extended: "\""; shifted: "\""; anchors.right: minusKey.left; }
-            CharKey        { imgNormal: UI.imageGreyKey[formFactor]; imgPressed: UI.imageGreyKeyPressed[formFactor]; id: minusKey;      label: "-"; extended: "_"; shifted: "_";  anchors.right: dismissKey.left; }
+            CharKey        { imgNormal: UI.imageGreyKey; imgPressed: UI.imageGreyKeyPressed; id: apostropheKey; label: "'"; extended: "\""; shifted: "\""; anchors.right: minusKey.left; }
+            CharKey        { imgNormal: UI.imageGreyKey; imgPressed: UI.imageGreyKeyPressed; id: minusKey;      label: "-"; extended: "_"; shifted: "_";  anchors.right: dismissKey.left; }
             DismissKey     { id: dismissKey;                               anchors.right: parent.right;}
         }
        

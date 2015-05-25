@@ -18,8 +18,10 @@
 
 import QtQuick 2.0
 
+import keys 1.0
+
 ActionKey {
-    width: panel.keyWidth;
+    width: UI.keyWidth;
 //    iconNormal: "tab"
 //    iconShifted: "tab"
  //   iconCapsLock: "tab"

@@ -32,243 +32,199 @@
  */
 
 import QtQuick 2.0
-import "constants.js" as Const
-import "keys/"
-import "keys/key_constants.js" as UI
+import keys 1.0
 
 import LunaNext.Common 0.1
 
 Item {
     id: fullScreenItem
-    objectName: "fullScreenItem"
 
     property variant input_method: maliit_input_method
     property variant event_handler: maliit_event_handler
 
-    property string formFactor: Settings.tabletUi ? "tablet" : "phone"
+    Item {
+        id: canvas
 
-    property QtObject units: QtObject {
-        function gu(valueInGridUnits) {
-            return Units.gu(valueInGridUnits);
-        }
-        function dp(valueInLogicalPixels) {
-            return Units.dp(valueInLogicalPixels);
-        }
-    }
-    property QtObject i18n: QtObject {
-        function tr(inputString) {
-            return inputString;
-        }
-    }
-
-    // When the keyboard initializes, the root QML element returns a zero size.
-    // So if no further geometry change event is sent, we might end up with a
-    // keyboard of height=0.
-    // Therefore we need to survey the root width and height properties to force
-    // recompute once the Screen singleton is actually initialized with proper values.
-    property real rootItemSizeSurvey: fullScreenItem.width+fullScreenItem.height
-    onRootItemSizeSurveyChanged: calculateSize();
-
-Item {
-    id: canvas
-    objectName: "luneOSKeyboard" // Allow us to specify a specific keyboard within autopilot.
-
-    anchors.bottom: parent.bottom
-    anchors.left: parent.left
-
-    width: parent.width
-    height: 0
-
-    property int keypadHeight: height;
-
-    onRotationChanged: console.log("now rotation has changed!!" + rotation)
-
-    visible: true
-
-
-    property int contentOrientation: maliit_geometry.orientation
-    onContentOrientationChanged: fullScreenItem.reportKeyboardVisibleRect();
-
-    property bool wordribbon_visible: maliit_word_engine.enabled
-    onWordribbon_visibleChanged: calculateSize();
-
-    property bool languageMenuShown: false
-	property bool keyboardSizeMenuShown: false
-
-    onXChanged: fullScreenItem.reportKeyboardVisibleRect();
-    onYChanged: fullScreenItem.reportKeyboardVisibleRect();
-    onWidthChanged: fullScreenItem.reportKeyboardVisibleRect();
-    onHeightChanged: fullScreenItem.reportKeyboardVisibleRect();
-
-    MouseArea {
-        id: swipeArea
-
-        property int jumpBackThreshold: units.gu(10)
-
+        anchors.bottom: parent.bottom
         anchors.left: parent.left
         anchors.right: parent.right
-        anchors.top: parent.top
-        height: (parent.height - canvas.keypadHeight) + wordRibbon.height +
-                borderTop.height + units.gu(UI.top_margin) * 3
 
-        drag.target: keyboardSurface
-        drag.axis: Drag.YAxis;
-        drag.minimumY: 0
-        drag.maximumY: parent.height
-        drag.filterChildren: true
+        height: keyboardSurface.height
+        property int keypadHeight: height;
 
-        onReleased: {
-            if (keyboardSurface.y > jumpBackThreshold) {
-                maliit_geometry.shown = false;
-            } else {
-                bounceBackAnimation.from = keyboardSurface.y
-                bounceBackAnimation.start();
-            }
-        }
+        visible: true
 
-        Item {
-            id: keyboardSurface
-            objectName: "keyboardSurface"
+        property int contentOrientation: maliit_geometry.orientation
+        onContentOrientationChanged: fullScreenItem.reportKeyboardVisibleRect();
 
-            x:0
-            y:0
-            width: parent.width
-            height: canvas.height
+        property bool languageMenuShown: false
+        property bool keyboardSizeMenuShown: false
 
-            onXChanged: fullScreenItem.reportKeyboardVisibleRect();
-            onYChanged: fullScreenItem.reportKeyboardVisibleRect();
-            onWidthChanged: fullScreenItem.reportKeyboardVisibleRect();
-            onHeightChanged: fullScreenItem.reportKeyboardVisibleRect();
+        onXChanged: fullScreenItem.reportKeyboardVisibleRect();
+        onYChanged: fullScreenItem.reportKeyboardVisibleRect();
+        onWidthChanged: fullScreenItem.reportKeyboardVisibleRect();
+        onHeightChanged: fullScreenItem.reportKeyboardVisibleRect();
 
-            WordRibbon {
-                id: wordRibbon
-                objectName: "wordRibbon"
+        MouseArea {
+            id: swipeArea
 
-                visible: canvas.wordribbon_visible
+            property int jumpBackThreshold: Units.gu(10)
 
-                anchors.bottom: keyboardComp.top
-                width: parent.width;
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: parent.top
+            height: (parent.height - keypad.height) + wordRibbon.height
 
-                height: canvas.wordribbon_visible ? Units.gu(UI.wordribbonHeight) : 0
-                onHeightChanged: calculateSize();
+            drag.target: keyboardSurface
+            drag.axis: Drag.YAxis;
+            drag.minimumY: 0
+            drag.maximumY: parent.height
+            drag.filterChildren: true
+
+            onReleased: {
+                if (keyboardSurface.y > jumpBackThreshold) {
+                    maliit_geometry.shown = false;
+                } else {
+                    bounceBackAnimation.from = keyboardSurface.y
+                    bounceBackAnimation.start();
+                }
             }
 
             Item {
-                id: keyboardComp
-                objectName: "keyboardComp"
+                id: keyboardSurface
+                objectName: "keyboardSurface"
 
-                height: canvas.keypadHeight - wordRibbon.height
+                x:0
+                y:0
                 width: parent.width
-                anchors.bottom: parent.bottom
+                height: wordRibbon.height + keyboardComp.height
 
+                onXChanged: fullScreenItem.reportKeyboardVisibleRect();
+                onYChanged: fullScreenItem.reportKeyboardVisibleRect();
+                onWidthChanged: fullScreenItem.reportKeyboardVisibleRect();
                 onHeightChanged: fullScreenItem.reportKeyboardVisibleRect();
 
-                Image {
-                    id: background
+                WordRibbon {
+                    id: wordRibbon
+                    objectName: "wordRibbon"
 
-                    anchors.fill: parent
-                    source: "images/"+formFactor+"/keyboard-bg.png"
-                    fillMode: Image.TileHorizontally
+                    visible: maliit_word_engine.enabled
+
+                    anchors.bottom: keyboardComp.top
+                    width: parent.width;
+
+                    height: visible ? Units.gu(UI.wordribbonHeight) : 0
                 }
 
-                Image {
-                    id: borderTop
-                    source: "images/"+formFactor+"/border_top.png"
+                Item {
+                    id: keyboardComp
+                    objectName: "keyboardComp"
+
+                    height: keyboardCompColumn.height
                     width: parent.width
-                    anchors.top: parent.top.bottom
-                }
+                    anchors.bottom: parent.bottom
 
-                Image {
-                    id: borderBottom
-                    source: "images/"+formFactor+"/border_bottom.png"
-                    width: parent.width
-                    anchors.bottom: background.bottom
-                }
+                    onHeightChanged: fullScreenItem.reportKeyboardVisibleRect();
 
-                KeyboardContainer {
-                    id: keypad
+                    Image {
+                        id: background
 
-                    anchors.top: borderTop.bottom
-                    anchors.bottom: borderBottom.top
-                    anchors.topMargin: units.gu( UI.top_margin )
-                    anchors.bottomMargin: units.gu( UI.bottom_margin )
-                    width: parent.width
+                        anchors.fill: parent
+                        source: "images/"+UI.formFactor+"/keyboard-bg.png"
+                        fillMode: Image.TileHorizontally
+                    }
 
-                    onCurrentKeyboardSizeChanged: fullScreenItem.calculateSize();
-                }
-            } // keyboardComp
-        }
-    }
+                    Column {
+                        id: keyboardCompColumn
+                        width: parent.width
 
-    PropertyAnimation {
-        id: bounceBackAnimation
-        target: keyboardSurface
-        properties: "y"
-        easing.type: Easing.OutBounce;
-        easing.overshoot: 2.0
-        to: 0
-    }
-
-    state: "HIDDEN"
-
-    states: [
-        State {
-            name: "SHOWN"
-            PropertyChanges { target: canvas; y: 0; }
-            when: maliit_geometry.shown === true
-        },
-
-        State {
-            name: "HIDDEN"
-            PropertyChanges { target: canvas; y: height; }
-            onCompleted: {
-                canvas.languageMenuShown = false;
-                keyboardSurface.y = 0;
-                keypad.closeExtendedKeys();
-                keypad.activeKeypadState = "NORMAL";
-                keypad.state = "CHARACTERS";
-                maliit_input_method.hide();
+                        Image {
+                            source: "images/"+UI.formFactor+"/border_top.png"
+                            width: parent.width
+                        }
+                        Item {
+                            width: parent.width
+                            height: Units.gu( UI.top_margin )
+                        }
+                        KeyboardContainer {
+                            id: keypad
+                            width: parent.width
+                        }
+                        Item {
+                            width: parent.width
+                            height: Units.gu( UI.bottom_margin )
+                        }
+                        Image {
+                            source: "images/"+UI.formFactor+"/border_bottom.png"
+                            width: parent.width
+                        }
+                    }
+                } // keyboardComp
             }
-            when: maliit_geometry.shown === false
         }
-    ]
-    transitions: Transition {
-        PropertyAnimation { target: canvas; properties: "y"; easing.type: Easing.InOutQuad }
+
+        PropertyAnimation {
+            id: bounceBackAnimation
+            target: keyboardSurface
+            properties: "y"
+            easing.type: Easing.OutBounce;
+            easing.overshoot: 2.0
+            to: 0
+        }
+
+        state: "HIDDEN"
+
+        states: [
+            State {
+                name: "SHOWN"
+                PropertyChanges { target: canvas; y: 0; }
+                when: maliit_geometry.shown === true
+            },
+
+            State {
+                name: "HIDDEN"
+                PropertyChanges { target: canvas; y: height; }
+                onCompleted: {
+                    keyboardSurface.y = 0;
+                    UI.hideExtendedKeys();
+                    UI.hideKeyboardSizeMenu();
+                    UI.hideLanguagesMenu();
+                    UI.currentShiftState = "NORMAL";
+                    UI.currentSymbolState = "CHARACTERS";
+                    maliit_input_method.hide();
+                }
+                when: maliit_geometry.shown === false
+            }
+        ]
+        transitions: Transition {
+            PropertyAnimation { target: canvas; properties: "y"; easing.type: Easing.InOutQuad }
+        }
+
+        Connections {
+            target: input_method
+            onActivateAutocaps: {
+                keypad.state = "CHARACTERS";
+                UI.currentShiftState = "SHIFTED";
+            }
+        }
+
+    } // canvas
+
+    // calculates the size of the visible keyboard to report to the window system
+    // FIXME get the correct size for enabled extended keys instead of that big area
+    function reportKeyboardVisibleRect() {
+
+        var vx = 0;
+        var vy = wordRibbon.y;
+        var vwidth = keyboardSurface.width;
+        var vheight = keyboardComp.height + wordRibbon.height;
+
+        var obj = fullScreenItem.mapFromItem(keyboardSurface, vx, vy, vwidth, vheight);
+        maliit_geometry.visibleRect = Qt.rect(obj.x, obj.y, obj.width, obj.height);
     }
 
-    Connections {
-        target: input_method
-        onActivateAutocaps: {
-            keypad.state = "CHARACTERS";
-            keypad.activeKeypadState = "SHIFTED";
-        }
+    Component.onCompleted: {
+        UI.isLandscape = Qt.binding( function() { return fullScreenItem.width > fullScreenItem.height; } );
     }
-
-} // canvas
-
-function calculateSize()
-{
-    // warning: the following line is wrong if the vkb height doesn't always cover the screen current height
-    var isLandscape = (fullScreenItem.width > fullScreenItem.height);
-
-    var newHeight = fullScreenItem.height * UI.getHeightRatio(Settings.tabletUi ? "tablet" : "phone", fullScreenItem.height, isLandscape, keypad.currentKeyboardSize);
-
-    canvas.height = newHeight + wordRibbon.height;
-
-    reportKeyboardVisibleRect();
-}
-
-// calculates the size of the visible keyboard to report to the window system
-// FIXME get the correct size for enabled extended keys instead of that big area
-function reportKeyboardVisibleRect() {
-
-    var vx = 0;
-    var vy = wordRibbon.y;
-    var vwidth = keyboardSurface.width;
-    var vheight = keyboardComp.height + wordRibbon.height;
-
-    var obj = fullScreenItem.mapFromItem(keyboardSurface, vx, vy, vwidth, vheight);
-    maliit_geometry.visibleRect = Qt.rect(obj.x, obj.y, obj.width, obj.height);
-}
 
 } // fullScreenItem

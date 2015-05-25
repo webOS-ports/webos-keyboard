@@ -18,14 +18,14 @@
 
 import QtQuick 2.0
 
-import "key_constants.js" as UI
+import keys 1.0
 
 ActionKey {
     label: " ";
     shifted: " ";
 
-    imgNormal: formFactor === "tablet" ? UI.imageWhiteKey[formFactor] : UI.imageBlackKey[formFactor]
-    imgPressed: formFactor === "tablet" ? UI.imageWhiteKeyPressed[formFactor] : UI.imageBlackKeyPressed[formFactor]
+    imgNormal: UI.imageSpaceKey
+    imgPressed: UI.imageSpaceKeyPressed
 
     action: "space"
 }

@@ -18,11 +18,13 @@
 
 import QtQuick 2.0
 
-import "key_constants.js" as UI
+import keys 1.0
+import LunaNext.Common 0.1
 
 Item {
 	id: trackBall
 
+    height: 45
     property Item highlightedKey;
 
     Item {
@@ -35,44 +37,44 @@ Item {
     Image {
         anchors.centerIn: sliderMouseArea.pressed? undefined : parent
 		id: slider
-        source: "../images/"+formFactor+"/track-center.png"
+        source: "../images/"+UI.formFactor+"/track-center.png"
         width: sourceSize.width * 0.8
         height: sourceSize.height * 0.8
     }
 
     Image{
         id: leftArrow
-        anchors.rightMargin: units.gu(-0.5)
+        anchors.rightMargin: Units.gu(-0.5)
         anchors.right: origin.left
         anchors.verticalCenter: origin.verticalCenter
-        source: "../images/"+formFactor+"/track-arrow-left.png"
+        source: "../images/"+UI.formFactor+"/track-arrow-left.png"
         opacity: highlightedKey === leftArrow ? 1.0 : 0.2
     }
 
     Image{
         id: rightArrow
-        anchors.leftMargin: units.gu(-0.5)
+        anchors.leftMargin: Units.gu(-0.5)
         anchors.left: origin.right
         anchors.verticalCenter: origin.verticalCenter
-        source: "../images/"+formFactor+"/track-arrow-right.png"
+        source: "../images/"+UI.formFactor+"/track-arrow-right.png"
         opacity: highlightedKey === rightArrow ? 1.0 : 0.2
     }
 
     Image{
         id: upArrow
-        anchors.bottomMargin: units.gu(-0.5)
+        anchors.bottomMargin: Units.gu(-0.5)
         anchors.bottom: origin.top
         anchors.horizontalCenter: origin.horizontalCenter
-        source: "../images/"+formFactor+"/track-arrow-up.png"
+        source: "../images/"+UI.formFactor+"/track-arrow-up.png"
         opacity: highlightedKey === upArrow ? 1.0 : 0.2
     }
 
     Image{
         id: downArrow
-        anchors.topMargin: units.gu(-0.5)
+        anchors.topMargin: Units.gu(-0.5)
         anchors.top: origin.bottom
         anchors.horizontalCenter: origin.horizontalCenter
-        source: "../images/"+formFactor+"/track-arrow-down.png"
+        source: "../images/"+UI.formFactor+"/track-arrow-down.png"
         opacity: highlightedKey === downArrow ? 1.0 : 0.2
     }
 

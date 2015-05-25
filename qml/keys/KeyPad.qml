@@ -18,39 +18,89 @@
 
 import QtQuick 2.0
 
+import keys 1.0
+import LunaNext.Common 0.1
+
 Item {
     id: keyPadRoot
 
     state: "NORMAL"
 
-    property var content: c1
     property string symbols: "languages/Keyboard_symbols.qml"
     property bool capsLock: false
+    property int keyHeight: Units.gu(UI.keyHeight); // as a convenience for the objects inheriting KeyPad
 
-    property int nbNumericalRows: 0
+    property Column content: Column {}
 
-    Column {
-        id: c1
-    }
+    height: content.height
 
     Component.onCompleted:
     {
         calculateKeyWidth();
-        calculateKeyHeight();
+    }
+    onWidthChanged: calculateKeyWidth()
+
+    Connections {
+        target: UI
+        onShowExtendedKeys: {
+            extendedKeysSelector.extendedListModel = keysExtendedModel;
+            extendedKeysSelector.currentlyAssignedKey = keyItem;
+            extendedKeysSelector.enabled = true;
+            UI.extendedKeysShown = true;
+        }
+        onShowKeyboardSizeMenu: {
+            keyboardSizeMenu.extendedListModel = UI.keyboardSizeChoices;
+            keyboardSizeMenu.currentlyAssignedKey = keyItem;
+            keyboardSizeMenu.enabled = true;
+        }
+        onShowLanguagesMenu: {
+            languagesMenu.extendedListModel = maliit_input_method.enabledLanguages;
+            languagesMenu.currentlyAssignedKey = keyItem;
+            languagesMenu.enabled = true;
+        }
+        onHideExtendedKeys : {
+            extendedKeysSelector.closePopover();
+            UI.extendedKeysShown = false;
+        }
+        onHideKeyboardSizeMenu : {
+            keyboardSizeMenu.closePopover();
+        }
+        onHideLanguagesMenu : {
+            languagesMenu.closePopover();
+        }
     }
 
-    onWidthChanged: calculateKeyWidth()
-    onHeightChanged: calculateKeyHeight();
+    ExtendedListSelector {
+        id: extendedKeysSelector
+        anchors.fill: parent
+        z: 2;
+
+        onItemSelected: event_handler.onKeyReleased(modelData);
+    }
+
+    ExtendedListSelector {
+        id: keyboardSizeMenu
+        anchors.fill: parent
+        z: 2;
+
+        onItemSelected: UI.keyboardSizeChoice = modelData;
+    }
+
+    ExtendedListSelector {
+        id: languagesMenu
+        anchors.fill: parent
+        z: 2;
+
+        onItemSelected: maliit_input_method.activeLanguage = modelData;
+    }
 
     function numberOfRows() {
-        if( !content ) return 1;
-
         return content.children.length;
     }
 
     // we don´t use a QML layout, because we want all keys to be equally sized
     function calculateKeyWidth() {
-        var width = panel.width;
+        var width = keyPadRoot.width;
 
         var maxNrOfKeys = 0;
         for (var i = 0; i < numberOfRows(); ++i) {
@@ -58,14 +108,6 @@ Item {
                 maxNrOfKeys = content.children[i].children.length;
         }
 
-        var maxSpaceForKeys = panel.width / maxNrOfKeys;
-
-        panel.keyWidth = maxSpaceForKeys;
-    }
-
-    function calculateKeyHeight() {
-        // numKey height ratio is 0.74 (see NumKey.qml) and normal key height ratio is 1, so we get
-        // panel.height = (0.74 + (nbRows-1)*1) * panel.keyHeight
-        panel.keyHeight = panel.height / (0.74*nbNumericalRows + (numberOfRows()-nbNumericalRows));
+        UI.keyWidth = keyPadRoot.width / maxNrOfKeys;
     }
 }

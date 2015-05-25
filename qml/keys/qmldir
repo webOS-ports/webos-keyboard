@@ -5,7 +5,7 @@ ArrowKeys 1.0 ArrowKeys.qml
 BackspaceKey 1.0 BackspaceKey.qml
 CharKey 1.0 CharKey.qml
 DismissKey 1.0 DismissKey.qml
-ExtendedKeysSelector 1.0 ExtendedKeysSelector.qml
+ExtendedListSelector 1.0 ExtendedListSelector.qml
 GreyKey 1.0 GreyKey.qml
 Key 1.0 Key.qml
 KeyPad 1.0 KeyPad.qml
@@ -23,4 +23,4 @@ SymbolShiftKey 1.0 SymbolShiftKey.qml
 TabKey 1.0 TabKey.qml
 TrackBall 1.0 TrackBall.qml
 UrlKey 1.0 UrlKey.qml
-UI 1.0 key_constants.js
+singleton UI 1.0 UI.qml

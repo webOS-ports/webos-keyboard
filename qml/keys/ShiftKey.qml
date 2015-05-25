@@ -18,16 +18,16 @@
 
 import QtQuick 2.0
 
-import "key_constants.js" as UI
+import keys 1.0
 
 ActionKey {
-    width: panel.keyWidth;
+    width: UI.keyWidth;
     iconNormal: "shift"
     iconShifted: "shift-on"
     iconCapsLock: "shift-lock"
 
-    imgNormal: panel.activeKeypadState === "CAPSLOCK" ? UI.imageShiftLockKey[formFactor] : panel.activeKeypadState === "SHIFTED" ? UI.imageShiftKey[formFactor] : UI.imageBlackKey[formFactor]
-    imgPressed: panel.activeKeypadState === "CAPSLOCK" ? UI.imageShiftLockKeyPressed[formFactor] : panel.activeKeypadState === "SHIFTED" ? UI.imageShiftKeyPressed[formFactor] : UI.imageBlackKeyPressed[formFactor]
+    imgNormal: UI.currentShiftState === "CAPSLOCK" ? UI.imageShiftLockKey : UI.currentShiftState === "SHIFTED" ? UI.imageShiftKey : UI.imageBlackKey
+    imgPressed: UI.currentShiftState === "CAPSLOCK" ? UI.imageShiftLockKeyPressed : UI.currentShiftState === "SHIFTED" ? UI.imageShiftKeyPressed : UI.imageBlackKeyPressed
 	
     action: "shift"
 
@@ -36,24 +36,24 @@ ActionKey {
         preventStealing: true
 
         onClicked: {
-            if (panel.activeKeypadState === "NORMAL")
-                panel.activeKeypadState = "SHIFTED";
+            if (UI.currentShiftState === "NORMAL")
+                UI.currentShiftState = "SHIFTED";
 
-            else if (panel.activeKeypadState === "SHIFTED")
-                panel.activeKeypadState = "NORMAL"
+            else if (UI.currentShiftState === "SHIFTED")
+                UI.currentShiftState = "NORMAL"
 
-            else if (panel.activeKeypadState === "CAPSLOCK")
-                panel.activeKeypadState = "NORMAL"
+            else if (UI.currentShiftState === "CAPSLOCK")
+                UI.currentShiftState = "NORMAL"
         }
 
         onPressAndHold: {
-            panel.activeKeypadState = "CAPSLOCK"
-            //imgPressed: UI.imageShiftKey[formFactor]
+            UI.currentShiftState = "CAPSLOCK"
+            //imgPressed: UI.imageShiftKey
         }
 
         onDoubleClicked: {
-            if (panel.activeKeypadState === "SHIFTED")
-                panel.activeKeypadState = "CAPSLOCK"
+            if (UI.currentShiftState === "SHIFTED")
+                UI.currentShiftState = "CAPSLOCK"
         }
     }
 }

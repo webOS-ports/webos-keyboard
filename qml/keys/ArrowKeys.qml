@@ -19,7 +19,7 @@
 import QtQuick 2.0
 
 ActionKey {
-    width: panel.keyWidth;
+    width: UI.keyWidth;
 
   //  action: "tab"
 

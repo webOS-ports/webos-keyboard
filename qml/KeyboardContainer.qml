@@ -19,24 +19,16 @@
 import QtQuick 2.0
 import QtMultimedia 5.0
 import QtQuick.Window 2.0
-import LuneOSKeyboard 1.0
-import "languages/"
-import "keys/"
+
+import keys 1.0
 import LunaNext.Common 0.1
 
 Item {
     id: panel
 
-    property int keyWidth: 0
-    property int keyHeight: 0
+    height: characterKeypadLoader.height
 
-    property string activeKeypadState: "NORMAL"
-    property alias popoverEnabled: extendedKeysSelector.enabled
-    property alias keyboardSizeMenuShown: keyboardSizeMenu.enabled
-    property alias languagesMenuShown: languagesMenu.enabled
     property string currentKeyboardSize: "M"
-
-    state: "CHARACTERS"
 
     function closeExtendedKeys()
     {
@@ -45,33 +37,13 @@ Item {
 
     Loader {
         id: characterKeypadLoader
-        objectName: "characterKeyPadLoader"
-        anchors.fill: parent
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        height: item ? item.height : 0
         asynchronous: false
-        source: panel.state === "CHARACTERS" ? internal.characterKeypadSource : internal.symbolKeypadSource
-        onLoaded: activeKeypadState = "NORMAL"
-    }
-
-    ExtendedListSelector {
-        id: extendedKeysSelector
-        objectName: "extendedKeysSelector"
-        anchors.fill: parent
-
-        onItemSelected: event_handler.onKeyReleased(modelData);
-    }
-
-    ExtendedListSelector {
-        id: keyboardSizeMenu
-        anchors.fill: parent
-
-        onItemSelected: panel.currentKeyboardSize = modelData;
-    }
-
-    ExtendedListSelector {
-        id: languagesMenu
-        anchors.fill: parent
-
-        onItemSelected: maliit_input_method.activeLanguage = modelData;
+        source: UI.currentSymbolState === "CHARACTERS" ? internal.characterKeypadSource : internal.symbolKeypadSource
+        onLoaded: UI.currentShiftState = "NORMAL"
     }
 
     Audio {
@@ -79,25 +51,22 @@ Item {
         source: Qt.resolvedUrl("styles/ubuntu/sounds/key_tick2_quiet.wav")
     }
 
-    states: [
-        State {
-            name: "CHARACTERS"
-        },
-        State {
-            name: "SYMBOLS"
-        }
-    ]
-
     QtObject {
         id: internal
 
         property Item activeKeypad: characterKeypadLoader.item
         property string characterKeypadSource: loadLayout(maliit_input_method.contentType,
                                                           maliit_input_method.activeLanguage)
-        property string symbolKeypadSource: activeKeypad ? activeKeypad.symbols : ""
+        property string symbolKeypadSource: ""
 
         onCharacterKeypadSourceChanged: {
-            panel.state = "CHARACTERS";
+            UI.currentSymbolState = "CHARACTERS";
+        }
+        onActiveKeypadChanged: {
+            // don't do property binding, to avoid a binding loop with characterKeypadLoader.source
+            if( UI.currentSymbolState === "CHARACTERS" ) {
+                symbolKeypadSource = activeKeypad ? activeKeypad.symbols : "";
+            }
         }
 
         /// Returns if the given language is supported
@@ -137,10 +106,9 @@ Item {
             }
 
             var selectedLanguageFile = "lib/en/Keyboard_en.qml";
-            var formFactor = Settings.tabletUi ? "tablet" : "phone";
 
             // results in something like "lib/en/Keyboard_en_tablet.qml"
-            selectedLanguageFile = "lib/" + language + "/Keyboard_" + language + "_" + formFactor + ".qml";
+            selectedLanguageFile = "lib/" + language + "/Keyboard_" + language + "_" + UI.formFactor + ".qml";
 
             return selectedLanguageFile;
         }
@@ -166,16 +134,14 @@ Item {
                     locale = "en"
                 }
 
-                var formFactor = Settings.tabletUi ? "tablet" : "phone";
-
                 //            if (contentType === InputMethod.EmailContentType) {
                 if (contentType === 3) {
-					selectedLayoutFile = "lib/"+locale+"/Keyboard_"+locale +"_"+formFactor+"_email.qml";
+                    selectedLayoutFile = "lib/"+locale+"/Keyboard_"+locale +"_"+UI.formFactor+"_email.qml";
                 }
 
                 //            if (contentType === InputMethod.UrlContentType) {
                 else if (contentType === 4) {
-					selectedLayoutFile = "lib/"+locale+"/Keyboard_"+locale + "_"+formFactor+"_url_search.qml";
+                    selectedLayoutFile = "lib/"+locale+"/Keyboard_"+locale + "_"+UI.formFactor+"_url_search.qml";
                 }
 
                 else {

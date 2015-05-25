@@ -17,17 +17,17 @@
  */
 
 import QtQuick 2.0
-import "../keys"
-import "../keys/key_constants.js" as UI
+
+import keys 1.0
 
 KeyPad {
-    anchors.fill: parent
-
+    id: keypadRoot
     content: c1
 
     Column {
         id: c1
-        anchors.fill: parent
+        anchors.right: parent.right
+        anchors.left: parent.left
         anchors.margins: 0;
 
         spacing: 0
@@ -35,6 +35,8 @@ KeyPad {
         Row {
             anchors.horizontalCenter: parent.horizontalCenter;
             spacing: 0
+
+            height: keyHeight
 
             CharKey { label: "1"; /*shifted: "!"; extended: ["1", "!", "¹", "¼", "½", "¡"]*/	}
             CharKey { label: "2"; /*shifted: "@"; extended: ["2", "@", "²"]*/}
@@ -52,6 +54,8 @@ KeyPad {
             anchors.horizontalCenter: parent.horizontalCenter;
            // anchors.margins: 50;
             spacing: 0
+
+            height: keyHeight
 
             CharKey { label: "!";}
             CharKey { label: "@";}
@@ -72,16 +76,16 @@ KeyPad {
             anchors.left: parent.left
             anchors.right: parent.right
 
-            height: panel.keyHeight;
+            height: keyHeight;
 			
 			ShiftKey {id: shiftKey; anchors.left: parent.left;}
-            CharKey {width: panel.keyWidth * 8/7; id: semicolonKey; anchors.left: shiftKey.right; label: ";"; }
-            CharKey {width: panel.keyWidth * 8/7; id: colonKey; anchors.left: semicolonKey.right; label: ":"; }
-            CharKey {width: panel.keyWidth * 8/7; id: equalKey; anchors.left: colonKey.right; label: "="; }
-            CharKey {width: panel.keyWidth * 8/7; id: plusKey; anchors.left: equalKey.right; label: "+"; }
-            CharKey {width: panel.keyWidth * 8/7; id: minusKey; anchors.left: plusKey.right; label: "-"; }
-            CharKey {width: panel.keyWidth * 8/7; id: apostropheKeyM; anchors.left: minusKey.right; label: "'"; }
-            CharKey {width: panel.keyWidth * 8/7; id: quoteKey; anchors.left: apostropheKeyM.right; label: "\""; }
+            CharKey {width: UI.keyWidth * 8/7; id: semicolonKey; anchors.left: shiftKey.right; label: ";"; }
+            CharKey {width: UI.keyWidth * 8/7; id: colonKey; anchors.left: semicolonKey.right; label: ":"; }
+            CharKey {width: UI.keyWidth * 8/7; id: equalKey; anchors.left: colonKey.right; label: "="; }
+            CharKey {width: UI.keyWidth * 8/7; id: plusKey; anchors.left: equalKey.right; label: "+"; }
+            CharKey {width: UI.keyWidth * 8/7; id: minusKey; anchors.left: plusKey.right; label: "-"; }
+            CharKey {width: UI.keyWidth * 8/7; id: apostropheKeyM; anchors.left: minusKey.right; label: "'"; }
+            CharKey {width: UI.keyWidth * 8/7; id: quoteKey; anchors.left: apostropheKeyM.right; label: "\""; }
 
             BackspaceKey {id: backspaceKey; anchors.right: parent.right; anchors.left: quoteKey.right 	}
 
@@ -91,13 +95,13 @@ KeyPad {
             anchors.left: parent.left
             anchors.right: parent.right
 
-            height: panel.keyHeight;
+            height: keyHeight;
 
 			SymbolShiftKey { id: symShiftKey; label: "ABC"; shifted: "ABC"; anchors.left: parent.left; }
             LanguageKey    { id: languageMenuButton;                       anchors.left: symShiftKey.right; }
             SpaceKey       { id: spaceKey;                                 anchors.left: languageMenuButton.right; anchors.right: smileyKey.left; noMagnifier: true }
-            //CharKey        { imgNormal: UI.imageGreyKey[formFactor]; imgPressed: UI.imageGreyKeyPressed[formFactor]; id: apostropheKey; label: "'"; extended: "\""; shifted: "\""; anchors.right: minusKey.left; }
-            CharKey        { imgNormal: UI.imageGreyKey[formFactor]; imgPressed: UI.imageGreyKeyPressed[formFactor]; id: smileyKey;      label: "..."; /*extended: "_"; shifted: "_";*/  anchors.right: enterKey.left; }
+            //CharKey        { imgNormal: UI.imageGreyKey; imgPressed: UI.imageGreyKeyPressed; id: apostropheKey; label: "'"; extended: "\""; shifted: "\""; anchors.right: minusKey.left; }
+            CharKey        { imgNormal: UI.imageGreyKey; imgPressed: UI.imageGreyKeyPressed; id: smileyKey;      label: "..."; /*extended: "_"; shifted: "_";*/  anchors.right: enterKey.left; }
             ReturnKey      { id: enterKey;      label: "Enter"; shifted: "Enter"; extended: "Enter";  anchors.right: parent.right;}
 	        }
        

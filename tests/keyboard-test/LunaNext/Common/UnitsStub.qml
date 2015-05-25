@@ -15,26 +15,25 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-.pragma library
+pragma Singleton
 
-Qt.include("SettingsStub.js")
+import QtQuick 2.0
+import "StorageStub.js" as Storage
 
-// Utility to convert a pixel length expressed at DPI=132 to
-// a pixel length expressed in our DPI
-function length(lengthAt132DPI) {
-    return (lengthAt132DPI * layoutScale);
-}
+QtObject {
+    // Utility to convert a pixel length expressed at DPI=132 to
+    // a pixel length expressed in our DPI
+    function length(lengthAt132DPI) {
+        return (lengthAt132DPI * Storage.layoutScale);
+    }
 
-var DEFAULT_GRID_UNIT_PX = 8;
+    property int _DEFAULT_GRID_UNIT_PX: 8;
 
-function dp(value) {
-    var ratio = gridUnit / DEFAULT_GRID_UNIT_PX;
-    if (value <= 2.0)
-        // for values under 2dp, return only multiples of the value
-        return Math.round(value * Math.floor(ratio));
-    return Math.round(value * ratio);
-}
+    function dp(value) {
+        return Storage.dp(value);
+    }
 
-function gu(value) {
-    return Math.round(value * gridUnit);
+    function gu(value) {
+        return Storage.gu(value);
+    }
 }
