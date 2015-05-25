@@ -20,6 +20,7 @@ import QtQuick 2.3
 import QtQuick.Controls 1.1
 
 import LunaNext.Common 0.1
+import keys 1.0
 
 import "../../qml"
 
@@ -148,6 +149,8 @@ Rectangle {
                         onClicked: {
                             keyboardLoader.sourceComponent = undefined;
                             Settings.currentTestEnv = index;
+                            // reset UI singleton values
+                            UI.keyboardSizeChoice = "M";
                             keyboardLoader.sourceComponent = kbdComponent;
                         }
                     }
