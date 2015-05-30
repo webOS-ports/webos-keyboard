@@ -70,10 +70,12 @@ QtObject {
     property real actionKeyPadding: DesignConstants.actionKeyPadding;
     property string symbolShiftKeyFontSize: DesignConstants.symbolShiftKeyFontSize[formFactor];
     property string smallFontSize: DesignConstants.smallFontSize[formFactor];
+	property string xsFontSize: DesignConstants.xsFontSize[formFactor];
 
     /* extended keys */
     property real popoverTopMargin: DesignConstants.popoverTopMargin;
     property string popoverFontSize: DesignConstants.popoverFontSize[formFactor];
+	property string popoverFontSizeLong: DesignConstants.popoverFontSizeLong[formFactor];
 
     property string imageWhiteKey: DesignConstants.imageWhiteKey[formFactor];
     property string imageWhiteKeyPressed: DesignConstants.imageWhiteKeyPressed[formFactor];

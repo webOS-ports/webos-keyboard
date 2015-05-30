@@ -83,7 +83,7 @@ Item {
             __annotationLabelShifted = annotation
         } else {
      		if (extended) {
-                if(imgNormal === UI.imageGreyKey) {
+                if(imgNormal === UI.imageGreyKey && !action === "url") {
 					__annotationLabelNormal = extended[0]
 					__annotationLabelShifted = label
 				}
@@ -105,14 +105,14 @@ Item {
     BorderImage {
         id: buttonImage
         border {
-            left:   UI.formFactor==="tablet" ? 14 : 24
-            top:    UI.formFactor==="tablet" ? 13 : 24
-            right:  UI.formFactor==="tablet" ? 14: 24
-            bottom: UI.formFactor==="tablet" ? 17 : 24
+            left:   UI.formFactor==="tablet" ? 11 : 24
+            top:    UI.formFactor==="tablet" ? 11 : 24
+            right:  UI.formFactor==="tablet" ? 11 : 24
+            bottom: UI.formFactor==="tablet" ? 11 : 24
         }
         anchors.centerIn: parent
         anchors.fill: key
-        anchors.margins: Units.gu( UI.keyMargins );
+        anchors.margins: UI.keyboardSizeChoice === "XS" ? Units.gu(-0.20) : Units.gu( UI.keyMargins );
         source: key.pressed ? key.imgPressed : key.imgNormal
     }
 
@@ -130,7 +130,7 @@ Item {
         font.bold: UI.fontBold
         color: UI.fontColor
 		smooth: true
-		visible: action === ""
+		visible: action === "" || action === "url"
     }
 
     /// shows an annotation
@@ -140,10 +140,10 @@ Item {
         id: annotationLabel
         text: (UI.currentShiftState !== "NORMAL") ? __annotationLabelShifted : __annotationLabelNormal
 
-        anchors.right: parent.right
-        anchors.rightMargin: Units.gu(1.00)
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.horizontalCenterOffset: UI.formFactor === "tablet" ? UI.keyWidth / 4 : UI.keyWidth / 8
         anchors.bottom: parent.bottom
-        anchors.bottomMargin: Units.gu(1.00)
+        anchors.bottomMargin: UI.formFactor === "tablet" ? Units.gu(1.00) : Units.gu(0.50)
 
         font.pixelSize: FontUtils.sizeToPixels(UI.annotationFontSize)
         font.bold: false

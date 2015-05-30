@@ -19,13 +19,14 @@
 .pragma library
 
 var keyMargins  	=   0 //gu
-var keyHeight       =   {"tabletLandscape" : "6.6",
+
+var keyHeight       =   {"tabletLandscape" : "7",
                          "tabletPortrait"  : "7",
                          "phonePortrait"   : "6.1",
                          "phoneLandscape"  : "4.3"};   // gu
 
 var keyHeightRatio = { "XS" : 0.7147058877,		/* 243 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
-                        "S" : 0.857352948, 	/* (340+243 / 2)  / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
+                        "S" : 0.857352948, 		/* (340+243 / 2)  / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
                         "M" : 1.0,       		/* 340 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
                         "L" : 1.15588236 }; 	/* 393 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
 
@@ -69,19 +70,26 @@ var magnifierVerticalPadding = 0; // gu, stretch the magnifier a little bit in y
 /* special keys */
 var actionKeyPadding = 2;  // gu, action keys are a bit bigger
 
-var symbolShiftKeyFontSize = {"tablet" : "22pt",
+var symbolShiftKeyFontSize = {"tablet" : "16pt",
 							  "phone"  : "12pt"};
 
 
 var smallFontSize = {"tablet" : "14pt",
 				     "phone"  : "14pt"}; 
 
+var xsFontSize = {"tablet" : "14pt",
+                     "phone"  : "10pt"};
+					 
 /* extended keys */
 var popoverTopMargin   = 1; // gu
 
 var popoverFontSize   = {"tablet" : "32pt",
                          "phone"  : "32pt"};    // gu
 
+var popoverFontSizeLong   = {"tablet" : "32pt",
+                         "phone"  : "24pt"};    // gu
+						 
+						 
 var imageWhiteKey        = { "tablet" : "../images/tablet/key_bg_white.png",
                              "phone"  : "../images/phone/key_bg_white.png"  };
 

@@ -30,5 +30,5 @@ CharKey {
     label: ".com";
     shifted: label
     extendedShifted: extended
-    fontSize: label.length>1 ? UI.smallFontSize : UI.fontSize;
+	action: "url";
 }
