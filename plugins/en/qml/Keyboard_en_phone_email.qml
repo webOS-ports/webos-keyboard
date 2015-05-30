@@ -91,7 +91,8 @@ KeyPad {
             height: keyHeight;
 
             SymbolShiftKey { id: symShiftKey; label: "123"; shifted: "123"; anchors.left: parent.left; }
-            UrlKey         { id: atKey;    label: "@"; shifted: "@";     anchors.left: symShiftKey.right; }
+            LanguageKey    { id: languageMenuButton;                       anchors.left: symShiftKey.right; }
+            UrlKey         { id: atKey;    label: "@"; shifted: "@";     anchors.left: languageMenuButton.right; }
             SpaceKey       { id: spaceKey;                               anchors.left: atKey.right; anchors.right: urlKey.left; noMagnifier: true }
             UrlKey         { id: urlKey; label: ".com"; shifted: ".com"; extended: [".net", ".org", ".edu", ".gov", ".co.uk", ".ac.uk"]; anchors.right: dotKey.left; }
             UrlKey         { id: dotKey;      label: "."; shifted: ".";  anchors.right: enterKey.left; }

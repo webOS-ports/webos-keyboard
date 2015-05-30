@@ -55,8 +55,8 @@ CharKey {
 
         id: iconImage
         source: Qt.resolvedUrl("../images/" + UI.formFactor + "/" + __icon + ".png")
-        anchors.centerIn: parent
-        anchors.verticalCenterOffset: UI.formFactor === "tablet" ? Units.gu(-0.25) : Units.gu(0.15)
+		anchors.verticalCenter: parent.verticalCenter
+		anchors.horizontalCenter: parent.horizontalCenter
         visible: (label == "")
         height: UI.formFactor === "tablet" ? parent.height * 0.7 : actionKeyRoot.height > actionKeyRoot.width ? parent.height * 0.5 : parent.width * 0.5
 	   	smooth: true
@@ -67,7 +67,7 @@ CharKey {
         id: keyLabel
         text: (UI.currentShiftState === "NORMAL") ? label : shifted;
         anchors.centerIn: parent
-        anchors.horizontalCenterOffset: action === "return" && UI.formFactor === "tablet" ? Units.gu(2) : 0
+        anchors.horizontalCenterOffset: action === "return" && UI.isLandscape ? UI.formFactor === "tablet" ? Units.gu(2) : Units.gu(1) : 0
         font.family: UI.fontFamily
         font.pixelSize: FontUtils.sizeToPixels(fontSize);
         font.bold: UI.fontBoldAction

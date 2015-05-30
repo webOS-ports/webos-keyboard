@@ -30,5 +30,6 @@ CharKey {
     label: ".com";
     shifted: label
     extendedShifted: extended
+    fontSize: UI.formFactor==="phone" ? UI.xsFontSize : UI.smallFontSize; 
 	action: "url";
 }

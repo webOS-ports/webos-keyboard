@@ -92,7 +92,8 @@ KeyPad {
             height: keyHeight
 
             SymbolShiftKey { id: symShiftKey; label: "123"; shifted: "123"; anchors.left: parent.left; }
-            UrlKey        { id: slashKey;    label: "/"; shifted: "/";  anchors.left: symShiftKey.right; }
+            LanguageKey    { id: languageMenuButton;                       anchors.left: symShiftKey.right; }
+            UrlKey        { id: slashKey;    label: "/"; shifted: "/";  anchors.left: languageMenuButton.right; }
             SpaceKey       { id: spaceKey;                               anchors.left: slashKey.right; anchors.right: urlKey.left; noMagnifier: true }
             UrlKey         { id: urlKey; label: ".com"; extended: [".co.uk", ".net", ".org", ".edu", ".gov", ".ac.uk"]; anchors.right: dotKey.left; }
             UrlKey        { id: dotKey;      label: "."; shifted: ".";  anchors.right: enterKey.left; }
