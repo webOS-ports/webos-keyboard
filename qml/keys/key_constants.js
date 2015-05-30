@@ -70,10 +70,6 @@ var magnifierVerticalPadding = 0; // gu, stretch the magnifier a little bit in y
 /* special keys */
 var actionKeyPadding = 2;  // gu, action keys are a bit bigger
 
-var symbolShiftKeyFontSize = {"tablet" : "16pt",
-							  "phone"  : "12pt"};
-
-
 var smallFontSize = {"tablet" : "14pt",
 				     "phone"  : "14pt"}; 
 

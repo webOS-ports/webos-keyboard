@@ -36,7 +36,7 @@ Item {
     property var extended; // list of extended keys
     property var extendedShifted; // list of extended keys in shifted state
 
-    property alias valueToSubmit: keyLabel.text
+    property alias valueToSubmit: keyLabel.text 
 
     property string action
     property bool noMagnifier: UI.formFactor==="tablet" ? true : false
@@ -98,7 +98,7 @@ Item {
         }
         anchors.centerIn: parent
         anchors.fill: key
-        anchors.margins: UI.keyboardSizeChoice === "XS" ? Units.gu(-0.20) : Units.gu( UI.keyMargins ); //Units.gu( UI.keyMargins / 3);
+        anchors.margins: UI.keyboardSizeChoice === "XS" ? Units.gu(-0.20) : Units.gu( UI.keyMargins ); 
         source: key.pressed ? key.imgPressed : key.imgNormal
     }
 
@@ -110,13 +110,13 @@ Item {
         text: label
 
         anchors.horizontalCenter: buttonImage.horizontalCenter
-        anchors.horizontalCenterOffset: useHorizontalLayout ? UI.keyWidth/6 : 0
+        anchors.horizontalCenterOffset: useHorizontalLayout ? UI.keyWidth / 6 : 0
 
         anchors.verticalCenter: parent.verticalCenter
-		anchors.verticalCenterOffset: useHorizontalLayout ? Units.gu(-0.25) : UI.formFactor === "phone" && UI.isLandscape ? Units.gu (0.50) : Units.gu(0.25) 
+		anchors.verticalCenterOffset: useHorizontalLayout ? UI.keyHeight / -2 : UI.keyHeight / 0.6 
 		
         font.family: UI.fontFamily
-        font.pixelSize: (UI.currentShiftState === "NORMAL") ? FontUtils.sizeToPixels(UI.symbolShiftKeyFontSize) : FontUtils.sizeToPixels(UI.annotationFontSize)
+        font.pixelSize: (UI.currentShiftState === "NORMAL") ? FontUtils.sizeToPixels(UI.annotationFontSize) : FontUtils.sizeToPixels(UI.xsFontSize)
         font.bold: UI.fontBold
         color: (UI.currentShiftState === "NORMAL") ? UI.fontColor : UI.annotationFontColor
         style: (UI.currentShiftState === "NORMAL") ? Text.Raised : Text.Normal
@@ -132,12 +132,12 @@ Item {
         text: __annotationLabelNormal
 
         anchors.horizontalCenter: buttonImage.horizontalCenter
-        anchors.horizontalCenterOffset: useHorizontalLayout ? UI.keyWidth/-6 : 0
+        anchors.horizontalCenterOffset: useHorizontalLayout ? UI.keyWidth / -6 : 0
 
         anchors.verticalCenter: parent.verticalCenter
-        anchors.verticalCenterOffset: useHorizontalLayout ? Units.gu(-0.25) : UI.formFactor === "phone" && UI.isLandscape ? Units.gu (-1.00) : Units.gu(-1.75) 
+        anchors.verticalCenterOffset: useHorizontalLayout ? UI.keyHeight / -2 : UI.keyHeight / -0.4
 
-        font.pixelSize: (UI.currentShiftState === "NORMAL") ? FontUtils.sizeToPixels(UI.annotationFontSize) : FontUtils.sizeToPixels(UI.symbolShiftKeyFontSize)
+        font.pixelSize: (UI.currentShiftState === "NORMAL") ? FontUtils.sizeToPixels(UI.annotationFontSize) : FontUtils.sizeToPixels(UI.xsFontSize)
         font.bold: false
         color: (UI.currentShiftState !== "NORMAL") ? UI.fontColor : UI.annotationFontColor
         style: (UI.currentShiftState !== "NORMAL") ? Text.Raised : Text.Normal
@@ -149,11 +149,11 @@ Item {
         id: annotationLabel2
 		text: "…" //__annotationLabelNormal
 
-		anchors.right: parent.right
-        anchors.rightMargin: useHorizontalLayout ? Units.gu(0.75) : UI.formFactor === "phone" ? Units.gu(0.5) : Units.gu(1.0)
-		
-		anchors.bottom: parent.bottom
-        anchors.bottomMargin: UI.formFactor === "phone" ? Units.gu(0.5) : useHorizontalLayout ? Units.gu(0.75) : Units.gu(1.0)
+        anchors.horizontalCenter: buttonImage.horizontalCenter
+        anchors.horizontalCenterOffset: UI.formFactor === "phone" && !UI.isLandscape ? UI.keyWidth / 4 : UI.keyWidth / 3.5
+
+        anchors.verticalCenter: parent.verticalCenter
+        anchors.verticalCenterOffset: useHorizontalLayout ? UI.keyHeight / 1.5 : UI.formFactor === "phone" && !UI.isLandscape ? UI.keyHeight / 0.25 : UI.keyHeight / 0.5 
 
         font.pixelSize: FontUtils.sizeToPixels(UI.annotationFontSize)
         font.bold: false
@@ -168,7 +168,7 @@ Item {
         anchors.fill: key
 
         onPressAndHold: {
-            if (activeExtendedModel != undefined) {
+            if (activeExtendedModel !== undefined) {
                 UI.showExtendedKeys(activeExtendedModel, key);
             }
         }
@@ -181,11 +181,12 @@ Item {
                 event_handler.onKeyReleased(valueToSubmit, action);
                 if (!skipAutoCaps)
                     if (UI.currentShiftState === "SHIFTED" && UI.currentSymbolState === "CHARACTERS")
-                        UI.currentShiftState = "NORMAL"
+                        UI.currentShiftState === "NORMAL"
             }
         }
         onPressed: {
-            event_handler.onKeyPressed(valueToSubmit, action);
+            valueToSubmit = UI.currentShiftState === "NORMAL" ? keyLabel.text : annotationLabel.text
+			event_handler.onKeyPressed(valueToSubmit, action);
         }
     }
 

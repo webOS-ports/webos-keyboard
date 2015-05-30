@@ -68,7 +68,6 @@ QtObject {
 
     /* special keys */
     property real actionKeyPadding: DesignConstants.actionKeyPadding;
-    property string symbolShiftKeyFontSize: DesignConstants.symbolShiftKeyFontSize[formFactor];
     property string smallFontSize: DesignConstants.smallFontSize[formFactor];
 	property string xsFontSize: DesignConstants.xsFontSize[formFactor];
 
