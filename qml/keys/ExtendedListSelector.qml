@@ -29,8 +29,8 @@ Item {
     property variant extendedListModel
     property Item currentlyAssignedKey
 
-    property int keyHeight: currentlyAssignedKey ? currentlyAssignedKey.height : 0
-    property int keyWidth:  currentlyAssignedKey ? currentlyAssignedKey.width : 0
+    property int keyHeight: Units.gu(6.3) 
+    property int keyWidth: Units.gu(8.0) 
 
     property int currentlyAssignedKeyParentY: currentlyAssignedKey ? currentlyAssignedKey.parent.y : 0
     property int currentlyAssignedKeyX: currentlyAssignedKey ? currentlyAssignedKey.x : 0
@@ -70,9 +70,9 @@ Item {
         anchors.bottom: anchorItem.bottom
         anchors.bottomMargin: -8
         x: isOnLeftSideOfScreen ? (anchorItem.x) : (anchorItem.x+anchorItem.width-popoverBackground.width)
-        width: Math.max(UI.keyWidth, rowOfKeys.width + 10*2)
-        height: ((30 + numberOfLines * 60))
-
+        width: Math.max(popover.keyWidth * (keyRepeater.count <=4 ? keyRepeater.count : 4), rowOfKeys.width + 10*2)
+        height: ((Units.gu(3.0) + numberOfLines * popover.keyHeight))
+	
         function __updatePopoverRect() {
             var newPopoverRect = popover.mapToItem(null, x, y, width, height);
             maliit_geometry.popoverRect = Qt.rect(newPopoverRect.x, newPopoverRect.y, newPopoverRect.width, newPopoverRect.height);
@@ -131,7 +131,7 @@ Item {
         id: rowOfKeys
         anchors.centerIn: popoverBackground
         anchors.verticalCenterOffset: -5
-        width: Math.min(keyRepeater.count, 4) * 60
+        width: Math.min(keyRepeater.count, 4) * popover.keyWidth
 
         Repeater {
             id: keyRepeater
@@ -150,8 +150,8 @@ Item {
                     anchors.centerIn: parent
                     id: popupKeyImage
                     source: UI.imagePopupKey
-                    width: 60
-                    height: 60
+                    width: popover.keyWidth
+                    height: popover.keyHeight
                 }
 
                 Text {

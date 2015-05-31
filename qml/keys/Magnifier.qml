@@ -123,7 +123,7 @@ Item {
         anchors.verticalCenterOffset: Units.gu(-0.5)
 
         font.family: UI.fontFamily
-        font.pixelSize: FontUtils.sizeToPixels(UI.popoverFontSize)
+        font.pixelSize: text.length > 1 ? FontUtils.sizeToPixels(UI.popoverFontSizeLong) : FontUtils.sizeToPixels(UI.popoverFontSize)
         font.bold: UI.fontBold
         color: UI.magnifierFontColor
     }

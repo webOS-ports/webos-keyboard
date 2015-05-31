@@ -94,7 +94,7 @@ KeyPad {
             AnnotatedKey   { id: commaKey; label: ","; shifted: "/"; extended: [",", "/", "\\"]; extendedShifted: [",", "/", "\\"]; anchors.left: languageMenuButton.right}
             SpaceKey       { id: spaceKey;                                 anchors.right: dotKey.left; anchors.left: commaKey.right; noMagnifier: true }
             AnnotatedKey   { id: dotKey; label: "."; shifted: "?"; extended: [".", "?", "•", "…", "¿"]; extendedShifted: [".", "?", "•", "…", "¿"]; anchors.right: enterKey.left}
-            ReturnKey      { id: enterKey;      label: "Enter"; shifted: "Enter"; extended: "Enter";  anchors.right: parent.right;}
+            ReturnKey      { id: enterKey;      label: "Enter"; shifted: "Enter"; anchors.right: parent.right;}
         }
     } // column
 }

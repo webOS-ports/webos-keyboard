@@ -23,5 +23,5 @@ import keys 1.0
 ActionKey {
 	width: UI.keyWidth * 1.5;
     action: "return"
-    fontSize: UI.symbolShiftKeyFontSize;
+    fontSize: UI.xsFontSize;
 }

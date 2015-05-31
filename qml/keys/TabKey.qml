@@ -22,13 +22,8 @@ import keys 1.0
 
 ActionKey {
     width: UI.keyWidth;
-//    iconNormal: "tab"
-//    iconShifted: "tab"
- //   iconCapsLock: "tab"
-
-    //colorShifted: "orange"
-
-    action: "tab"
+    fontSize: UI.xsFontSize;
+	action: "tab"
 
     MouseArea {
         anchors.fill: parent
