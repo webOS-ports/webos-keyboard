@@ -36,7 +36,7 @@ Item {
     property var extended; // list of extended keys
     property var extendedShifted; // list of extended keys in shifted state
 
-    property alias valueToSubmit: keyLabel.text 
+    property string valueToSubmit: UI.currentShiftState === "NORMAL" ? keyLabel.text : annotationLabel.text
 
     property string action
     property bool noMagnifier: UI.formFactor==="tablet" ? true : false
@@ -181,11 +181,10 @@ Item {
                 event_handler.onKeyReleased(valueToSubmit, action);
                 if (!skipAutoCaps)
                     if (UI.currentShiftState === "SHIFTED" && UI.currentSymbolState === "CHARACTERS")
-                        UI.currentShiftState === "NORMAL"
+                        UI.currentShiftState = "NORMAL";
             }
         }
         onPressed: {
-            valueToSubmit = UI.currentShiftState === "NORMAL" ? keyLabel.text : annotationLabel.text
 			event_handler.onKeyPressed(valueToSubmit, action);
         }
     }
