@@ -30,18 +30,6 @@ ActionKey {
 
     width: UI.keyWidth;
 
-    Image {
-
-        property color color;
-
-        id: iconImage
-        source: Qt.resolvedUrl("../images/" + UI.formFactor + "/" + __icon + ".png")
-        anchors.centerIn: parent
-        visible: (label == "")
-		smooth: true
-		fillMode: Image.PreserveAspectFit
-    }
-
     MouseArea {
         anchors.fill: parent
         preventStealing: true
