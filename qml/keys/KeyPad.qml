@@ -58,6 +58,11 @@ Item {
             languagesMenu.currentlyAssignedKey = keyItem;
             languagesMenu.enabled = true;
         }
+        onShowAlternativeLayoutsMenu: {
+            alternativeLayoutsMenu.extendedListModel = maliit_input_method.enabledLanguages;
+            alternativeLayoutsMenu.currentlyAssignedKey = keyItem;
+            alternativeLayoutsMenu.enabled = true;
+        }
         onHideExtendedKeys : {
             extendedKeysSelector.closePopover();
             UI.extendedKeysShown = false;
@@ -67,6 +72,9 @@ Item {
         }
         onHideLanguagesMenu : {
             languagesMenu.closePopover();
+        }
+        onHideAlternativeLayoutsMenu : {
+            alternativeLayoutsMenu.closePopover();
         }
     }
 
@@ -88,6 +96,14 @@ Item {
 
     ExtendedListSelector {
         id: languagesMenu
+        anchors.fill: parent
+        z: 2;
+
+        onItemSelected: maliit_input_method.activeLanguage = modelData;
+    }
+
+    ExtendedListSelector {
+        id: alternativeLayoutsMenu
         anchors.fill: parent
         z: 2;
 

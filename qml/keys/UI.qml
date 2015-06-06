@@ -37,6 +37,8 @@ QtObject {
     signal hideKeyboardSizeMenu();
     signal showLanguagesMenu(Item keyItem);
     signal hideLanguagesMenu();
+    signal showAlternativeLayoutsMenu(Item keyItem);
+    signal hideAlternativeLayoutsMenu();
 
     // internal helper
     property string formFactor: Settings.tabletUi ? "tablet" : "phone";

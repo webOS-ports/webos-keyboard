@@ -35,8 +35,11 @@ ActionKey {
     MouseArea {
         anchors.fill: parent
         preventStealing: true
-        onPressAndHold: {
+        onClicked: {
             UI.showLanguagesMenu(actionKey);
+        }
+        onPressAndHold: {
+            UI.showAlternativeLayoutsMenu(actionKey);
         }
     }
 }
