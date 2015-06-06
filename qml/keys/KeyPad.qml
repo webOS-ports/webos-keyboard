@@ -28,7 +28,9 @@ Item {
 
     property string symbols: "languages/Keyboard_symbols.qml"
     property bool capsLock: false
-    property int keyHeight: Units.gu(UI.keyHeight); // as a convenience for the objects inheriting KeyPad
+    property int keyHeight: Units.gu(UI.keyHeight);           // as a convenience for the objects inheriting KeyPad
+    property int currentContentType: maliit_input_method.contentType
+    property var alternativeLayouts: [ ]
 
     property Column content: Column {}
 
@@ -58,6 +60,13 @@ Item {
             languagesMenu.currentlyAssignedKey = keyItem;
             languagesMenu.enabled = true;
         }
+        onShowAlternativeLayoutsMenu: {
+            if( alternativeLayouts.length > 0 ) {
+                alternativeLayoutsMenu.extendedListModel = [ "LuneOS" ].concat(alternativeLayouts);
+                alternativeLayoutsMenu.currentlyAssignedKey = keyItem;
+                alternativeLayoutsMenu.enabled = true;
+            }
+        }
         onHideExtendedKeys : {
             extendedKeysSelector.closePopover();
             UI.extendedKeysShown = false;
@@ -67,6 +76,9 @@ Item {
         }
         onHideLanguagesMenu : {
             languagesMenu.closePopover();
+        }
+        onHideAlternativeLayoutsMenu : {
+            alternativeLayoutsMenu.closePopover();
         }
     }
 
@@ -92,6 +104,14 @@ Item {
         z: 2;
 
         onItemSelected: maliit_input_method.activeLanguage = modelData;
+    }
+
+    ExtendedListSelector {
+        id: alternativeLayoutsMenu
+        anchors.fill: parent
+        z: 2;
+
+        onItemSelected: UI.currentAlternativeLayout = ((modelData === "LuneOS") ? "" : modelData);
     }
 
     function numberOfRows() {

@@ -80,6 +80,55 @@ KeyPad {
             BackspaceKey {}
         }
 
+
+        Component {
+            id: contentTypeNormal
+            Item {
+                height: keyHeight
+
+                SymbolShiftKey { id: symShiftKey;                            anchors.left: parent.left; }
+                LanguageKey    { id: languageMenuButton;                     anchors.left: symShiftKey.right; }
+                CharKey        { id: commaKey;    label: ","; shifted: "/";  anchors.left: languageMenuButton.right; }
+                SpaceKey       { id: spaceKey;                               anchors.left: commaKey.right; anchors.right: dotKey.left; noMagnifier: true }
+                CharKey        { id: dotKey;      label: "."; shifted: ".";  anchors.right: enterKey.left; }
+                ReturnKey      { id: enterKey;                               anchors.right: parent.right }
+            }
+        }
+        Component {
+            id: contentTypeEmail
+
+            Item {
+                height: keyHeight
+
+                SymbolShiftKey { id: symShiftKey;                            anchors.left: parent.left; }
+                CharKey        { id: atKey;    label: "@"; shifted: "@";     anchors.left: symShiftKey.right; }
+                SpaceKey       { id: spaceKey;                               anchors.left: atKey.right; anchors.right: urlKey.left; noMagnifier: true }
+                UrlKey         { id: urlKey; label: ".cz"; extended: [".sk"];anchors.right: dotKey.left; }
+                CharKey        { id: dotKey;      label: "."; shifted: ".";  anchors.right: enterKey.left; }
+                ReturnKey      { id: enterKey;                               anchors.right: parent.right }
+            }
+        }
+        Component {
+            id: contentTypeUrl
+
+            Item {
+                height: keyHeight
+
+                SymbolShiftKey { id: symShiftKey;                            anchors.left: parent.left; }
+                CharKey        { id: slashKey;    label: "/"; shifted: "/";  anchors.left: symShiftKey.right; }
+                SpaceKey       { id: spaceKey;                               anchors.left: slashKey.right; anchors.right: urlKey.left; noMagnifier: true }
+                UrlKey         { id: urlKey; label: ".cz"; extended: [".sk"];anchors.right: dotKey.left; }
+                CharKey        { id: dotKey;      label: "."; shifted: ".";  anchors.right: enterKey.left; }
+                ReturnKey      { id: enterKey;                               anchors.right: parent.right }
+            }
+        }
+        Loader {
+            anchors.left: parent.left
+            anchors.right: parent.right
+
+            sourceComponent: currentContentType === 0 ? contentTypeNormal :
+                             currentContentType === 3 ? contentTypeEmail : contentTypeUrl
+        }
         Item {
             anchors.left: parent.left
             anchors.right: parent.right
