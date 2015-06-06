@@ -29,6 +29,7 @@ QtObject {
     property bool extendedKeysShown: false
     property string currentShiftState: "NORMAL"  // can be "NORMAL", "SHIFTED" or "CAPSLOCK"
     property string currentSymbolState: "CHARACTER" // can be "CHARACTER" or "SYMBOL"
+    property string currentAlternativeLayout: ""
 
     // keyboard-wide signals
     signal showExtendedKeys(variant keysExtendedModel, Item keyItem);

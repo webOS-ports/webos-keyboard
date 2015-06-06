@@ -81,19 +81,56 @@ KeyPad {
             BackspaceKey { padding: 0 }
         }
 
-        Item {
+        Component {
+            id: contentTypeNormal
+            Item {
+                height: keyHeight
+
+                SymbolShiftKey { id: symShiftKey;                            anchors.left: parent.left; }
+                LanguageKey    { id: languageMenuButton;                     anchors.left: symShiftKey.right; }
+                CharKey        { id: dotKey;      label: "."; shifted: ".";  anchors.left: languageMenuButton.right; }
+                CharKey        { id: commaKey;    label: ","; shifted: "/";  anchors.left: dotKey.right; }
+                SpaceKey       { id: spaceKey;                               anchors.left: commaKey.right; anchors.right: umlaut.left; noMagnifier: true }
+                CharKey        { id: umlaut;      label: "ö"; shifted: "Ö";  extended: ["ø"]; extendedShifted: ["Ø"]; anchors.right: enterKey.left; }
+                ReturnKey      { id: enterKey;                               anchors.right: parent.right }
+            }
+        }
+        Component {
+            id: contentTypeEmail
+
+            Item {
+                height: keyHeight
+
+                SymbolShiftKey { id: symShiftKey;                            anchors.left: parent.left; }
+                CharKey        { id: atKey;    label: "@"; shifted: "@";     anchors.left: symShiftKey.right; }
+                SpaceKey       { id: spaceKey;                               anchors.left: atKey.right; anchors.right: urlKey.left; noMagnifier: true }
+                UrlKey         { id: urlKey; label: ".se"; extended: [".fi", ".ax"]; anchors.right: dotKey.left; }
+                CharKey        { id: dotKey;      label: "."; shifted: ".";  anchors.right: umlaut.left; }
+                CharKey        { id: umlaut;      label: "ö"; shifted: "Ö";  extended: ["ø"]; extendedShifted: ["Ø"]; anchors.right: enterKey.left; }
+                ReturnKey      { id: enterKey;                               anchors.right: parent.right }
+            }
+        }
+        Component {
+            id: contentTypeUrl
+
+            Item {
+                height: keyHeight
+
+                SymbolShiftKey { id: symShiftKey;                            anchors.left: parent.left; }
+                CharKey        { id: slashKey; label: "/"; shifted: "/";     anchors.left: symShiftKey.right; }
+                SpaceKey       { id: spaceKey;                               anchors.left: slashKey.right; anchors.right: urlKey.left; noMagnifier: true }
+                UrlKey         { id: urlKey; label: ".se"; extended: [".fi", ".ax"]; anchors.right: dotKey.left; }
+                CharKey        { id: dotKey;      label: "."; shifted: ".";  anchors.right: umlaut.left; }
+                CharKey        { id: umlaut;      label: "ö"; shifted: "Ö";  extended: ["ø"]; extendedShifted: ["Ø"]; anchors.right: enterKey.left; }
+                ReturnKey      { id: enterKey;                               anchors.right: parent.right }
+            }
+        }
+        Loader {
             anchors.left: parent.left
             anchors.right: parent.right
 
-            height: keyHeight;
-
-            SymbolShiftKey { id: symShiftKey;                            anchors.left: parent.left; }
-            LanguageKey    { id: languageMenuButton;                     anchors.left: symShiftKey.right; }
-            CharKey        { id: dotKey;      label: "."; shifted: ".";  anchors.left: languageMenuButton.right; }
-            CharKey        { id: commaKey;    label: ","; shifted: "/";  anchors.left: dotKey.right; }
-            SpaceKey       { id: spaceKey;                               anchors.left: commaKey.right; anchors.right: umlaut.left; noMagnifier: true }
-            CharKey        { id: umlaut;      label: "ö"; shifted: "Ö";  extended: ["ø"]; extendedShifted: ["Ø"]; anchors.right: enterKey.left; }
-            ReturnKey      { id: enterKey;                               anchors.right: parent.right }
+            sourceComponent: currentContentType === 0 ? contentTypeNormal :
+                             currentContentType === 3 ? contentTypeEmail : contentTypeUrl
         }
     } // column
 }

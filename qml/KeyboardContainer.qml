@@ -29,6 +29,7 @@ Item {
     height: characterKeypadLoader.height
 
     property string currentKeyboardSize: "M"
+    property string currentAlternativeLayout: UI.currentAlternativeLayout
 
     function closeExtendedKeys()
     {
@@ -56,7 +57,8 @@ Item {
 
         property Item activeKeypad: characterKeypadLoader.item
         property string characterKeypadSource: loadLayout(maliit_input_method.contentType,
-                                                          maliit_input_method.activeLanguage)
+                                                          maliit_input_method.activeLanguage,
+                                                          panel.currentAlternativeLayout)
         property string symbolKeypadSource: ""
 
         onCharacterKeypadSourceChanged: {
@@ -94,26 +96,60 @@ Item {
             ];
             return (supportedLocales.indexOf( locale ) > -1);
         }
+        function alternativeLayoutIsSupported(locale, alternativeLayout) {
+            if( alternativeLayout.length === 0 ) return true; // default layout is always ok
+
+            var supportedLocaleLayouts = {
+                "ar": [],
+                "cs": [],
+                "da": [],
+                "de": [],
+                "en": [ 'dvorak' ],
+                "es": [],
+                "fi": [],
+                "fr": [],
+                "he": [],
+                "hu": [],
+                "it": [],
+                "nl": [],
+                "pl": [],
+                "pt": [],
+                "ru": [],
+                "sv": [],
+                "zh": []
+            };
+            return (supportedLocaleLayouts[locale].indexOf( alternativeLayout ) > -1);
+        }
 
         /// Returns the relative path to the keyboard QML file for a given language for free text
-        function freeTextLanguageKeyboard(language)
+        function freeTextLanguageKeyboard(language, alternativeLayout)
         {
             language = language .slice(0,2).toLowerCase();
+            alternativeLayout = alternativeLayout.toLowerCase()
 
             if (!languageIsSupported(language)) {
                 console.log("Language '"+language+"' not supported - using 'en' instead");
                 language = "en";
             }
+            if( !alternativeLayoutIsSupported(language, alternativeLayout) ) {
+                console.log("Alternative '" + alternativeLayout + "' is not supported for language '"+language+"' - using default layout instead");
+                alternativeLayout = "";
+            }
+            else {
+                if( alternativeLayout.length > 0 ) {
+                    alternativeLayout = "_" + alternativeLayout;
+                }
+            }
 
             var selectedLanguageFile = "lib/en/Keyboard_en.qml";
 
             // results in something like "lib/en/Keyboard_en_tablet.qml"
-            selectedLanguageFile = "lib/" + language + "/Keyboard_" + language + "_" + UI.formFactor + ".qml";
+            selectedLanguageFile = "lib/" + language + "/Keyboard_" + language + "_" + UI.formFactor + alternativeLayout + ".qml";
 
             return selectedLanguageFile;
         }
 
-        function loadLayout(contentType, activeLanguage)
+        function loadLayout(contentType, activeLanguage, alternativeLayout)
         {
             var selectedLayoutFile;
 
@@ -128,25 +164,7 @@ Item {
             }
 
             else {
-                var locale = activeLanguage.slice(0,2).toLowerCase();
-                if (!languageIsSupported(locale)) {
-                    console.log("System language '"+locale+"' can't be used in OSK - using 'en' instead")
-                    locale = "en"
-                }
-
-                //            if (contentType === InputMethod.EmailContentType) {
-                if (contentType === 3) {
-                    selectedLayoutFile = "lib/"+locale+"/Keyboard_"+locale +"_"+UI.formFactor+"_email.qml";
-                }
-
-                //            if (contentType === InputMethod.UrlContentType) {
-                else if (contentType === 4) {
-                    selectedLayoutFile = "lib/"+locale+"/Keyboard_"+locale + "_"+UI.formFactor+"_url_search.qml";
-                }
-
-                else {
-                    selectedLayoutFile = freeTextLanguageKeyboard(activeLanguage);
-                }
+                selectedLayoutFile = freeTextLanguageKeyboard(activeLanguage, alternativeLayout);
 
                 // for testing on desktop
                 if( maliit_input_method.testEnvironment )

@@ -84,19 +84,58 @@ KeyPad {
             BackspaceKey { padding: 0 }
         }
 
-        Item {
+        Component {
+            id: contentTypeNormal
+            Item {
+                height: keyHeight
+
+                SymbolShiftKey { id: symShiftKey;                            anchors.left: parent.left; }
+                LanguageKey    { id: languageMenuButton;                     anchors.left: symShiftKey.right; }
+                CharKey        { id: commaKey;    label: "ذ"; shifted: "/";  anchors.left: languageMenuButton.right; }
+                SpaceKey       { id: spaceKey;                               anchors.left: commaKey.right; anchors.right: dotKey.left; noMagnifier: true }
+                CharKey        { id: dotKey;      label: "."; shifted: ".";  anchors.right: specialChar.left; }
+                CharKey        { id: specialChar; label: "ط";                anchors.right: enterKey.left }
+                ReturnKey      { id: enterKey;                               anchors.right: parent.right }
+            }
+        }
+        Component {
+            id: contentTypeEmail
+
+            Item {
+                height: keyHeight
+
+                SymbolShiftKey { id: symShiftKey;                            anchors.left: parent.left; }
+                CharKey        { id: atKey;    label: "@"; shifted: "@";     anchors.left: symShiftKey.right; }
+                SpaceKey       { id: spaceKey;                               anchors.left: atKey.right; anchors.right: urlKey.left; noMagnifier: true }
+                UrlKey         { id: urlKey; label: ".eg"; extended: [".iq", ".lb", ".sa", ".sy", ".jo", ".ye"]; anchors.right: dotKey.left; }
+                CharKey        { id: dotKey;      label: "."; shifted: "ذ";  anchors.right: specialChar.left; }
+                CharKey        { id: specialChar; label: "ط";                anchors.right: enterKey.left }
+                ReturnKey      { id: enterKey;                               anchors.right: parent.right }
+            }
+        }
+        Component {
+            id: contentTypeUrl
+
+            Item {
+                height: keyHeight
+
+                // note FIXME: full list of tld:
+                // [".ma", ".dz", ".ly", ".tn", ".iq", ".lb", ".ps", ".jo", ".ye", ".bh", ".dj", ".kw", ".km", ".mr‎", ".om", ".qa", ".sa", ".sy", ".so‎", ".sd", ".ae"]
+                SymbolShiftKey { id: symShiftKey;                            anchors.left: parent.left; }
+                CharKey        { id: slashKey; label: "/"; shifted: "/";     anchors.left: symShiftKey.right; }
+                SpaceKey       { id: spaceKey;                               anchors.left: slashKey.right; anchors.right: urlKey.left; noMagnifier: true }
+                UrlKey         { id: urlKey; label: ".eg"; extended: [".iq", ".lb", ".sa", ".sy", ".jo", ".ye"]; anchors.right: dotKey.left; }
+                CharKey        { id: dotKey;      label: "."; shifted: "ذ";  anchors.right: specialChar.left; }
+                CharKey        { id: specialChar; label: "ط";                anchors.right: enterKey.left }
+                ReturnKey      { id: enterKey;                               anchors.right: parent.right }
+            }
+        }
+        Loader {
             anchors.left: parent.left
             anchors.right: parent.right
 
-            height: keyHeight;
-
-            SymbolShiftKey { id: symShiftKey;                            anchors.left: parent.left; }
-            LanguageKey    { id: languageMenuButton;                     anchors.left: symShiftKey.right; }
-            CharKey        { id: commaKey;    label: "ذ"; shifted: "/";  anchors.left: languageMenuButton.right; }
-            SpaceKey       { id: spaceKey;                               anchors.left: commaKey.right; anchors.right: dotKey.left; noMagnifier: true }
-            CharKey        { id: dotKey;      label: "."; shifted: ".";  anchors.right: specialChar.left; }
-            CharKey        { id: specialChar; label: "ط";                anchors.right: enterKey.left }
-            ReturnKey      { id: enterKey;                               anchors.right: parent.right }
+            sourceComponent: currentContentType === 0 ? contentTypeNormal :
+                             currentContentType === 3 ? contentTypeEmail : contentTypeUrl
         }
     } // column
 }

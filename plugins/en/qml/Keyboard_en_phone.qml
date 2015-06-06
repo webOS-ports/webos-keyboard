@@ -21,6 +21,7 @@ import keys 1.0
 
 KeyPad {
     id: keypadRoot
+
     content: c1
     symbols: "languages/Keyboard_symbols_phone.qml"
 
@@ -83,18 +84,59 @@ KeyPad {
             BackspaceKey {id: backspaceKey; anchors.left: mKey.right; anchors.right: parent.right}
         }
 
-        Item {
+        Component {
+            id: contentTypeNormal
+
+            Item {
+                anchors.left: parent.left
+                anchors.right: parent.right
+
+                height: keyHeight;
+
+                SymbolShiftKey { id: symShiftKey; label: "123"; shifted: "123"; anchors.left: parent.left; }
+                LanguageKey    { id: languageMenuButton;                       anchors.left: symShiftKey.right; }
+                AnnotatedKey   { id: commaKey; label: ","; shifted: "/"; extended: [",", "/", "\\"]; extendedShifted: [",", "/", "\\"]; anchors.left: languageMenuButton.right}
+                SpaceKey       { id: spaceKey;                                 anchors.right: dotKey.left; anchors.left: commaKey.right; noMagnifier: true }
+                AnnotatedKey   { id: dotKey; label: "."; shifted: "?"; extended: [".", "?", "•", "…", "¿"]; extendedShifted: [".", "?", "•", "…", "¿"]; anchors.right: enterKey.left}
+                ReturnKey      { id: enterKey;      label: "Enter"; shifted: "Enter"; anchors.right: parent.right;}
+            }
+        }
+        Component {
+            id: contentTypeEmail
+
+            Item {
+                height: keyHeight;
+
+                SymbolShiftKey { id: symShiftKey; label: "123"; shifted: "123"; anchors.left: parent.left; }
+                LanguageKey    { id: languageMenuButton;                       anchors.left: symShiftKey.right; }
+                UrlKey         { id: atKey;    label: "@"; shifted: "@";     anchors.left: languageMenuButton.right; }
+                SpaceKey       { id: spaceKey;                               anchors.left: atKey.right; anchors.right: urlKey.left; noMagnifier: true }
+                UrlKey         { id: urlKey; label: ".com"; shifted: ".com"; extended: [".net", ".org", ".edu", ".gov", ".co.uk", ".ac.uk"]; anchors.right: dotKey.left; }
+                UrlKey         { id: dotKey;      label: "."; shifted: ".";  anchors.right: enterKey.left; }
+                ReturnKey      { id: enterKey; label: "Enter"; shifted: "Enter"; anchors.right: parent.right }
+            }
+        }
+        Component {
+            id: contentTypeUrl
+
+            Item {
+                height: keyHeight
+
+                SymbolShiftKey { id: symShiftKey; label: "123"; shifted: "123"; anchors.left: parent.left; }
+                LanguageKey    { id: languageMenuButton;                       anchors.left: symShiftKey.right; }
+                UrlKey        { id: slashKey;    label: "/"; shifted: "/";  anchors.left: languageMenuButton.right; }
+                SpaceKey       { id: spaceKey;                               anchors.left: slashKey.right; anchors.right: urlKey.left; noMagnifier: true }
+                UrlKey         { id: urlKey; label: ".com"; extended: [".co.uk", ".net", ".org", ".edu", ".gov", ".ac.uk"]; anchors.right: dotKey.left; }
+                UrlKey        { id: dotKey;      label: "."; shifted: ".";  anchors.right: enterKey.left; }
+                ReturnKey      { id: enterKey;    label: "Enter"; shifted: "Enter"; anchors.right: parent.right }
+            }
+        }
+        Loader {
             anchors.left: parent.left
             anchors.right: parent.right
 
-            height: keyHeight;
-
-            SymbolShiftKey { id: symShiftKey; label: "123"; shifted: "123"; anchors.left: parent.left; }
-            LanguageKey    { id: languageMenuButton;                       anchors.left: symShiftKey.right; }
-            AnnotatedKey   { id: commaKey; label: ","; shifted: "/"; extended: [",", "/", "\\"]; extendedShifted: [",", "/", "\\"]; anchors.left: languageMenuButton.right}
-            SpaceKey       { id: spaceKey;                                 anchors.right: dotKey.left; anchors.left: commaKey.right; noMagnifier: true }
-            AnnotatedKey   { id: dotKey; label: "."; shifted: "?"; extended: [".", "?", "•", "…", "¿"]; extendedShifted: [".", "?", "•", "…", "¿"]; anchors.right: enterKey.left}
-            ReturnKey      { id: enterKey;      label: "Enter"; shifted: "Enter"; anchors.right: parent.right;}
+            sourceComponent: currentContentType === 0 ? contentTypeNormal :
+                             currentContentType === 3 ? contentTypeEmail : contentTypeUrl
         }
     } // column
 }
