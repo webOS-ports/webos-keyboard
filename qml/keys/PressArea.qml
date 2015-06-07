@@ -33,7 +33,9 @@ MultiPointTouchArea {
     property bool pressed: false
 
     /// Same as MouseArea pressAndHold()
-    signal pressAndHold()
+    signal keyPressed()
+    signal keyPressedAndHold()
+    signal keyReleased()
 
     /// Cancels the current pressed state of the mouse are
     function cancelPress() {
@@ -46,17 +48,22 @@ MultiPointTouchArea {
         interval: 1000
         onTriggered: {
             if (root.pressed)
-                root.pressAndHold();
+                root.keyPressedAndHold();
         }
     }
 
     onPressed: {
         pressed = true;
         holdTimer.restart();
+        root.keyPressed();
     }
 
     onReleased: {
-        pressed = false;
-        holdTimer.stop();
+        if( pressed )
+        {
+            pressed = false;
+            holdTimer.stop();
+            root.keyReleased();
+        }
     }
 }
