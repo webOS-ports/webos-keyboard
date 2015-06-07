@@ -29,6 +29,7 @@ CharKey {
 
     noMagnifier: true
     skipAutoCaps: true
+    alignTextRight: false
     property int padding: UI.actionKeyPadding
 
     // action keys are a bit wider
@@ -66,8 +67,10 @@ CharKey {
     Text {
         id: keyLabel
         text: (UI.currentShiftState === "NORMAL") ? label : shifted;
-        anchors.centerIn: parent
-        anchors.horizontalCenterOffset: action === "return" && UI.isLandscape ? UI.formFactor === "tablet" ? Units.gu(2) : Units.gu(1) : 0
+        anchors.verticalCenter: parent.verticalCenter
+        anchors.right: alignTextRight ? parent.right : undefined
+        anchors.rightMargin: alignTextRight ? UI.keyWidth / 4 : undefined
+        anchors.horizontalCenter: !alignTextRight ? parent.horizontalCenter : undefined
         font.family: UI.fontFamily
         font.pixelSize: FontUtils.sizeToPixels(fontSize);
         font.bold: UI.fontBoldAction

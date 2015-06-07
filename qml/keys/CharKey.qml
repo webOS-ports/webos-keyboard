@@ -40,6 +40,7 @@ Item {
 
     property string action
     property bool skipAutoCaps: false
+    property bool alignTextRight: false
 
     /* design */
     property string imgNormal: UI.imageWhiteKey
