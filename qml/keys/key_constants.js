@@ -30,6 +30,17 @@ var keyHeightRatio = [ { "name": "XS", "ratio" : 0.7147058877 },	/* 243 / 768 ba
                        { "name":  "M", "ratio" : 1.0 },         	/* 340 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
                        { "name":  "L", "ratio" : 1.15588236 } ];	/* 393 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
 
+var topRowKeyHeightRatio = [ { "name": "XS", "ratio" : 0.82 },	/* 243 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
+                       { "name":  "S", "ratio" : 0.74 }, 	/* (340+243 / 2)  / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
+                       { "name":  "M", "ratio" : 0.74 },         	/* 340 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
+                       { "name":  "L", "ratio" : 0.74 } ];	/* 393 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
+
+var numKeyWidthRatio       =   [ { "name": "XS", "ratio" : 0.925 },	/* 243 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
+                       { "name":  "S", "ratio" : 0.925 }, 	/* (340+243 / 2)  / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
+                       { "name":  "M", "ratio" : 0.925 },         	/* 340 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
+                       { "name":  "L", "ratio" : 0.925 } ];	/* 393 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
+                       
+                       
 var fontSize    	=   {"tablet" : "22pt",
                          "phone"  : "16pt"};    
 

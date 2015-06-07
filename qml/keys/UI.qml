@@ -47,7 +47,10 @@ QtObject {
     // UI design values (taken from key_constants.js)
     property real keyMargins: DesignConstants.keyMargins;
     property real keyHeight: DesignConstants.keyHeightRatio[keyboardSizeChoices.indexOf(keyboardSizeChoice)].ratio * DesignConstants.keyHeight[formFactor + (isLandscape ? "Landscape" : "Portrait")];
-
+    
+    property real numKeyWidthRatio: DesignConstants.numKeyWidthRatio[keyboardSizeChoices.indexOf(keyboardSizeChoice)].ratio;
+    property real topRowKeyHeightRatio: DesignConstants.topRowKeyHeightRatio[keyboardSizeChoices.indexOf(keyboardSizeChoice)].ratio;
+        
     property variant keyboardSizeChoices: DesignConstants.keyHeightRatio.map(function(obj) {return obj.name});
 
     property string fontSize: DesignConstants.fontSize[formFactor];
