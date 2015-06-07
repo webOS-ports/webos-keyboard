@@ -36,7 +36,7 @@ KeyPad {
             anchors.horizontalCenter: parent.horizontalCenter;
             spacing: 0
 
-            height: UI.keyboardSizeChoice === "XS" ? keyHeight * 0.82 : keyHeight * 0.74
+            height: keyHeight * UI.topRowKeyHeightRatio
 
             NumKey { label: "1"; shifted: "!"; extended: ["1", "!", "¹", "¼", "½", "¡"]}
             NumKey { label: "2"; shifted: "@"; extended: ["2", "@", "²"]}
@@ -48,7 +48,7 @@ KeyPad {
             NumKey { label: "8"; shifted: "*"; extended: ["8", "*"]}
             NumKey { label: "9"; shifted: "("; extended: ["9", "(", "[", "{"]}
             NumKey { label: "0"; shifted: ")"; extended: ["0", ")", "]", "}"]}
-            TrackBall { width: keypadRoot.width - (UI.keyWidth*0.925*10); anchors.verticalCenter: parent.verticalCenter }
+            TrackBall { width: keypadRoot.width - (UI.keyWidth*UI.numKeyWidthRatio*10); anchors.verticalCenter: parent.verticalCenter }
         }
 
         Row {
