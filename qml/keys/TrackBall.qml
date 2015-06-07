@@ -82,6 +82,8 @@ Item {
         id: sliderMouseArea
         anchors.fill: parent
 
+        preventStealing: true
+
         function sendKey(key) {
             event_handler.onKeyPressed("", key);
             event_handler.onKeyReleased("", key);

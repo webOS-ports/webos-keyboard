@@ -69,7 +69,6 @@ Item {
         }
         onHideExtendedKeys : {
             extendedKeysSelector.closePopover();
-            UI.extendedKeysShown = false;
         }
         onHideKeyboardSizeMenu : {
             keyboardSizeMenu.closePopover();
@@ -87,7 +86,11 @@ Item {
         anchors.fill: parent
         z: 2;
 
-        onItemSelected: event_handler.onKeyReleased(modelData);
+        onItemSelected: {
+            event_handler.onKeyReleased(modelData);
+            UI.hideExtendedKeys();
+        }
+        onExtendedListDismissed: UI.extendedKeysShown = false;
     }
 
     ExtendedListSelector {
@@ -95,7 +98,10 @@ Item {
         anchors.fill: parent
         z: 2;
 
-        onItemSelected: UI.keyboardSizeChoice = modelData;
+        onItemSelected: {
+            UI.keyboardSizeChoice = modelData;
+            UI.hideKeyboardSizeMenu();
+        }
     }
 
     ExtendedListSelector {
@@ -103,7 +109,10 @@ Item {
         anchors.fill: parent
         z: 2;
 
-        onItemSelected: maliit_input_method.activeLanguage = modelData;
+        onItemSelected: {
+            maliit_input_method.activeLanguage = modelData;
+            UI.hideLanguagesMenu();
+        }
     }
 
     ExtendedListSelector {
@@ -111,7 +120,10 @@ Item {
         anchors.fill: parent
         z: 2;
 
-        onItemSelected: UI.currentAlternativeLayout = ((modelData === "LuneOS") ? "" : modelData);
+        onItemSelected: {
+            UI.currentAlternativeLayout = ((modelData === "LuneOS") ? "" : modelData);
+            UI.hideAlternativeLayoutsMenu();
+        }
     }
 
     function numberOfRows() {
