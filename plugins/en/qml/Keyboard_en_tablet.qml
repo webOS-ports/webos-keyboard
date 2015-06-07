@@ -36,7 +36,7 @@ KeyPad {
             anchors.horizontalCenter: parent.horizontalCenter;
             spacing: 0
 
-            height: UI.keyboardSizeChoice === "XS" ? keyHeight * 0.82 : keyHeight * 0.74
+            height: keyHeight * UI.topRowKeyHeightRatio
 
             NumKey { label: "1"; shifted: "!"; extended: ["1", "!", "¹", "¼", "½", "¡"]}
             NumKey { label: "2"; shifted: "@"; extended: ["2", "@", "²"]}
