@@ -71,7 +71,7 @@ Item {
      */
 
     property string oskState: UI.currentShiftState
-    property var activeExtendedModel: (UI.currentShiftState === "NORMAL") ? extended : extendedShifted
+    property var activeExtendedModel: (UI.currentShiftState === "NORMAL" || !extendedShifted) ? extended : extendedShifted
 
     Component.onCompleted: {
         if (annotation) {
