@@ -51,6 +51,7 @@ Item {
     }
 
     signal itemSelected(string modelData);
+    signal extendedListDismissed();
 
     ///
     // Item gets repositioned above the currently active key on keyboard.
@@ -175,7 +176,6 @@ Item {
                     onReleased: {
                         key.highlight = false;
                         popover.itemSelected(modelData);
-                        popover.closePopover();
                     }
                 }
 
@@ -202,6 +202,7 @@ Item {
     {
         extendedListModel = null;
         popover.enabled = false;
+        popover.extendedListDismissed();
     }
 }
 
