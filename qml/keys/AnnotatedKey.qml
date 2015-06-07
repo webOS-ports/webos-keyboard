@@ -167,13 +167,13 @@ Item {
         id: keyMouseArea
         anchors.fill: key
 
-        onPressAndHold: {
+        onKeyPressedAndHold: {
             if (activeExtendedModel !== undefined) {
                 UI.showExtendedKeys(activeExtendedModel, key);
             }
         }
 
-        onReleased: {
+        onKeyReleased: {
             if (!extendedKeysShown) {
                 if (maliit_input_method.useAudioFeedback)
                     audioFeedback.play();
@@ -184,7 +184,7 @@ Item {
                         UI.currentShiftState = "NORMAL";
             }
         }
-        onPressed: {
+        onKeyPressed: {
 			event_handler.onKeyPressed(valueToSubmit, action);
         }
     }
