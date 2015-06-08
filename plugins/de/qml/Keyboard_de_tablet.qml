@@ -132,7 +132,7 @@ KeyPad {
                 LanguageKey    { id: languageMenuButton;                       anchors.left: symShiftKey.right; }
                 UrlKey         { id: emailKey;    label: "@"; shifted: "@";  anchors.left: languageMenuButton.right; }
                 SpaceKey       { id: spaceKey;                               anchors.left: emailKey.right; anchors.right: urlKey.left; }
-                UrlKey         { id: urlKey; label: ".com"; shifted: ".com"; extended: [".com", ".de", ".net", ".org", ".edu", ".gov"]; anchors.right: ssKey.left; }
+                UrlKey         { id: urlKey; label: ".com"; shifted: ".com"; extended: [".com", ".de", ".at", ".ch", ".net", ".org", ".edu", ".gov"]; anchors.right: ssKey.left; }
                 AnnotatedKey   { id: ssKey; label: "ß"; shifted: "?"; extended: ["ß", "?", "¿"]; extendedShifted: ["ß", "?", "¿"]; anchors.right: minusKey.left; useHorizontalLayout: (UI.keyboardSizeChoice === "XS" || UI.keyboardSizeChoice === "S") ? true : false;}
                 AnnotatedKey   { id: minusKey;      label: "-"; shifted: "'"; extended: ["-", "'", "±", "¬", "`", "‚", "‘","’"]; extendedShifted: ["-", "'", "±", "¬", "`", "‚", "‘","’"]; anchors.right: dismissKey.left; useHorizontalLayout: (UI.keyboardSizeChoice === "XS" || UI.keyboardSizeChoice === "S") ? true : false;}
                 DismissKey     { id: dismissKey;                               anchors.right: parent.right;}
@@ -149,7 +149,7 @@ KeyPad {
                 LanguageKey    { id: languageMenuButton;                       anchors.left: symShiftKey.right; }
                 CharKey        { imgNormal: UI.imageGreyKey; imgPressed: UI.imageGreyKeyPressed; id: slashKey;    label: "/"; shifted: "/"; extended: ["http://", "https://", "www."];  anchors.left: languageMenuButton.right; }
                 SpaceKey       { id: spaceKey;                               anchors.left: slashKey.right; anchors.right: urlKey.left; }
-                UrlKey         { id: urlKey; label: ".com"; extended: [".com", ".de", ".net", ".org", ".edu", ".gov"]; anchors.right: ssKey.left; }
+                UrlKey         { id: urlKey; label: ".com"; extended: [".com", ".de", ".at", ".ch", ".net", ".org", ".edu", ".gov"]; anchors.right: ssKey.left; }
                 AnnotatedKey   { id: ssKey; label: "ß"; shifted: "?"; extended: ["ß", "?", "¿"]; extendedShifted: ["ß", "?", "¿"]; anchors.right: minusKey.left; useHorizontalLayout: (UI.keyboardSizeChoice === "XS" || UI.keyboardSizeChoice === "S") ? true : false;}
                 AnnotatedKey   { id: minusKey;      label: "-"; shifted: "'"; extended: ["-", "'", "±", "¬", "`", "‚", "‘","’"]; extendedShifted: ["-", "'", "±", "¬", "`", "‚", "‘","’"]; anchors.right: dismissKey.left; useHorizontalLayout: (UI.keyboardSizeChoice === "XS" || UI.keyboardSizeChoice === "S") ? true : false;}
                 DismissKey     { id: dismissKey;                               anchors.right: parent.right;}

@@ -74,22 +74,20 @@ KeyPad {
             height: keyHeight;
 
             ShiftKey {id: shiftKey; anchors.left: parent.left; }
-            CharKey { id: wKey; anchors.left: shiftKey.right; width: UI.keyWidth * 10/8; label: "w"; shifted: "W"; }
-            CharKey { id: xKey; anchors.left: wKey.right; width: UI.keyWidth * 10/8; label: "x"; shifted: "X"; extended: ["x", "Rec", "Mute"]; extendedShifted: ["X", "Rec", "Mute"]; }
-            CharKey { id: cKey; anchors.left: xKey.right; width: UI.keyWidth * 10/8; label: "c"; shifted: "C"; extended: ["c", "ç", "ć", "©", "¢"]; extendedShifted: ["C", "Ç", "Ć", "©", "¢"]; }
-            CharKey { id: vKey; anchors.left: cKey.right; width: UI.keyWidth * 10/8; label: "v"; shifted: "V"; }
-            CharKey { id: bKey; anchors.left: vKey.right; width: UI.keyWidth * 10/8; label: "b"; shifted: "B"; }
-            CharKey { id: nKey; anchors.left: bKey.right; width: UI.keyWidth * 10/8; label: "n"; shifted: "N"; extended: ["n", "ñ", "ń"]; extendedShifted: ["N", "Ñ", "Ń"]; }
-            BackspaceKey {id: backspaceKey; anchors.left: nKey.right; anchors.right: parent.right}
+            CharKey { id: wKey; anchors.left: shiftKey.right; width: UI.keyWidth * 9/8; label: "w"; shifted: "W"; }
+            CharKey { id: xKey; anchors.left: wKey.right; width: UI.keyWidth * 9/8; label: "x"; shifted: "X"; extended: ["x", "Rec", "Mute"]; extendedShifted: ["X", "Rec", "Mute"]; }
+            CharKey { id: cKey; anchors.left: xKey.right; width: UI.keyWidth * 9/8; label: "c"; shifted: "C"; extended: ["c", "ç", "ć", "©", "¢"]; extendedShifted: ["C", "Ç", "Ć", "©", "¢"]; }
+            CharKey { id: vKey; anchors.left: cKey.right; width: UI.keyWidth * 9/8; label: "v"; shifted: "V"; }
+            CharKey { id: bKey; anchors.left: vKey.right; width: UI.keyWidth * 9/8; label: "b"; shifted: "B"; }
+            CharKey { id: nKey; anchors.left: bKey.right; width: UI.keyWidth * 9/8; label: "n"; shifted: "N"; extended: ["n", "ñ", "ń"]; extendedShifted: ["N", "Ñ", "Ń"]; }
+			CharKey { id: apostropheKey; anchors.left: nKey.right; width: UI.keyWidth * 9/8; label: "'"; shifted: "\"";}
+            BackspaceKey {id: backspaceKey; anchors.left: apostropheKey.right; anchors.right: parent.right}
         }
 
         Component {
             id: contentTypeNormal
 
             Item {
-                anchors.left: parent.left
-                anchors.right: parent.right
-
                 height: keyHeight;
 
                 SymbolShiftKey { id: symShiftKey; label: "123"; shifted: "123"; anchors.left: parent.left; }
@@ -110,7 +108,7 @@ KeyPad {
                 LanguageKey    { id: languageMenuButton;                       anchors.left: symShiftKey.right; }
                 UrlKey         { id: atKey;    label: "@"; shifted: "@";     anchors.left: languageMenuButton.right; }
                 SpaceKey       { id: spaceKey;                               anchors.left: atKey.right; anchors.right: urlKey.left; noMagnifier: true }
-                UrlKey         { id: urlKey; label: ".com"; shifted: ".com"; extended: [".com", ".de", ".net", ".org", ".edu", ".gov"]; anchors.right: dotKey.left; }
+                UrlKey         { id: urlKey; label: ".com"; shifted: ".fr"; extended: [".com", ".fr", ".net", ".org", ".ca", ".cd", ".ci", ".ch", ".be", ".ht", ".edu", ".gov"]; anchors.right: dotKey.left; }
                 UrlKey         { id: dotKey;      label: "."; shifted: ".";  anchors.right: enterKey.left; }
                 ReturnKey      { id: enterKey; label: "Enter"; shifted: "Enter"; anchors.right: parent.right }
             }
@@ -125,7 +123,7 @@ KeyPad {
                 LanguageKey    { id: languageMenuButton;                       anchors.left: symShiftKey.right; }
                 UrlKey        { id: slashKey;    label: "/"; shifted: "/";  anchors.left: languageMenuButton.right; }
                 SpaceKey       { id: spaceKey;                               anchors.left: slashKey.right; anchors.right: urlKey.left; noMagnifier: true }
-                UrlKey         { id: urlKey; label: ".com"; extended: [".com", ".de", ".net", ".org", ".edu", ".gov"]; anchors.right: dotKey.left; }
+                UrlKey         { id: urlKey; label: ".com"; shifted: ".fr"; extended: [".com", ".fr", ".net", ".org", ".ca", ".cd", ".ci", ".ch", ".be", ".ht", ".edu", ".gov"]; anchors.right: dotKey.left; }
                 UrlKey        { id: dotKey;      label: "."; shifted: ".";  anchors.right: enterKey.left; }
                 ReturnKey      { id: enterKey;    label: "Enter"; shifted: "Enter"; anchors.right: parent.right }
             }
