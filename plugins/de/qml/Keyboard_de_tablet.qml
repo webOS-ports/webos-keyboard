@@ -32,20 +32,20 @@ KeyPad {
             anchors.horizontalCenter: parent.horizontalCenter;
             spacing: 0
 
-            height: keyHeight * 0.74;
+            height: keyHeight * UI.topRowKeyHeightRatio
 
             NumKey { label: "1"; shifted: "!"; extended: ["1", "!", "¹", "¼", "½", "¡"]}
-            NumKey { label: "2"; shifted: "\""; extended: ["2", "\"", "²"]}
+            NumKey { label: "2"; shifted: "\""; extended: ["2", "\"", "²", "”", "„", "“", "«", "»"]}
             NumKey { label: "3"; shifted: "@"; extended: ["3", "@", "³", "¾"]}
             NumKey { label: "4"; shifted: "$"; extended: ["4", "$", "€", "£", "¥", "¢", "¤"]}
             NumKey { label: "5"; shifted: "%"; extended: ["5", "%", "‰"]}
-            NumKey { label: "6"; shifted: "^"; extended: ["6", "^"]}
-            NumKey { label: "7"; shifted: "&"; extended: ["7", "&"]}
-            NumKey { label: "8"; shifted: "*"; extended: ["8", "*"]}
-            NumKey { label: "9"; shifted: "("; extended: ["9", "(", "[", "{"]}
-            NumKey { label: "0"; shifted: ")"; extended: ["0", ")", "]", "}"]}
-            TrackBall { width: c1.width - (UI.keyWidth*0.9*10); anchors.verticalCenter: parent.verticalCenter }
-        }
+            NumKey { label: "6"; shifted: "&"; extended: ["6", "&"]}
+            NumKey { label: "7"; shifted: "/"; extended: ["7", "/", "\\"]}
+            NumKey { label: "8"; shifted: "("; extended: ["8", "(", "[","{"]}
+            NumKey { label: "9"; shifted: ")"; extended: ["9", ")", "]", "}"]}
+            NumKey { label: "0"; shifted: "="; extended: ["0", "="]}
+            TrackBall { width: keypadRoot.width - (UI.keyWidth*UI.numKeyWidthRatio*10); anchors.verticalCenter: parent.verticalCenter }        
+            }
 	
         Row {
             anchors.horizontalCenter: parent.horizontalCenter;
@@ -58,12 +58,13 @@ KeyPad {
             CharKey { label: "e"; shifted: "E"; extended: ["e", "è", "é", "ê", "ë", "ę", "ē", "€"]; extendedShifted: ["E", "È", "É", "Ê", "Ë", "Ę", "Ē", "€"] }
             CharKey { label: "r"; shifted: "R"; extended: ["r", "®"]; extendedShifted: ["R","®"] }
             CharKey { label: "t"; shifted: "T"; extended: ["t", "™", "þ"]; extendedShifted: ["T", "™", "Þ"] }
-            CharKey { label: "z"; shifted: "Z"; }
+            CharKey { label: "z"; shifted: "Z"; extended: ["z", "ž", "ź", "ż"]; extendedShifted: ["Z", "Ž", "Ź", "Ż"] }
             CharKey { label: "u"; shifted: "U"; extended: ["u", "û", "ù", "ú", "û", "ü", "ű"]; extendedShifted: ["U", "Û","Ù","Ú","Û", "Ü", "Ű"] }
             CharKey { label: "i"; shifted: "I"; extended: ["i", "ì","í", "î", "ï", "İ", "ı"]; extendedShifted: ["I", "Ì", "Í", "Î", "Ï", "İ", "ı"] }
             CharKey { label: "o"; shifted: "O"; extended: ["o", "ò", "ó", "ô", "õ", "ö", "ø", "ő", "œ", "º", "ω"]; extendedShifted: ["O", "Ò", "Ó", "Ô", "Õ", "Ö", "Ø", "Ő", "Œ", "º", "Ω"] }
             CharKey { label: "p"; shifted: "P"; extended: ["p", "¶", "§", "π"]; extendedShifted: ["P", "§", "Π"]}
             CharKey { label: "ü"; shifted: "Ü"; }
+            BackspaceKey {}
         }
 
         Row {
@@ -83,6 +84,7 @@ KeyPad {
             CharKey { label: "l"; shifted: "L"; extended: ["l", "ł"]; extendedShifted: ["L", "Ł"]}
             CharKey { label: "ö"; shifted: "Ö"; }
 			CharKey { label: "ä"; shifted: "Ä"; }
+            ReturnKey { id: enterKey; label: "Enter"; shifted: "Enter"; width: UI.keyWidth * 0.75; fontSize: UI.isLandscape ? UI.xsFontSize : "10pt"}
         }
 
         Row {
@@ -91,7 +93,7 @@ KeyPad {
 
             height: keyHeight;
 
-//            ShiftKey { padding: 0 }
+            ShiftKey { }
             CharKey { label: "y"; shifted: "Y"; extended: ["y", "ý", "ÿ", "¥"]; extendedShifted: ["Y", "Ý", "Ÿ", "¥"] }
             CharKey { label: "x"; shifted: "X"; extended: ["x", "Rec", "Mute"]; extendedShifted: ["X", "Rec", "Mute"]}
             CharKey { label: "c"; shifted: "C"; extended: ["c", "ç", "ć", "©", "¢"]; extendedShifted: ["C", "Ç", "Ć", "©", "¢"] }
@@ -99,11 +101,10 @@ KeyPad {
             CharKey { label: "b"; shifted: "B"; }
             CharKey { label: "n"; shifted: "N"; extended: ["n", "ñ", "ń"]; extendedShifted: ["N", "Ñ", "Ń"] }
             CharKey { label: "m"; shifted: "M"; extended: ["m", "μ"]; extendedShifted: ["M", "Μ"]}
-            AnnotatedKey { label: ","; shifted: "/"; extended: [",", "/", "\\"]; extendedShifted: [",", "/", "\\"];}
-            AnnotatedKey { label: "."; shifted: "?"; extended: [".", "?", "•", "…", "¿"]; extendedShifted: [".", "?", "•", "…", "¿"]}
-
- //           BackspaceKey { padding: 0 }
-        }
+            AnnotatedKey { label: ","; shifted: ";"; extended: [",", ";"]; extendedShifted: [",", ";"];}
+            AnnotatedKey { label: "."; shifted: ":"; extended: [".", ":", "•", "…"]; extendedShifted: [".", ":", "•", "…"]}
+            ShiftKey { }
+         }
 
 
         Component {
@@ -111,13 +112,13 @@ KeyPad {
             Item {
                 height: keyHeight
 
-                SymbolShiftKey { id: symShiftKey;                            anchors.left: parent.left; }
-                LanguageKey    { id: languageMenuButton;                     anchors.left: symShiftKey.right; }
-                CharKey        { id: commaKey;    label: ","; shifted: "/";  anchors.left: languageMenuButton.right; }
-                SpaceKey       { id: spaceKey;                               anchors.left: commaKey.right; anchors.right: dotKey.left; noMagnifier: true }
-                CharKey        { id: dotKey;      label: "."; shifted: ".";  anchors.right: umlaut.left; }
-                CharKey        { id: umlaut;      label: "ö"; shifted: "Ö";  anchors.right: enterKey.left; }
-                ReturnKey      { id: enterKey;                               anchors.right: parent.right }
+                TabKey         { id: tabKey; 				label: "Tab"; shifted: "Tab";                       anchors.left: parent.left; }
+                SymbolShiftKey { id: symShiftKey;                             anchors.left: tabKey.right; }
+                LanguageKey    { id: languageMenuButton;                       anchors.left: symShiftKey.right; }
+                SpaceKey       { id: spaceKey;                                 anchors.left: languageMenuButton.right; anchors.right: sKey.left; }
+                AnnotatedKey   { id: sKey; label: "ß"; shifted: "?"; extended: ["ß", "?", "¿"]; extendedShifted: ["ß", "?", "¿"]; anchors.right: minusKey.left; useHorizontalLayout: (UI.keyboardSizeChoice === "XS" || UI.keyboardSizeChoice === "S") ? true : false;}
+                AnnotatedKey   { id: minusKey;      label: "-"; shifted: "'"; extended: ["-", "'", "±", "¬", "`", "‚", "‘","’"]; extendedShifted: ["-", "'", "±", "¬", "`", "‚", "‘","’"]; anchors.right: dismissKey.left; useHorizontalLayout: (UI.keyboardSizeChoice === "XS" || UI.keyboardSizeChoice === "S") ? true : false;}
+                DismissKey     { id: dismissKey;                               anchors.right: parent.right;}
             }
         }
         Component {
@@ -126,13 +127,15 @@ KeyPad {
             Item {
                 height: keyHeight
 
-                SymbolShiftKey { id: symShiftKey;                            anchors.left: parent.left; }
-                CharKey        { id: atKey;    label: "@"; shifted: "@";     anchors.left: symShiftKey.right; }
-                SpaceKey       { id: spaceKey;                               anchors.left: atKey.right; anchors.right: urlKey.left; noMagnifier: true }
-                UrlKey         { id: urlKey; label: ".de"; extended: [".at", ".ch", ".de"]; anchors.right: dotKey.left; }
-                CharKey        { id: dotKey;      label: "."; shifted: ".";  anchors.right: umlaut.left; }
-                CharKey        { id: umlaut;      label: "ö"; shifted: "Ö";  anchors.right: enterKey.left; }
-                ReturnKey      { id: enterKey;                               anchors.right: parent.right }
+                TabKey         { id: tabKey; extended: "Tab";  shifted: "Tab";       label: "Tab";              anchors.left: parent.left; }
+                SymbolShiftKey { id: symShiftKey;                             anchors.left: tabKey.right; }
+                LanguageKey    { id: languageMenuButton;                       anchors.left: symShiftKey.right; }
+                UrlKey         { id: emailKey;    label: "@"; shifted: "@";  anchors.left: languageMenuButton.right; }
+                SpaceKey       { id: spaceKey;                               anchors.left: emailKey.right; anchors.right: urlKey.left; }
+                UrlKey         { id: urlKey; label: ".com"; shifted: ".com"; extended: [".com", ".de", ".net", ".org", ".edu", ".gov"]; anchors.right: atKey.left; }
+                AnnotatedKey   { id: atKey; label: "@"; shifted: "_"; extended: ["@", "_"]; extendedShifted: ["@", "_"]; anchors.right: exclamationKey.left; useHorizontalLayout: (UI.keyboardSizeChoice === "XS" || UI.keyboardSizeChoice === "S") ? true : false;}
+                AnnotatedKey   { id: exclamationKey;      label: "!"; shifted: "*"; extended: ["!", "*", "¡"]; extendedShifted: ["!", "*", "¡"]; anchors.right: dismissKey.left; useHorizontalLayout: (UI.keyboardSizeChoice === "XS" || UI.keyboardSizeChoice === "S") ? true : false;}
+                DismissKey     { id: dismissKey;                               anchors.right: parent.right;}
             }
         }
         Component {
@@ -141,13 +144,15 @@ KeyPad {
             Item {
                 height: keyHeight
 
-                SymbolShiftKey { id: symShiftKey;                            anchors.left: parent.left; }
-                CharKey        { id: slashKey;    label: "/"; shifted: "/";  anchors.left: symShiftKey.right; }
-                SpaceKey       { id: spaceKey;                               anchors.left: slashKey.right; anchors.right: urlKey.left; noMagnifier: true }
-                UrlKey         { id: urlKey; label: ".de"; extended: [".at", ".ch", ".de"]; anchors.right: dotKey.left; }
-                CharKey        { id: dotKey;      label: "."; shifted: ".";  anchors.right: umlaut.left; }
-                CharKey        { id: umlaut;      label: "ö"; shifted: "Ö";  anchors.right: enterKey.left; }
-                ReturnKey      { id: enterKey;                               anchors.right: parent.right }
+                TabKey         { id: tabKey; extended: "Tab";  shifted: "Tab";       label: "Tab";              anchors.left: parent.left; }
+                SymbolShiftKey { id: symShiftKey;                             anchors.left: tabKey.right; }
+                LanguageKey    { id: languageMenuButton;                       anchors.left: symShiftKey.right; }
+                CharKey        { imgNormal: UI.imageGreyKey; imgPressed: UI.imageGreyKeyPressed; id: slashKey;    label: "/"; shifted: "/"; extended: ["http://", "https://", "www."];  anchors.left: languageMenuButton.right; }
+                SpaceKey       { id: spaceKey;                               anchors.left: slashKey.right; anchors.right: urlKey.left; }
+                UrlKey         { id: urlKey; label: ".com"; extended: [".com", ".de", ".net", ".org", ".edu", ".gov"]; anchors.right: atKey.left; }
+                AnnotatedKey   { id: atKey; label: "@"; shifted: "_"; extended: ["@", "_"]; extendedShifted: ["@", "_"]; anchors.right: exclamationKey.left; useHorizontalLayout: (UI.keyboardSizeChoice === "XS" || UI.keyboardSizeChoice === "S") ? true : false;}
+                AnnotatedKey   { id: exclamationKey;      label: "!"; shifted: "*"; extended: ["!", "*", "¡"]; extendedShifted: ["!", "*", "¡"]; anchors.right: dismissKey.left; useHorizontalLayout: (UI.keyboardSizeChoice === "XS" || UI.keyboardSizeChoice === "S") ? true : false;}
+                DismissKey     { id: dismissKey;                               anchors.right: parent.right;}
             }
         }
         Loader {
