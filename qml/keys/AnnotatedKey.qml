@@ -202,7 +202,7 @@ Item {
         anchors.bottom: buttonImage.top
         width: key.width + Units.gu(UI.magnifierHorizontalPadding)
         height: key.height + Units.gu(UI.magnifierVerticalPadding)
-        text: keyLabel.text
+        text: valueToSubmit
         shown: key.pressed && !noMagnifier && !extendedKeysShown
     }
 }
