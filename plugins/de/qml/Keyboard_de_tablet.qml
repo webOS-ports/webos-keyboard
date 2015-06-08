@@ -34,17 +34,17 @@ KeyPad {
 
             height: keyHeight * UI.topRowKeyHeightRatio
 
-            NumKey { label: "1"; shifted: "!"; extended: ["1", "!", "¹", "¼", "½", "¡"]}
-            NumKey { label: "2"; shifted: "\""; extended: ["2", "\"", "²", "”", "„", "“", "«", "»"]}
-            NumKey { label: "3"; shifted: "@"; extended: ["3", "@", "³", "¾"]}
-            NumKey { label: "4"; shifted: "$"; extended: ["4", "$", "€", "£", "¥", "¢", "¤"]}
-            NumKey { label: "5"; shifted: "%"; extended: ["5", "%", "‰"]}
-            NumKey { label: "6"; shifted: "&"; extended: ["6", "&"]}
-            NumKey { label: "7"; shifted: "/"; extended: ["7", "/", "\\"]}
-            NumKey { label: "8"; shifted: "("; extended: ["8", "(", "[","{"]}
-            NumKey { label: "9"; shifted: ")"; extended: ["9", ")", "]", "}"]}
-            NumKey { label: "0"; shifted: "="; extended: ["0", "="]}
-            TrackBall { width: keypadRoot.width - (UI.keyWidth*UI.numKeyWidthRatio*10); anchors.verticalCenter: parent.verticalCenter }        
+            NumKey { label: "1"; shifted: "!"; extended: ["1", "!", "¹", "¼", "½", "¡"]; keyWidth: UI.keyWidth;}
+            NumKey { label: "2"; shifted: "\""; extended: ["2", "\"", "²", "”", "„", "“", "«", "»"]; keyWidth: UI.keyWidth;}
+            NumKey { label: "3"; shifted: "@"; extended: ["3", "@", "³", "¾"]; keyWidth: UI.keyWidth;}
+            NumKey { label: "4"; shifted: "$"; extended: ["4", "$", "€", "£", "¥", "¢", "¤"]; keyWidth: UI.keyWidth;}
+            NumKey { label: "5"; shifted: "%"; extended: ["5", "%", "‰"]; keyWidth: UI.keyWidth;}
+            NumKey { label: "6"; shifted: "&"; extended: ["6", "&"]; keyWidth: UI.keyWidth;}
+            NumKey { label: "7"; shifted: "/"; extended: ["7", "/", "\\"]; keyWidth: UI.keyWidth;}
+            NumKey { label: "8"; shifted: "("; extended: ["8", "(", "[","{"]; keyWidth: UI.keyWidth;}
+            NumKey { label: "9"; shifted: ")"; extended: ["9", ")", "]", "}"]; keyWidth: UI.keyWidth;}
+            NumKey { label: "0"; shifted: "="; extended: ["0", "="]; keyWidth: UI.keyWidth;}
+            TrackBall { width: keypadRoot.width - (UI.keyWidth*10); anchors.verticalCenter: parent.verticalCenter }        
             }
 	
         Row {
@@ -68,7 +68,7 @@ KeyPad {
         }
 
         Row {
-            anchors.horizontalCenter: parent.horizontalCenter;
+            anchors.right: parent.right
             spacing: 0
 
             height: keyHeight;
@@ -84,7 +84,7 @@ KeyPad {
             CharKey { label: "l"; shifted: "L"; extended: ["l", "ł"]; extendedShifted: ["L", "Ł"]}
             CharKey { label: "ö"; shifted: "Ö"; }
 			CharKey { label: "ä"; shifted: "Ä"; }
-            ReturnKey { id: enterKey; label: "Enter"; shifted: "Enter"; width: UI.keyWidth * 0.75; fontSize: UI.isLandscape ? UI.xsFontSize : "10pt"}
+            ReturnKey { id: enterKey; label: "Enter"; shifted: "Enter"; width: UI.keyWidth * 0.8; fontSize: UI.isLandscape ? UI.xsFontSize : "10pt"}
         }
 
         Row {
@@ -93,7 +93,7 @@ KeyPad {
 
             height: keyHeight;
 
-            ShiftKey { }
+            ShiftKey { width: UI.keyWidth * 0.8 }
             CharKey { label: "y"; shifted: "Y"; extended: ["y", "ý", "ÿ", "¥"]; extendedShifted: ["Y", "Ý", "Ÿ", "¥"] }
             CharKey { label: "x"; shifted: "X"; extended: ["x", "Rec", "Mute"]; extendedShifted: ["X", "Rec", "Mute"]}
             CharKey { label: "c"; shifted: "C"; extended: ["c", "ç", "ć", "©", "¢"]; extendedShifted: ["C", "Ç", "Ć", "©", "¢"] }
@@ -102,8 +102,8 @@ KeyPad {
             CharKey { label: "n"; shifted: "N"; extended: ["n", "ñ", "ń"]; extendedShifted: ["N", "Ñ", "Ń"] }
             CharKey { label: "m"; shifted: "M"; extended: ["m", "μ"]; extendedShifted: ["M", "Μ"]}
             AnnotatedKey { label: ","; shifted: ";"; extended: [",", ";"]; extendedShifted: [",", ";"];}
-            AnnotatedKey { label: "."; shifted: ":"; extended: [".", ":", "•", "…"]; extendedShifted: [".", ":", "•", "…"]}
-            ShiftKey { }
+            AnnotatedKey { id: dotKey; label: "."; shifted: ":"; extended: [".", ":", "•", "…"]; extendedShifted: [".", ":", "•", "…"]}
+            ShiftKey { width: UI.keyWidth * 2.2 }
          }
 
 
@@ -115,8 +115,8 @@ KeyPad {
                 TabKey         { id: tabKey; 				label: "Tab"; shifted: "Tab";                       anchors.left: parent.left; }
                 SymbolShiftKey { id: symShiftKey;                             anchors.left: tabKey.right; }
                 LanguageKey    { id: languageMenuButton;                       anchors.left: symShiftKey.right; }
-                SpaceKey       { id: spaceKey;                                 anchors.left: languageMenuButton.right; anchors.right: sKey.left; }
-                AnnotatedKey   { id: sKey; label: "ß"; shifted: "?"; extended: ["ß", "?", "¿"]; extendedShifted: ["ß", "?", "¿"]; anchors.right: minusKey.left; useHorizontalLayout: (UI.keyboardSizeChoice === "XS" || UI.keyboardSizeChoice === "S") ? true : false;}
+                SpaceKey       { id: spaceKey;                                 anchors.left: languageMenuButton.right; anchors.right: ssKey.left; }
+                AnnotatedKey   { id: ssKey; label: "ß"; shifted: "?"; extended: ["ß", "?", "¿"]; extendedShifted: ["ß", "?", "¿"]; anchors.right: minusKey.left; useHorizontalLayout: (UI.keyboardSizeChoice === "XS" || UI.keyboardSizeChoice === "S") ? true : false;}
                 AnnotatedKey   { id: minusKey;      label: "-"; shifted: "'"; extended: ["-", "'", "±", "¬", "`", "‚", "‘","’"]; extendedShifted: ["-", "'", "±", "¬", "`", "‚", "‘","’"]; anchors.right: dismissKey.left; useHorizontalLayout: (UI.keyboardSizeChoice === "XS" || UI.keyboardSizeChoice === "S") ? true : false;}
                 DismissKey     { id: dismissKey;                               anchors.right: parent.right;}
             }
@@ -127,14 +127,14 @@ KeyPad {
             Item {
                 height: keyHeight
 
-                TabKey         { id: tabKey; extended: "Tab";  shifted: "Tab";       label: "Tab";              anchors.left: parent.left; }
+                TabKey         { id: tabKey; shifted: "Tab"; label: "Tab";              anchors.left: parent.left; }
                 SymbolShiftKey { id: symShiftKey;                             anchors.left: tabKey.right; }
                 LanguageKey    { id: languageMenuButton;                       anchors.left: symShiftKey.right; }
                 UrlKey         { id: emailKey;    label: "@"; shifted: "@";  anchors.left: languageMenuButton.right; }
                 SpaceKey       { id: spaceKey;                               anchors.left: emailKey.right; anchors.right: urlKey.left; }
-                UrlKey         { id: urlKey; label: ".com"; shifted: ".com"; extended: [".com", ".de", ".net", ".org", ".edu", ".gov"]; anchors.right: atKey.left; }
-                AnnotatedKey   { id: atKey; label: "@"; shifted: "_"; extended: ["@", "_"]; extendedShifted: ["@", "_"]; anchors.right: exclamationKey.left; useHorizontalLayout: (UI.keyboardSizeChoice === "XS" || UI.keyboardSizeChoice === "S") ? true : false;}
-                AnnotatedKey   { id: exclamationKey;      label: "!"; shifted: "*"; extended: ["!", "*", "¡"]; extendedShifted: ["!", "*", "¡"]; anchors.right: dismissKey.left; useHorizontalLayout: (UI.keyboardSizeChoice === "XS" || UI.keyboardSizeChoice === "S") ? true : false;}
+                UrlKey         { id: urlKey; label: ".com"; shifted: ".com"; extended: [".com", ".de", ".net", ".org", ".edu", ".gov"]; anchors.right: ssKey.left; }
+                AnnotatedKey   { id: ssKey; label: "ß"; shifted: "?"; extended: ["ß", "?", "¿"]; extendedShifted: ["ß", "?", "¿"]; anchors.right: minusKey.left; useHorizontalLayout: (UI.keyboardSizeChoice === "XS" || UI.keyboardSizeChoice === "S") ? true : false;}
+                AnnotatedKey   { id: minusKey;      label: "-"; shifted: "'"; extended: ["-", "'", "±", "¬", "`", "‚", "‘","’"]; extendedShifted: ["-", "'", "±", "¬", "`", "‚", "‘","’"]; anchors.right: dismissKey.left; useHorizontalLayout: (UI.keyboardSizeChoice === "XS" || UI.keyboardSizeChoice === "S") ? true : false;}
                 DismissKey     { id: dismissKey;                               anchors.right: parent.right;}
             }
         }
@@ -144,14 +144,14 @@ KeyPad {
             Item {
                 height: keyHeight
 
-                TabKey         { id: tabKey; extended: "Tab";  shifted: "Tab";       label: "Tab";              anchors.left: parent.left; }
+                TabKey         { id: tabKey; shifted: "Tab"; label: "Tab";              anchors.left: parent.left; }
                 SymbolShiftKey { id: symShiftKey;                             anchors.left: tabKey.right; }
                 LanguageKey    { id: languageMenuButton;                       anchors.left: symShiftKey.right; }
                 CharKey        { imgNormal: UI.imageGreyKey; imgPressed: UI.imageGreyKeyPressed; id: slashKey;    label: "/"; shifted: "/"; extended: ["http://", "https://", "www."];  anchors.left: languageMenuButton.right; }
                 SpaceKey       { id: spaceKey;                               anchors.left: slashKey.right; anchors.right: urlKey.left; }
-                UrlKey         { id: urlKey; label: ".com"; extended: [".com", ".de", ".net", ".org", ".edu", ".gov"]; anchors.right: atKey.left; }
-                AnnotatedKey   { id: atKey; label: "@"; shifted: "_"; extended: ["@", "_"]; extendedShifted: ["@", "_"]; anchors.right: exclamationKey.left; useHorizontalLayout: (UI.keyboardSizeChoice === "XS" || UI.keyboardSizeChoice === "S") ? true : false;}
-                AnnotatedKey   { id: exclamationKey;      label: "!"; shifted: "*"; extended: ["!", "*", "¡"]; extendedShifted: ["!", "*", "¡"]; anchors.right: dismissKey.left; useHorizontalLayout: (UI.keyboardSizeChoice === "XS" || UI.keyboardSizeChoice === "S") ? true : false;}
+                UrlKey         { id: urlKey; label: ".com"; extended: [".com", ".de", ".net", ".org", ".edu", ".gov"]; anchors.right: ssKey.left; }
+                AnnotatedKey   { id: ssKey; label: "ß"; shifted: "?"; extended: ["ß", "?", "¿"]; extendedShifted: ["ß", "?", "¿"]; anchors.right: minusKey.left; useHorizontalLayout: (UI.keyboardSizeChoice === "XS" || UI.keyboardSizeChoice === "S") ? true : false;}
+                AnnotatedKey   { id: minusKey;      label: "-"; shifted: "'"; extended: ["-", "'", "±", "¬", "`", "‚", "‘","’"]; extendedShifted: ["-", "'", "±", "¬", "`", "‚", "‘","’"]; anchors.right: dismissKey.left; useHorizontalLayout: (UI.keyboardSizeChoice === "XS" || UI.keyboardSizeChoice === "S") ? true : false;}
                 DismissKey     { id: dismissKey;                               anchors.right: parent.right;}
             }
         }
