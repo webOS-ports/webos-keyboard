@@ -137,6 +137,7 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
         anchors.verticalCenterOffset: useHorizontalLayout ? UI.keyHeight / -2 : UI.keyHeight / -0.4
 
+        font.family: UI.fontFamily
         font.pixelSize: (UI.currentShiftState === "NORMAL") ? FontUtils.sizeToPixels(UI.annotationFontSize) : FontUtils.sizeToPixels(UI.xsFontSize)
         font.bold: false
         color: (UI.currentShiftState !== "NORMAL") ? UI.fontColor : UI.annotationFontColor
@@ -155,6 +156,7 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
         anchors.verticalCenterOffset: useHorizontalLayout ? UI.keyHeight / 1.5 : UI.formFactor === "phone" && !UI.isLandscape ? UI.keyHeight / 0.25 : UI.keyHeight / 0.5 
 
+        font.family: UI.fontFamily
         font.pixelSize: FontUtils.sizeToPixels(UI.annotationFontSize)
         font.bold: false
         style: Text.Raised

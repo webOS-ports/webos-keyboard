@@ -146,6 +146,7 @@ Item {
         anchors.bottom: parent.bottom
         anchors.bottomMargin: UI.formFactor === "tablet" ? Units.gu(1.00) : Units.gu(0.50)
 
+        font.family: UI.fontFamily
         font.pixelSize: FontUtils.sizeToPixels(UI.annotationFontSize)
         font.bold: false
         style: Text.Raised
