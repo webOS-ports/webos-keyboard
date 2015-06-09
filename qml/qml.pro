@@ -37,18 +37,14 @@ OTHER_FILES += \
     keys/ActionKey.qml \
     keys/CharKey.qml \
     keys/BackspaceKey.qml \
-    keys/DropShadow.qml \
     keys/ExtendedListSelector.qml \
     keys/LanguageKey.qml \
 	keys/KeyPad.qml \
     keys/Magnifier.qml \
-    keys/OneTwoKey.qml \
     keys/PressArea.qml \
     keys/ReturnKey.qml \
     keys/ShiftKey.qml \
     keys/SpaceKey.qml \
-    keys/Spacer.qml \
-    keys/SpacerLuneOS.qml \	
     keys/SymbolShiftKey.qml \
 	keys/TabKey.qml \
     keys/UrlKey.qml \

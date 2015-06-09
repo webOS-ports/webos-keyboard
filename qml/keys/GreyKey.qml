@@ -119,7 +119,7 @@ Item {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.verticalCenter
         anchors.margins: 0, 0, 0, 5
-
+        font.family: UI.fontFamily
         font.pixelSize: FontUtils.sizeToPixels(UI.annotationFontSize);
         font.bold: false
         color: UI.annotationFontColor
