@@ -91,7 +91,7 @@ Rectangle {
         property int contentType: 0 // 0 ->  text, 1 -> number, 2 -> telephone, 3 -> email, 4 -> url
         property bool testEnvironment: true
         property string activeLanguage: "en"
-        property variant enabledLanguages: [ "en", "de", "nl", "fr", "sv" ]
+        property variant enabledLanguages: [ "en", "de", "nl", "fr", "sv", "ar", "cs", "da", "es", "fi", "he", "hu", "it", "pl", "pt", "ru" ]
     }
 
     Rectangle {
