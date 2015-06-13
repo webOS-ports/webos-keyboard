@@ -72,7 +72,6 @@ Item {
         }
 
         /// Returns if the given language is supported
-        /// FIXME the possible languages should be checked in C++
         function languageIsSupported(locale)
         {
             var supportedLocales = [
@@ -96,30 +95,6 @@ Item {
             ];
             return (supportedLocales.indexOf( locale ) > -1);
         }
-        function alternativeLayoutIsSupported(locale, alternativeLayout) {
-            if( alternativeLayout.length === 0 ) return true; // default layout is always ok
-
-            var supportedLocaleLayouts = {
-                "ar": [],
-                "cs": [],
-                "da": [],
-                "de": [],
-                "en": [ 'dvorak' ],
-                "es": [],
-                "fi": [],
-                "fr": [],
-                "he": [],
-                "hu": [],
-                "it": [],
-                "nl": [],
-                "pl": [],
-                "pt": [],
-                "ru": [],
-                "sv": [],
-                "zh": []
-            };
-            return (supportedLocaleLayouts[locale].indexOf( alternativeLayout ) > -1);
-        }
 
         /// Returns the relative path to the keyboard QML file for a given language for free text
         function freeTextLanguageKeyboard(language, alternativeLayout)
@@ -131,14 +106,8 @@ Item {
                 console.log("Language '"+language+"' not supported - using 'en' instead");
                 language = "en";
             }
-            if( !alternativeLayoutIsSupported(language, alternativeLayout) ) {
-                console.log("Alternative '" + alternativeLayout + "' is not supported for language '"+language+"' - using default layout instead");
-                alternativeLayout = "";
-            }
-            else {
-                if( alternativeLayout.length > 0 ) {
-                    alternativeLayout = "_" + alternativeLayout;
-                }
+            if( alternativeLayout.length > 0 ) {
+                alternativeLayout = "_" + alternativeLayout;
             }
 
             var selectedLanguageFile = "lib/en/Keyboard_en.qml";
