@@ -18,6 +18,8 @@ import QtQuick 2.0
 import keys 1.0
 
 KeyPad {
+    id: keypadRoot
+    
     content: c1
     symbols: "languages/Keyboard_symbols_tablet.qml"
 
@@ -28,22 +30,43 @@ KeyPad {
         spacing: 0
 
         Row {
+            //anchors.horizontalCenter: parent.horizontalCenter;
+            anchors.left: parent.left;
+            spacing: 0
+
+            height: keyHeight * UI.topRowKeyHeightRatio
+
+            NumKey { label: "1"; shifted: "!"; extended: ["1", "!", "¹", "¼", "½", "¡"]}
+            NumKey { label: "2"; shifted: "@"; extended: ["2", "@", "²"]}
+            NumKey { label: "3"; shifted: "#"; extended: ["3", "#", "³", "¾"]}
+            NumKey { label: "4"; shifted: "$"; extended: ["4", "$", "€", "£", "¥", "¢", "¤"]}
+            NumKey { label: "5"; shifted: "%"; extended: ["5", "%", "‰"]}
+            NumKey { label: "6"; shifted: "^"; extended: ["6", "^"]}
+            NumKey { label: "7"; shifted: "&"; extended: ["7", "&"]}
+            NumKey { label: "8"; shifted: "*"; extended: ["8", "*"]}
+            NumKey { label: "9"; shifted: "("; extended: ["9", "(", "[", "{"]}
+            NumKey { label: "0"; shifted: ")"; extended: ["0", ")", "]", "}"]}
+            TrackBall { width: keypadRoot.width - (UI.keyWidth*10); anchors.verticalCenter: parent.verticalCenter }
+        }
+        
+        Row {
             anchors.horizontalCenter: parent.horizontalCenter;
             spacing: 0
 
             height: keyHeight;
 
-            CharKey { label: "й"; shifted: "Й"; }
-            CharKey { label: "ц"; shifted: "Ц"; }
-            CharKey { label: "у"; shifted: "Y"; extended: ["ў"]; extendedShifted: ["Ў"] }
-            CharKey { label: "к"; shifted: "К"; }
-            CharKey { label: "e"; shifted: "E"; extended: ["ë", "€"]; extendedShifted: ["Ë", "€"] }
-            CharKey { label: "н"; shifted: "Н"; }
-            CharKey { label: "г"; shifted: "Г"; }
-            CharKey { label: "ш"; shifted: "Ш"; }
-            CharKey { label: "щ"; shifted: "Щ"; }
-            CharKey { label: "з"; shifted: "З"; }
-            CharKey { label: "х"; shifted: "Х"; }
+            CharKey { label: "й"; shifted: "Й"; width: UI.keyWidth * 0.95;}
+            CharKey { label: "ц"; shifted: "Ц"; width: UI.keyWidth * 0.95;}
+            CharKey { label: "у"; shifted: "Y"; extended: ["ў"]; extendedShifted: ["Ў"];width: UI.keyWidth * 0.95; }
+            CharKey { label: "к"; shifted: "К"; width: UI.keyWidth * 0.95;}
+            CharKey { label: "e"; shifted: "E"; extended: ["ë", "€"]; extendedShifted: ["Ë", "€"];width: UI.keyWidth * 0.95; }
+            CharKey { label: "н"; shifted: "Н"; width: UI.keyWidth * 0.95;}
+            CharKey { label: "г"; shifted: "Г"; width: UI.keyWidth * 0.95;}
+            CharKey { label: "ш"; shifted: "Ш"; width: UI.keyWidth * 0.95;}
+            CharKey { label: "щ"; shifted: "Щ"; width: UI.keyWidth * 0.95;}
+            CharKey { label: "з"; shifted: "З"; width: UI.keyWidth * 0.95;}
+            CharKey { label: "х"; shifted: "Х"; width: UI.keyWidth * 0.95;}
+            BackspaceKey {width: UI.keyWidth * 1.5;}
         }
 
         Row {
@@ -52,17 +75,18 @@ KeyPad {
 
             height: keyHeight;
 
-            CharKey { label: "ф"; shifted: "Ф"; }
-            CharKey { label: "ы"; shifted: "Ы"; }
-            CharKey { label: "в"; shifted: "В"; }
-            CharKey { label: "a"; shifted: "A"; }
-            CharKey { label: "п"; shifted: "П"; }
-            CharKey { label: "р"; shifted: "Р"; }
-            CharKey { label: "о"; shifted: "О"; }
-            CharKey { label: "л"; shifted: "Л"; }
-            CharKey { label: "д"; shifted: "Д"; }
-            CharKey { label: "ж"; shifted: "Ж"; }
-            CharKey { label: "э"; shifted: "Э"; }
+            CharKey { label: "ф"; shifted: "Ф"; width: UI.keyWidth * 0.95;}
+            CharKey { label: "ы"; shifted: "Ы"; width: UI.keyWidth * 0.95;}
+            CharKey { label: "в"; shifted: "В"; width: UI.keyWidth * 0.95;}
+            CharKey { label: "a"; shifted: "A"; width: UI.keyWidth * 0.95;}
+            CharKey { label: "п"; shifted: "П"; width: UI.keyWidth * 0.95;}
+            CharKey { label: "р"; shifted: "Р"; width: UI.keyWidth * 0.95;}
+            CharKey { label: "о"; shifted: "О"; width: UI.keyWidth * 0.95;}
+            CharKey { label: "л"; shifted: "Л"; width: UI.keyWidth * 0.95;}
+            CharKey { label: "д"; shifted: "Д"; width: UI.keyWidth * 0.95;}
+            CharKey { label: "ж"; shifted: "Ж"; width: UI.keyWidth * 0.95;}
+            CharKey { label: "э"; shifted: "Э"; width: UI.keyWidth * 0.95;}
+            ReturnKey      { id: enterKey; label: "Enter";  width: UI.keyWidth * 1.5;}
         }
 
         Row {
@@ -82,7 +106,7 @@ KeyPad {
             CharKey { label: "ь"; shifted: "Ь"; }
             CharKey { label: "б"; shifted: "Б"; }
             CharKey { label: "ю"; shifted: "Ю"; }
-            BackspaceKey { padding: 0 }
+           // BackspaceKey { padding: 0 }
         }
 
         Component {
