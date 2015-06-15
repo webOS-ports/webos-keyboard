@@ -70,6 +70,8 @@ Item {
 
             property int jumpBackThreshold: Units.gu(10)
 
+            enabled: UI.formFactor === "phone"
+
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.top: parent.top
