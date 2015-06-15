@@ -121,7 +121,7 @@ KeyPad {
 
                 SymbolShiftKey { id: symShiftKey; label: "123"; shifted: "123"; anchors.left: parent.left; }
                 LanguageKey    { id: languageMenuButton;                       anchors.left: symShiftKey.right; }
-                UrlKey        { id: slashKey;    label: "/"; shifted: "/";  anchors.left: languageMenuButton.right; }
+                UrlKey        { id: slashKey;    label: "/"; shifted: "/";  extended: ["http://", "https://", "www."]; anchors.left: languageMenuButton.right; }
                 SpaceKey       { id: spaceKey;                               anchors.left: slashKey.right; anchors.right: urlKey.left; noMagnifier: true }
                 UrlKey         { id: urlKey; label: ".com"; shifted: ".fr"; extended: [".com", ".fr", ".net", ".org", ".ca", ".cd", ".ci", ".ch", ".be", ".ht", ".edu", ".gov"]; anchors.right: dotKey.left; }
                 UrlKey        { id: dotKey;      label: "."; shifted: ".";  anchors.right: enterKey.left; }
