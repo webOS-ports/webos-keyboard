@@ -31,29 +31,43 @@ ActionKey {
 	
     action: "shift"
 
-    MouseArea {
+    PressArea {
         anchors.fill: parent
-        preventStealing: true
+        //preventStealing: true
 
-        onClicked: {
+        onKeyPressed: {
             if (UI.currentShiftState === "NORMAL")
                 UI.currentShiftState = "SHIFTED";
 
-            else if (UI.currentShiftState === "SHIFTED")
-                UI.currentShiftState = "NORMAL"
-
-            else if (UI.currentShiftState === "CAPSLOCK")
+            else if (UI.currentShiftState === "SHIFTED" || UI.currentShiftState === "CAPSLOCK")
                 UI.currentShiftState = "NORMAL"
         }
 
-        onPressAndHold: {
+        onKeyPressedAndHold: {
             UI.currentShiftState = "CAPSLOCK"
             //imgPressed: UI.imageShiftKey
         }
 
+        // Add double-click management
+        signal doubleClicked();
+        Timer {
+            id: doubleClickTimer
+            interval: 300; running: false; repeat: false
+        }
+        onPressed: {
+            if(!afterMove) {
+                if (doubleClickTimer.running) {
+                    doubleClicked();
+                    doubleClickTimer.stop();
+                }
+                else {
+                    doubleClickTimer.start();
+                }
+            }
+        }
+
         onDoubleClicked: {
-            if (UI.currentShiftState === "SHIFTED")
-                UI.currentShiftState = "CAPSLOCK"
+            UI.currentShiftState = "CAPSLOCK"
         }
     }
 }

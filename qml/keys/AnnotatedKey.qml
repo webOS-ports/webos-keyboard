@@ -57,7 +57,7 @@ Item {
     property string annotation: ""
 
     /*! indicates if te key is currently pressed/down*/
-    property alias pressed: keyMouseArea.pressed
+    property alias pressed: keyMouseArea.isPressed
 
     /* internal */
     property string __annotationLabelNormal

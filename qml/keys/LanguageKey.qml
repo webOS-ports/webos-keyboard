@@ -32,13 +32,14 @@ ActionKey {
     visible: maliit_input_method.enabledLanguages.length > 1 ? true : false
     width: visible ? UI.keyWidth : 0
 
-    MouseArea {
+    PressArea {
         anchors.fill: parent
-        preventStealing: true
-        onClicked: {
+        onlyExclusive: true
+
+        onKeyReleased: {
             UI.showLanguagesMenu(actionKey);
         }
-        onPressAndHold: {
+        onKeyPressedAndHold: {
             UI.showAlternativeLayoutsMenu(actionKey);
         }
     }

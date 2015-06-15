@@ -26,15 +26,26 @@ Item {
     enabled: false
     visible: enabled
 
+    y: anchorPoint.y - (popoverBackground.height - 8)
+    x: isOnLeftSideOfScreen ? (anchorPoint.x) : (anchorPoint.x+currentlyAssignedKeyWidth-popoverBackground.width)
+
+    width: popoverBackground.width
+    height: popoverBackground.height
+
     property variant extendedListModel
     property Item currentlyAssignedKey
 
     property int keyHeight: Units.gu(6.3) 
     property int keyWidth: Units.gu(8.0) 
 
+    property Item keyPad
+
+    property bool isOnLeftSideOfScreen: anchorPoint.x < (keyPad.width/2)
+
     property int currentlyAssignedKeyParentY: currentlyAssignedKey ? currentlyAssignedKey.parent.y : 0
     property int currentlyAssignedKeyX: currentlyAssignedKey ? currentlyAssignedKey.x : 0
     property int currentlyAssignedKeyY: currentlyAssignedKey ? currentlyAssignedKey.y : 0
+    property int currentlyAssignedKeyWidth: currentlyAssignedKey ? currentlyAssignedKey.width : 0
 
     property int numberOfLines: Math.ceil(keyRepeater.count / 4)
 	
@@ -50,40 +61,29 @@ Item {
         __repositionPopoverTo(currentlyAssignedKey);
     }
 
+    function __updatePopoverRect() {
+        var newPopoverRect = keyPad.mapToItem(null, x, y, width, height);
+        maliit_geometry.popoverRect = Qt.rect(newPopoverRect.x, newPopoverRect.y, newPopoverRect.width, newPopoverRect.height);
+    }
+    onXChanged: __updatePopoverRect();
+    onYChanged: __updatePopoverRect();
+    onWidthChanged: __updatePopoverRect();
+    onHeightChanged: __updatePopoverRect();
+
     signal itemSelected(string modelData);
     signal extendedListDismissed();
 
     ///
     // Item gets repositioned above the currently active key on keyboard.
     // extended keys area will center on top of this
-
-    Item {
-        id: anchorItem
-        width: popover.keyWidth
-        height: popover.keyHeight
-    }
+    property point anchorPoint: "0,0"
 
     Item {
         id: popoverBackground
 
-        property bool isOnLeftSideOfScreen: anchorItem.x < (popover.width/2)
-
-        anchors.bottom: anchorItem.bottom
-        anchors.bottomMargin: -8
-        x: isOnLeftSideOfScreen ? (anchorItem.x) : (anchorItem.x+anchorItem.width-popoverBackground.width)
         width: Math.max(popover.keyWidth * (keyRepeater.count <=4 ? keyRepeater.count : 4), rowOfKeys.width + 10*2)
         height: ((Units.gu(3.0) + numberOfLines * popover.keyHeight))
 	
-        function __updatePopoverRect() {
-            var newPopoverRect = popover.mapToItem(null, x, y, width, height);
-            maliit_geometry.popoverRect = Qt.rect(newPopoverRect.x, newPopoverRect.y, newPopoverRect.width, newPopoverRect.height);
-        }
-
-        onXChanged: __updatePopoverRect();
-        onYChanged: __updatePopoverRect();
-        onWidthChanged: __updatePopoverRect();
-        onHeightChanged: __updatePopoverRect();
-
         Row {
             x: 0; y: 0; height: parent.height
             BorderImage {
@@ -98,7 +98,7 @@ Item {
                 height: parent.height
                 border {top: 21; bottom: 36;}
                 verticalTileMode: BorderImage.Stretch
-                width: popoverBackground.isOnLeftSideOfScreen ? 8 : (popoverBackground.width - 21 - 33 - 8 - 21)
+                width: popover.isOnLeftSideOfScreen ? 8 : (popoverBackground.width - 21 - 33 - 8 - 21)
             }
             BorderImage {
                 source: UI.imagePopupBgCaret
@@ -112,7 +112,7 @@ Item {
                 border {top: 21; bottom: 36;}
                 verticalTileMode: BorderImage.Stretch
                 height: parent.height
-                width: popoverBackground.isOnLeftSideOfScreen ? (popoverBackground.width - 21 - 33 - 8 - 21) : 8
+                width: popover.isOnLeftSideOfScreen ? (popoverBackground.width - 21 - 33 - 8 - 21) : 8
             }
             BorderImage {
                 border {right: 21; top: 21; bottom: 36;}
@@ -121,11 +121,6 @@ Item {
                 width: 21
             }
         }
-    }
-
-    MouseArea {
-        anchors.fill: parent
-        onClicked: closePopover();
     }
 
     Flow {
@@ -142,7 +137,7 @@ Item {
                 id: key
 
                 property alias commitStr: textCell.text
-                property bool highlight: false
+                property bool highlight: popupKeyPressArea.isPressed
 
                 height: popupKeyImage.height
                 width: popupKeyImage.width
@@ -167,14 +162,11 @@ Item {
                     color: key.highlight ? UI.extendedHighLightColor : UI.extendedFontColor
                 }
 
-                MouseArea {
+                PressArea {
+                    id: popupKeyPressArea
                     anchors.fill: parent
-                    preventStealing: true
 
-                    onPressed: key.highlight = true;
-
-                    onReleased: {
-                        key.highlight = false;
+                    onKeyReleased: {
                         popover.itemSelected(modelData);
                     }
                 }
@@ -187,10 +179,10 @@ Item {
     {
         // item.parent is a row
         var row = item.parent;
-        var point = popover.mapFromItem(item, item.x, item.y)
+        var point = keyPad.mapFromItem(row, item.x, item.y)
 
-        anchorItem.x = item.x + row.x
-        anchorItem.y = point.y - popover.keyHeight;
+        anchorPoint.x = point.x
+        anchorPoint.y = point.y
     }
 
     function __restoreAssignedKey()

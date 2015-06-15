@@ -26,20 +26,29 @@ import QtQuick 2.0
   FIXME this compoment assumes, that only one finger touches this single area at
   the same time.
  */
-MultiPointTouchArea {
+Item {
     id: root
 
-    /// Is true while the area is touched, and the finger did not yet lift
-    property bool pressed: false
+    objectName: "pressArea"
+
+    property bool onlyExclusive: false
+
+    // used as slots
+    signal pressed(bool afterMove);
+    signal released(bool afterMove);
+    signal moved();
 
     /// Same as MouseArea pressAndHold()
     signal keyPressed()
     signal keyPressedAndHold()
     signal keyReleased()
 
+    /// Is true while the area is touched, and the finger did not yet lift
+    property bool isPressed: false
+
     /// Cancels the current pressed state of the mouse are
     function cancelPress() {
-        pressed = false;
+        isPressed = false;
         holdTimer.stop();
     }
 
@@ -47,23 +56,36 @@ MultiPointTouchArea {
         id: holdTimer
         interval: 1000
         onTriggered: {
-            if (root.pressed)
+            if (root.isPressed)
                 root.keyPressedAndHold();
         }
     }
 
     onPressed: {
-        pressed = true;
-        holdTimer.restart();
-        root.keyPressed();
+        if( onlyExclusive && afterMove ) return;
+
+        isPressed = true;
+        if( !afterMove ) {
+            holdTimer.restart();
+            root.keyPressed();
+        }
     }
 
     onReleased: {
-        if( pressed )
+        if( isPressed )
         {
-            pressed = false;
+            isPressed = false;
             holdTimer.stop();
-            root.keyReleased();
+            if( !afterMove ) {
+                root.keyReleased();
+            }
+        }
+    }
+
+    onMoved: {
+        if( isPressed )
+        {
+            holdTimer.stop();
         }
     }
 }

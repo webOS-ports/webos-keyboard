@@ -59,7 +59,7 @@ Item {
     property string annotation: ""
 
     /*! indicates if te key is currently pressed/down*/
-    property alias pressed: keyMouseArea.pressed
+    property alias pressed: keyMouseArea.isPressed
 
     /* internal */
     property string __annotationLabelNormal
@@ -162,6 +162,7 @@ Item {
     PressArea {
         id: keyMouseArea
         anchors.fill: key
+        onlyExclusive: action !== "" && action !== "url" && action !== "space"
 
         onKeyPressedAndHold: {
             if (activeExtendedModel != undefined) {
@@ -179,6 +180,9 @@ Item {
                 if (!skipAutoCaps)
                     if (UI.currentShiftState === "SHIFTED" && UI.currentSymbolState === "CHARACTERS")
                         UI.currentShiftState = "NORMAL"
+            }
+            else {
+                UI.hideExtendedKeys();
             }
         }
         onKeyPressed: {
