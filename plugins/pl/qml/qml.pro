@@ -14,9 +14,4 @@ INSTALLS += lang_pl
 # for QtCreator
 OTHER_FILES += \
     Keyboard_pl_tablet.qml \
-    Keyboard_pl_tablet_email.qml \
-    Keyboard_pl_tablet_url_search.qml \
-    Keyboard_pl_phone.qml \
-    Keyboard_pl_phone_email.qml \
-    Keyboard_pl_phone_url_search.qml
-
+    Keyboard_pl_phone.qml

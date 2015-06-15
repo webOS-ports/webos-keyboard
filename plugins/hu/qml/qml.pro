@@ -14,9 +14,5 @@ INSTALLS += lang_hu
 # for QtCreator
 OTHER_FILES += \
     Keyboard_hu_tablet.qml \
-    Keyboard_hu_tablet_email.qml \
-    Keyboard_hu_tablet_url_search.qml \
-    Keyboard_hu_phone.qml \
-    Keyboard_hu_phone_email.qml \
-    Keyboard_hu_phone_url_search.qml
+    Keyboard_hu_phone.qml
 
