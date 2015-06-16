@@ -104,7 +104,7 @@ Item {
                 "cs": [],
                 "da": [],
                 "de": [],
-                "en": [ 'dvorak' ],
+                "en": [ 'dvorak', 'thumb' ],
                 "es": [],
                 "fi": [],
                 "fr": [],

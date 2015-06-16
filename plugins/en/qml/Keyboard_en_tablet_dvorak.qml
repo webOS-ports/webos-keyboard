@@ -24,7 +24,7 @@ KeyPad {
 
     content: c1
     symbols: "languages/Keyboard_symbols_tablet.qml"
-    alternativeLayouts: [ "Dvorak" ] // list of alternative layouts, like Dvorak, Bepo, Splitted...
+    alternativeLayouts: [ "Dvorak", "Thumb" ] // list of alternative layouts, like Dvorak, Bepo, Splitted...
 
     Column {
         id: c1
