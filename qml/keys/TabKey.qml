@@ -24,15 +24,4 @@ ActionKey {
     width: UI.keyWidth;
     fontSize: UI.xsFontSize;
 	action: "tab"
-
-    MouseArea {
-        anchors.fill: parent
-        preventStealing: true
-
-        onClicked: {
-		//TODO add tab action
-  	   }
-
-       
-    }
 }

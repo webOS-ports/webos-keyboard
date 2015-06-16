@@ -462,6 +462,10 @@ void AbstractTextEditor::onKeyReleased(const Key &key)
         event_key = Qt::Key_Left;
         break;
 
+	case Key::ActionTab:
+        event_key = Qt::Key_Tab;
+        break;
+
     case Key::ActionUp:
         event_key = Qt::Key_Up;
         break;
