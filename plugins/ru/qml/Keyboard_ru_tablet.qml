@@ -66,7 +66,7 @@ KeyPad {
             CharKey { label: "ш"; shifted: "Ш"; width: UI.keyWidth * 0.95;}
             CharKey { label: "щ"; shifted: "Щ"; width: UI.keyWidth * 0.95;}
             CharKey { label: "з"; shifted: "З"; width: UI.keyWidth * 0.95;}
-            CharKey { label: ""; shifted: "Х"; width: UI.keyWidth * 0.95;}
+            CharKey { label: "х"; shifted: "Х"; width: UI.keyWidth * 0.95;}
             BackspaceKey {width: UI.keyWidth * 1.5;}
         }
 
