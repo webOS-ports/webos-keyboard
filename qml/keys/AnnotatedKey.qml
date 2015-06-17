@@ -26,7 +26,7 @@ Item {
     id: key
 
     property int padding: 0
-	property bool thumbKeyboard: false
+    property bool isCompact: UI.isCompactLayout
 
     width: UI.keyWidth
     height: parent.height
@@ -49,7 +49,7 @@ Item {
     property string imgNormal: UI.imageGreyKey
     property string imgPressed: UI.imageGreyKeyPressed
     // fontSize can be overwritten when using the component, e.g. SymbolShiftKey uses smaller fontSize
-    property string fontSize: thumbKeyboard ? UI.thumbFontSize : UI.fontSize
+    property string fontSize: UI.fontSize
 
     /// annotation shows a small label in the upper right corner
     // if the annotiation property is set, it will be used. If not, the first position in extended[] list or extendedShifted[] list will
@@ -99,7 +99,7 @@ Item {
         }
         anchors.centerIn: parent
         anchors.fill: key
-        anchors.margins: thumbKeyboard ? Units.gu(-0.30) : UI.keyboardSizeChoice === "XS" ? Units.gu(-0.20) : Units.gu( UI.keyMargins );
+        anchors.margins: UI.keyboardSizeChoice === "XS" ? Units.gu(-0.20) : Units.gu( UI.keyMargins );
         source: key.pressed ? key.imgPressed : key.imgNormal
     }
 
@@ -111,11 +111,10 @@ Item {
         text: label
 
         anchors.horizontalCenter: buttonImage.horizontalCenter
-        anchors.horizontalCenterOffset: thumbKeyboard ? UI.keyWidth / 14 : useHorizontalLayout ? UI.keyWidth / 6 : 0
+        anchors.horizontalCenterOffset: useHorizontalLayout ? UI.keyWidth / 6 : 0
 
         anchors.verticalCenter: parent.verticalCenter
-		anchors.verticalCenterOffset: useHorizontalLayout || thumbKeyboard ? UI.keyHeight / -2 : UI.keyHeight / 0.6  //Units.gu(-0.25)
-		//anchors.verticalCenterOffset: thumbKeyboard? Units.gu(0) : useHorizontalLayout ? UI.keyHeight / -2 : UI.keyHeight / 0.6 
+        anchors.verticalCenterOffset: useHorizontalLayout ? UI.keyHeight / -2 : UI.keyHeight / 0.6  //Units.gu(-0.25)
 		
         font.family: UI.fontFamily
         font.pixelSize: (UI.currentShiftState === "NORMAL") ? FontUtils.sizeToPixels(UI.annotationFontSize) : FontUtils.sizeToPixels(UI.xsFontSize)
@@ -134,15 +133,14 @@ Item {
         text: __annotationLabelNormal
 
         anchors.horizontalCenter: buttonImage.horizontalCenter
-        anchors.horizontalCenterOffset: thumbKeyboard ? UI.keyWidth / -14 : useHorizontalLayout ? UI.keyWidth / -6 : 0
+        anchors.horizontalCenterOffset: useHorizontalLayout ? UI.keyWidth / -6 : 0
 
         anchors.verticalCenter: parent.verticalCenter
-        anchors.verticalCenterOffset: useHorizontalLayout || thumbKeyboard ? UI.keyHeight / -2 : UI.keyHeight / -0.4  //Units.gu(-0.25)
-		
+        anchors.verticalCenterOffset: useHorizontalLayout ? UI.keyHeight / -2 : UI.keyHeight / -0.4  //Units.gu(-0.25)
 
 
         font.family: UI.fontFamily
-        font.pixelSize: thumbKeyboard ? FontUtils.sizeToPixels(UI.thumbAnnotationFontSize) : (UI.currentShiftState === "NORMAL") ? FontUtils.sizeToPixels(UI.annotationFontSize) : FontUtils.sizeToPixels(UI.xsFontSize)
+        font.pixelSize: (UI.currentShiftState === "NORMAL") ? FontUtils.sizeToPixels(UI.annotationFontSize) : FontUtils.sizeToPixels(UI.xsFontSize)
         font.bold: false
         color: (UI.currentShiftState !== "NORMAL") ? UI.fontColor : UI.annotationFontColor
         style: (UI.currentShiftState !== "NORMAL") ? Text.Raised : Text.Normal
@@ -154,15 +152,13 @@ Item {
         id: annotationLabel2
 		text: "…" //__annotationLabelNormal
 
-        anchors.horizontalCenter: buttonImage.horizontalCenter
-        anchors.horizontalCenterOffset: thumbKeyboard ? UI.keyWidth / 14 : UI.formFactor === "phone" && !UI.isLandscape ? UI.keyWidth / 4 : UI.keyWidth / 3.5
+        visible: !isCompact
 
-        /*anchors.verticalCenter: parent.verticalCenter
-        anchors.verticalCenterOffset: thumbKeyboard ? UI.keyHeight / 14 : useHorizontalLayout ? UI.keyHeight / 1.5 : UI.formFactor === "phone" && !UI.isLandscape ? UI.keyHeight / 0.25 : UI.keyHeight / 0.5 */
-		
+        anchors.horizontalCenter: buttonImage.horizontalCenter
+        anchors.horizontalCenterOffset: UI.formFactor === "phone" && !UI.isLandscape ? UI.keyWidth / 4 : UI.keyWidth / 3.5
+
 		anchors.bottom: parent.bottom
-        //anchors.bottomMargin: thumbKeyboard ? UI.keyHeight / 14 : UI.formFactor === "tablet" ? UI.keyHeight / 0.8 : UI.keyHeight / 3  //Units.gu(1.00) : Units.gu(0.50)
-		anchors.bottomMargin: thumbKeyboard ? UI.keyHeight / 1.5 : UI.formFactor === "tablet" ? UI.keyHeight / 0.8 : UI.keyHeight / 3  //Units.gu(1.00) : Units.gu(0.50)
+        anchors.bottomMargin: UI.formFactor === "tablet" ? UI.keyHeight / 0.8 : UI.keyHeight / 3  //Units.gu(1.00) : Units.gu(0.50)
 
 
         font.family: UI.fontFamily

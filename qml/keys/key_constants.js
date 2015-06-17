@@ -43,9 +43,6 @@ var numKeyWidthRatio       =   [ { "name": "XS", "ratio" : 0.925 },	/* 243 / 768
                        
 var fontSize    	=   {"tablet" : "22pt",
                          "phone"  : "16pt"};    
-
-var thumbFontSize   =   "18pt";
-var thumbAnnotationFontSize   =   "10pt";
 						 
 var fontFamily  	=   "Prelude";
 

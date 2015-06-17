@@ -41,8 +41,9 @@ QtObject {
     signal showAlternativeLayoutsMenu(Item keyItem);
     signal hideAlternativeLayoutsMenu();
 
-    // internal helper
+    // helpers
     property string formFactor: Settings.tabletUi ? "tablet" : "phone";
+    property bool isCompactLayout: keyWidth < FontUtils.sizeToPixels(DesignConstants.fontSize[formFactor])*2
 
     // UI design values (taken from key_constants.js)
     property real keyMargins: DesignConstants.keyMargins;
@@ -54,8 +55,6 @@ QtObject {
     property variant keyboardSizeChoices: DesignConstants.keyHeightRatio.map(function(obj) {return obj.name});
 
     property string fontSize: DesignConstants.fontSize[formFactor];
-	property string thumbFontSize: DesignConstants.thumbFontSize;
-	property string thumbAnnotationFontSize: DesignConstants.thumbAnnotationFontSize;
     property string fontFamily: DesignConstants.fontFamily;
     property color fontColor: DesignConstants.fontColor[formFactor];
     property bool fontBold: DesignConstants.fontBold[formFactor];

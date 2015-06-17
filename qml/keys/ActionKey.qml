@@ -68,9 +68,8 @@ CharKey {
         id: keyLabel
         text: (UI.currentShiftState === "NORMAL") ? label : shifted;
         anchors.verticalCenter: parent.verticalCenter
-        anchors.verticalCenterOffset: thumbKeyboard ? (action === "keyLeft" || action === "keyRight" ) ? Units.gu(-0.4) : Units.gu(-0.25) : Units.gu(0);
         anchors.right: alignTextRight ? parent.right : undefined
-        anchors.rightMargin: alignTextRight ? thumbKeyboard ? UI.keyWidth / 12 : UI.keyWidth / 4 : undefined
+        anchors.rightMargin: alignTextRight ? UI.keyWidth / 4 : undefined
         anchors.horizontalCenter: !alignTextRight ? parent.horizontalCenter : undefined
         font.family: UI.fontFamily
         font.pixelSize: FontUtils.sizeToPixels(fontSize);
