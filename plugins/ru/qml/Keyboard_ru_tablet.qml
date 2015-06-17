@@ -22,7 +22,8 @@ KeyPad {
     
     content: c1
     symbols: "languages/Keyboard_symbols_tablet.qml"
-
+    alternativeLayouts: [ "Thumb" ] // list of alternative layouts, like Dvorak, Bepo, Splitted...
+	
     Column {
         id: c1
         anchors.right: parent.right
@@ -36,16 +37,16 @@ KeyPad {
 
             height: keyHeight * UI.topRowKeyHeightRatio
 
-            NumKey { label: "1"; shifted: "!"; extended: ["1", "!", "¹", "¼", "½", "¡"]; width: UI.keyWidth;}
+            NumKey { label: "1"; shifted: "ё"; extended: ["1", "ё", "!", "¹", "¼", "½", "¡"]; width: UI.keyWidth;}
             NumKey { label: "2"; shifted: "@"; extended: ["2", "@", "²"]; width: UI.keyWidth;}
-            NumKey { label: "3"; shifted: "#"; extended: ["3", "#", "³", "¾"]; width: UI.keyWidth;}
+            NumKey { label: "3"; shifted: "№"; extended: ["3", "№", "#", "³", "¾"]; width: UI.keyWidth;}
             NumKey { label: "4"; shifted: "$"; extended: ["4", "$", "€", "£", "¥", "¢", "¤"]; width: UI.keyWidth;}
             NumKey { label: "5"; shifted: "%"; extended: ["5", "%", "‰"]; width: UI.keyWidth;}
             NumKey { label: "6"; shifted: "^"; extended: ["6", "^"]; width: UI.keyWidth;}
             NumKey { label: "7"; shifted: "&"; extended: ["7", "&"]; width: UI.keyWidth;}
-            NumKey { label: "8"; shifted: "*"; extended: ["8", "*"]; width: UI.keyWidth;}
-            NumKey { label: "9"; shifted: "("; extended: ["9", "(", "[", "{"]; width: UI.keyWidth;}
-            NumKey { label: "0"; shifted: ")"; extended: ["0", ")", "]", "}"]; width: UI.keyWidth;}
+            NumKey { label: "8"; shifted: "х"; extended: ["8", "х", "*"]; extendedShifted: ["8", "Х", "*"]; width: UI.keyWidth;}
+            NumKey { label: "9"; shifted: "ъ"; extended: ["9", "ъ", "(", "[", "{"]; extendedShifted: ["9", "Ъ", "(", "[", "{"]; width: UI.keyWidth;}
+            NumKey { label: "0"; shifted: "э"; extended: ["0", "э", ")", "]", "}"]; extendedShifted: ["0", "Э", ")", "]", "}"]; width: UI.keyWidth;}
             TrackBall { width: keypadRoot.width - (UI.keyWidth*10); anchors.verticalCenter: parent.verticalCenter }
         }
         
@@ -65,7 +66,7 @@ KeyPad {
             CharKey { label: "ш"; shifted: "Ш"; width: UI.keyWidth * 0.95;}
             CharKey { label: "щ"; shifted: "Щ"; width: UI.keyWidth * 0.95;}
             CharKey { label: "з"; shifted: "З"; width: UI.keyWidth * 0.95;}
-            CharKey { label: "х"; shifted: "Х"; width: UI.keyWidth * 0.95;}
+            CharKey { label: ""; shifted: "Х"; width: UI.keyWidth * 0.95;}
             BackspaceKey {width: UI.keyWidth * 1.5;}
         }
 
