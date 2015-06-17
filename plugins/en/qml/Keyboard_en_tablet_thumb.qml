@@ -25,7 +25,7 @@ KeyPad {
     id: keypadRoot
 
     content: c1
-    symbols: "languages/Keyboard_symbols_tablet.qml"
+    symbols: "languages/Keyboard_symbols_tablet_thumb.qml"
     alternativeLayouts: [ "Dvorak", "Thumb" ] // list of alternative layouts, like Dvorak, Bepo, Splitted...
 
     Column {
@@ -110,9 +110,11 @@ KeyPad {
                 DismissKey     { id: dismissKey; width: Units.gu(5.2); anchors.left: shiftKey.right; thumbKeyboard: true;}
                 LanguageKey    { id: languageMenuButton;  width: Units.gu(5.2); anchors.left: dismissKey.right; thumbKeyboard: true;}
                 AnnotatedKey   { id: minusKey; width: Units.gu(3.9); label: "/"; shifted: "-"; extended: ["/", "-"]; extendedShifted: ["/", "-"]; anchors.left: languageMenuButton.right; thumbKeyboard: true;}
-                SpaceKey       { id: spaceKey1;                                 anchors.left: minusKey.right; anchors.right: symShiftKey.left; thumbKeyboard: true;}
-                SymbolShiftKey { id: symShiftKey; width: keypadRoot.width * 0.15;                           anchors.horizontalCenter: parent.horizontalCenter; thumbKeyboard: true;}
-                SpaceKey       { id: spaceKey2;                                 anchors.left: symShiftKey.right; anchors.right: dotKey.left; thumbKeyboard: true;}
+                SpaceKey       { id: spaceKey1;                                 anchors.left: minusKey.right; thumbKeyboard: true;}
+                TabKey         { id: tabKey1; fontSize: UI.isLandscape ? UI.xsFontSize : UI.thumbAnnotationFontSize;				label: "Tab"; shifted: "Tab";                       anchors.left: spaceKey1.right; anchors.right: symShiftKey.left; thumbKeyboard: true;}
+                SymbolShiftKey { id: symShiftKey;                           anchors.horizontalCenter: parent.horizontalCenter; thumbKeyboard: true;}
+                TabKey         { id: tabKey2; fontSize: UI.isLandscape ? UI.xsFontSize : UI.thumbAnnotationFontSize;				label: "Tab"; shifted: "Tab";                       anchors.left: symShiftKey.right; anchors.right: spaceKey2.left; thumbKeyboard: true;}
+                SpaceKey       { id: spaceKey2;                                  anchors.right: dotKey.left; thumbKeyboard: true;}
                 AnnotatedKey { id: dotKey; label: "."; shifted: ","; extended: [".", ","]; extendedShifted: [".", ","]; width: Units.gu(3.9); anchors.right: arrowLeftKey.left; thumbKeyboard: true;}
                 ActionKey {id: arrowLeftKey; label: "←"; shifted: "←"; action: "keyLeft"; width: Units.gu(3.9); thumbKeyboard: true; anchors.right: arrowRightKey.left;}
                 ActionKey {id: arrowRightKey; label: "→"; shifted: "→";action: "keyRight"; width: Units.gu(3.9); thumbKeyboard: true;  anchors.right: enterKey.left;}
@@ -125,32 +127,44 @@ KeyPad {
             Item {
                 height: keyHeight * 2/3
 
-                //TabKey         { id: tabKey; shifted: "Tab";       label: "Tab";              anchors.left: parent.left; }
-                SymbolShiftKey { id: symShiftKey;                             anchors.left: tabKey.right; }
-                LanguageKey    { id: languageMenuButton;                       anchors.left: symShiftKey.right; }
-                UrlKey         { id: emailKey;    label: "@"; shifted: "@";  anchors.left: languageMenuButton.right; }
-                SpaceKey       { id: spaceKey;                               anchors.left: emailKey.right; anchors.right: urlKey.left; noMagnifier: true }
-                UrlKey         { id: urlKey; label: ".com"; shifted: ".com"; extended: [".net", ".org", ".edu", ".gov", ".co.uk", ".ac.uk"]; anchors.right: apostropheKey.left; }
-                AnnotatedKey   { id: apostropheKey; label: "'"; shifted: "\""; extended: ["'", "\"", "`", "‘", "’", "“", "”", "«", "»"]; extendedShifted: ["'", "\"", "`", "‘", "’", "“", "”", "«", "»"]; anchors.right: minusKey.left; useHorizontalLayout: (UI.keyboardSizeChoice === "XS" || UI.keyboardSizeChoice === "S") ? true : false; }
-                AnnotatedKey   { id: minusKey;      label: "-"; shifted: "_"; extended: ["-", "_", "±", "¬"]; extendedShifted: ["-", "_", "±", "¬"];  anchors.right: dismissKey.left; useHorizontalLayout: (UI.keyboardSizeChoice === "XS" || UI.keyboardSizeChoice === "S") ? true : false; }
-                DismissKey     { id: dismissKey;                               anchors.right: parent.right;}
+                ShiftKey {id: shiftKey; width: Units.gu(5.2); anchors.left: parent.left; thumbKeyboard: true;}
+                DismissKey     { id: dismissKey; width: Units.gu(5.2); anchors.left: shiftKey.right; thumbKeyboard: true;}
+                LanguageKey    { id: languageMenuButton;  width: Units.gu(5.2); anchors.left: dismissKey.right; thumbKeyboard: true;}
+                AnnotatedKey   { id: minusKey; width: Units.gu(3.9); label: "/"; shifted: "-"; extended: ["/", "-"]; extendedShifted: ["/", "-"]; anchors.left: languageMenuButton.right; thumbKeyboard: true;}
+                UrlKey         { id: emailKey; width: UI.isLandscape ? Units.gu(5.2) : Units.gu(3.9); fontSize: UI.isLandscape ? UI.xsFontSize : UI.thumbAnnotationFontSize; label: "@"; shifted: "@";  anchors.left: minusKey.right; thumbKeyboard: true; }
+                SpaceKey       { id: spaceKey1; width: Units.gu(3.9);                                 anchors.left: emailKey.right; anchors.right: tabKey1.left; thumbKeyboard: true;}
+                TabKey         { id: tabKey1; width: UI.isLandscape ? Units.gu(7.8) : Units.gu(3.9); fontSize: UI.isLandscape ? UI.xsFontSize : UI.thumbAnnotationFontSize;				label: "Tab"; shifted: "Tab";                       anchors.right: symShiftKey.left; thumbKeyboard: true;}
+                SymbolShiftKey { id: symShiftKey;                         anchors.horizontalCenter: parent.horizontalCenter; thumbKeyboard: true;}
+                TabKey         { id: tabKey2; width: UI.isLandscape ? Units.gu(7.8) : Units.gu(3.9); fontSize: UI.isLandscape ? UI.xsFontSize : UI.thumbAnnotationFontSize;				label: "Tab"; shifted: "Tab";                       anchors.left: symShiftKey.right; thumbKeyboard: true;}
+                SpaceKey       { id: spaceKey2; width: Units.gu(3.9);                                 anchors.left: tabKey2.right; anchors.right: urlKey.left; thumbKeyboard: true;}
+                UrlKey         { id: urlKey; width: UI.isLandscape ? Units.gu(5.2) : Units.gu(3.9); fontSize: UI.isLandscape ? UI.xsFontSize : UI.thumbAnnotationFontSize; label: ".com"; shifted: ".com"; extended: [".net", ".org", ".edu", ".gov", ".co.uk",".ac.uk"]; anchors.right: dotKey.left; thumbKeyboard: true; }
+                AnnotatedKey { id: dotKey; label: "."; shifted: ","; extended: [".", ","]; extendedShifted: [".", ","]; width: Units.gu(3.9); anchors.right: arrowLeftKey.left; thumbKeyboard: true;}
+                ActionKey {id: arrowLeftKey; label: "←"; shifted: "←"; action: "keyLeft"; width: Units.gu(3.9); thumbKeyboard: true; anchors.right: arrowRightKey.left;}
+                ActionKey {id: arrowRightKey; label: "→"; shifted: "→";action: "keyRight"; width: Units.gu(3.9); thumbKeyboard: true;  anchors.right: enterKey.left;}
+                ReturnKey { id: enterKey; label: "Enter"; shifted: "Enter"; alignTextRight: true; anchors.right: parent.right; width: Units.gu(7.8); thumbKeyboard: true;}
             }
         }
         Component {
             id: contentTypeUrl
 
             Item {
-                height: keyHeight
+                height: keyHeight * 2/3
 
-                TabKey         { id: tabKey; shifted: "Tab";       label: "Tab";              anchors.left: parent.left; }
-                SymbolShiftKey { id: symShiftKey;                             anchors.left: tabKey.right; }
-                LanguageKey    { id: languageMenuButton;                       anchors.left: symShiftKey.right; }
-                CharKey        { imgNormal: UI.imageGreyKey; imgPressed: UI.imageGreyKeyPressed; id: slashKey;    label: "/"; shifted: "/"; extended: ["http://", "https://", "www."];  anchors.left: languageMenuButton.right; }
-                SpaceKey       { id: spaceKey;                               anchors.left: slashKey.right; anchors.right: urlKey.left; noMagnifier: true }
-                UrlKey         { id: urlKey; label: ".com"; extended: [".net", ".org", ".edu", ".gov", ".co.uk", ".ac.uk"]; anchors.right: apostropheKey.left; }
-                AnnotatedKey   { id: apostropheKey; label: "'"; shifted: "\""; extended: ["'", "\"", "`", "‘", "’", "“", "”", "«", "»"]; extendedShifted: ["'", "\"", "`", "‘", "’", "“", "”", "«", "»"]; anchors.right: minusKey.left; useHorizontalLayout: (UI.keyboardSizeChoice === "XS" || UI.keyboardSizeChoice === "S") ? true : false; }
-                AnnotatedKey   { id: minusKey;      label: "-"; shifted: "_"; extended: ["-", "_", "±", "¬"]; extendedShifted: ["-", "_", "±", "¬"]; anchors.right: dismissKey.left; useHorizontalLayout: (UI.keyboardSizeChoice === "XS" || UI.keyboardSizeChoice === "S") ? true : false; }
-                DismissKey     { id: dismissKey;                               anchors.right: parent.right;}
+                ShiftKey {id: shiftKey; width: Units.gu(5.2); anchors.left: parent.left; thumbKeyboard: true;}
+                DismissKey     { id: dismissKey; width: Units.gu(5.2); anchors.left: shiftKey.right; thumbKeyboard: true;}
+                LanguageKey    { id: languageMenuButton;  width: Units.gu(5.2); anchors.left: dismissKey.right; thumbKeyboard: true;}
+                AnnotatedKey   { id: minusKey; width: Units.gu(3.9); label: "/"; shifted: "-"; extended: ["/", "-"]; extendedShifted: ["/", "-"]; anchors.left: languageMenuButton.right; thumbKeyboard: true;}
+                UrlKey         { id: slashKey; width: UI.isLandscape ? Units.gu(5.5) : Units.gu(4.2); fontSize: UI.isLandscape ? UI.xsFontSize : UI.thumbAnnotationFontSize; label: "www."; shifted: "https://"; extended: ["www.", "https://", "http://"];  anchors.left: minusKey.right; thumbKeyboard: true; }
+                SpaceKey       { id: spaceKey1;                                 anchors.left: slashKey.right; anchors.right: tabKey1.left; thumbKeyboard: true;}
+                TabKey         { id: tabKey1; width: UI.isLandscape ? Units.gu(7.8) : Units.gu(3.9); fontSize: UI.isLandscape ? UI.xsFontSize: UI.thumbAnnotationFontSize;				label: "Tab"; shifted: "Tab";                       anchors.right: symShiftKey.left; thumbKeyboard: true;}
+                SymbolShiftKey { id: symShiftKey;                            anchors.horizontalCenter: parent.horizontalCenter; thumbKeyboard: true;}
+                TabKey         { id: tabKey2; width: UI.isLandscape ? Units.gu(7.8) : Units.gu(3.9); fontSize: UI.isLandscape ? UI.xsFontSize : UI.thumbAnnotationFontSize;				label: "Tab"; shifted: "Tab";                       anchors.left: symShiftKey.right; thumbKeyboard: true;}
+                SpaceKey       { id: spaceKey2;                                  anchors.left: tabKey2.right; anchors.right: urlKey.left; thumbKeyboard: true;}
+                UrlKey         { id: urlKey; width: UI.isLandscape ? Units.gu(5.5) : Units.gu(4.2); fontSize: UI.isLandscape ? UI.xsFontSize : UI.thumbAnnotationFontSize; label: ".com"; shifted: ".com"; extended: [".net", ".org", ".edu", ".gov", ".co.uk",".ac.uk"]; anchors.right: dotKey.left; thumbKeyboard: true; }
+                AnnotatedKey { id: dotKey; label: "."; shifted: ","; extended: [".", ","]; extendedShifted: [".", ","]; width: Units.gu(3.9); anchors.right: arrowLeftKey.left; thumbKeyboard: true;}
+                ActionKey {id: arrowLeftKey; label: "←"; shifted: "←"; action: "keyLeft"; width: Units.gu(3.9); thumbKeyboard: true; anchors.right: arrowRightKey.left;}
+                ActionKey {id: arrowRightKey; label: "→"; shifted: "→";action: "keyRight"; width: Units.gu(3.9); thumbKeyboard: true;  anchors.right: enterKey.left;}
+                ReturnKey { id: enterKey; label: "Enter"; shifted: "Enter"; alignTextRight: true; anchors.right: parent.right; width: Units.gu(7.8); thumbKeyboard: true;}
             }
         }
         Loader {
