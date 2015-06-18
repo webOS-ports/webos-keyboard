@@ -87,7 +87,7 @@ KeyPad {
             CharKey { label: "д"; shifted: "Д"; width: UI.keyWidth * 0.95;}
             CharKey { label: "ж"; shifted: "Ж"; width: UI.keyWidth * 0.95;}
             CharKey { label: "э"; shifted: "Э"; width: UI.keyWidth * 0.95;}
-            ReturnKey      { id: enterKey; label: "Enter";  width: UI.keyWidth * 1.5;}
+            ReturnKey      { id: enterKey; label: "Enter"; shifted: "Enter"; width: UI.keyWidth * 1.5;}
         }
 
         Row {
