@@ -26,6 +26,7 @@ Item {
     id: key
 
     property int padding: 0
+	property bool thumbKeyboard: false
 
     width: UI.keyWidth
     height: parent.height
@@ -46,7 +47,7 @@ Item {
     property string imgNormal: UI.imageWhiteKey
     property string imgPressed: UI.imageWhiteKeyPressed
     // fontSize can be overwritten when using the component, e.g. SymbolShiftKey uses smaller fontSize
-    property string fontSize: UI.fontSize
+    property string fontSize: thumbKeyboard ? UI.thumbFontSize : UI.fontSize
 	
 	//We only want the maginifier for phone, so set the noMagnifier to true for tablets
     property bool noMagnifier: UI.formFactor==="tablet" ? true : false
@@ -113,7 +114,7 @@ Item {
         }
         anchors.centerIn: parent
         anchors.fill: key
-        anchors.margins: UI.keyboardSizeChoice === "XS" ? Units.gu(-0.20) : Units.gu( UI.keyMargins );
+        anchors.margins: thumbKeyboard ? Units.gu(-0.30) : UI.keyboardSizeChoice === "XS" ? Units.gu(-0.20) : Units.gu( UI.keyMargins );
         source: key.pressed ? key.imgPressed : key.imgNormal
     }
 
@@ -125,7 +126,7 @@ Item {
         text: (UI.currentShiftState === "NORMAL") ? label : shifted;
         anchors.horizontalCenter: buttonImage.horizontalCenter
 		anchors.verticalCenter: buttonImage.verticalCenter 
-        anchors.verticalCenterOffset: Units.gu(-0.25)
+        anchors.verticalCenterOffset: UI.keyHeight / -2 //Units.gu(-0.25)
         font.family: UI.fontFamily
         font.pixelSize: FontUtils.sizeToPixels(fontSize)
         font.bold: UI.fontBold
@@ -142,12 +143,14 @@ Item {
         text: (UI.currentShiftState !== "NORMAL") ? __annotationLabelShifted : __annotationLabelNormal
 
         anchors.horizontalCenter: parent.horizontalCenter
-        anchors.horizontalCenterOffset: UI.formFactor === "tablet" ? UI.keyWidth / 4 : UI.keyWidth / 8
-        anchors.bottom: parent.bottom
-        anchors.bottomMargin: UI.formFactor === "tablet" ? Units.gu(1.00) : Units.gu(0.50)
+        //anchors.horizontalCenterOffset: thumbKeyboard ? UI.keyWidth / 14 : UI.formFactor === "tablet" ? UI.keyWidth / 4 : UI.keyWidth / 8
+        anchors.horizontalCenterOffset: thumbKeyboard ? UI.keyWidth / 14 : UI.formFactor === "phone" && !UI.isLandscape ? UI.keyWidth / 4 : UI.keyWidth / 3.5
+        
+		anchors.bottom: parent.bottom
+        anchors.bottomMargin: thumbKeyboard ? UI.keyHeight / 1.5 : UI.formFactor === "tablet" ? UI.keyHeight / 0.8 : UI.keyHeight / 3  //Units.gu(1.00) : Units.gu(0.50)
 
         font.family: UI.fontFamily
-        font.pixelSize: FontUtils.sizeToPixels(UI.annotationFontSize)
+        font.pixelSize: thumbKeyboard ? FontUtils.sizeToPixels(UI.thumbAnnotationFontSize) : FontUtils.sizeToPixels(UI.annotationFontSize)
         font.bold: false
         style: Text.Raised
         styleColor: "white"

@@ -1,7 +1,7 @@
 module keys
 ActionKey 1.0 ActionKey.qml
+ArrowKey 1.0 ArrowKey.qml
 AnnotatedKey 1.0 AnnotatedKey.qml
-ArrowKeys 1.0 ArrowKeys.qml
 BackspaceKey 1.0 BackspaceKey.qml
 CharKey 1.0 CharKey.qml
 DismissKey 1.0 DismissKey.qml
