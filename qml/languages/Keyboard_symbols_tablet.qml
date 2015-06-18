@@ -86,7 +86,7 @@ KeyPad {
             CharKey { label: "°"; shifted: "°"; }
             CharKey { label: ";"; shifted: ";"; }
             CharKey { label: ":"; shifted: ":"; }
-            ReturnKey { id: enterKey; label: "Enter"; shifted: "Enter"; noMagnifier: true; }
+            ReturnKey { id: enterKey; label: "Enter"; shifted: "Enter"; alignTextRight: true;}
 
         }
 
