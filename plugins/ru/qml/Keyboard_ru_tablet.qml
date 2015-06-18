@@ -58,7 +58,7 @@ KeyPad {
 
             CharKey { label: "й"; shifted: "Й"; width: UI.keyWidth * 0.95;}
             CharKey { label: "ц"; shifted: "Ц"; width: UI.keyWidth * 0.95;}
-            CharKey { label: "у"; shifted: "Y"; extended: ["ў"]; extendedShifted: ["Ў"];width: UI.keyWidth * 0.95; }
+            CharKey { label: "у"; shifted: "У"; extended: ["ў"]; extendedShifted: ["Ў"];width: UI.keyWidth * 0.95; }
             CharKey { label: "к"; shifted: "К"; width: UI.keyWidth * 0.95;}
             CharKey { label: "e"; shifted: "E"; extended: ["ë", "€"]; extendedShifted: ["Ë", "€"];width: UI.keyWidth * 0.95; }
             CharKey { label: "н"; shifted: "Н"; width: UI.keyWidth * 0.95;}
