@@ -29,6 +29,7 @@ Item {
     property string symbols: "languages/Keyboard_symbols.qml"
     property bool capsLock: false
     property int keyHeight: Units.gu(UI.keyHeight);           // as a convenience for the objects inheriting KeyPad
+    property real keyWidthRatio: 1.0
     property int currentContentType: maliit_input_method.contentType
     property var alternativeLayouts: [ ]
 
@@ -140,6 +141,6 @@ Item {
                 maxNrOfKeys = content.children[i].children.length;
         }
 
-        UI.keyWidth = keyPadRoot.width / maxNrOfKeys;
+        UI.keyWidth = keyWidthRatio*(keyPadRoot.width / maxNrOfKeys);
     }
 }
