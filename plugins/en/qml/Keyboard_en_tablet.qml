@@ -85,7 +85,7 @@ KeyPad {
             CharKey { label: "j"; shifted: "J"; }
             CharKey { label: "k"; shifted: "K"; }
             CharKey { label: "l"; shifted: "L"; extended: ["l", "ł"]; extendedShifted: ["L", "Ł"]}
-            ReturnKey { id: enterKey; label: "Enter"; shifted: "Enter"; alignTextRight: true}
+            ReturnKey { id: enterKey; label: "Enter"; shifted: "Enter"; alignTextRight: true;}
         }
 
         Row {
