@@ -182,6 +182,14 @@ Item {
         }
     }
 
+    MultiTouchKeyArea {
+        id: popoverTouchArea
+        anchors.fill: rowOfKeys
+        z: 3
+
+        keyRootItem: rowOfKeys
+    }
+
     function __repositionPopoverTo(item)
     {
         // item.parent is a row

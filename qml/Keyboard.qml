@@ -70,7 +70,7 @@ Item {
 
             property int jumpBackThreshold: Units.gu(10)
 
-            enabled: UI.formFactor === "phone"
+            enabled: UI.formFactor === "phone" && !UI.extendedKeysShown
 
             anchors.left: parent.left
             anchors.right: parent.right

@@ -44,50 +44,28 @@ Item {
     }
     onWidthChanged: calculateKeyWidth()
 
-    Connections {
-        target: UI
-        onShowExtendedKeys: {
-            extendedKeysSelector.currentlyAssignedKey = keyItem;
-            extendedKeysSelector.extendedListModel = Qt.binding(function() { return extendedKeysSelector.currentlyAssignedKey.activeExtendedModel });
-            extendedKeysSelector.enabled = true;
-            currentVisibleExtendedList = extendedKeysSelector;
-            UI.extendedKeysShown = true;
-        }
-        onShowKeyboardSizeMenu: {
-            keyboardSizeMenu.extendedListModel = UI.keyboardSizeChoices;
-            keyboardSizeMenu.currentlyAssignedKey = keyItem;
-            keyboardSizeMenu.enabled = true;
-            currentVisibleExtendedList = keyboardSizeMenu;
-        }
-        onShowLanguagesMenu: {
-            languagesMenu.extendedListModel = maliit_input_method.enabledLanguages;
-            languagesMenu.currentlyAssignedKey = keyItem;
-            languagesMenu.enabled = true;
-            currentVisibleExtendedList = languagesMenu;
-        }
-        onShowAlternativeLayoutsMenu: {
-            if( alternativeLayouts.length > 0 ) {
-                alternativeLayoutsMenu.extendedListModel = [ "LuneOS" ].concat(alternativeLayouts);
-                alternativeLayoutsMenu.currentlyAssignedKey = keyItem;
-                alternativeLayoutsMenu.enabled = true;
-                currentVisibleExtendedList = alternativeLayoutsMenu;
+    MultiTouchKeyArea {
+        id: keyPadTouchArea
+        anchors.fill: content
+        z: content.z - 1    // put the multi-touch area *behind* the keys, so that they can overload the behavior if needed, like for the TrackBall
+
+        keyRootItem: content
+
+        onPressed: {
+            if( currentVisibleExtendedList ) {
+                for( var i = 0; i < touchPoints.length; ++i ) {
+                    var keyArea = keyAt(touchPoints[i].x, touchPoints[i].y);
+                    touchPoints[i].currentKeyArea = keyArea;
+                    if( keyArea && !keyArea.compatibleWithPopover ) {
+                        UI.hideExtendedKeys();
+                        UI.hideKeyboardSizeMenu();
+                        UI.hideLanguagesMenu();
+                        UI.hideAlternativeLayoutsMenu();
+
+                        break;
+                    }
+                }
             }
-        }
-        onHideExtendedKeys : {
-            extendedKeysSelector.closePopover();
-            currentVisibleExtendedList = null;
-        }
-        onHideKeyboardSizeMenu : {
-            keyboardSizeMenu.closePopover();
-            currentVisibleExtendedList = null;
-        }
-        onHideLanguagesMenu : {
-            languagesMenu.closePopover();
-            currentVisibleExtendedList = null;
-        }
-        onHideAlternativeLayoutsMenu : {
-            alternativeLayoutsMenu.closePopover();
-            currentVisibleExtendedList = null;
         }
     }
 
@@ -136,106 +114,50 @@ Item {
         }
     }
 
-    MultiPointTouchArea {
-        id: keyPadTouchArea
-        anchors.fill: keyPadRoot
-        z: 3
-
-        touchPoints: [
-            KeyTouchPoint { id: touchPoint0 },
-            KeyTouchPoint { id: touchPoint1 },
-            KeyTouchPoint { id: touchPoint2 },
-            KeyTouchPoint { id: touchPoint3 },
-            KeyTouchPoint { id: touchPoint4 },
-            KeyTouchPoint { id: touchPoint5 },
-            KeyTouchPoint { id: touchPoint6 },
-            KeyTouchPoint { id: touchPoint7 },
-            KeyTouchPoint { id: touchPoint8 },
-            KeyTouchPoint { id: touchPoint9 }
-        ]
-
-        function keyAt(x, y)
-        {
-            var child;
-            var childParent = keyPadRoot;
-            var posChild = { "x":x, "y":y };
-
-            /*
-             * Item.childAt uses a pretty dumb algorithm (last child to first, checking only boundingRect).
-             * So if there are stacked brother items, it won't necessarily take the one with highest z-order.
-             * Therefore, we test the extendedList by hand first.
-             */
-            if( currentVisibleExtendedList ) {
-                var currentPosChildRelative = childParent.mapToItem(currentVisibleExtendedList, posChild.x, posChild.y);
-                child = currentVisibleExtendedList.childAt(currentPosChildRelative.x, currentPosChildRelative.y);
-                if (child) {
-                    posChild = currentPosChildRelative;
-                    childParent = child;
-                }
-            }
-
-            do {
-                child = childParent.childAt(posChild.x, posChild.y);
-                if (!child) {
-                    return null;
-                } else if (child && child.objectName === "pressArea") {
-                    if( !currentVisibleExtendedList || child.compatibleWithPopover ) {
-                        return child;
-                    }
-                    else {
-                        return null;
-                    }
-                }
-                posChild = childParent.mapToItem(child, posChild.x, posChild.y);
-                childParent = child;
-            }
-            while (child);
+    Connections {
+        target: UI
+        onShowExtendedKeys: {
+            extendedKeysSelector.currentlyAssignedKey = keyItem;
+            extendedKeysSelector.extendedListModel = Qt.binding(function() { return extendedKeysSelector.currentlyAssignedKey.activeExtendedModel });
+            extendedKeysSelector.enabled = true;
+            currentVisibleExtendedList = extendedKeysSelector;
+            UI.extendedKeysShown = true;
         }
-
-        onPressed: {
-            for( var i = 0; i < touchPoints.length; ++i ) {
-                var keyArea = keyAt(touchPoints[i].x, touchPoints[i].y);
-                touchPoints[i].currentKeyArea = keyArea;
-                if( keyArea ) {
-                    keyArea.pressed(false);
-                }
-                else {
-                    // we clicked where there is no key: hide any remaining popup
-                    UI.hideExtendedKeys();
-                    UI.hideKeyboardSizeMenu();
-                    UI.hideLanguagesMenu();
-                    UI.hideAlternativeLayoutsMenu();
-                }
+        onShowKeyboardSizeMenu: {
+            keyboardSizeMenu.extendedListModel = UI.keyboardSizeChoices;
+            keyboardSizeMenu.currentlyAssignedKey = keyItem;
+            keyboardSizeMenu.enabled = true;
+            currentVisibleExtendedList = keyboardSizeMenu;
+        }
+        onShowLanguagesMenu: {
+            languagesMenu.extendedListModel = maliit_input_method.enabledLanguages;
+            languagesMenu.currentlyAssignedKey = keyItem;
+            languagesMenu.enabled = true;
+            currentVisibleExtendedList = languagesMenu;
+        }
+        onShowAlternativeLayoutsMenu: {
+            if( alternativeLayouts.length > 0 ) {
+                alternativeLayoutsMenu.extendedListModel = [ "LuneOS" ].concat(alternativeLayouts);
+                alternativeLayoutsMenu.currentlyAssignedKey = keyItem;
+                alternativeLayoutsMenu.enabled = true;
+                currentVisibleExtendedList = alternativeLayoutsMenu;
             }
         }
-
-        onReleased: {
-            for( var i = 0; i < touchPoints.length; ++i ) {
-                var keyArea = touchPoints[i].currentKeyArea;
-                if( keyArea ) {
-                    keyArea.released(false);
-                }
-            }
+        onHideExtendedKeys : {
+            extendedKeysSelector.closePopover();
+            currentVisibleExtendedList = null;
         }
-
-        onUpdated: {
-            for( var i = 0; i < touchPoints.length; ++i ) {
-                var currentKeyArea = touchPoints[i].currentKeyArea
-                var keyArea = keyAt(touchPoints[i].x, touchPoints[i].y);
-
-                if( keyArea !== currentKeyArea ) {
-                    if( currentKeyArea ) {
-                        currentKeyArea.released(true);
-                    }
-                    if( keyArea ) {
-                        keyArea.pressed(true);
-                    }
-                    touchPoints[i].currentKeyArea = keyArea;
-                }
-                if( keyArea ) {
-                    keyArea.moved();
-                }
-            }
+        onHideKeyboardSizeMenu : {
+            keyboardSizeMenu.closePopover();
+            currentVisibleExtendedList = null;
+        }
+        onHideLanguagesMenu : {
+            languagesMenu.closePopover();
+            currentVisibleExtendedList = null;
+        }
+        onHideAlternativeLayoutsMenu : {
+            alternativeLayoutsMenu.closePopover();
+            currentVisibleExtendedList = null;
         }
     }
 
