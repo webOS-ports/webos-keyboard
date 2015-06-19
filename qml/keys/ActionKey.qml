@@ -27,6 +27,8 @@ CharKey {
     property string iconShifted: "transparent"
     property string iconCapsLock: "transparent"
 
+    pressed: actionkeyMouseArea.isPressed
+
     noMagnifier: true
     skipAutoCaps: true
     alignTextRight: false
@@ -79,6 +81,17 @@ CharKey {
         styleColor: "black"
         color: UI.greyColor
         smooth: true
+    }
+
+    // The additional image and text are hiding partially the PressArea of the Charkey; so let's create a new one on top and forward the events
+    PressArea {
+        id: actionkeyMouseArea
+        anchors.fill: actionKeyRoot
+        onlyExclusive: actionKeyRoot.charkeyPressArea.onlyExclusive
+
+        onKeyPressedAndHold: actionKeyRoot.charkeyPressArea.keyPressedAndHold();
+        onKeyReleased: actionKeyRoot.charkeyPressArea.keyReleased();
+        onKeyPressed: actionKeyRoot.charkeyPressArea.keyPressed();
     }
 
     onOskStateChanged: {

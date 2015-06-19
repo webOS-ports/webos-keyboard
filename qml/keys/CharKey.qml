@@ -59,11 +59,13 @@ Item {
     property string annotation: ""
 
     /*! indicates if te key is currently pressed/down*/
-    property alias pressed: keyMouseArea.isPressed
+    property alias pressed: keyPressArea.isPressed
 
     /* internal */
     property string __annotationLabelNormal
     property string __annotationLabelShifted
+
+    property alias charkeyPressArea: keyPressArea;
 
     /**
      * this property specifies if the key can submit its value or not (e.g. when the popover is shown, it does not commit its value)
@@ -160,7 +162,7 @@ Item {
     }
 
     PressArea {
-        id: keyMouseArea
+        id: keyPressArea
         anchors.fill: key
         onlyExclusive: action !== "" && action !== "url" && action !== "space"
 
@@ -191,7 +193,7 @@ Item {
         target: swipeArea.drag
         onActiveChanged: {
             if (swipeArea.drag.active)
-                keyMouseArea.cancelPress();
+                keyPressArea.cancelPress();
         }
     }
 
