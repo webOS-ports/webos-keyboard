@@ -177,11 +177,16 @@ Item {
             do {
                 child = childParent.childAt(posChild.x, posChild.y);
                 if (!child) {
-                    return null
+                    return null;
                 } else if (child && child.objectName === "pressArea") {
-                    return child
+                    if( !currentVisibleExtendedList || child.compatibleWithPopover ) {
+                        return child;
+                    }
+                    else {
+                        return null;
+                    }
                 }
-                posChild = childParent.mapToItem(child, posChild.x, posChild.y)
+                posChild = childParent.mapToItem(child, posChild.x, posChild.y);
                 childParent = child;
             }
             while (child);

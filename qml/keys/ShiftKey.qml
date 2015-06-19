@@ -33,7 +33,7 @@ ActionKey {
 
     PressArea {
         anchors.fill: parent
-        //preventStealing: true
+        compatibleWithPopover: true
 
         onKeyPressed: {
             if (UI.currentShiftState === "NORMAL")

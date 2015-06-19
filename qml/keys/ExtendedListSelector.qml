@@ -165,6 +165,7 @@ Item {
                 PressArea {
                     id: popupKeyPressArea
                     anchors.fill: parent
+                    compatibleWithPopover: true
 
                     onKeyReleased: {
                         if (maliit_input_method.useAudioFeedback)

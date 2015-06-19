@@ -181,9 +181,6 @@ Item {
                     if (UI.currentShiftState === "SHIFTED" && UI.currentSymbolState === "CHARACTERS")
                         UI.currentShiftState = "NORMAL"
             }
-            else {
-                UI.hideExtendedKeys();
-            }
         }
         onKeyPressed: {
             event_handler.onKeyPressed(valueToSubmit, action);

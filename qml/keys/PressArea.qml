@@ -31,7 +31,8 @@ Item {
 
     objectName: "pressArea"
 
-    property bool onlyExclusive: false
+    property bool onlyExclusive: false         // when true, only a press (and not a move) on that area will trigger it
+    property bool compatibleWithPopover: false // when true, won't hide popover if pressed
 
     // used as slots
     signal pressed(bool afterMove);
