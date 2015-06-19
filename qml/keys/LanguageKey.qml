@@ -34,13 +34,18 @@ ActionKey {
 
     PressArea {
         anchors.fill: parent
+        property bool isPressedAndHold: false
         onlyExclusive: true
 
         onKeyReleased: {
-            UI.showLanguagesMenu(actionKey);
+            if( !isPressedAndHold ) {
+                UI.showLanguagesMenu(actionKey);
+            }
+            isPressedAndHold = false;
         }
         onKeyPressedAndHold: {
             UI.showAlternativeLayoutsMenu(actionKey);
+            isPressedAndHold = true;
         }
     }
 }

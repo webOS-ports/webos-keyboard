@@ -62,7 +62,7 @@ Item {
     }
 
     function __updatePopoverRect() {
-        var newPopoverRect = keyPad.mapToItem(null, x, y, width, height);
+        var newPopoverRect = keyPad.mapToItem(fullScreenItem, x, y, width, height);
         maliit_geometry.popoverRect = Qt.rect(newPopoverRect.x, newPopoverRect.y, newPopoverRect.width, newPopoverRect.height);
     }
     onXChanged: __updatePopoverRect();
@@ -167,7 +167,13 @@ Item {
                     anchors.fill: parent
 
                     onKeyReleased: {
+                        if (maliit_input_method.useAudioFeedback)
+                            audioFeedback.play();
+
                         popover.itemSelected(modelData);
+
+                        if (UI.currentShiftState === "SHIFTED" && UI.currentSymbolState === "CHARACTERS")
+                            UI.currentShiftState = "NORMAL"
                     }
                 }
 

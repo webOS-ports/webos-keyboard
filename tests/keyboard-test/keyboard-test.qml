@@ -54,6 +54,16 @@ Rectangle {
             width:  maliit_geometry.visibleRect.width / widthRatio
             height: maliit_geometry.visibleRect.height / heightRatio
         }
+        Rectangle {
+            color: "red"
+
+            property real widthRatio: keyboardLoader.width / deviceScreenRect.width
+            property real heightRatio: keyboardLoader.height / deviceScreenRect.height
+            x: maliit_geometry.popoverRect.x / widthRatio
+            y: maliit_geometry.popoverRect.y / heightRatio
+            width:  maliit_geometry.popoverRect.width / widthRatio
+            height: maliit_geometry.popoverRect.height / heightRatio
+        }
     }
 
     QtObject {
