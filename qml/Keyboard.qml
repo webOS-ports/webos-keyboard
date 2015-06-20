@@ -188,9 +188,7 @@ Item {
                 PropertyChanges { target: canvas; y: height; }
                 onCompleted: {
                     keyboardSurface.y = 0;
-                    UI.hideExtendedKeys();
-                    UI.hideKeyboardSizeMenu();
-                    UI.hideLanguagesMenu();
+                    UI.hideCurrentPopover();
                     UI.currentShiftState = "NORMAL";
                     UI.currentSymbolState = "CHARACTERS";
                     maliit_input_method.hide();

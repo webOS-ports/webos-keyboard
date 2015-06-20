@@ -51,21 +51,8 @@ Item {
 
         keyRootItem: content
 
-        onPressed: {
-            if( currentVisibleExtendedList ) {
-                for( var i = 0; i < touchPoints.length; ++i ) {
-                    var keyArea = keyAt(touchPoints[i].x, touchPoints[i].y);
-                    touchPoints[i].currentKeyArea = keyArea;
-                    if( keyArea && !keyArea.compatibleWithPopover ) {
-                        UI.hideExtendedKeys();
-                        UI.hideKeyboardSizeMenu();
-                        UI.hideLanguagesMenu();
-                        UI.hideAlternativeLayoutsMenu();
-
-                        break;
-                    }
-                }
-            }
+        onPressOnNoKeyArea: {
+            UI.hideCurrentPopover();
         }
     }
 
@@ -76,7 +63,7 @@ Item {
 
         onItemSelected: {
             event_handler.onKeyReleased(modelData);
-            UI.hideExtendedKeys();
+            UI.hideCurrentPopover();
         }
         onExtendedListDismissed: UI.extendedKeysShown = false;
     }
@@ -88,7 +75,7 @@ Item {
 
         onItemSelected: {
             UI.keyboardSizeChoice = modelData;
-            UI.hideKeyboardSizeMenu();
+            UI.hideCurrentPopover();
         }
     }
 
@@ -99,7 +86,7 @@ Item {
 
         onItemSelected: {
             maliit_input_method.activeLanguage = modelData;
-            UI.hideLanguagesMenu();
+            UI.hideCurrentPopover();
         }
     }
 
@@ -110,13 +97,15 @@ Item {
 
         onItemSelected: {
             UI.currentAlternativeLayout = ((modelData === "LuneOS") ? "" : modelData);
-            UI.hideAlternativeLayoutsMenu();
+            UI.hideCurrentPopover();
         }
     }
 
     Connections {
         target: UI
         onShowExtendedKeys: {
+            UI.hideCurrentPopover();
+
             extendedKeysSelector.currentlyAssignedKey = keyItem;
             extendedKeysSelector.extendedListModel = Qt.binding(function() { return extendedKeysSelector.currentlyAssignedKey.activeExtendedModel });
             extendedKeysSelector.enabled = true;
@@ -124,18 +113,24 @@ Item {
             UI.extendedKeysShown = true;
         }
         onShowKeyboardSizeMenu: {
+            UI.hideCurrentPopover();
+
             keyboardSizeMenu.extendedListModel = UI.keyboardSizeChoices;
             keyboardSizeMenu.currentlyAssignedKey = keyItem;
             keyboardSizeMenu.enabled = true;
             currentVisibleExtendedList = keyboardSizeMenu;
         }
         onShowLanguagesMenu: {
+            UI.hideCurrentPopover();
+
             languagesMenu.extendedListModel = maliit_input_method.enabledLanguages;
             languagesMenu.currentlyAssignedKey = keyItem;
             languagesMenu.enabled = true;
             currentVisibleExtendedList = languagesMenu;
         }
         onShowAlternativeLayoutsMenu: {
+            UI.hideCurrentPopover();
+
             if( alternativeLayouts.length > 0 ) {
                 alternativeLayoutsMenu.extendedListModel = [ "LuneOS" ].concat(alternativeLayouts);
                 alternativeLayoutsMenu.currentlyAssignedKey = keyItem;
@@ -143,20 +138,10 @@ Item {
                 currentVisibleExtendedList = alternativeLayoutsMenu;
             }
         }
-        onHideExtendedKeys : {
-            extendedKeysSelector.closePopover();
-            currentVisibleExtendedList = null;
-        }
-        onHideKeyboardSizeMenu : {
-            keyboardSizeMenu.closePopover();
-            currentVisibleExtendedList = null;
-        }
-        onHideLanguagesMenu : {
-            languagesMenu.closePopover();
-            currentVisibleExtendedList = null;
-        }
-        onHideAlternativeLayoutsMenu : {
-            alternativeLayoutsMenu.closePopover();
+        onHideCurrentPopover : {
+            if( currentVisibleExtendedList ) {
+                currentVisibleExtendedList.closePopover();
+            }
             currentVisibleExtendedList = null;
         }
     }

@@ -20,6 +20,9 @@ import QtQuick 2.0
 MultiPointTouchArea {
     property Item keyRootItem;
 
+    signal pressOnNoKeyArea();
+    signal releaseOnNoKeyArea();
+
     touchPoints: [
         KeyTouchPoint { id: touchPoint0 },
         KeyTouchPoint { id: touchPoint1 },
@@ -63,6 +66,9 @@ MultiPointTouchArea {
             if( keyArea ) {
                 keyArea.pressed(false);
             }
+            else {
+                pressOnNoKeyArea();
+            }
         }
     }
 
@@ -71,6 +77,9 @@ MultiPointTouchArea {
             var keyArea = touchPoints[i].currentKeyArea;
             if( keyArea ) {
                 keyArea.released(false);
+            }
+            else {
+                releaseOnNoKeyArea();
             }
         }
     }

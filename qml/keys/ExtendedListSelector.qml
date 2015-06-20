@@ -188,6 +188,8 @@ Item {
         z: 3
 
         keyRootItem: rowOfKeys
+
+        onPressOnNoKeyArea: closePopover();
     }
 
     function __repositionPopoverTo(item)

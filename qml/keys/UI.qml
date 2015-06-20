@@ -34,13 +34,10 @@ QtObject {
 
     // keyboard-wide signals
     signal showExtendedKeys(variant keysExtendedModel, Item keyItem);
-    signal hideExtendedKeys();
     signal showKeyboardSizeMenu(Item keyItem);
-    signal hideKeyboardSizeMenu();
     signal showLanguagesMenu(Item keyItem);
-    signal hideLanguagesMenu();
     signal showAlternativeLayoutsMenu(Item keyItem);
-    signal hideAlternativeLayoutsMenu();
+    signal hideCurrentPopover();
 
     signal shiftedKeySent();
 

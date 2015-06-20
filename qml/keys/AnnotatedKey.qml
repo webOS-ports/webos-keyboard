@@ -194,6 +194,12 @@ Item {
                     if (UI.currentShiftState === "SHIFTED" && UI.currentSymbolState === "CHARACTERS")
                         UI.shiftedKeySent();
             }
+            else if (activeExtendedModel != undefined) {
+                UI.showExtendedKeys(activeExtendedModel, key);
+            }
+            else {
+                UI.hideCurrentPopover();
+            }
         }
         onKeyPressed: {
 			event_handler.onKeyPressed(valueToSubmit, action);
