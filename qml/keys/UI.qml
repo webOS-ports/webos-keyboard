@@ -27,6 +27,7 @@ QtObject {
     property string keyboardSizeChoice: "M"
     property real keyWidth: 5 // arbitrary value, will be overwritten when KeyPad computes the ideal key width
     property bool extendedKeysShown: false
+    property bool isShiftKeyPressed: false
     property string currentShiftState: "NORMAL"  // can be "NORMAL", "SHIFTED" or "CAPSLOCK"
     property string currentSymbolState: "CHARACTER" // can be "CHARACTER" or "SYMBOL"
     property string currentAlternativeLayout: ""
@@ -40,6 +41,8 @@ QtObject {
     signal hideLanguagesMenu();
     signal showAlternativeLayoutsMenu(Item keyItem);
     signal hideAlternativeLayoutsMenu();
+
+    signal shiftedKeySent();
 
     // internal helper
     property string formFactor: Settings.tabletUi ? "tablet" : "phone";

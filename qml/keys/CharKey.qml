@@ -181,7 +181,7 @@ Item {
                 event_handler.onKeyReleased(valueToSubmit, action);
                 if (!skipAutoCaps)
                     if (UI.currentShiftState === "SHIFTED" && UI.currentSymbolState === "CHARACTERS")
-                        UI.currentShiftState = "NORMAL"
+                        UI.shiftedKeySent();
             }
         }
         onKeyPressed: {
