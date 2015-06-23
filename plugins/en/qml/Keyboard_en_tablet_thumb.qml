@@ -57,9 +57,9 @@ KeyPad {
 
             CharKey { id: qKey; width: Units.gu(3.9); label: "q"; shifted: "Q"; anchors.left: parent.left; thumbKeyboard: true;}
             CharKey { id: wKey; width: Units.gu(3.9); label: "w"; shifted: "W"; anchors.left: qKey.right; thumbKeyboard: true;}
-            CharKey { id: eKey; width: Units.gu(3.9); label: "e"; shifted: "E"; extended: ["e", "è", "é", "ê", "ë", "ę", "ē", "€"]; extendedShifted: ["E", "È", "É", "Ê", "Ë", "Ę", "Ē", "€"]; anchors.left: wKey.right; thumbKeyboard: true;}
-            CharKey { id: rKey; width: Units.gu(3.9); label: "r"; shifted: "R"; extended: ["r", "®"]; extendedShifted: ["R","®"]; anchors.left: eKey.right; thumbKeyboard: true;}
-            CharKey { id: tKey; width: Units.gu(3.9); label: "t"; shifted: "T"; extended: ["t", "™", "þ"]; extendedShifted: ["T", "™", "Þ"]; anchors.left: rKey.right; thumbKeyboard: true;}
+            CharKey { id: eKey; width: Units.gu(3.9); label: "e"; shifted: "E"; extended: ["e", "è", "é", "ê", "ë", "ę", "ē", "€", "ě"]; extendedShifted: ["E", "È", "É", "Ê", "Ë", "Ę", "Ē", "€", "Ě"]; anchors.left: wKey.right; thumbKeyboard: true;}
+            CharKey { id: rKey; width: Units.gu(3.9); label: "r"; shifted: "R"; extended: ["r", "®", "ř", "ŕ"]; extendedShifted: ["R","®", "Ř", "Ŕ"]; anchors.left: eKey.right; thumbKeyboard: true;}
+            CharKey { id: tKey; width: Units.gu(3.9); label: "t"; shifted: "T"; extended: ["t", "™", "þ", "ť", "ţ"]; extendedShifted: ["T", "™", "Þ", "Ť", "Ţ"]; anchors.left: rKey.right; thumbKeyboard: true;}
             CharKey { id: yKey; width: Units.gu(3.9); label: "y"; shifted: "Y"; extended: ["y", "ý", "ÿ", "¥"]; extendedShifted: ["Y", "Ý", "Ÿ", "¥"]; anchors.right: uKey.left; thumbKeyboard: true;}
             CharKey { id: uKey; width: Units.gu(3.9); label: "u"; shifted: "U"; extended: ["u", "ù", "ú", "û", "ü", "ű"]; extendedShifted: ["U", "Ù","Ú","Û", "Ü", "Ű"]; anchors.right: iKey.left; thumbKeyboard: true;}
             CharKey { id: iKey; width: Units.gu(3.9); label: "i"; shifted: "I"; extended: ["i", "ì","í", "î", "ï", "İ", "ı"]; extendedShifted: ["I", "Ì", "Í", "Î", "Ï", "İ", "ı"]; anchors.right: oKey.left; thumbKeyboard: true;}
@@ -73,14 +73,14 @@ KeyPad {
             height: keyHeight * 2/3
 
             CharKey { id: aKey; label: "a"; width: Units.gu(3.9); shifted: "A"; extended: ["a", "à", "á", "â", "ã" , "ä", "å", "æ", "ª"]; extendedShifted: ["A", "À", "Á", "Â", "Ã", "Ä", "Å", "Æ", "ª"]; anchors.left: parent.left; thumbKeyboard: true;}
-            CharKey { id: sKey; label: "s"; width: Units.gu(3.9); shifted: "S"; extended: ["s", "š", "ş", "ß", "σ", "$"]; extendedShifted: ["S", "Š", "Ş", "ß", "Σ", "$"]; anchors.left: aKey.right; thumbKeyboard: true;}
-            CharKey { id: dKey; label: "d"; width: Units.gu(3.9); shifted: "D"; extended: ["d", "ð", "†", "‡"]; extendedShifted: ["D", "Ð", "†", "‡"]; anchors.left: sKey.right; thumbKeyboard: true;}
+            CharKey { id: sKey; label: "s"; width: Units.gu(3.9); shifted: "S"; extended: ["s", "š", "ş", "ß", "σ", "$", "ś"]; extendedShifted: ["S", "Š", "Ş", "ß", "Σ", "$", "Ś"]; anchors.left: aKey.right; thumbKeyboard: true;}
+            CharKey { id: dKey; label: "d"; width: Units.gu(3.9); shifted: "D"; extended: ["d", "ð", "†", "‡", "ď", "đ"]; extendedShifted: ["D", "Ð", "†", "‡", "Ď", "Đ"]; anchors.left: sKey.right; thumbKeyboard: true;}
             CharKey { id: fKey; label: "f"; width: Units.gu(3.9); shifted: "F"; anchors.left: dKey.right; thumbKeyboard: true;}
             CharKey { id: gKey; label: "g"; width: Units.gu(3.9); shifted: "G"; extended: ["g", "ğ"]; extendedShifted: ["G", "Ğ"]; anchors.left: fKey.right; thumbKeyboard: true;}
             CharKey { id: hKey; label: "h"; width: Units.gu(3.9); shifted: "H"; anchors.right: jKey.left; thumbKeyboard: true;}
             CharKey { id: jKey; label: "j"; width: Units.gu(3.9); shifted: "J"; anchors.right: kKey.left; thumbKeyboard: true;}
             CharKey { id: kKey; label: "k"; width: Units.gu(3.9); shifted: "K"; anchors.right: lKey.left; thumbKeyboard: true;}
-            CharKey { id: lKey; label: "l"; width: Units.gu(3.9); shifted: "L"; extended: ["l", "ł"]; extendedShifted: ["L", "Ł"]; anchors.right: semicolonKey.left; thumbKeyboard: true;}
+            CharKey { id: lKey; label: "l"; width: Units.gu(3.9); shifted: "L"; extended: ["l", "ł", "ĺ"]; extendedShifted: ["L", "Ł", "Ĺ"]; anchors.right: semicolonKey.left; thumbKeyboard: true;}
             AnnotatedKey { id: semicolonKey; label: ";"; width: Units.gu(3.9); shifted: ":"; extended: [";", ":"]; extendedShifted: [";", ":"]; anchors.right: parent.right; thumbKeyboard: true;}
         }
 
@@ -91,10 +91,10 @@ KeyPad {
 
             CharKey { id: zKey; label: "z"; width: Units.gu(3.9); shifted: "Z"; extended: ["z", "ž", "ź", "ż"]; extendedShifted: ["Z", "Ž", "Ź", "Ż"]; anchors.left: parent.left; thumbKeyboard: true; }
             CharKey { id: xKey; label: "x"; width: Units.gu(3.9); shifted: "X"; extended: ["x", "Rec", "Mute"]; extendedShifted: ["X", "Rec", "Mute"]; anchors.left: zKey.right; thumbKeyboard: true; }
-            CharKey { id: cKey; label: "c"; width: Units.gu(3.9); shifted: "C"; extended: ["c", "ç", "ć", "©", "¢"]; extendedShifted: ["C", "Ç", "Ć", "©", "¢"]; anchors.left: xKey.right; thumbKeyboard: true; }
+            CharKey { id: cKey; label: "c"; width: Units.gu(3.9); shifted: "C"; extended: ["c", "ç", "ć", "©", "¢", "č"]; extendedShifted: ["C", "Ç", "Ć", "©", "¢", "Č"]; anchors.left: xKey.right; thumbKeyboard: true; }
             CharKey { id: vKey; label: "v"; width: Units.gu(3.9); shifted: "V"; anchors.left: cKey.right; thumbKeyboard: true; }
             CharKey { id: bKey; label: "b"; width: Units.gu(3.9); shifted: "B"; anchors.left: vKey.right; thumbKeyboard: true; }
-            CharKey { id: nKey; label: "n"; width: Units.gu(3.9); shifted: "N"; extended: ["n", "ñ", "ń"]; extendedShifted: ["N", "Ñ", "Ń"]; anchors.right: mKey.left; thumbKeyboard: true; }
+            CharKey { id: nKey; label: "n"; width: Units.gu(3.9); shifted: "N"; extended: ["n", "ñ", "ń", "ň"]; extendedShifted: ["N", "Ñ", "Ń", "Ň"]; anchors.right: mKey.left; thumbKeyboard: true; }
             CharKey { id: mKey; label: "m"; width: Units.gu(3.9); shifted: "M"; extended: ["m", "μ"]; extendedShifted: ["M", "Μ"]; anchors.right: leftBracketKey.left; thumbKeyboard: true; }
             CharKey { id: leftBracketKey; label: "["; width: Units.gu(3.9); shifted: "["; anchors.right: rightBracketKey.left; thumbKeyboard: true; }
             CharKey { id: rightBracketKey; label: "]"; width: Units.gu(3.9); shifted: "]"; anchors.right: backspaceKey.left; thumbKeyboard: true;}
