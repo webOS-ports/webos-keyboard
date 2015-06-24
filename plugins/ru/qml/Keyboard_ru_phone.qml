@@ -93,9 +93,9 @@ KeyPad {
 
                 SymbolShiftKey { id: symShiftKey;                            anchors.left: parent.left; }
                 LanguageKey    { id: languageMenuButton;                     anchors.left: symShiftKey.right; }
-                CharKey        { id: commaKey;    label: ","; shifted: "/";  anchors.left: languageMenuButton.right; }
+                UrlKey        { id: commaKey;    label: ","; shifted: "/";  anchors.left: languageMenuButton.right; }
                 SpaceKey       { id: spaceKey;                               anchors.left: commaKey.right; anchors.right: dotKey.left; noMagnifier: true }
-                CharKey        { id: dotKey;       label: "."; shifted: "."; anchors.right: enterKey.left; }
+                UrlKey        { id: dotKey;       label: "."; shifted: "."; anchors.right: enterKey.left; }
                 ReturnKey      { id: enterKey;  label: "Enter"; shifted: "Enter";                            anchors.right: parent.right }
             }
         }
@@ -106,11 +106,12 @@ KeyPad {
                 height: keyHeight
 
                 SymbolShiftKey { id: symShiftKey;                            anchors.left: parent.left; }
-                CharKey        { id: atKey;    label: "@"; shifted: "@";     anchors.left: symShiftKey.right; }
+                LanguageKey    { id: languageMenuButton;                     anchors.left: symShiftKey.right; }
+				UrlKey         { id: atKey;    label: "@"; shifted: "@";     anchors.left: languageMenuButton.right; }
                 SpaceKey       { id: spaceKey;                               anchors.left: atKey.right; anchors.right: urlKey.left; noMagnifier: true }
                 UrlKey         { id: urlKey; label: ".ru"; extended: [".ru", ".ua", ".su", ".kg", ".рф", ".укр", ".by", ".tj"]; anchors.right: dotKey.left; }
-                CharKey        { id: dotKey;       label: "."; shifted: "."; anchors.right: enterKey.left; }
-                ReturnKey      { id: enterKey; label: "Enter";                              anchors.right: parent.right }
+                UrlKey         { id: dotKey;       label: "."; shifted: "."; anchors.right: enterKey.left; }
+                ReturnKey      { id: enterKey; label: "Enter"; shifted: "Enter";                              anchors.right: parent.right }
             }
         }
         Component {
@@ -120,11 +121,12 @@ KeyPad {
                 height: keyHeight
 
                 SymbolShiftKey { id: symShiftKey;                            anchors.left: parent.left; }
-                CharKey        { id: slashKey; label: "/"; shifted: "/"; extended: ["http://", "https://", "www."];     anchors.left: symShiftKey.right; }
+                LanguageKey    { id: languageMenuButton;                     anchors.left: symShiftKey.right; }
+                UrlKey         { id: slashKey; label: "/"; shifted: "/"; extended: ["http://", "https://", "www."];     anchors.left: languageMenuButton.right; }
                 SpaceKey       { id: spaceKey;                               anchors.left: slashKey.right; anchors.right: urlKey.left; noMagnifier: true }
                 UrlKey         { id: urlKey; label: ".ru"; extended: [".ru", ".ua", ".su", ".kg", ".рф", ".укр", ".by", ".tj"]; anchors.right: dotKey.left; }
-                CharKey        { id: dotKey;       label: "."; shifted: "."; anchors.right: enterKey.left; }
-                ReturnKey      { id: enterKey;  label: "Enter";                             anchors.right: parent.right }
+                UrlKey         { id: dotKey;       label: "."; shifted: "."; anchors.right: enterKey.left; }
+                ReturnKey      { id: enterKey;  label: "Enter"; shifted: "Enter";                             anchors.right: parent.right }
             }
         }
         Loader {
