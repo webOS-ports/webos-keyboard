@@ -59,9 +59,9 @@ KeyPad {
 
             CharKey { label: "q"; shifted: "Q"; width: UI.keyWidth * 0.95; }
             CharKey { label: "w"; shifted: "W"; width: UI.keyWidth * 0.95;}
-            CharKey { label: "e"; shifted: "E"; extended: ["e", "è", "é", "ê", "ë", "ę", "ē", "€"]; extendedShifted: ["E", "È", "É", "Ê", "Ë", "Ę", "Ē", "€"]; width: UI.keyWidth * 0.95; }
-            CharKey { label: "r"; shifted: "R"; extended: ["r", "®"]; extendedShifted: ["R","®"]; width: UI.keyWidth * 0.95; }
-            CharKey { label: "t"; shifted: "T"; extended: ["t", "™", "þ"]; extendedShifted: ["T", "™", "Þ"]; width: UI.keyWidth * 0.95; }
+            CharKey { label: "e"; shifted: "E"; extended: ["e", "è", "é", "ê", "ë", "ę", "ē", "€", "ě"]; extendedShifted: ["E", "È", "É", "Ê", "Ë", "Ę", "Ē", "€", "Ě"]; width: UI.keyWidth * 0.95; }
+            CharKey { label: "r"; shifted: "R"; extended: ["r", "®", "ř", "ŕ"]; extendedShifted: ["R","®", "Ř", "Ŕ"]; width: UI.keyWidth * 0.95; }
+            CharKey { label: "t"; shifted: "T"; extended: ["t", "™", "þ", "ť", "ţ"]; extendedShifted: ["T", "™", "Þ", "Ť", "Ţ"]; width: UI.keyWidth * 0.95; }
             CharKey { label: "y"; shifted: "Y"; extended: ["y", "ý", "ÿ", "¥"]; extendedShifted: ["Y", "Ý", "Ÿ", "¥"]; width: UI.keyWidth * 0.95; }
             CharKey { label: "u"; shifted: "U"; extended: ["u", "ù", "ú", "û", "ü", "ű"]; extendedShifted: ["U", "Ù","Ú","Û", "Ü", "Ű"]; width: UI.keyWidth * 0.95; }
             CharKey { label: "i"; shifted: "I"; extended: ["i", "ì","í", "î", "ï", "İ", "ı"]; extendedShifted: ["I", "Ì", "Í", "Î", "Ï", "İ", "ı"]; width: UI.keyWidth * 0.95; }
@@ -78,14 +78,14 @@ KeyPad {
             height: keyHeight
 
             CharKey { label: "a"; shifted: "A"; extended: ["a", "à", "á", "â", "ã" , "ä", "å", "æ", "ª"]; extendedShifted: ["A", "À", "Á", "Â", "Ã", "Ä", "Å", "Æ", "ª"]; width: UI.keyWidth * 0.98;}
-            CharKey { label: "s"; shifted: "S"; extended: ["s", "š", "ş", "ß", "σ", "$"]; extendedShifted: ["S", "Š", "Ş", "ß", "Σ", "$"]; width: UI.keyWidth * 0.98;}
-            CharKey { label: "d"; shifted: "D"; extended: ["d", "ð", "†", "‡"]; extendedShifted: ["D", "Ð", "†", "‡"]; width: UI.keyWidth * 0.98; }
+            CharKey { label: "s"; shifted: "S"; extended: ["s", "š", "ş", "ß", "σ", "$", "ś"]; extendedShifted: ["S", "Š", "Ş", "ß", "Σ", "$", "Ś"]; width: UI.keyWidth * 0.98;}
+            CharKey { label: "d"; shifted: "D"; extended: ["d", "ð", "†", "‡", "ď", "đ"]; extendedShifted: ["D", "Ð", "†", "‡", "Ď", "Đ"]; width: UI.keyWidth * 0.98; }
             CharKey { label: "f"; shifted: "F"; width: UI.keyWidth * 0.98;}
             CharKey { label: "g"; shifted: "G"; extended: ["g", "ğ"]; extendedShifted: ["G", "Ğ"]; width: UI.keyWidth * 0.98;}
             CharKey { label: "h"; shifted: "H"; width: UI.keyWidth * 0.98;}
             CharKey { label: "j"; shifted: "J"; width: UI.keyWidth * 0.98;}
             CharKey { label: "k"; shifted: "K"; width: UI.keyWidth * 0.98;}
-            CharKey { label: "l"; shifted: "L"; extended: ["l", "ł"]; extendedShifted: ["L", "Ł"]; width: UI.keyWidth * 0.98;}
+            CharKey { label: "l"; shifted: "L"; extended: ["l", "ł", "ĺ"]; extendedShifted: ["L", "Ł", "Ĺ"]; width: UI.keyWidth * 0.98;}
             CharKey { label: "æ"; shifted: "Æ"; width: UI.keyWidth * 0.98;}
             CharKey { label: "ø"; shifted: "Ø"; width: UI.keyWidth * 0.98;}
             ReturnKey { id: enterKey; label: "Enter"; shifted: "Enter"; width: UI.keyWidth * 0.98;}
@@ -100,10 +100,10 @@ KeyPad {
             ShiftKey {id: shiftKeyLeft; anchors.left: parent.left;}
             CharKey {id: zKey; label: "z"; shifted: "Z"; extended: ["z", "ž", "ź", "ż"]; extendedShifted: ["Z", "Ž", "Ź", "Ż"]; anchors.left: shiftKeyLeft.right;}
             CharKey {id: xKey; label: "x"; shifted: "X"; extended: ["x", "Rec", "Mute"]; extendedShifted: ["X", "Rec", "Mute"]; anchors.left: zKey.right;}
-            CharKey {id: cKey; label: "c"; shifted: "C"; extended: ["c", "ç", "ć", "©", "¢"]; extendedShifted: ["C", "Ç", "Ć", "©", "¢"]; anchors.left: xKey.right; }
+            CharKey {id: cKey; label: "c"; shifted: "C"; extended: ["c", "ç", "ć", "©", "¢", "č"]; extendedShifted: ["C", "Ç", "Ć", "©", "¢", "Č"]; anchors.left: xKey.right; }
             CharKey {id: vKey; label: "v"; shifted: "V"; anchors.left: cKey.right;}
             CharKey {id: bKey; label: "b"; shifted: "B"; anchors.left: vKey.right;}
-            CharKey {id: nKey; label: "n"; shifted: "N"; extended: ["n", "ñ", "ń"]; extendedShifted: ["N", "Ñ", "Ń"]; anchors.left: bKey.right;}
+            CharKey {id: nKey; label: "n"; shifted: "N"; extended: ["n", "ñ", "ń", "ň"]; extendedShifted: ["N", "Ñ", "Ń", "Ň"]; anchors.left: bKey.right;}
             CharKey {id: mKey; label: "m"; shifted: "M"; extended: ["m", "μ"]; extendedShifted: ["M", "Μ"]; anchors.left: nKey.right;}
             AnnotatedKey { id: commaKey; label: ","; shifted: ";"; extended: [",", ";", "/", "\\"]; extendedShifted: ["," , ";", "/", "\\"]; anchors.left: mKey.right; }
             AnnotatedKey { id: dotkey; label: "."; shifted: ":"; extended: [".", ":", "?", "•", "…", "¿"]; extendedShifted: [".", ":", "?", "•", "…", "¿"]; anchors.left: commaKey.right; }
