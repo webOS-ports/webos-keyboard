@@ -1,5 +1,7 @@
 /*
  * Copyright 2013 Canonical Ltd.
+ * Copyright (C) 2015 Christophe Chapuis <chris.chapuis@gmail.com>
+ * Copyright (C) 2015 Herman van Hazendonk <github.com@herrie.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -18,7 +20,9 @@ import QtQuick 2.0
 import keys 1.0
 
 KeyPad {
-    content: c1
+    id: keypadRoot
+	
+	content: c1
     symbols: "languages/Keyboard_symbols_tablet.qml"
 
     Column {
@@ -26,6 +30,25 @@ KeyPad {
         anchors.right: parent.right
         anchors.left: parent.left
         spacing: 0
+
+        Row {
+            anchors.horizontalCenter: parent.horizontalCenter;
+            spacing: 0
+
+            height: keyHeight * UI.topRowKeyHeightRatio
+
+            NumKey { label: "1"; shifted: "!"; extended: ["1", "!", "¹", "¼", "½", "¡"]}
+            NumKey { label: "2"; shifted: "@"; extended: ["2", "@", "²"]}
+            NumKey { label: "3"; shifted: "#"; extended: ["3", "#", "³", "¾"]}
+            NumKey { label: "4"; shifted: "$"; extended: ["4", "$", "€", "£", "¥", "¢", "¤"]}
+            NumKey { label: "5"; shifted: "%"; extended: ["5", "%", "‰"]}
+            NumKey { label: "6"; shifted: "^"; extended: ["6", "^"]}
+            NumKey { label: "7"; shifted: "&"; extended: ["7", "&"]}
+            NumKey { label: "8"; shifted: "*"; extended: ["8", "*"]}
+            NumKey { label: "9"; shifted: "("; extended: ["9", "(", "[", "{"]}
+            NumKey { label: "0"; shifted: ")"; extended: ["0", ")", "]", "}"]}
+            TrackBall { width: keypadRoot.width - (UI.keyWidth*UI.numKeyWidthRatio*10); anchors.verticalCenter: parent.verticalCenter }
+        }
 
         Row {
             anchors.horizontalCenter: parent.horizontalCenter;
@@ -44,6 +67,7 @@ KeyPad {
             CharKey { label: "خ"; }
             CharKey { label: "ح"; }
             CharKey { label: "ج"; }
+			BackspaceKey { padding: 0 }
         }
 
         Row {
@@ -63,6 +87,7 @@ KeyPad {
             CharKey { label: "م"; }
             CharKey { label: "ك"; }
             CharKey { label: "د"; }
+            ReturnKey { id: enterKey; label: "Enter"; shifted: "Enter"; width: UI.keyWidth; fontSize: UI.isLandscape ? UI.xsFontSize : "12pt"}
         }
 
         Row {
@@ -71,7 +96,7 @@ KeyPad {
 
             height: keyHeight;
 
-            ShiftKey { padding: 0 }
+            ShiftKey { width: UI.keyWidth * 1.5; }
             CharKey { label: "ئ"; }
             CharKey { label: "ء"; }
             CharKey { label: "ؤ"; }
@@ -81,7 +106,8 @@ KeyPad {
             CharKey { label: "و"; }
             CharKey { label: "ز"; }
             CharKey { label: "ظ"; }
-            BackspaceKey { padding: 0 }
+			ShiftKey { width: UI.keyWidth * 1.5; }
+            
         }
 
         Component {
@@ -89,13 +115,14 @@ KeyPad {
             Item {
                 height: keyHeight
 
-                SymbolShiftKey { id: symShiftKey;                            anchors.left: parent.left; }
-                LanguageKey    { id: languageMenuButton;                     anchors.left: symShiftKey.right; }
+                TabKey         { id: tabKey; 				label: "Tab"; shifted: "Tab";                       anchors.left: parent.left; }
+                SymbolShiftKey { id: symShiftKey;                             anchors.left: tabKey.right; }
+                LanguageKey    { id: languageMenuButton;                       anchors.left: symShiftKey.right; }
                 CharKey        { id: commaKey;    label: "ذ"; shifted: "/";  anchors.left: languageMenuButton.right; }
                 SpaceKey       { id: spaceKey;                               anchors.left: commaKey.right; anchors.right: dotKey.left; noMagnifier: true }
                 CharKey        { id: dotKey;      label: "."; shifted: ".";  anchors.right: specialChar.left; }
-                CharKey        { id: specialChar; label: "ط";                anchors.right: enterKey.left }
-                ReturnKey      { id: enterKey;                               anchors.right: parent.right }
+                CharKey        { id: specialChar; label: "ط";                anchors.right: dismissKey.left }
+                DismissKey     { id: dismissKey;                               anchors.right: parent.right;}
             }
         }
         Component {
@@ -104,13 +131,15 @@ KeyPad {
             Item {
                 height: keyHeight
 
-                SymbolShiftKey { id: symShiftKey;                            anchors.left: parent.left; }
-                CharKey        { id: atKey;    label: "@"; shifted: "@";     anchors.left: symShiftKey.right; }
+                TabKey         { id: tabKey; 				label: "Tab"; shifted: "Tab";                       anchors.left: parent.left; }
+                SymbolShiftKey { id: symShiftKey;                             anchors.left: tabKey.right; }
+                LanguageKey    { id: languageMenuButton;                       anchors.left: symShiftKey.right; }
+                CharKey        { id: atKey;    label: "@"; shifted: "@";     anchors.left: languageMenuButton.right; }
                 SpaceKey       { id: spaceKey;                               anchors.left: atKey.right; anchors.right: urlKey.left; noMagnifier: true }
                 UrlKey         { id: urlKey; label: ".eg"; extended: [".iq", ".lb", ".sa", ".sy", ".jo", ".ye"]; anchors.right: dotKey.left; }
                 CharKey        { id: dotKey;      label: "."; shifted: "ذ";  anchors.right: specialChar.left; }
-                CharKey        { id: specialChar; label: "ط";                anchors.right: enterKey.left }
-                ReturnKey      { id: enterKey;                               anchors.right: parent.right }
+                CharKey        { id: specialChar; label: "ط";                anchors.right: dismissKey.left }
+                DismissKey     { id: dismissKey;                               anchors.right: parent.right;}
             }
         }
         Component {
@@ -121,13 +150,15 @@ KeyPad {
 
                 // note FIXME: full list of tld:
                 // [".ma", ".dz", ".ly", ".tn", ".iq", ".lb", ".ps", ".jo", ".ye", ".bh", ".dj", ".kw", ".km", ".mr‎", ".om", ".qa", ".sa", ".sy", ".so‎", ".sd", ".ae"]
-                SymbolShiftKey { id: symShiftKey;                            anchors.left: parent.left; }
-                CharKey        { id: slashKey; label: "/"; shifted: "/";     anchors.left: symShiftKey.right; }
+                TabKey         { id: tabKey; 				label: "Tab"; shifted: "Tab";                       anchors.left: parent.left; }
+                SymbolShiftKey { id: symShiftKey;                            anchors.left: tabKey.right; }
+                LanguageKey    { id: languageMenuButton;                     anchors.left: symShiftKey.right; }
+                CharKey        { id: slashKey; label: "/"; shifted: "/";     anchors.left: languageMenuButton.right; }
                 SpaceKey       { id: spaceKey;                               anchors.left: slashKey.right; anchors.right: urlKey.left; noMagnifier: true }
-                UrlKey         { id: urlKey; label: ".eg"; extended: [".iq", ".lb", ".sa", ".sy", ".jo", ".ye"]; anchors.right: dotKey.left; }
+                UrlKey         { id: urlKey; label: ".eg"; extended: [".ma", ".dz", ".ly", ".tn", ".iq", ".lb", ".ps", ".jo", ".ye", ".bh", ".dj", ".kw", ".km", ".mr‎", ".om", ".qa", ".sa", ".sy", ".so‎", ".sd", ".ae"]; anchors.right: dotKey.left; }
                 CharKey        { id: dotKey;      label: "."; shifted: "ذ";  anchors.right: specialChar.left; }
-                CharKey        { id: specialChar; label: "ط";                anchors.right: enterKey.left }
-                ReturnKey      { id: enterKey;                               anchors.right: parent.right }
+                CharKey        { id: specialChar; label: "ط";                anchors.right: dismissKey.left }
+                DismissKey     { id: dismissKey;                               anchors.right: parent.right;}
             }
         }
         Loader {
