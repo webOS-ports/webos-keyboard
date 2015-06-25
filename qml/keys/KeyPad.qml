@@ -32,8 +32,9 @@ Item {
     property real keyWidthRatio: 1.0
     property int currentContentType: maliit_input_method.contentType
     property var alternativeLayouts: [ ]
+    property ExtendedListSelector currentVisibleExtendedList
 
-    property Column content: Column {}
+    property Column content
 
     height: content.height
 
@@ -43,87 +44,105 @@ Item {
     }
     onWidthChanged: calculateKeyWidth()
 
-    Connections {
-        target: UI
-        onShowExtendedKeys: {
-            extendedKeysSelector.extendedListModel = keysExtendedModel;
-            extendedKeysSelector.currentlyAssignedKey = keyItem;
-            extendedKeysSelector.enabled = true;
-            UI.extendedKeysShown = true;
-        }
-        onShowKeyboardSizeMenu: {
-            keyboardSizeMenu.extendedListModel = UI.keyboardSizeChoices;
-            keyboardSizeMenu.currentlyAssignedKey = keyItem;
-            keyboardSizeMenu.enabled = true;
-        }
-        onShowLanguagesMenu: {
-            languagesMenu.extendedListModel = maliit_input_method.enabledLanguages;
-            languagesMenu.currentlyAssignedKey = keyItem;
-            languagesMenu.enabled = true;
-        }
-        onShowAlternativeLayoutsMenu: {
-            if( alternativeLayouts.length > 0 ) {
-                alternativeLayoutsMenu.extendedListModel = [ "LuneOS" ].concat(alternativeLayouts);
-                alternativeLayoutsMenu.currentlyAssignedKey = keyItem;
-                alternativeLayoutsMenu.enabled = true;
-            }
-        }
-        onHideExtendedKeys : {
-            extendedKeysSelector.closePopover();
-        }
-        onHideKeyboardSizeMenu : {
-            keyboardSizeMenu.closePopover();
-        }
-        onHideLanguagesMenu : {
-            languagesMenu.closePopover();
-        }
-        onHideAlternativeLayoutsMenu : {
-            alternativeLayoutsMenu.closePopover();
+    MultiTouchKeyArea {
+        id: keyPadTouchArea
+        anchors.fill: content
+        z: content.z - 1    // put the multi-touch area *behind* the keys, so that they can overload the behavior if needed, like for the TrackBall
+
+        keyRootItem: content
+
+        onPressOnNoKeyArea: {
+            UI.hideCurrentPopover();
         }
     }
 
     ExtendedListSelector {
         id: extendedKeysSelector
-        anchors.fill: parent
         z: 2;
+        keyPad: keyPadRoot
 
         onItemSelected: {
             event_handler.onKeyReleased(modelData);
-            UI.hideExtendedKeys();
+            UI.hideCurrentPopover();
         }
         onExtendedListDismissed: UI.extendedKeysShown = false;
     }
 
     ExtendedListSelector {
         id: keyboardSizeMenu
-        anchors.fill: parent
         z: 2;
+        keyPad: keyPadRoot
 
         onItemSelected: {
             UI.keyboardSizeChoice = modelData;
-            UI.hideKeyboardSizeMenu();
+            UI.hideCurrentPopover();
         }
     }
 
     ExtendedListSelector {
         id: languagesMenu
-        anchors.fill: parent
         z: 2;
+        keyPad: keyPadRoot
 
         onItemSelected: {
             maliit_input_method.activeLanguage = modelData;
-            UI.hideLanguagesMenu();
+            UI.hideCurrentPopover();
         }
     }
 
     ExtendedListSelector {
         id: alternativeLayoutsMenu
-        anchors.fill: parent
         z: 2;
+        keyPad: keyPadRoot
 
         onItemSelected: {
             UI.currentAlternativeLayout = ((modelData === "LuneOS") ? "" : modelData);
-            UI.hideAlternativeLayoutsMenu();
+            UI.hideCurrentPopover();
+        }
+    }
+
+    Connections {
+        target: UI
+        onShowExtendedKeys: {
+            UI.hideCurrentPopover();
+
+            extendedKeysSelector.currentlyAssignedKey = keyItem;
+            extendedKeysSelector.extendedListModel = Qt.binding(function() { return extendedKeysSelector.currentlyAssignedKey.activeExtendedModel });
+            extendedKeysSelector.enabled = true;
+            currentVisibleExtendedList = extendedKeysSelector;
+            UI.extendedKeysShown = true;
+        }
+        onShowKeyboardSizeMenu: {
+            UI.hideCurrentPopover();
+
+            keyboardSizeMenu.extendedListModel = UI.keyboardSizeChoices;
+            keyboardSizeMenu.currentlyAssignedKey = keyItem;
+            keyboardSizeMenu.enabled = true;
+            currentVisibleExtendedList = keyboardSizeMenu;
+        }
+        onShowLanguagesMenu: {
+            UI.hideCurrentPopover();
+
+            languagesMenu.extendedListModel = maliit_input_method.enabledLanguages;
+            languagesMenu.currentlyAssignedKey = keyItem;
+            languagesMenu.enabled = true;
+            currentVisibleExtendedList = languagesMenu;
+        }
+        onShowAlternativeLayoutsMenu: {
+            UI.hideCurrentPopover();
+
+            if( alternativeLayouts.length > 0 ) {
+                alternativeLayoutsMenu.extendedListModel = [ "LuneOS" ].concat(alternativeLayouts);
+                alternativeLayoutsMenu.currentlyAssignedKey = keyItem;
+                alternativeLayoutsMenu.enabled = true;
+                currentVisibleExtendedList = alternativeLayoutsMenu;
+            }
+        }
+        onHideCurrentPopover : {
+            if( currentVisibleExtendedList ) {
+                currentVisibleExtendedList.closePopover();
+            }
+            currentVisibleExtendedList = null;
         }
     }
 

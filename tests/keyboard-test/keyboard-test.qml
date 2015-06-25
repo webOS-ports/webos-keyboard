@@ -54,6 +54,16 @@ Rectangle {
             width:  maliit_geometry.visibleRect.width / widthRatio
             height: maliit_geometry.visibleRect.height / heightRatio
         }
+        Rectangle {
+            color: "red"
+
+            property real widthRatio: keyboardLoader.width / deviceScreenRect.width
+            property real heightRatio: keyboardLoader.height / deviceScreenRect.height
+            x: maliit_geometry.popoverRect.x / widthRatio
+            y: maliit_geometry.popoverRect.y / heightRatio
+            width:  maliit_geometry.popoverRect.width / widthRatio
+            height: maliit_geometry.popoverRect.height / heightRatio
+        }
     }
 
     QtObject {
@@ -69,9 +79,11 @@ Rectangle {
         id: maliit_event_handler
 
         function onKeyPressed(valueToSubmit, action) { console.log("onKeyPressed : " + valueToSubmit + " -> action: " + action); }
-        function onKeyReleased(valueToSubmit, action) { console.log("onKeyReleased : " + valueToSubmit + " -> action: " + action); inputtextarea.lastKey = valueToSubmit; }
+        function onKeyReleased(valueToSubmit, action) { console.log("onKeyReleased : " + valueToSubmit + " -> action: " + action); inputtextarea.lastKey = valueToSubmit; keyReleased(); }
         function onWordCandidatePressed(word) { console.log("onWordCandidatePressed : " + word); }
         function onWordCandidateReleased(word) { console.log("onWordCandidateReleased : " + word); inputtextarea.lastKey = word; }
+
+        signal keyReleased();
     }
     QtObject {
         id: maliit_word_engine

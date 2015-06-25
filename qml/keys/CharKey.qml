@@ -59,11 +59,13 @@ Item {
     property string annotation: ""
 
     /*! indicates if te key is currently pressed/down*/
-    property alias pressed: keyMouseArea.pressed
+    property alias pressed: keyPressArea.isPressed
 
     /* internal */
     property string __annotationLabelNormal
     property string __annotationLabelShifted
+
+    property alias charkeyPressArea: keyPressArea;
 
     /**
      * this property specifies if the key can submit its value or not (e.g. when the popover is shown, it does not commit its value)
@@ -160,8 +162,9 @@ Item {
     }
 
     PressArea {
-        id: keyMouseArea
+        id: keyPressArea
         anchors.fill: key
+        onlyExclusive: action !== "" && action !== "url" && action !== "space"
 
         onKeyPressedAndHold: {
             if (activeExtendedModel != undefined) {
@@ -178,8 +181,15 @@ Item {
                 event_handler.onKeyReleased(valueToSubmit, action);
                 if (!skipAutoCaps)
                     if (UI.currentShiftState === "SHIFTED" && UI.currentSymbolState === "CHARACTERS")
-                        UI.currentShiftState = "NORMAL"
+                        UI.shiftedKeySent();
             }
+            else if (activeExtendedModel != undefined) {
+                UI.showExtendedKeys(activeExtendedModel, key);
+            }
+            else {
+                UI.hideCurrentPopover();
+            }
+
         }
         onKeyPressed: {
             event_handler.onKeyPressed(valueToSubmit, action);
@@ -190,7 +200,7 @@ Item {
         target: swipeArea.drag
         onActiveChanged: {
             if (swipeArea.drag.active)
-                keyMouseArea.cancelPress();
+                keyPressArea.cancelPress();
         }
     }
 

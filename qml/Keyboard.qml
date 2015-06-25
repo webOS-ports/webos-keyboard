@@ -70,6 +70,8 @@ Item {
 
             property int jumpBackThreshold: Units.gu(10)
 
+            enabled: UI.formFactor === "phone" && !UI.extendedKeysShown
+
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.top: parent.top
@@ -186,9 +188,7 @@ Item {
                 PropertyChanges { target: canvas; y: height; }
                 onCompleted: {
                     keyboardSurface.y = 0;
-                    UI.hideExtendedKeys();
-                    UI.hideKeyboardSizeMenu();
-                    UI.hideLanguagesMenu();
+                    UI.hideCurrentPopover();
                     UI.currentShiftState = "NORMAL";
                     UI.currentSymbolState = "CHARACTERS";
                     maliit_input_method.hide();

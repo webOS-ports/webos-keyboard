@@ -29,10 +29,11 @@ ActionKey {
     fontSize: UI.xsFontSize;
     width: UI.keyWidth //* 2
     
-    MouseArea {
+    PressArea {
         anchors.fill: parent
-        preventStealing: true
-        onClicked: {
+        onlyExclusive: true
+
+        onKeyPressed: {
             if (UI.currentSymbolState === "CHARACTERS")
                 UI.currentSymbolState = "SYMBOLS";
             else

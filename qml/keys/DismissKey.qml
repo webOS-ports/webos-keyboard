@@ -30,15 +30,15 @@ ActionKey {
 
     width: UI.keyWidth;
 
-    MouseArea {
+    PressArea {
         anchors.fill: parent
-        preventStealing: true
+        onlyExclusive: true
 
-        onClicked: {
+        onKeyReleased: {
             maliit_geometry.shown = false;
         }
 
-        onPressAndHold: {
+        onKeyPressedAndHold: {
             UI.showKeyboardSizeMenu(actionKey);
         }
     }

@@ -26,34 +26,85 @@ ActionKey {
     iconShifted: "shift-on"
     iconCapsLock: "shift-lock"
 
+    pressed: shiftKeyPressArea.isPressed
+
     imgNormal: UI.currentShiftState === "CAPSLOCK" ? UI.imageShiftLockKey : UI.currentShiftState === "SHIFTED" ? UI.imageShiftKey : UI.imageBlackKey
     imgPressed: UI.currentShiftState === "CAPSLOCK" ? UI.imageShiftLockKeyPressed : UI.currentShiftState === "SHIFTED" ? UI.imageShiftKeyPressed : UI.imageBlackKeyPressed
 	
     action: "shift"
 
-    MouseArea {
+    PressArea {
+        id: shiftKeyPressArea
         anchors.fill: parent
-        preventStealing: true
+        compatibleWithPopover: true
+        property bool keySentDuringShiftState: false;
 
-        onClicked: {
+        onKeyPressed: {
+            keySentDuringShiftState = false; // reset state
+
             if (UI.currentShiftState === "NORMAL")
                 UI.currentShiftState = "SHIFTED";
 
-            else if (UI.currentShiftState === "SHIFTED")
+            else if (UI.currentShiftState === "SHIFTED" || UI.currentShiftState === "CAPSLOCK")
                 UI.currentShiftState = "NORMAL"
 
-            else if (UI.currentShiftState === "CAPSLOCK")
-                UI.currentShiftState = "NORMAL"
+            UI.isShiftKeyPressed =  true;
         }
 
-        onPressAndHold: {
-            UI.currentShiftState = "CAPSLOCK"
-            //imgPressed: UI.imageShiftKey
+        onKeyPressedAndHold: {
+            if( !keySentDuringShiftState ) {
+                UI.currentShiftState = "CAPSLOCK"
+            }
+        }
+
+        onKeyReleased: {
+            // reset state to normal
+            if( keySentDuringShiftState && UI.currentShiftState === "SHIFTED" ) {
+                UI.currentShiftState = "NORMAL"
+            }
+        }
+
+        // Add double-click management
+        signal doubleClicked();
+        Timer {
+            id: doubleClickTimer
+            interval: 300; running: false; repeat: false
+        }
+        onPressed: {
+            if(!afterMove) {
+                if (doubleClickTimer.running) {
+                    doubleClicked();
+                    doubleClickTimer.stop();
+                }
+                else {
+                    doubleClickTimer.start();
+                }
+            }
+            else {
+                /* even if the press is due to a move on the shift area, go to Shifted mode */
+                if (UI.currentShiftState === "NORMAL")
+                    UI.currentShiftState = "SHIFTED";
+            }
+            UI.isShiftKeyPressed =  true;
+        }
+        onReleased: {
+            UI.isShiftKeyPressed =  false;
         }
 
         onDoubleClicked: {
-            if (UI.currentShiftState === "SHIFTED")
-                UI.currentShiftState = "CAPSLOCK"
+            UI.currentShiftState = "CAPSLOCK"
+        }
+
+        Connections {
+            target: UI
+            onShiftedKeySent: {
+                if( UI.isShiftKeyPressed ) {
+                    shiftKeyPressArea.keySentDuringShiftState = true;
+                }
+                else {
+                    UI.currentShiftState = "NORMAL"
+                }
+            }
         }
     }
 }
