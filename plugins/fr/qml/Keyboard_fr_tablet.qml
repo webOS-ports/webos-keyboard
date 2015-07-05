@@ -84,7 +84,7 @@ KeyPad {
             CharKey { label: "k"; shifted: "K"; }
             CharKey { label: "l"; shifted: "L"; extended: ["l", "ł", "ĺ"]; extendedShifted: ["L", "Ł", "Ĺ"]}
             CharKey { label: "m"; shifted: "M"; extended: ["m", "μ"]; extendedShifted: ["M", "Μ"]}
-            ReturnKey { id: enterKey; label: "Enter"; shifted: "Enter"; width: UI.keyWidth * 0.75; fontSize: UI.isLandscape ? UI.xsFontSize : "10pt"}
+            ReturnKey { id: enterKey; label: "Enter"; shifted: "Enter"; width: UI.keyWidth * 0.75; fontSize: UI.isLandscape ? UI.xsFontSize : "10pt"; }
         }
 
         Row {
