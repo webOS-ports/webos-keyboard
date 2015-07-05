@@ -1,5 +1,7 @@
 /*
  * Copyright 2013 Canonical Ltd.
+ * Copyright (C) 2015 Christophe Chapuis <chris.chapuis@gmail.com>
+ * Copyright (C) 2015 Herman van Hazendonk <github.com@herrie.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -27,20 +29,28 @@ KeyPad {
         anchors.left: parent.left
         spacing: 0
 
-        Row {
-            anchors.horizontalCenter: parent.horizontalCenter;
-            spacing: 0
+        //Row {
+        Item {
+            //anchors.horizontalCenter: parent.horizontalCenter
+            anchors.right: parent.right;
+            anchors.left: parent.left;
+            //spacing: 0
 
             height: keyHeight;
 
-            CharKey { label: "ק"; shifted: ""; }
-            CharKey { label: "ר"; shifted: ""; }
-            CharKey { label: "א"; shifted: ""; }
-            CharKey { label: "ט"; shifted: ""; }
-            CharKey { label: "ו"; shifted: ""; }
-            CharKey { label: "ן"; shifted: ""; }
-            CharKey { label: "ם"; shifted: ""; }
-            CharKey { label: "פ"; shifted: ""; }
+            CharKey { id: leftEmptyKey; width: UI.keyWidth * 0.5; anchors.left: parent.left; }
+            CharKey { id: qKey; label: "/"; shifted: "Q"; anchors.left: leftEmptyKey.right /*parent.left*/; width: UI.keyWidth * 11/10; }
+            CharKey { id: wKey; label: "'"; shifted: "W"; anchors.left: qKey.right; width: UI.keyWidth * 11/10; }
+            CharKey { id: eKey; label: "ק"; shifted: "E"; anchors.left: wKey.right; width: UI.keyWidth * 11/10; }
+            CharKey { id: rKey; label: "ר"; shifted: "R"; anchors.left: eKey.right; width: UI.keyWidth * 11/10; }
+            CharKey { id: tKey; label: "א"; shifted: "T"; anchors.left: rKey.right; width: UI.keyWidth * 11/10; }
+            CharKey { id: yKey; label: "ט"; shifted: "Y"; anchors.left: tKey.right; width: UI.keyWidth * 11/10; }
+            CharKey { id: uKey; label: "ו"; shifted: "U"; anchors.left: yKey.right; width: UI.keyWidth * 11/10; }
+            CharKey { id: iKey; label: "ן"; shifted: "I"; anchors.left: uKey.right; width: UI.keyWidth * 11/10; }
+            CharKey { id: oKey; label: "ם"; shifted: "O"; anchors.left: iKey.right; width: UI.keyWidth * 11/10; }
+            CharKey { id: pKey; label: "פ"; shifted: "P"; anchors.left: oKey.right; width: UI.keyWidth * 11/10; /*anchors.right: parent.right;*/ }
+            CharKey { id: rightEmptyKey; width: UI.keyWidth * 0.5; anchors.left: pKey.right; anchors.right: parent.right; }
+
         }
 
         Row {
@@ -49,34 +59,34 @@ KeyPad {
 
             height: keyHeight;
 
-            CharKey { label: "ש"; shifted: ""; }
-            CharKey { label: "ד"; shifted: ""; }
-            CharKey { label: "ג"; shifted: ""; }
-            CharKey { label: "כ"; shifted: ""; }
-            CharKey { label: "ע"; shifted: ""; }
-            CharKey { label: "י"; shifted: ""; }
-            CharKey { label: "ח"; shifted: ""; }
-            CharKey { label: "ל"; shifted: ""; }
-            CharKey { label: "ך"; shifted: ""; }
-            CharKey { label: "ף"; shifted: ""; }
+            CharKey { label: "ש"; shifted: "A"; }
+            CharKey { label: "ד"; shifted: "S"; }
+            CharKey { label: "ג"; shifted: "D"; }
+            CharKey { label: "כ"; shifted: "F"; }
+            CharKey { label: "ע"; shifted: "G"; }
+            CharKey { label: "י"; shifted: "H"; }
+            CharKey { label: "ח"; shifted: "J"; }
+            CharKey { label: "ל"; shifted: "K"; }
+            CharKey { label: "ך"; shifted: "L"; }
+            CharKey { label: "ף"; shifted: ":"; }
         }
 
-        Row {
-            anchors.horizontalCenter: parent.horizontalCenter;
-            spacing: 0
+        Item {
+            anchors.right: parent.right;
+            anchors.left: parent.left;
 
             height: keyHeight;
 
-            CharKey { label: "ז"; shifted: ""; }
-            CharKey { label: "ס"; shifted: ""; }
-            CharKey { label: "ב"; shifted: ""; }
-            CharKey { label: "ה"; shifted: ""; }
-            CharKey { label: "נ"; shifted: ""; }
-            CharKey { label: "מ"; shifted: ""; }
-            CharKey { label: "צ"; shifted: ""; }
-            CharKey { label: "ת"; shifted: ""; }
-            CharKey { label: "ץ"; shifted: ""; }
-            BackspaceKey { padding: 0 }
+            ShiftKey {id: shiftKey; /*width: UI.keyWidth * 1;*/ anchors.left: parent.left; anchors.right: zKey.left; }
+            CharKey { id: zKey; label: "ז"; shifted: "Z"; anchors.left: shiftKey.right; width: UI.keyWidth * 10/9; }
+            CharKey { id: xKey; label: "ס"; shifted: "X"; anchors.left: zKey.right; width: UI.keyWidth * 10/9;}
+            CharKey { id: cKey; label: "ב"; shifted: "C"; anchors.left: xKey.right; width: UI.keyWidth * 10/9;}
+            CharKey { id: vKey; label: "ה"; shifted: "V"; anchors.left: cKey.right; width: UI.keyWidth * 10/9;}
+            CharKey { id: bKey; label: "נ"; shifted: "B"; anchors.left: vKey.right; width: UI.keyWidth * 10/9;}
+            CharKey { id: nKey; label: "מ"; shifted: "N"; anchors.left: bKey.right; width: UI.keyWidth * 10/9;}
+            CharKey { id: mKey; label: "צ"; shifted: "M"; anchors.left: nKey.right; width: UI.keyWidth * 10/9;}
+            CharKey { id: questionKey; label: "ת"; shifted: ";"; anchors.left: mKey.right; width: UI.keyWidth * 10/9;}
+            BackspaceKey { id: backspaceKey; /*width: UI.keyWidth * 1;*/ anchors.right: parent.right; anchors.left: questionKey.right; }
         }
 
         Component {
@@ -84,12 +94,12 @@ KeyPad {
             Item {
                 height: keyHeight
 
-                SymbolShiftKey { id: symShiftKey;                            anchors.left: parent.left; }
+                SymbolShiftKey { id: symShiftKey; label: "123"; shifted: "123"; anchors.left: parent.left; }
                 LanguageKey    { id: languageMenuButton;                     anchors.left: symShiftKey.right; }
-                CharKey        { id: commaKey;    label: ","; shifted: "/";  anchors.left: languageMenuButton.right; }
-                SpaceKey       { id: spaceKey;                               anchors.left: commaKey.right; anchors.right: dotKey.left; noMagnifier: true }
-                CharKey        { id: dotKey;      label: "."; shifted: ".";  anchors.right: enterKey.left; }
-                ReturnKey      { id: enterKey;                               anchors.right: parent.right }
+                AnnotatedKey   { id: commaKey; label: ","; shifted: "/"; extended: [",", "/", "\\"]; extendedShifted: [",", "/", "\\"]; anchors.left: languageMenuButton.right}
+                SpaceKey       { id: spaceKey;                               anchors.left: commaKey.right; anchors.right: dotKey.left; }
+                AnnotatedKey   { id: dotKey; label: "."; shifted: "?"; extended: [".", "?", "•", "…", "¿"]; extendedShifted: [".", "?", "•", "…", "¿"]; anchors.right: enterKey.left}
+                ReturnKey      { id: enterKey;    label: "Enter"; shifted: "Enter"; anchors.right: parent.right }
             }
         }
         Component {
@@ -98,12 +108,13 @@ KeyPad {
             Item {
                 height: keyHeight
 
-                SymbolShiftKey { id: symShiftKey;                            anchors.left: parent.left; }
-                CharKey        { id: atKey;    label: "@"; shifted: "@";     anchors.left: symShiftKey.right; }
-                SpaceKey       { id: spaceKey;                               anchors.left: atKey.right; anchors.right: urlKey.left; noMagnifier: true }
-                UrlKey         { id: urlKey; label: ".il";                   anchors.right: dotKey.left; }
-                CharKey        { id: dotKey;      label: "."; shifted: ".";  anchors.right: enterKey.left; }
-                ReturnKey      { id: enterKey;                               anchors.right: parent.right }
+                SymbolShiftKey { id: symShiftKey; label: "123"; shifted: "123"; anchors.left: parent.left; }
+                LanguageKey    { id: languageMenuButton;                       anchors.left: symShiftKey.right; }
+                UrlKey         { id: atKey;    label: "@"; shifted: "@";     anchors.left: languageMenuButton.right; }
+                SpaceKey       { id: spaceKey;                               anchors.left: atKey.right; anchors.right: urlKey.left; }
+                UrlKey         { id: urlKey; label: ".il"; extended: [".com", ".net", ".org", ".edu", ".gov", ".co.uk", ".ac.uk"]; anchors.right: dotKey.left; }
+                UrlKey         { id: dotKey;      label: "."; shifted: ".";  anchors.right: enterKey.left; }
+                ReturnKey      { id: enterKey; label: "Enter"; shifted: "Enter"; anchors.right: parent.right }
             }
         }
         Component {
@@ -112,12 +123,13 @@ KeyPad {
             Item {
                 height: keyHeight
 
-                SymbolShiftKey { id: symShiftKey;                            anchors.left: parent.left; }
-                CharKey        { id: slashKey;    label: "/"; shifted: "/";  anchors.left: symShiftKey.right; }
-                SpaceKey       { id: spaceKey;                               anchors.left: slashKey.right; anchors.right: urlKey.left; noMagnifier: true }
-                UrlKey         { id: urlKey; label: ".il";                   anchors.right: dotKey.left; }
-                CharKey        { id: dotKey;      label: "."; shifted: ".";  anchors.right: enterKey.left; }
-                ReturnKey      { id: enterKey;                               anchors.right: parent.right }
+                SymbolShiftKey { id: symShiftKey; label: "123"; shifted: "123"; anchors.left: parent.left; }
+                LanguageKey    { id: languageMenuButton;                       anchors.left: symShiftKey.right; }
+                UrlKey        { id: slashKey;    label: "/"; shifted: "/"; extended: ["http://", "https://", "www."]; anchors.left: languageMenuButton.right; }
+                SpaceKey       { id: spaceKey;                               anchors.left: slashKey.right; anchors.right: urlKey.left; }
+                UrlKey         { id: urlKey; label: ".il"; extended: [".com", ".net", ".org", ".edu", ".gov", ".co.uk", ".ac.uk"]; anchors.right: dotKey.left; }
+                UrlKey        { id: dotKey;      label: "."; shifted: ".";  anchors.right: enterKey.left; }
+                ReturnKey      { id: enterKey;    label: "Enter"; shifted: "Enter"; anchors.right: parent.right }
             }
         }
         Loader {
