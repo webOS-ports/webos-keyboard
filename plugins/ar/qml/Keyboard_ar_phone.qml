@@ -94,7 +94,7 @@ KeyPad {
                 SymbolShiftKey { id: symShiftKey;                            anchors.left: parent.left; }
                 LanguageKey    { id: languageMenuButton;                     anchors.left: symShiftKey.right; }
                 UrlKey        { id: commaKey;    label: "ذ"; shifted: "/";  anchors.left: languageMenuButton.right; }
-                SpaceKey       { id: spaceKey;                               anchors.left: commaKey.right; anchors.right: dotKey.left; noMagnifier: true }
+                SpaceKey       { id: spaceKey;                               anchors.left: commaKey.right; anchors.right: dotKey.left; }
                 UrlKey        { id: dotKey;      label: "."; shifted: ".";  anchors.right: specialChar.left; }
                 UrlKey        { id: specialChar; label: "ط";                anchors.right: enterKey.left }
                 ReturnKey      { id: enterKey;    label: "Enter"; shifted: "Enter"; anchors.right: parent.right }
@@ -109,7 +109,7 @@ KeyPad {
                 SymbolShiftKey { id: symShiftKey;                            anchors.left: parent.left; }
                 LanguageKey    { id: languageMenuButton;                     anchors.left: symShiftKey.right; }
 				UrlKey        { id: atKey;    label: "@"; shifted: "@";     anchors.left: languageMenuButton.right; }
-                SpaceKey       { id: spaceKey;                               anchors.left: atKey.right; anchors.right: urlKey.left; noMagnifier: true }
+                SpaceKey       { id: spaceKey;                               anchors.left: atKey.right; anchors.right: urlKey.left; }
                 UrlKey         { id: urlKey; label: ".eg"; extended: [".iq", ".lb", ".sa", ".sy", ".jo", ".ye"]; anchors.right: dotKey.left; }
                 UrlKey        { id: dotKey;      label: "."; shifted: "ذ";  anchors.right: specialChar.left; }
                 UrlKey        { id: specialChar; label: "ط";                anchors.right: enterKey.left }
@@ -125,7 +125,7 @@ KeyPad {
                 SymbolShiftKey { id: symShiftKey;                            anchors.left: parent.left; }
                 LanguageKey    { id: languageMenuButton;                     anchors.left: symShiftKey.right; }
 				UrlKey        { id: slashKey; label: "/"; shifted: "/";     anchors.left: languageMenuButton.right; }
-                SpaceKey       { id: spaceKey;                               anchors.left: slashKey.right; anchors.right: urlKey.left; noMagnifier: true }
+                SpaceKey       { id: spaceKey;                               anchors.left: slashKey.right; anchors.right: urlKey.left; }
                 UrlKey         { id: urlKey; label: ".eg"; extended: [".ma", ".dz", ".ly", ".tn", ".iq", ".lb", ".ps", ".jo", ".ye", ".bh", ".dj", ".kw", ".km", ".mr‎", ".om", ".qa", ".sa", ".sy", ".so‎", ".sd", ".ae"]; anchors.right: dotKey.left; }
                 UrlKey        { id: dotKey;      label: "."; shifted: "ذ";  anchors.right: specialChar.left; }
                 UrlKey        { id: specialChar; label: "ط";                anchors.right: enterKey.left }

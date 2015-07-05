@@ -18,6 +18,7 @@ import QtQuick 2.0
 import keys 1.0
 
 KeyPad {
+	id: keypadRoot
     content: c1
     symbols: "languages/Keyboard_symbols_tablet.qml"
 
@@ -26,6 +27,25 @@ KeyPad {
         anchors.right: parent.right
         anchors.left: parent.left
         spacing: 0
+		
+	Row {
+            anchors.horizontalCenter: parent.horizontalCenter;
+            spacing: 0
+
+            height: keyHeight * UI.topRowKeyHeightRatio
+
+            NumKey { label: "1"; shifted: "!"; extended: ["1", "!", "¹", "¼", "½", "¡"]}
+            NumKey { label: "2"; shifted: "@"; extended: ["2", "@", "²"]}
+            NumKey { label: "3"; shifted: "#"; extended: ["3", "#", "³", "¾"]}
+            NumKey { label: "4"; shifted: "$"; extended: ["4", "$", "€", "£", "¥", "¢", "¤"]}
+            NumKey { label: "5"; shifted: "%"; extended: ["5", "%", "‰"]}
+            NumKey { label: "6"; shifted: "^"; extended: ["6", "^"]}
+            NumKey { label: "7"; shifted: "&"; extended: ["7", "&"]}
+            NumKey { label: "8"; shifted: "*"; extended: ["8", "*"]}
+            NumKey { label: "9"; shifted: "("; extended: ["9", "(", "[", "{"]}
+            NumKey { label: "0"; shifted: ")"; extended: ["0", ")", "]", "}"]}
+            TrackBall { width: keypadRoot.width - (UI.keyWidth*UI.numKeyWidthRatio*10); anchors.verticalCenter: parent.verticalCenter }
+        }
 
         Row {
             anchors.horizontalCenter: parent.horizontalCenter;
@@ -89,7 +109,7 @@ KeyPad {
                 SymbolShiftKey { id: symShiftKey;                            anchors.left: parent.left; }
                 LanguageKey    { id: languageMenuButton;                     anchors.left: symShiftKey.right; }
                 CharKey        { id: commaKey;    label: ","; shifted: "/";  anchors.left: languageMenuButton.right; }
-                SpaceKey       { id: spaceKey;                               anchors.left: commaKey.right; anchors.right: dotKey.left; noMagnifier: true }
+                SpaceKey       { id: spaceKey;                               anchors.left: commaKey.right; anchors.right: dotKey.left; }
                 CharKey        { id: dotKey;      label: "."; shifted: ".";  anchors.right: enterKey.left; }
                 ReturnKey      { id: enterKey;                               anchors.right: parent.right }
             }
@@ -102,7 +122,7 @@ KeyPad {
 
                 SymbolShiftKey { id: symShiftKey;                            anchors.left: parent.left; }
                 CharKey        { id: atKey;    label: "@"; shifted: "@";     anchors.left: symShiftKey.right; }
-                SpaceKey       { id: spaceKey;                               anchors.left: atKey.right; anchors.right: urlKey.left; noMagnifier: true }
+                SpaceKey       { id: spaceKey;                               anchors.left: atKey.right; anchors.right: urlKey.left; }
                 UrlKey         { id: urlKey; label: ".cz"; extended: [".sk"];anchors.right: dotKey.left; }
                 CharKey        { id: dotKey;      label: "."; shifted: ".";  anchors.right: enterKey.left; }
                 ReturnKey      { id: enterKey;                               anchors.right: parent.right }
@@ -116,7 +136,7 @@ KeyPad {
 
                 SymbolShiftKey { id: symShiftKey;                            anchors.left: parent.left; }
                 CharKey        { id: slashKey;    label: "/"; shifted: "/";  anchors.left: symShiftKey.right; }
-                SpaceKey       { id: spaceKey;                               anchors.left: slashKey.right; anchors.right: urlKey.left; noMagnifier: true }
+                SpaceKey       { id: spaceKey;                               anchors.left: slashKey.right; anchors.right: urlKey.left; }
                 UrlKey         { id: urlKey; label: ".cz"; extended: [".sk"];anchors.right: dotKey.left; }
                 CharKey        { id: dotKey;      label: "."; shifted: ".";  anchors.right: enterKey.left; }
                 ReturnKey      { id: enterKey;                               anchors.right: parent.right }
@@ -128,19 +148,6 @@ KeyPad {
 
             sourceComponent: currentContentType === 0 ? contentTypeNormal :
                              currentContentType === 3 ? contentTypeEmail : contentTypeUrl
-        }
-        Item {
-            anchors.left: parent.left
-            anchors.right: parent.right
-
-            height: keyHeight;
-
-            SymbolShiftKey { id: symShiftKey;                            anchors.left: parent.left; }
-            LanguageKey    { id: languageMenuButton;                     anchors.left: symShiftKey.right; }
-            CharKey        { id: commaKey;    label: ","; shifted: "/";  anchors.left: languageMenuButton.right; }
-            SpaceKey       { id: spaceKey;                               anchors.left: commaKey.right; anchors.right: dotKey.left; noMagnifier: true }
-            CharKey        { id: dotKey;      label: "."; shifted: ".";  anchors.right: enterKey.left; }
-            ReturnKey      { id: enterKey;                               anchors.right: parent.right }
         }
     } // column
 }

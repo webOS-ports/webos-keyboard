@@ -89,7 +89,7 @@ KeyPad {
                 SymbolShiftKey { id: symShiftKey;                            anchors.left: parent.left; }
                 LanguageKey    { id: languageMenuButton;                     anchors.left: symShiftKey.right; }
                 CharKey        { id: commaKey;    label: ","; shifted: "/";  anchors.left: languageMenuButton.right; }
-                SpaceKey       { id: spaceKey;                               anchors.left: commaKey.right; anchors.right: dotKey.left; noMagnifier: true }
+                SpaceKey       { id: spaceKey;                               anchors.left: commaKey.right; anchors.right: dotKey.left; }
                 CharKey        { id: dotKey;      label: "."; shifted: ".";  anchors.right: umlaut.left; }
                 CharKey        { id: umlaut;      label: "ö"; shifted: "Ö";  anchors.right: enterKey.left; }
                 ReturnKey      { id: enterKey;                               anchors.right: parent.right }
@@ -103,7 +103,7 @@ KeyPad {
 
                 SymbolShiftKey { id: symShiftKey;                            anchors.left: parent.left; }
                 CharKey        { id: atKey;    label: "@"; shifted: "@";     anchors.left: symShiftKey.right; }
-                SpaceKey       { id: spaceKey;                               anchors.left: atKey.right; anchors.right: urlKey.left; noMagnifier: true }
+                SpaceKey       { id: spaceKey;                               anchors.left: atKey.right; anchors.right: urlKey.left; }
                 UrlKey         { id: urlKey; label: ".fi"; extended: [".se", ".no"]; anchors.right: dotKey.left; }
                 CharKey        { id: dotKey;      label: "."; shifted: ".";  anchors.right: umlaut.left; }
                 CharKey        { id: umlaut;      label: "ö"; shifted: "Ö";  anchors.right: enterKey.left; }
@@ -118,7 +118,7 @@ KeyPad {
 
                 SymbolShiftKey { id: symShiftKey;                            anchors.left: parent.left; }
                 CharKey        { id: slashKey;    label: "/"; shifted: "/";  anchors.left: symShiftKey.right; }
-                SpaceKey       { id: spaceKey;                               anchors.left: slashKey.right; anchors.right: urlKey.left; noMagnifier: true }
+                SpaceKey       { id: spaceKey;                               anchors.left: slashKey.right; anchors.right: urlKey.left; }
                 UrlKey         { id: urlKey; label: ".fi"; extended: [".se", ".no"]; anchors.right: dotKey.left; }
                 CharKey        { id: dotKey;      label: "."; shifted: ".";  anchors.right: umlaut.left; }
                 CharKey        { id: umlaut;      label: "ö"; shifted: "Ö";  anchors.right: enterKey.left; }
