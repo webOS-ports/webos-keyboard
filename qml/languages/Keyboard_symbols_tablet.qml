@@ -117,7 +117,7 @@ KeyPad {
             TabKey         { id: tabKey; shifted: "Tab";       label: "Tab";              anchors.left: parent.left; }
 			SymbolShiftKey { id: symShiftKey; label: "ABC"; shifted: "ABC"; anchors.left: tabKey.right; }
             LanguageKey    { id: languageMenuButton;                       anchors.left: symShiftKey.right; }
-            SpaceKey       { id: spaceKey;                                 anchors.left: languageMenuButton.right; anchors.right: apostropheKey.left; noMagnifier: true }
+            SpaceKey       { id: spaceKey;                                 anchors.left: languageMenuButton.right; anchors.right: apostropheKey.left; }
             AnnotatedKey   { id: apostropheKey; label: "'"; shifted: "\""; extended: ["'", "\"", "`", "‘", "’", "“", "”", "«", "»"]; extendedShifted: ["'", "\"", "`", "‘", "’", "“", "”", "«", "»"]; anchors.right: minusKey.left; useHorizontalLayout: (UI.keyboardSizeChoice === "XS" || UI.keyboardSizeChoice === "S") ? true : false;}
             AnnotatedKey   { id: minusKey;      label: "-"; shifted: "_"; extended: ["-", "_", "±", "¬"]; extendedShifted: ["-", "_", "±", "¬"]; anchors.right: dismissKey.left; useHorizontalLayout: (UI.keyboardSizeChoice === "XS" || UI.keyboardSizeChoice === "S") ? true : false;}
             DismissKey     { id: dismissKey;                               anchors.right: parent.right;}
