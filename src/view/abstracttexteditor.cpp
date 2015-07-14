@@ -495,9 +495,11 @@ void AbstractTextEditor::onKeyReleased(const Key &key)
 
     if (event_key != Qt::Key_unknown) {
         commitPreedit();
-        QKeyEvent ev(QEvent::KeyPress, event_key, Qt::NoModifier, keyText);
-        sendKeyEvent(ev);
     }
+    QKeyEvent evPress(QEvent::KeyPress, event_key, Qt::NoModifier, keyText);
+    sendKeyEvent(evPress);
+    QKeyEvent evRelease(QEvent::KeyRelease, event_key, Qt::NoModifier, keyText);
+    sendKeyEvent(evRelease);
 }
 
 //! \brief Reacts to sliding into a key.
