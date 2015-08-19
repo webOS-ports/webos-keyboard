@@ -9,7 +9,7 @@ QT             += widgets
 INCLUDEPATH    += \
     $${TOP_SRCDIR}/src/ \
     $${TOP_SRCDIR}/src/lib/ \
-    $${TOP_SRCDIR}/src/lib/logic/
+    $${TOP_SRCDIR}/src/lib/logic/ \
     $${TOP_SRCDIR}/plugins/westernsupport
 
 HEADERS         = \
