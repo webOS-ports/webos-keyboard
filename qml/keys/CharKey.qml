@@ -96,7 +96,7 @@ Item {
 				}
 			}
             if (extendedShifted) {
-                if(imgNormal === UI.imageGreyKey) {
+                if(imgNormal === UI.imageGreyKey && !action === "url") {
 					__annotationLabelShifted = extendedShifted[0]
 				}
 				else{

@@ -42,6 +42,7 @@ Item {
     property string action
     property bool noMagnifier: UI.formFactor==="tablet" ? true : false
     property bool skipAutoCaps: false
+    property bool showAnnotation2: true
 
     /* design */
     property bool useHorizontalLayout: false;
@@ -86,6 +87,10 @@ Item {
                 __annotationLabelNormal = extended[1]
             if (extendedShifted)
                 __annotationLabelShifted = extendedShifted[0]
+            else
+            {
+                __annotationLabelNormal = shifted;
+            }
         }
     }
 
@@ -172,6 +177,7 @@ Item {
         styleColor: "white"
         color: UI.fontColor //: UI.annotationFontColor
 		smooth: true
+        visible: showAnnotation2
     }
 
     PressArea {
