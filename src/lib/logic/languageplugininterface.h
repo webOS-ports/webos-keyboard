@@ -3,6 +3,8 @@
 
 #include <QString>
 #include <QStringList>
+#include <QObject>
+#include <presage.h>
 
 class AbstractLanguageFeatures;
 
