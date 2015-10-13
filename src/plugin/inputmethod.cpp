@@ -110,6 +110,7 @@ InputMethod::InputMethod(MAbstractInputMethodHost *host)
     connect(&d->editor,  SIGNAL(autoCapsActivated()), this, SIGNAL(activateAutocaps()));
 
     connect(this, SIGNAL(contentTypeChanged(TextContentType)), this, SLOT(setContentType(TextContentType)));
+	connect(this, SIGNAL(keyboardSizeChanged(QString)), this, SLOT(setKeyboardSize(QString)));
     connect(this, SIGNAL(activeLanguageChanged(QString)), d->editor.wordEngine(), SLOT(onLanguageChanged(QString)));
     connect(d->m_geometry, SIGNAL(visibleRectChanged()), this, SLOT(onVisibleRectChanged()));
     connect(d->m_geometry, SIGNAL(popoverRectChanged()), this, SLOT(updateWindowMask()));
@@ -119,9 +120,13 @@ InputMethod::InputMethod(MAbstractInputMethodHost *host)
     d->registerWordEngineSetting();
     d->registerActiveLanguage();
     d->registerEnabledLanguages();
-
+    d->registerKeyboardSize();
+	
     //fire signal so all listeners know what active language is
     Q_EMIT activeLanguageChanged(d->activeLanguage);
+	
+    //fire signal so all listeners know what keyboard size is
+    Q_EMIT keyboardSizeChanged(d->keyboardSize);
 
     // Setting layout orientation depends on word engine and hide word ribbon
     // settings to be initialized first:
@@ -479,6 +484,31 @@ void InputMethod::setActiveLanguage(const QString &newLanguage)
 
     qDebug() << "in inputMethod.cpp setActiveLanguage() emitting activeLanguageChanged to" << d->activeLanguage;
     Q_EMIT activeLanguageChanged(d->activeLanguage);
+}
+
+//! \brief InputMethod::setKeyboardSize
+//! Sets the keyboard size
+//! \param keyboardSize of the new size. For example "XS", "S", "M" or "L"
+//! FIXME check if the size is supported - if not use "M" as fallback
+void InputMethod::setKeyboardSize(const QString &newKeyboardSize)
+{
+    Q_D(InputMethod);
+
+    if (newKeyboardSize.length() != 2 && newKeyboardSize.length() != 1) {
+        qWarning() << Q_FUNC_INFO << "newKeyboardSize is not valid:" << newKeyboardSize;
+        return;
+    }
+
+    qDebug() << "in inputMethod.cpp setKeyboardSize() keyboardSize is:" << newKeyboardSize;
+
+    if (d->keyboardSize == newKeyboardSize)
+        return;
+
+    d->keyboardSize = newKeyboardSize;
+    d->host->setKeyboardSize(newKeyboardSize);
+    
+    qDebug() << "in inputMethod.cpp setKeyboardSize() emitting keyboardSizeChanged to" << d->keyboardSize;
+    Q_EMIT keyboardSizeChanged(d->keyboardSize);
 }
 
 void InputMethod::updateWindowMask()

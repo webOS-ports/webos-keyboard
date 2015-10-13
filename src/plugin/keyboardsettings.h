@@ -50,6 +50,7 @@ public:
     bool predictiveText() const;
     bool spellchecking() const;
     bool keyPressFeedback() const;
+    QString keyboardSize() const;
 
     static bool systemServiceStatusCallback(LSHandle *handle, LSMessage *message, void *user_data);
     static bool preferencesChangedCallback(LSHandle *handle, LSMessage *message, void *user_data);
@@ -65,6 +66,7 @@ Q_SIGNALS:
     void predictiveTextChanged(bool);
     void spellCheckingChanged(bool);
     void keyPressFeedbackChanged(bool);
+    void keyboardSizeChanged(QString);
 
 private:
     LSHandle *mServiceHandle;
@@ -76,6 +78,7 @@ private:
     bool mPredictiveText;
     bool mSpellchecing;
     bool mKeyPressFeedback;
+    QString mKeyboardSize;
 };
 
 } // namespace

@@ -51,6 +51,7 @@ class InputMethod
     Q_PROPERTY(TextContentType contentType READ contentType WRITE setContentType NOTIFY contentTypeChanged)
     Q_PROPERTY(QStringList enabledLanguages READ enabledLanguages NOTIFY enabledLanguagesChanged)
     Q_PROPERTY(QString activeLanguage READ activeLanguage WRITE setActiveLanguage NOTIFY activeLanguageChanged)
+    Q_PROPERTY(QString keyboardSize READ keyboardSize WRITE setKeyboardSize NOTIFY keyboardSizeChanged)
     Q_PROPERTY(bool useAudioFeedback READ useAudioFeedback NOTIFY useAudioFeedbackChanged)
 
     Q_ENUMS(TextContentType)
@@ -102,6 +103,8 @@ public:
 
     const QString &activeLanguage() const;
     Q_SLOT void setActiveLanguage(const QString& newLanguage);
+	
+	Q_SLOT void setKeyboardSize(const QString& newKeyboardSize);
 
     Q_SLOT void updateWindowMask();
     Q_SLOT void onVisibleRectChanged();
