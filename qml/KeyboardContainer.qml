@@ -28,7 +28,7 @@ Item {
 
     height: characterKeypadLoader.height
 
-    property string currentKeyboardSize: "M"
+    property string currentKeyboardSize: maliit_input_method.keyboardSize
     property string currentAlternativeLayout: UI.currentAlternativeLayout
 
     function closeExtendedKeys()
