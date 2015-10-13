@@ -451,6 +451,7 @@ const QString &InputMethod::activeLanguage() const
     return d->activeLanguage;
 }
 
+
 //! \brief InputMethod::useAudioFeedback is true, when keys should play a audio
 //! feedback when pressed
 //! \return
@@ -486,6 +487,12 @@ void InputMethod::setActiveLanguage(const QString &newLanguage)
     Q_EMIT activeLanguageChanged(d->activeLanguage);
 }
 
+const QString &InputMethod::keyboardSize() const
+{
+    Q_D(const InputMethod);
+    return d->keyboardSize;
+}
+
 //! \brief InputMethod::setKeyboardSize
 //! Sets the keyboard size
 //! \param keyboardSize of the new size. For example "XS", "S", "M" or "L"
@@ -505,7 +512,6 @@ void InputMethod::setKeyboardSize(const QString &newKeyboardSize)
         return;
 
     d->keyboardSize = newKeyboardSize;
-    d->host->setKeyboardSize(newKeyboardSize);
     
     qDebug() << "in inputMethod.cpp setKeyboardSize() emitting keyboardSizeChanged to" << d->keyboardSize;
     Q_EMIT keyboardSizeChanged(d->keyboardSize);

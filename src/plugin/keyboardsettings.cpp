@@ -60,8 +60,8 @@ KeyboardSettings::KeyboardSettings(QObject *parent) :
     mAutoCompletion(false),
     mPredictiveText(false),
     mSpellchecing(false),
-    mKeyPressFeedback(false,
-    mKeyboardSize("M");
+    mKeyPressFeedback(false),
+    mKeyboardSize("M")
 {
     LSError error;
     LSErrorInit(&error);

@@ -103,8 +103,9 @@ public:
 
     const QString &activeLanguage() const;
     Q_SLOT void setActiveLanguage(const QString& newLanguage);
-	
-	Q_SLOT void setKeyboardSize(const QString& newKeyboardSize);
+
+    const QString &keyboardSize() const;	
+    Q_SLOT void setKeyboardSize(const QString& newKeyboardSize);
 
     Q_SLOT void updateWindowMask();
     Q_SLOT void onVisibleRectChanged();
@@ -119,6 +120,7 @@ Q_SIGNALS:
     void wordEngineEnabledChanged(bool wordEngineEnabled);
     void wordRibbonEnabledChanged(bool wordRibbonEnabled);
     void windowGeometryRectChanged(QRect rect);
+    void keyboardSizeChanged(QString size);
 
 private:
     Q_SLOT void onAutoCorrectSettingChanged();
