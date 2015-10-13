@@ -54,6 +54,7 @@ public:
     bool wordEngineEnabled;
     InputMethod::TextContentType contentType;
     QString activeLanguage;
+	QString keyboardSize;
     QStringList enabledLanguages;
     Qt::ScreenOrientation appsCurrentOrientation;
 
@@ -75,6 +76,7 @@ public:
         , wordEngineEnabled(false)
         , contentType(InputMethod::FreeTextContentType)
         , activeLanguage("en")
+		, keyboardSize("M")
         , enabledLanguages(activeLanguage)
         , appsCurrentOrientation(qGuiApp->primaryScreen()->orientation())
         , m_geometry(new KeyboardGeometry(q))
@@ -214,6 +216,16 @@ public:
         activeLanguage = m_settings.activeLanguage();
         qDebug() << "inputmethod_p.h registerActiveLanguage(): activeLanguage is:" << activeLanguage;
         q->setActiveLanguage(activeLanguage);
+    }
+	
+    void registerKeyboardSize()
+    {
+        QObject::connect(&m_settings, SIGNAL(keyboardSizeChanged(QString)),
+                         q, SLOT(setKeyboardSize(QString)));
+
+        keyboardSize = m_settings.keyboardSize();
+        qDebug() << "inputmethod_p.h registerKeyboardSize(): keyboardSize is:" << keyboardSize;
+        q->setKeyboardSize(keyboardSize);
     }
 
     void registerEnabledLanguages()

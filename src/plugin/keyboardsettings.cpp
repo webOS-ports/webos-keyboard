@@ -46,6 +46,7 @@ const QLatin1String AUTO_COMPLETION_KEY = QLatin1String("autoCompletion");
 const QLatin1String PREDICTIVE_TEXT_KEY = QLatin1String("predictiveText");
 const QLatin1String SPELL_CHECKING_KEY = QLatin1String("spellChecking");
 const QLatin1String KEY_PRESS_FEEDBACK_KEY = QLatin1String("keyPressFeedback");
+const QLatin1String KEYBOARD_SIZE_KEY = QLatin1String("keyboardSize");
 
 /*!
  * \brief KeyboardSettings::KeyboardSettings class to load the settings, and
@@ -59,7 +60,8 @@ KeyboardSettings::KeyboardSettings(QObject *parent) :
     mAutoCompletion(false),
     mPredictiveText(false),
     mSpellchecing(false),
-    mKeyPressFeedback(false)
+    mKeyPressFeedback(false),
+    mKeyboardSize("M")
 {
     LSError error;
     LSErrorInit(&error);
@@ -220,6 +222,15 @@ void KeyboardSettings::preferencesChanged(const QByteArray &data)
             Q_EMIT keyPressFeedbackChanged(mKeyPressFeedback);
         }
     }
+	
+    if (keyboardPref.contains(KEYBOARD_SIZE_KEY) && keyboardPref.value(KEYBOARD_SIZE_KEY).isString()) {
+        QString value = keyboardPref.value(KEYBOARD_SIZE_KEY).toString();
+        if (value != mKeyboardSize) {
+            mKeyboardSize = value;
+            Q_EMIT keyboardSizeChanged(mKeyboardSize);
+        }
+    }
+
 }
 
 /*!
@@ -292,6 +303,17 @@ bool KeyboardSettings::keyPressFeedback() const
   return mKeyPressFeedback;
 }
 
+/*!
+ * \brief KeyboardSettings::keyboardSize returns current keyboard size
+ * \return keyboard size
+ */
+
+QString KeyboardSettings::keyboardSize() const
+{
+    return mKeyboardSize;
+}
+
+
 #if 0
 /*!
  * \brief KeyboardSettings::settingUpdated slot to handle changes in the settings backend
@@ -321,7 +343,11 @@ void KeyboardSettings::settingUpdated(const QString &key)
     } else if (key == KEY_PRESS_FEEDBACK_KEY) {
         Q_EMIT keyPressFeedbackChanged(keyPressFeedback());
         return;
+    } else if (key == KEYBOARD_SIZE_KEY) {
+        Q_EMIT keyboardSizeChanged(keyboardSize());
+        return;
     }
+	
 
     qWarning() << Q_FUNC_INFO << "unknown settings key:" << key;
     return;
