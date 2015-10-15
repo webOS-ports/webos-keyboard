@@ -97,9 +97,9 @@ MultiPointTouchArea {
                     keyArea.pressed(true);
                 }
                 touchPoints[i].currentKeyArea = keyArea;
-            }
-            if( keyArea ) {
-                keyArea.moved();
+                if( keyArea ) {
+                    keyArea.moved();
+                }
             }
         }
     }
