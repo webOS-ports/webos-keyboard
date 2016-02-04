@@ -75,13 +75,14 @@ KeyPad {
             height: keyHeight;
 			
 			ShiftKey {id: shiftKey; anchors.left: parent.left;}
-            CharKey {width: UI.keyWidth * 8/7; id: semicolonKey; anchors.left: shiftKey.right; label: ";"; shifted: ";"; }
-            CharKey {width: UI.keyWidth * 8/7; id: colonKey; anchors.left: semicolonKey.right; label: ":"; shifted: ":";}
-            CharKey {width: UI.keyWidth * 8/7; id: equalKey; anchors.left: colonKey.right; label: "="; shifted: "=";}
-            CharKey {width: UI.keyWidth * 8/7; id: plusKey; anchors.left: equalKey.right; label: "+"; shifted: "+";}
-            CharKey {width: UI.keyWidth * 8/7; id: minusKey; anchors.left: plusKey.right; label: "-"; shifted: "-";}
-            CharKey {width: UI.keyWidth * 8/7; id: apostropheKeyM; anchors.left: minusKey.right; label: "'"; shifted: "'";}
-            CharKey {width: UI.keyWidth * 8/7; id: quoteKey; anchors.left: apostropheKeyM.right; label: "\""; shifted: "\"";}
+            CharKey {width: UI.keyWidth; id: semicolonKey; anchors.left: shiftKey.right; label: ";"; shifted: ";"; }
+            CharKey {width: UI.keyWidth; id: colonKey; anchors.left: semicolonKey.right; label: ":"; shifted: ":";}
+            CharKey {width: UI.keyWidth; id: equalKey; anchors.left: colonKey.right; label: "="; shifted: "=";}
+            CharKey {width: UI.keyWidth; id: plusKey; anchors.left: equalKey.right; label: "+"; shifted: "+";}
+            CharKey {width: UI.keyWidth; id: minusKey; anchors.left: plusKey.right; label: "-"; shifted: "-";}
+            CharKey {width: UI.keyWidth; id: underscoreKey; anchors.left: minusKey.right; label: "_"; shifted: "_";}
+            CharKey {width: UI.keyWidth; id: apostropheKeyM; anchors.left: underscoreKey.right; label: "'"; shifted: "'";}
+            CharKey {width: UI.keyWidth; id: quoteKey; anchors.left: apostropheKeyM.right; label: "\""; shifted: "\"";}
 
             BackspaceKey {id: backspaceKey; anchors.right: parent.right; anchors.left: quoteKey.right 	}
 
@@ -96,7 +97,8 @@ KeyPad {
 			SymbolShiftKey { id: symShiftKey; label: "ABC"; shifted: "ABC"; anchors.left: parent.left; }
             LanguageKey    { id: languageMenuButton;                       anchors.left: symShiftKey.right; }
             SpaceKey       { id: spaceKey;                                 anchors.left: languageMenuButton.right; anchors.right: smileyKey.left; }
-            CharKey        { imgNormal: UI.imageGreyKey; imgPressed: UI.imageGreyKeyPressed; id: smileyKey;      label: "..."; shifted: "...";   anchors.right: enterKey.left; }
+            CharKey        { imgNormal: UI.imageGreyKey; imgPressed: UI.imageGreyKeyPressed; id: smileyKey; label: "..."; shifted: "..."; anchors.right: dismissKey.left; }
+            DismissKey     { id: dismissKey;                               anchors.right: enterKey.left}
             ReturnKey      { id: enterKey;      label: "Enter"; shifted: "Enter"; extended: "Enter";  anchors.right: parent.right;}
 	        }
        

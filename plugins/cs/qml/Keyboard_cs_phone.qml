@@ -95,7 +95,8 @@ KeyPad {
                 LanguageKey    { id: languageMenuButton;                       anchors.left: symShiftKey.right; }
                 AnnotatedKey   { id: commaKey; label: ","; shifted: "/"; extended: [",", "/", "\\"]; extendedShifted: [",", "/", "\\"]; anchors.left: languageMenuButton.right; }
                 SpaceKey       { id: spaceKey;                                 anchors.right: dotKey.left; anchors.left: commaKey.right; }
-                AnnotatedKey   { id: dotKey; label: "."; shifted: "?"; extended: [".", "?", "•", "…", "¿"]; extendedShifted: [".", "?", "•", "…", "¿"]; anchors.right: enterKey.left; }
+                AnnotatedKey   { id: dotKey; label: "."; shifted: "?"; extended: [".", "?", "•", "…", "¿"]; extendedShifted: [".", "?", "•", "…", "¿"]; anchors.right: dismissKey.left; }
+                DismissKey     { id: dismissKey;                                anchors.right: enterKey.left}
                 ReturnKey      { id: enterKey;      label: "Enter"; shifted: "Enter"; anchors.right: parent.right; }
             }
         }
@@ -110,7 +111,8 @@ KeyPad {
                 UrlKey         { id: atKey;    label: "@"; shifted: "@";     anchors.left: languageMenuButton.right; }
                 SpaceKey       { id: spaceKey;                               anchors.left: atKey.right; anchors.right: urlKey.left; }
                 UrlKey         { id: urlKey; label: ".cz"; shifted: ".sk"; extended: [".cz", ".sk", ".com", ".net", ".org", ".edu", ".gov", ".co.uk", ".ac.uk"]; anchors.right: dotKey.left; }
-                AnnotatedKey   { id: dotKey;      label: "."; shifted: "?"; showAnnotation2: false; anchors.right: enterKey.left; }
+                AnnotatedKey   { id: dotKey;      label: "."; shifted: "?"; showAnnotation2: false; anchors.right: dismissKey.left; }
+                DismissKey     { id: dismissKey;                                anchors.right: enterKey.left}
                 ReturnKey      { id: enterKey; label: "Enter"; shifted: "Enter"; anchors.right: parent.right; }
             }
         }
@@ -125,7 +127,8 @@ KeyPad {
                 UrlKey         { id: slashKey;    label: "/"; shifted: "/"; extended: ["http://", "https://", "www."]; anchors.left: languageMenuButton.right; }
                 SpaceKey       { id: spaceKey;                               anchors.left: slashKey.right; anchors.right: urlKey.left; }
                 UrlKey         { id: urlKey; label: ".cz"; shifted: ".sk"; extended: [".cz", ".sk", ".com", ".net", ".org", ".edu", ".gov", ".co.uk", ".ac.uk"]; anchors.right: dotKey.left; }
-                AnnotatedKey   { id: dotKey;      label: "."; shifted: "?"; showAnnotation2: false;  anchors.right: enterKey.left; }
+                AnnotatedKey   { id: dotKey;      label: "."; shifted: "?"; showAnnotation2: false;  anchors.right: dismissKey.left; }
+                DismissKey     { id: dismissKey;                                anchors.right: enterKey.left}
                 ReturnKey      { id: enterKey;    label: "Enter"; shifted: "Enter"; anchors.right: parent.right; }
             }
         }
