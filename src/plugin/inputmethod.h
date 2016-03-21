@@ -52,6 +52,7 @@ class InputMethod
     Q_PROPERTY(QStringList enabledLanguages READ enabledLanguages NOTIFY enabledLanguagesChanged)
     Q_PROPERTY(QString activeLanguage READ activeLanguage WRITE setActiveLanguage NOTIFY activeLanguageChanged)
     Q_PROPERTY(QString keyboardSize READ keyboardSize WRITE setKeyboardSize NOTIFY keyboardSizeChanged)
+    Q_PROPERTY(QString keyboardLayout READ keyboardLayout WRITE setKeyboardLayout NOTIFY keyboardLayoutChanged)
     Q_PROPERTY(bool useAudioFeedback READ useAudioFeedback NOTIFY useAudioFeedbackChanged)
 
     Q_ENUMS(TextContentType)
@@ -107,6 +108,9 @@ public:
     const QString &keyboardSize() const;	
     Q_SLOT void setKeyboardSize(const QString& newKeyboardSize);
 
+    const QString &keyboardLayout() const;
+    Q_SLOT void setKeyboardLayout(const QString& newKeyboardLayout);
+
     Q_SLOT void updateWindowMask();
     Q_SLOT void onVisibleRectChanged();
     bool useAudioFeedback() const;
@@ -121,6 +125,7 @@ Q_SIGNALS:
     void wordRibbonEnabledChanged(bool wordRibbonEnabled);
     void windowGeometryRectChanged(QRect rect);
     void keyboardSizeChanged(QString size);
+    void keyboardLayoutChanged(QString layout);
 
 private:
     Q_SLOT void onAutoCorrectSettingChanged();

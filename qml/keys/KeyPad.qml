@@ -98,6 +98,7 @@ Item {
 
         onItemSelected: {
             UI.currentAlternativeLayout = ((modelData === "LuneOS") ? "" : modelData);
+            maliit_input_method.keyboardLayout = modelData;
             UI.hideCurrentPopover();
         }
     }

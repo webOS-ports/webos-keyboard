@@ -30,7 +30,7 @@ QtObject {
     property bool isShiftKeyPressed: false
     property string currentShiftState: "NORMAL"  // can be "NORMAL", "SHIFTED" or "CAPSLOCK"
     property string currentSymbolState: "CHARACTER" // can be "CHARACTER" or "SYMBOL"
-    property string currentAlternativeLayout: ""
+    property string currentAlternativeLayout: maliit_input_method.keyboardLayout === "LuneOS" ? "" : maliit_input_method.keyboardLayout
 
     // keyboard-wide signals
     signal showExtendedKeys(variant keysExtendedModel, Item keyItem);

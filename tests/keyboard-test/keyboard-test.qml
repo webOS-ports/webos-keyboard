@@ -104,6 +104,7 @@ Rectangle {
         property bool testEnvironment: true
         property string activeLanguage: "en"
         property string keyboardSize: "M"
+        property string keyboardLayout: "LuneOS"
         property variant enabledLanguages: [ "en", "de", "nl", "fr", "sv", "ar", "cs", "da", "es", "fi", "he", "hu", "it", "pl", "pt", "ru" ]
     }
 
