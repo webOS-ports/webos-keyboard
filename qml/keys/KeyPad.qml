@@ -75,6 +75,7 @@ Item {
 
         onItemSelected: {
             UI.keyboardSizeChoice = modelData;
+            maliit_input_method.keyboardSize = modelData;
             UI.hideCurrentPopover();
         }
     }

@@ -24,7 +24,7 @@ import "key_constants.js" as DesignConstants
 QtObject {
     // set from keyboard
     property bool isLandscape: false
-    property string keyboardSizeChoice: "M"
+    property string keyboardSizeChoice: maliit_input_method.keyboardSize
     property real keyWidth: 5 // arbitrary value, will be overwritten when KeyPad computes the ideal key width
     property bool extendedKeysShown: false
     property bool isShiftKeyPressed: false

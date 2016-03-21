@@ -34,6 +34,7 @@
 #include <QStringList>
 
 #include <luna-service2/lunaservice.h>
+#include "inputmethod.h"
 
 namespace MaliitKeyboard {
 
@@ -57,6 +58,7 @@ public:
 
     void preferenceServiceIsAvailable();
     void preferencesChanged(const QByteArray &data);
+    void savePreferences(InputMethod *q);
 
 Q_SIGNALS:
     void activeLanguageChanged(QString);
@@ -79,6 +81,7 @@ private:
     bool mSpellchecing;
     bool mKeyPressFeedback;
     QString mKeyboardSize;
+    QJsonObject mSavedKeyboardPrefs;
 };
 
 } // namespace

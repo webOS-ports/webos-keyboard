@@ -231,6 +231,7 @@ void KeyboardSettings::preferencesChanged(const QByteArray &data)
         }
     }
 
+    mSavedKeyboardPrefs = keyboardPref;
 }
 
 /*!
@@ -313,6 +314,37 @@ QString KeyboardSettings::keyboardSize() const
     return mKeyboardSize;
 }
 
+void KeyboardSettings::savePreferences(InputMethod *q)
+{
+    QJsonObject keyboardObj;
+
+    keyboardObj.insert(ACTIVE_LANGUAGE_KEY, QJsonValue(q->activeLanguage()));
+    keyboardObj.insert(ENABLED_LANGUAGES_KEY, QJsonValue(QJsonArray::fromStringList(q->enabledLanguages())));
+    keyboardObj.insert(AUTO_CAPITALIZATION_KEY, QJsonValue(mAutoCapitalization));
+    keyboardObj.insert(AUTO_COMPLETION_KEY, QJsonValue(mAutoCompletion));
+    keyboardObj.insert(PREDICTIVE_TEXT_KEY, QJsonValue(mPredictiveText));
+    keyboardObj.insert(SPELL_CHECKING_KEY, QJsonValue(mSpellchecing));
+    keyboardObj.insert(KEY_PRESS_FEEDBACK_KEY, QJsonValue(mKeyPressFeedback));
+    keyboardObj.insert(KEYBOARD_SIZE_KEY, QJsonValue(q->keyboardSize()));
+
+    if (keyboardObj == mSavedKeyboardPrefs)
+        return;
+
+    QJsonObject prefObj;
+    prefObj.insert("keyboard", keyboardObj);
+
+    QJsonDocument document;
+    document.setObject(prefObj);
+    QString payload = document.toJson();
+    LSError error;
+    LSErrorInit(&error);
+    if (!LSCallOneReply(mServiceHandle, "palm://com.palm.systemservice/setPreferences",
+                        payload.toStdString().c_str(), NULL, this, NULL, &error)) {
+        qWarning("Failed to save keyboard preferences: %s", error.message);
+        LSErrorFree(&error);
+    }
+    return;
+}
 
 #if 0
 /*!

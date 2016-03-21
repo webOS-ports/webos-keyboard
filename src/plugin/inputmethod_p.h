@@ -251,6 +251,8 @@ public:
         view->setVisible(false);
 
         applicationApiWrapper->reportOSKInvisible();
+
+        m_settings.savePreferences(q);
     }
 
     void truncateEnabledLanguageLocales(QStringList locales)
