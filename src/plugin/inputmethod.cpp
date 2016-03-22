@@ -111,6 +111,7 @@ InputMethod::InputMethod(MAbstractInputMethodHost *host)
 
     connect(this, SIGNAL(contentTypeChanged(TextContentType)), this, SLOT(setContentType(TextContentType)));
 	connect(this, SIGNAL(keyboardSizeChanged(QString)), this, SLOT(setKeyboardSize(QString)));
+    connect(this, SIGNAL(keyboardLayoutChanged(QString)), this, SLOT(setKeyboardLayout(QString)));
     connect(this, SIGNAL(activeLanguageChanged(QString)), d->editor.wordEngine(), SLOT(onLanguageChanged(QString)));
     connect(d->m_geometry, SIGNAL(visibleRectChanged()), this, SLOT(onVisibleRectChanged()));
     connect(d->m_geometry, SIGNAL(popoverRectChanged()), this, SLOT(updateWindowMask()));
@@ -121,12 +122,16 @@ InputMethod::InputMethod(MAbstractInputMethodHost *host)
     d->registerActiveLanguage();
     d->registerEnabledLanguages();
     d->registerKeyboardSize();
+    d->registerKeyboardLayout();
 	
     //fire signal so all listeners know what active language is
     Q_EMIT activeLanguageChanged(d->activeLanguage);
 	
     //fire signal so all listeners know what keyboard size is
     Q_EMIT keyboardSizeChanged(d->keyboardSize);
+
+    //fire signal so all listeners know what keyboard layout is
+    Q_EMIT keyboardLayoutChanged(d->keyboardLayout);
 
     // Setting layout orientation depends on word engine and hide word ribbon
     // settings to be initialized first:
@@ -515,6 +520,31 @@ void InputMethod::setKeyboardSize(const QString &newKeyboardSize)
     
     qDebug() << "in inputMethod.cpp setKeyboardSize() emitting keyboardSizeChanged to" << d->keyboardSize;
     Q_EMIT keyboardSizeChanged(d->keyboardSize);
+}
+
+const QString &InputMethod::keyboardLayout() const
+{
+    Q_D(const InputMethod);
+    return d->keyboardLayout;
+}
+
+//! \brief InputMethod::setKeyboardLayout
+//! Sets the keyboard layout
+//! \param keyboardLayout of the new layout. For example "LuneOS", "Dvorak" or "Thumb"
+//! FIXME check if the layout is supported - if not use "LuneOS" as fallback
+void InputMethod::setKeyboardLayout(const QString &newKeyboardLayout)
+{
+    Q_D(InputMethod);
+
+    qDebug() << "in inputMethod.cpp setKeyboardLayout() keyboardLayout is:" << newKeyboardLayout;
+
+    if (d->keyboardLayout == newKeyboardLayout)
+        return;
+
+    d->keyboardLayout = newKeyboardLayout;
+
+    qDebug() << "in inputMethod.cpp setKeyboardLayout() emitting keyboardLayoutChanged to" << d->keyboardLayout;
+    Q_EMIT keyboardLayoutChanged(d->keyboardLayout);
 }
 
 void InputMethod::updateWindowMask()

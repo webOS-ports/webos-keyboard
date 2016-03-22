@@ -47,6 +47,7 @@ const QLatin1String PREDICTIVE_TEXT_KEY = QLatin1String("predictiveText");
 const QLatin1String SPELL_CHECKING_KEY = QLatin1String("spellChecking");
 const QLatin1String KEY_PRESS_FEEDBACK_KEY = QLatin1String("keyPressFeedback");
 const QLatin1String KEYBOARD_SIZE_KEY = QLatin1String("keyboardSize");
+const QLatin1String KEYBOARD_LAYOUT_KEY = QLatin1String("keyboardLayout");
 
 /*!
  * \brief KeyboardSettings::KeyboardSettings class to load the settings, and
@@ -61,7 +62,8 @@ KeyboardSettings::KeyboardSettings(QObject *parent) :
     mPredictiveText(false),
     mSpellchecing(false),
     mKeyPressFeedback(false),
-    mKeyboardSize("M")
+    mKeyboardSize("M"),
+    mKeyboardLayout("LuneOS")
 {
     LSError error;
     LSErrorInit(&error);
@@ -231,6 +233,15 @@ void KeyboardSettings::preferencesChanged(const QByteArray &data)
         }
     }
 
+    if (keyboardPref.contains(KEYBOARD_LAYOUT_KEY) && keyboardPref.value(KEYBOARD_LAYOUT_KEY).isString()) {
+        QString value = keyboardPref.value(KEYBOARD_LAYOUT_KEY).toString();
+        if (value != mKeyboardLayout) {
+            mKeyboardLayout = value;
+            Q_EMIT keyboardLayoutChanged(mKeyboardLayout);
+        }
+    }
+
+    mSavedKeyboardPrefs = keyboardPref;
 }
 
 /*!
@@ -313,6 +324,48 @@ QString KeyboardSettings::keyboardSize() const
     return mKeyboardSize;
 }
 
+/*!
+ * \brief KeyboardSettings::keyboardLayout returns current keyboard layout
+ * \return keyboard layout
+ */
+
+QString KeyboardSettings::keyboardLayout() const
+{
+    return mKeyboardLayout;
+}
+
+void KeyboardSettings::savePreferences(InputMethod *q)
+{
+    QJsonObject keyboardObj;
+
+    keyboardObj.insert(ACTIVE_LANGUAGE_KEY, QJsonValue(q->activeLanguage()));
+    keyboardObj.insert(ENABLED_LANGUAGES_KEY, QJsonValue(QJsonArray::fromStringList(q->enabledLanguages())));
+    keyboardObj.insert(AUTO_CAPITALIZATION_KEY, QJsonValue(mAutoCapitalization));
+    keyboardObj.insert(AUTO_COMPLETION_KEY, QJsonValue(mAutoCompletion));
+    keyboardObj.insert(PREDICTIVE_TEXT_KEY, QJsonValue(mPredictiveText));
+    keyboardObj.insert(SPELL_CHECKING_KEY, QJsonValue(mSpellchecing));
+    keyboardObj.insert(KEY_PRESS_FEEDBACK_KEY, QJsonValue(mKeyPressFeedback));
+    keyboardObj.insert(KEYBOARD_SIZE_KEY, QJsonValue(q->keyboardSize()));
+    keyboardObj.insert(KEYBOARD_LAYOUT_KEY, QJsonValue(q->keyboardLayout()));
+
+    if (keyboardObj == mSavedKeyboardPrefs)
+        return;
+
+    QJsonObject prefObj;
+    prefObj.insert("keyboard", keyboardObj);
+
+    QJsonDocument document;
+    document.setObject(prefObj);
+    QString payload = document.toJson();
+    LSError error;
+    LSErrorInit(&error);
+    if (!LSCallOneReply(mServiceHandle, "palm://com.palm.systemservice/setPreferences",
+                        payload.toStdString().c_str(), NULL, this, NULL, &error)) {
+        qWarning("Failed to save keyboard preferences: %s", error.message);
+        LSErrorFree(&error);
+    }
+    return;
+}
 
 #if 0
 /*!

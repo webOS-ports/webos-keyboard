@@ -55,6 +55,7 @@ public:
     InputMethod::TextContentType contentType;
     QString activeLanguage;
 	QString keyboardSize;
+    QString keyboardLayout;
     QStringList enabledLanguages;
     Qt::ScreenOrientation appsCurrentOrientation;
 
@@ -77,6 +78,7 @@ public:
         , contentType(InputMethod::FreeTextContentType)
         , activeLanguage("en")
 		, keyboardSize("M")
+        , keyboardLayout("LuneOS")
         , enabledLanguages(activeLanguage)
         , appsCurrentOrientation(qGuiApp->primaryScreen()->orientation())
         , m_geometry(new KeyboardGeometry(q))
@@ -228,6 +230,16 @@ public:
         q->setKeyboardSize(keyboardSize);
     }
 
+    void registerKeyboardLayout()
+    {
+        QObject::connect(&m_settings, SIGNAL(keyboardLayoutChanged(QString)),
+                         q, SLOT(setKeyboardLayout(QString)));
+
+        keyboardLayout = m_settings.keyboardLayout();
+        qDebug() << "inputmethod_p.h registerKeyboardLayout(): keyboardLayout is:" << keyboardLayout;
+        q->setKeyboardLayout(keyboardLayout);
+    }
+
     void registerEnabledLanguages()
     {
         QObject::connect(&m_settings, SIGNAL(enabledLanguagesChanged(QStringList)),
@@ -251,6 +263,8 @@ public:
         view->setVisible(false);
 
         applicationApiWrapper->reportOSKInvisible();
+
+        m_settings.savePreferences(q);
     }
 
     void truncateEnabledLanguageLocales(QStringList locales)
