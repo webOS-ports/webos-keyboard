@@ -74,7 +74,6 @@ Item {
         keyPad: keyPadRoot
 
         onItemSelected: {
-            UI.keyboardSizeChoice = modelData;
             maliit_input_method.keyboardSize = modelData;
             UI.hideCurrentPopover();
         }
@@ -97,7 +96,6 @@ Item {
         keyPad: keyPadRoot
 
         onItemSelected: {
-            UI.currentAlternativeLayout = ((modelData === "LuneOS") ? "" : modelData);
             maliit_input_method.keyboardLayout = modelData;
             UI.hideCurrentPopover();
         }
