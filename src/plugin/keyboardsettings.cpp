@@ -60,7 +60,7 @@ KeyboardSettings::KeyboardSettings(QObject *parent) :
     mAutoCapitalization(false),
     mAutoCompletion(false),
     mPredictiveText(false),
-    mSpellchecing(false),
+    mSpellchecking(false),
     mKeyPressFeedback(false),
     mKeyboardSize("M"),
     mKeyboardLayout("LuneOS")
@@ -211,9 +211,9 @@ void KeyboardSettings::preferencesChanged(const QByteArray &data)
 
     if (keyboardPref.contains(SPELL_CHECKING_KEY) && keyboardPref.value(SPELL_CHECKING_KEY).isBool()) {
         bool value = keyboardPref.value(SPELL_CHECKING_KEY).toBool();
-        if (value != mSpellchecing) {
-            mSpellchecing = value;
-            Q_EMIT spellCheckingChanged(mSpellchecing);
+        if (value != mSpellchecking) {
+            mSpellchecking = value;
+            Q_EMIT spellCheckingChanged(mSpellchecking);
         }
     }
 
@@ -301,7 +301,7 @@ bool KeyboardSettings::predictiveText() const
  */
 bool KeyboardSettings::spellchecking() const
 {
-  return mSpellchecing;
+  return mSpellchecking;
 }
 
 /*!
@@ -343,7 +343,7 @@ void KeyboardSettings::savePreferences(InputMethod *q)
     keyboardObj.insert(AUTO_CAPITALIZATION_KEY, QJsonValue(mAutoCapitalization));
     keyboardObj.insert(AUTO_COMPLETION_KEY, QJsonValue(mAutoCompletion));
     keyboardObj.insert(PREDICTIVE_TEXT_KEY, QJsonValue(mPredictiveText));
-    keyboardObj.insert(SPELL_CHECKING_KEY, QJsonValue(mSpellchecing));
+    keyboardObj.insert(SPELL_CHECKING_KEY, QJsonValue(mSpellchecking));
     keyboardObj.insert(KEY_PRESS_FEEDBACK_KEY, QJsonValue(mKeyPressFeedback));
     keyboardObj.insert(KEYBOARD_SIZE_KEY, QJsonValue(q->keyboardSize()));
     keyboardObj.insert(KEYBOARD_LAYOUT_KEY, QJsonValue(q->keyboardLayout()));
