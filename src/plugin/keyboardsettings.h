@@ -80,7 +80,7 @@ private:
     bool mAutoCapitalization;
     bool mAutoCompletion;
     bool mPredictiveText;
-    bool mSpellchecing;
+    bool mSpellchecking;
     bool mKeyPressFeedback;
     QString mKeyboardSize;
     QString mKeyboardLayout;
