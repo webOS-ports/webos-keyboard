@@ -188,9 +188,9 @@ public:
 
     void registerAutoCorrectSetting()
     {
-        QObject::connect(&m_settings, SIGNAL(autoCompletionChanged(bool)),
+        QObject::connect(&m_settings, SIGNAL(autoCorrectionChanged(bool)),
                          q, SLOT(onAutoCorrectSettingChanged()));
-        editor.setAutoCorrectEnabled(m_settings.autoCompletion());
+        editor.setAutoCorrectEnabled(m_settings.autoCorrection());
     }
 
     void registerAutoCapsSetting()

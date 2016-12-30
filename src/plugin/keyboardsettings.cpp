@@ -42,7 +42,7 @@ using namespace MaliitKeyboard;
 const QLatin1String ACTIVE_LANGUAGE_KEY = QLatin1String("activeLanguage");
 const QLatin1String ENABLED_LANGUAGES_KEY = QLatin1String("enabledLanguages");
 const QLatin1String AUTO_CAPITALIZATION_KEY = QLatin1String("autoCapitalization");
-const QLatin1String AUTO_COMPLETION_KEY = QLatin1String("autoCompletion");
+const QLatin1String AUTO_CORRECTION_KEY = QLatin1String("autoCorrection");
 const QLatin1String PREDICTIVE_TEXT_KEY = QLatin1String("predictiveText");
 const QLatin1String SPELL_CHECKING_KEY = QLatin1String("spellChecking");
 const QLatin1String KEY_PRESS_FEEDBACK_KEY = QLatin1String("keyPressFeedback");
@@ -58,7 +58,7 @@ KeyboardSettings::KeyboardSettings(QObject *parent) :
     QObject(parent),
     mActiveLanguage("en"),
     mAutoCapitalization(false),
-    mAutoCompletion(false),
+    mAutoCorrection(false),
     mPredictiveText(false),
     mSpellchecking(false),
     mKeyPressFeedback(false),
@@ -193,11 +193,11 @@ void KeyboardSettings::preferencesChanged(const QByteArray &data)
         }
     }
 
-    if (keyboardPref.contains(AUTO_COMPLETION_KEY) && keyboardPref.value(AUTO_COMPLETION_KEY).isBool()) {
-        bool value = keyboardPref.value(AUTO_COMPLETION_KEY).toBool();
-        if (value != mAutoCompletion) {
-            mAutoCompletion = value;
-            Q_EMIT autoCompletionChanged(mAutoCompletion);
+    if (keyboardPref.contains(AUTO_CORRECTION_KEY) && keyboardPref.value(AUTO_CORRECTION_KEY).isBool()) {
+        bool value = keyboardPref.value(AUTO_CORRECTION_KEY).toBool();
+        if (value != mAutoCorrection) {
+            mAutoCorrection = value;
+            Q_EMIT autoCorrectionChanged(mAutoCorrection);
         }
     }
 
@@ -276,13 +276,13 @@ bool KeyboardSettings::autoCapitalization() const
 }
 
 /*!
- * \brief KeyboardSettings::autoCompletion returns true if the current word should
- * be completed with first suggestion when hitting space
+ * \brief KeyboardSettings::autoCorrection returns true if the current word should
+ * be corrected with first suggestion when hitting space
  * \return
  */
-bool KeyboardSettings::autoCompletion() const
+bool KeyboardSettings::autoCorrection() const
 {
-  return mAutoCompletion;
+  return mAutoCorrection;
 }
 
 /*!
@@ -341,7 +341,7 @@ void KeyboardSettings::savePreferences(InputMethod *q)
     keyboardObj.insert(ACTIVE_LANGUAGE_KEY, QJsonValue(q->activeLanguage()));
     keyboardObj.insert(ENABLED_LANGUAGES_KEY, QJsonValue(QJsonArray::fromStringList(q->enabledLanguages())));
     keyboardObj.insert(AUTO_CAPITALIZATION_KEY, QJsonValue(mAutoCapitalization));
-    keyboardObj.insert(AUTO_COMPLETION_KEY, QJsonValue(mAutoCompletion));
+    keyboardObj.insert(AUTO_CORRECTION_KEY, QJsonValue(mAutoCorrection));
     keyboardObj.insert(PREDICTIVE_TEXT_KEY, QJsonValue(mPredictiveText));
     keyboardObj.insert(SPELL_CHECKING_KEY, QJsonValue(mSpellchecking));
     keyboardObj.insert(KEY_PRESS_FEEDBACK_KEY, QJsonValue(mKeyPressFeedback));
@@ -384,8 +384,8 @@ void KeyboardSettings::settingUpdated(const QString &key)
     } else if (key == AUTO_CAPITALIZATION_KEY) {
         Q_EMIT autoCapitalizationChanged(autoCapitalization());
         return;
-    } else if (key == AUTO_COMPLETION_KEY) {
-        Q_EMIT autoCompletionChanged(autoCompletion());
+    } else if (key == AUTO_CORRECTION_KEY) {
+        Q_EMIT autoCorrectionChanged(autoCorrection());
         return;
     } else if (key == PREDICTIVE_TEXT_KEY) {
         Q_EMIT predictiveTextChanged(predictiveText());

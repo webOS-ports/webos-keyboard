@@ -47,7 +47,7 @@ public:
     QString activeLanguage() const;
     QStringList enabledLanguages() const;
     bool autoCapitalization() const;
-    bool autoCompletion() const;
+    bool autoCorrection() const;
     bool predictiveText() const;
     bool spellchecking() const;
     bool keyPressFeedback() const;
@@ -65,7 +65,7 @@ Q_SIGNALS:
     void activeLanguageChanged(QString);
     void enabledLanguagesChanged(QStringList);
     void autoCapitalizationChanged(bool);
-    void autoCompletionChanged(bool);
+    void autoCorrectionChanged(bool);
     void predictiveTextChanged(bool);
     void spellCheckingChanged(bool);
     void keyPressFeedbackChanged(bool);
@@ -78,7 +78,7 @@ private:
     QStringList mEnabledLanguages;
     QString mActiveLanguage;
     bool mAutoCapitalization;
-    bool mAutoCompletion;
+    bool mAutoCorrection;
     bool mPredictiveText;
     bool mSpellchecking;
     bool mKeyPressFeedback;
