@@ -248,7 +248,7 @@ bool InputMethod::imExtensionEvent(MImExtensionEvent *event)
 void InputMethod::onAutoCorrectSettingChanged()
 {
     Q_D(InputMethod);
-    d->editor.setAutoCorrectEnabled(d->m_settings.autoCompletion());
+    d->editor.setAutoCorrectEnabled(d->m_settings.autoCorrection());
 }
 
 /*!
