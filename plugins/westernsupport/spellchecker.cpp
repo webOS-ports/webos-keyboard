@@ -112,7 +112,7 @@ void SpellCheckerPrivate::addUserDictionary(const QString &user_dictionary)
         if (file.open(QFile::ReadOnly)) {
             QTextStream stream(&file);
             while (!stream.atEnd()) {
-                hunspell->add(codec->fromUnicode(stream.readLine()));
+                hunspell->add(codec->fromUnicode(stream.readLine()).toStdString());
             }
         }
     }
@@ -195,7 +195,7 @@ bool SpellChecker::spell(const QString &word)
         return true;
     }
 
-    return d->hunspell->spell(d->codec->fromUnicode(word));
+    return d->hunspell->spell(d->codec->fromUnicode(word).toStdString());
 }
 
 
@@ -213,7 +213,7 @@ QStringList SpellChecker::suggest(const QString &word,
     }
 
     char** suggestions = NULL;
-    const int suggestions_count = d->hunspell->suggest(&suggestions, d->codec->fromUnicode(word));
+    const int suggestions_count = d->hunspell->suggest(&suggestions, d->codec->fromUnicode(word).toStdString().c_str());
 
     // Less than zero means some error.
     if (suggestions_count < 0) {
@@ -264,7 +264,7 @@ void SpellChecker::addToUserWordlist(const QString &word)
     }
 
     // Non-zero return value means some error.
-    if (d->hunspell->add(d->codec->fromUnicode(word))) {
+    if (d->hunspell->add(d->codec->fromUnicode(word).toStdString())) {
         qWarning() << __PRETTY_FUNCTION__ << ": Failed to add '" << word << "' to user dictionary.";
     }
 }
