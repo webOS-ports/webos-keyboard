@@ -12,6 +12,7 @@ KeyPad 1.0 KeyPad.qml
 LanguageKey 1.0 LanguageKey.qml
 LanguageMenu 1.0 LanguageMenu.qml
 Magnifier 1.0 Magnifier.qml
+MultiTouchKeyArea 1.0 MultiTouchKeyArea.qml
 NumKey 1.0 NumKey.qml
 PressArea 1.0 PressArea.qml
 ReturnKey 1.0 ReturnKey.qml
