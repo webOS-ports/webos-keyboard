@@ -6,6 +6,11 @@
     },
     "permissions": [
         {
+            "service":"",
+            "inbound":["*"],
+            "outbound":["*"]
+        },
+        {
             "service":"org.maliit",
             "inbound":["*"],
             "outbound":["*"]
