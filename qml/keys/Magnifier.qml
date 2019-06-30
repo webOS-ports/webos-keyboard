@@ -80,7 +80,6 @@ Item {
             border {left: 21; top: 21; bottom: 36;}
             height: parent.height
             verticalTileMode: BorderImage.Stretch
-            width: Units.gu(2.1)
         }
         BorderImage {
             id: leftMiddleImage
@@ -113,7 +112,6 @@ Item {
             border {right: 21; top: 21; bottom: 36;}
             source: UI.imagePopupBgRight
             height: parent.height
-            width: Units.gu(2.1)
         }
     }
 
