@@ -31,7 +31,7 @@ Item {
         id: service
         name: "org.webosports.luna"
         onInitialized: {
-            service.call("palm://org.webosinternals.tweaks.prefs/get",
+            service.call("palm://org.webosports.service.tweaks.prefs/get",
                          JSON.stringify({owner: tweak.owner, keys: [tweak.key]}),
                          handleResult, handleError)
         }
