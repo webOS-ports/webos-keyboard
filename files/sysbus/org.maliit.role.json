@@ -1,9 +1,7 @@
 {
-    "role": {
-        "exeName":"/usr/bin/maliit-server",
-        "type": "privileged",
-        "allowedNames": ["org.maliit", ""]
-    },
+    "exeName":"/usr/bin/maliit-server",
+    "type": "privileged",
+    "allowedNames": ["org.maliit", ""],
     "permissions": [
         {
             "service":"",

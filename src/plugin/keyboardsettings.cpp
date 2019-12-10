@@ -68,7 +68,7 @@ KeyboardSettings::KeyboardSettings(QObject *parent) :
     LSError error;
     LSErrorInit(&error);
 
-    if (!LSRegister(NULL, &mServiceHandle, &error)) {
+    if (!LSRegister("org.maliit", &mServiceHandle, &error)) {
         qWarning("Failed to register service handle: %s", error.message);
         LSErrorFree(&error);
         return;
