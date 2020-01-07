@@ -97,10 +97,10 @@ Item {
     BorderImage {
         id: buttonImage
         border {
-            left:   UI.formFactor==="tablet" ? 14 : 24
-            top:    UI.formFactor==="tablet" ? 13 : 24
-            right:  UI.formFactor==="tablet" ? 14 : 24
-            bottom: UI.formFactor==="tablet" ? 17 : 24
+            left:   UI.formFactor==="tablet" ? 14 : 23
+            top:    UI.formFactor==="tablet" ? 13 : 23
+            right:  UI.formFactor==="tablet" ? 14 : 23
+            bottom: UI.formFactor==="tablet" ? 17 : 23
         }
         anchors.centerIn: parent
         anchors.fill: key
