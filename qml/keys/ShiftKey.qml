@@ -97,7 +97,7 @@ ActionKey {
 
         Connections {
             target: UI
-            onShiftedKeySent: {
+            function onShiftedKeySent() {
                 if( UI.isShiftKeyPressed ) {
                     shiftKeyPressArea.keySentDuringShiftState = true;
                 }

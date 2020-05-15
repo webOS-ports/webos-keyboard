@@ -214,7 +214,7 @@ Item {
 
     Connections {
         target: swipeArea.drag
-        onActiveChanged: {
+        function onActiveChanged() {
             if (swipeArea.drag.active)
                 keyMouseArea.cancelPress();
         }
