@@ -202,7 +202,7 @@ Item {
 
         Connections {
             target: input_method
-            onActivateAutocaps: {
+            function onActivateAutocaps() {
                 keypad.state = "CHARACTERS";
                 UI.currentShiftState = "SHIFTED";
             }
