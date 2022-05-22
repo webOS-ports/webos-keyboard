@@ -1,5 +1,8 @@
 QT       -= gui
 
+contains(QT_MAJOR_VERSION, 6) {
+QT       += core5compat
+}
 TARGET = westernsupport
 TEMPLATE = lib
 CONFIG += staticlib
