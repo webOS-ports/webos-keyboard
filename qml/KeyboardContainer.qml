@@ -17,7 +17,7 @@
  */
 
 import QtQuick 2.0
-import QtMultimedia 5.0
+import QtMultimedia 6.3
 import QtQuick.Window 2.0
 
 import keys 1.0
@@ -47,9 +47,10 @@ Item {
         onLoaded: UI.currentShiftState = "NORMAL"
     }
 
-    Audio {
+    MediaPlayer {
         id: audioFeedback
         source: Qt.resolvedUrl("styles/ubuntu/sounds/key_tick2_quiet.wav")
+        audioOutput: AudioOutput {}
     }
 
     QtObject {
