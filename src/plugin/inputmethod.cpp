@@ -48,7 +48,6 @@
 #include <QGuiApplication>
 #include <QApplication>
 #include <QWidget>
-#include <QDesktopWidget>
 
 
 class MImUpdateEvent;

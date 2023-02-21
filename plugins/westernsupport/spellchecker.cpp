@@ -55,7 +55,11 @@ private:
 
 #include <QFile>
 #include <QTextStream>
+#if QT_VERSION >= 0x060000
+#include <QtCore5Compat/QTextCodec>
+#else
 #include <QTextCodec>
+#endif
 #include <QStringList>
 #include <QDebug>
 #include <QDir>
@@ -256,7 +260,7 @@ void SpellChecker::addToUserWordlist(const QString &word)
     QDir::home().mkpath(QFileInfo(user_dictionary).absolutePath());
     if (user_dictionary.open(QFile::Append)) {
         QTextStream stream(&user_dictionary);
-        stream << word << endl;
+        stream << word << Qt::endl;
     }
 
     // Non-zero return value means some error.
