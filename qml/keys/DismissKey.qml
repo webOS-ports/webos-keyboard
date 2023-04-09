@@ -35,7 +35,7 @@ ActionKey {
         onlyExclusive: true
 
         onKeyReleased: {
-            maliit_geometry.shown = false;
+            maliit_input_method.hide();
         }
 
         onKeyPressedAndHold: {
