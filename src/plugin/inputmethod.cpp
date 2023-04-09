@@ -159,7 +159,6 @@ void InputMethod::hide()
 
 void InputMethod::reset()
 {
-    hide();
 }
 
 void InputMethod::setPreedit(const QString &preedit,
