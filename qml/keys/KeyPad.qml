@@ -103,7 +103,7 @@ Item {
 
     Connections {
         target: UI
-        function onShowExtendedKeys() {
+        function onShowExtendedKeys(keysExtendedModel, keyItem) {
             UI.hideCurrentPopover();
 
             extendedKeysSelector.currentlyAssignedKey = keyItem;
@@ -112,7 +112,7 @@ Item {
             currentVisibleExtendedList = extendedKeysSelector;
             UI.extendedKeysShown = true;
         }
-        function onShowKeyboardSizeMenu() {
+        function onShowKeyboardSizeMenu(keyItem) {
             UI.hideCurrentPopover();
 
             keyboardSizeMenu.extendedListModel = UI.keyboardSizeChoices;
@@ -120,7 +120,7 @@ Item {
             keyboardSizeMenu.enabled = true;
             currentVisibleExtendedList = keyboardSizeMenu;
         }
-        function onShowLanguagesMenu() {
+        function onShowLanguagesMenu(keyItem) {
             UI.hideCurrentPopover();
 
             languagesMenu.extendedListModel = maliit_input_method.enabledLanguages;
@@ -128,7 +128,7 @@ Item {
             languagesMenu.enabled = true;
             currentVisibleExtendedList = languagesMenu;
         }
-        function onShowAlternativeLayoutsMenu() {
+        function onShowAlternativeLayoutsMenu(keyItem) {
             UI.hideCurrentPopover();
 
             if( alternativeLayouts.length > 0 ) {
