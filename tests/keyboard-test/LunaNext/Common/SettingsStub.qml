@@ -86,7 +86,6 @@ QtObject {
 
     // not used
     property string lunaSystemResourcesPath: "./resourcesPath";
-    property int compatDpi: 114;
     property int splashIconSize: 64;
     property int gestureAreaHeight: 64;
     property int positiveSpaceTopPadding: 0;
