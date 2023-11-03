@@ -31,7 +31,7 @@ KeyPad {
         anchors.left: parent.left
         spacing: 0
 
-		Row {
+        Row {
             anchors.horizontalCenter: parent.horizontalCenter;
             spacing: 0
 
@@ -52,7 +52,7 @@ KeyPad {
 
 
         Row {
-			anchors.right: parent.right;
+            anchors.right: parent.right;
             spacing: 0
 
             height: keyHeight;
@@ -118,7 +118,7 @@ KeyPad {
             Item {
                 height: keyHeight
 
-                TabKey         { id: tabKey; 				label: "Tab"; shifted: "Tab";                       anchors.left: parent.left; }
+                TabKey         { id: tabKey;                 label: "Tab"; shifted: "Tab";                       anchors.left: parent.left; }
                 SymbolShiftKey { id: symShiftKey;                             anchors.left: tabKey.right; }
                 LanguageKey    { id: languageMenuButton;                     anchors.left: symShiftKey.right; }
                 SpaceKey       { id: spaceKey;                               anchors.left: languageMenuButton.right; anchors.right: dismissKey.left; }
@@ -131,7 +131,7 @@ KeyPad {
             Item {
                 height: keyHeight
 
-                TabKey         { id: tabKey; 				label: "Tab"; shifted: "Tab";                       anchors.left: parent.left; }
+                TabKey         { id: tabKey;                 label: "Tab"; shifted: "Tab";                       anchors.left: parent.left; }
                 SymbolShiftKey { id: symShiftKey;                             anchors.left: tabKey.right; }
                 LanguageKey    { id: languageMenuButton;                     anchors.left: symShiftKey.right; }
                 UrlKey        { id: atKey;    label: "@"; shifted: "@";     anchors.left: languageMenuButton.right; }
@@ -146,7 +146,7 @@ KeyPad {
             Item {
                 height: keyHeight
 
-                TabKey         { id: tabKey; 				label: "Tab"; shifted: "Tab";                       anchors.left: parent.left; }
+                TabKey         { id: tabKey;                 label: "Tab"; shifted: "Tab";                       anchors.left: parent.left; }
                 SymbolShiftKey { id: symShiftKey;                             anchors.left: tabKey.right; }
                 LanguageKey    { id: languageMenuButton;                     anchors.left: symShiftKey.right; }
                 CharKey        { imgNormal: UI.imageGreyKey; imgPressed: UI.imageGreyKeyPressed; id: slashKey;    label: "/"; shifted: "/"; extended: ["http://", "https://", "www."];  anchors.left: languageMenuButton.right; }

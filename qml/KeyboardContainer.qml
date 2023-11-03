@@ -31,8 +31,7 @@ Item {
     property string currentKeyboardSize: maliit_input_method.keyboardSize
     property string currentAlternativeLayout: UI.currentAlternativeLayout
 
-    function closeExtendedKeys()
-    {
+    function closeExtendedKeys() {
         extendedKeysSelector.closePopover();
     }
 
@@ -73,8 +72,7 @@ Item {
         }
 
         /// Returns if the given language is supported
-        function languageIsSupported(locale)
-        {
+        function languageIsSupported(locale) {
             var supportedLocales = [
                 "ar",
                 "cs",
@@ -98,8 +96,7 @@ Item {
         }
 
         /// Returns the relative path to the keyboard QML file for a given language for free text
-        function freeTextLanguageKeyboard(language, alternativeLayout)
-        {
+        function freeTextLanguageKeyboard(language, alternativeLayout) {
             language = language .slice(0,2).toLowerCase();
             alternativeLayout = alternativeLayout.toLowerCase()
 
@@ -119,16 +116,13 @@ Item {
             return selectedLanguageFile;
         }
 
-        function loadLayout(contentType, activeLanguage, alternativeLayout)
-        {
+        function loadLayout(contentType, activeLanguage, alternativeLayout) {
             var selectedLayoutFile;
 
-            //            if (contentType === InputMethod.NumberContentType) {
             if (contentType === 1) {
                 selectedLayoutFile = "languages/Keyboard_numbers.qml";
             }
 
-            //            if (contentType === InputMethod.PhoneNumberContentType) {
             else if (contentType === 2) {
                 selectedLayoutFile = "languages/Keyboard_telephone.qml";
             }

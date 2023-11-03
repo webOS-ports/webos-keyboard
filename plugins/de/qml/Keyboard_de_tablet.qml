@@ -48,7 +48,7 @@ KeyPad {
             NumKey { label: "0"; shifted: "="; extended: ["0", "="]; keyWidth: UI.keyWidth;}
             TrackBall { width: keypadRoot.width - (UI.keyWidth*10); anchors.verticalCenter: parent.verticalCenter }        
             }
-	
+    
         Row {
             anchors.horizontalCenter: parent.horizontalCenter;
             spacing: 0
@@ -85,7 +85,7 @@ KeyPad {
             CharKey { label: "k"; shifted: "K"; }
             CharKey { label: "l"; shifted: "L"; extended: ["l", "ł", "ĺ"]; extendedShifted: ["L", "Ł", "Ĺ"]}
             CharKey { label: "ö"; shifted: "Ö"; }
-			CharKey { label: "ä"; shifted: "Ä"; }
+            CharKey { label: "ä"; shifted: "Ä"; }
             ReturnKey { id: enterKey; label: "Enter"; shifted: "Enter"; width: UI.keyWidth * 0.8; fontSize: UI.isLandscape ? UI.xsFontSize : "10pt"}
         }
 
@@ -114,7 +114,7 @@ KeyPad {
             Item {
                 height: keyHeight
 
-                TabKey         { id: tabKey; 				label: "Tab"; shifted: "Tab";                       anchors.left: parent.left; }
+                TabKey         { id: tabKey;                 label: "Tab"; shifted: "Tab";                       anchors.left: parent.left; }
                 SymbolShiftKey { id: symShiftKey;                             anchors.left: tabKey.right; }
                 LanguageKey    { id: languageMenuButton;                       anchors.left: symShiftKey.right; }
                 SpaceKey       { id: spaceKey;                                 anchors.left: languageMenuButton.right; anchors.right: ssKey.left; }

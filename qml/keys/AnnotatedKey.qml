@@ -26,7 +26,7 @@ Item {
     id: key
 
     property int padding: 0
-	property bool thumbKeyboard: false
+    property bool thumbKeyboard: false
 
     width: UI.keyWidth
     height: parent.height
@@ -119,9 +119,9 @@ Item {
         anchors.horizontalCenterOffset: thumbKeyboard ? UI.keyWidth / 14 : useHorizontalLayout ? UI.keyWidth / 6 : 0
 
         anchors.verticalCenter: parent.verticalCenter
-		anchors.verticalCenterOffset: useHorizontalLayout || thumbKeyboard ? UI.keyHeight / -2 : UI.keyHeight / 0.6  //Units.gu(-0.25)
-		//anchors.verticalCenterOffset: thumbKeyboard? Units.gu(0) : useHorizontalLayout ? UI.keyHeight / -2 : UI.keyHeight / 0.6 
-		
+        anchors.verticalCenterOffset: useHorizontalLayout || thumbKeyboard ? UI.keyHeight / -2 : UI.keyHeight / 0.6  //Units.gu(-0.25)
+        //anchors.verticalCenterOffset: thumbKeyboard? Units.gu(0) : useHorizontalLayout ? UI.keyHeight / -2 : UI.keyHeight / 0.6 
+
         font.family: UI.fontFamily
         font.pixelSize: (UI.currentShiftState === "NORMAL") ? FontUtils.sizeToPixels(UI.annotationFontSize) : FontUtils.sizeToPixels(UI.xsFontSize)
         font.bold: UI.fontBold
@@ -143,8 +143,6 @@ Item {
 
         anchors.verticalCenter: parent.verticalCenter
         anchors.verticalCenterOffset: useHorizontalLayout || thumbKeyboard ? UI.keyHeight / -2 : UI.keyHeight / -0.4  //Units.gu(-0.25)
-		
-
 
         font.family: UI.fontFamily
         font.pixelSize: thumbKeyboard ? FontUtils.sizeToPixels(UI.thumbAnnotationFontSize) : (UI.currentShiftState === "NORMAL") ? FontUtils.sizeToPixels(UI.annotationFontSize) : FontUtils.sizeToPixels(UI.xsFontSize)
@@ -153,22 +151,21 @@ Item {
         style: (UI.currentShiftState !== "NORMAL") ? Text.Raised : Text.Normal
         styleColor: "white"
         smooth: true
-		}
-	
-	Text {
+    }
+
+    Text {
         id: annotationLabel2
-		text: "…" //__annotationLabelNormal
+        text: "…" //__annotationLabelNormal
 
         anchors.horizontalCenter: buttonImage.horizontalCenter
         anchors.horizontalCenterOffset: thumbKeyboard ? UI.keyWidth / 14 : UI.formFactor === "phone" && !UI.isLandscape ? UI.keyWidth / 4 : UI.keyWidth / 3.5
 
         /*anchors.verticalCenter: parent.verticalCenter
         anchors.verticalCenterOffset: thumbKeyboard ? UI.keyHeight / 14 : useHorizontalLayout ? UI.keyHeight / 1.5 : UI.formFactor === "phone" && !UI.isLandscape ? UI.keyHeight / 0.25 : UI.keyHeight / 0.5 */
-		
-		anchors.bottom: parent.bottom
+        
+        anchors.bottom: parent.bottom
         //anchors.bottomMargin: thumbKeyboard ? UI.keyHeight / 14 : UI.formFactor === "tablet" ? UI.keyHeight / 0.8 : UI.keyHeight / 3  //Units.gu(1.00) : Units.gu(0.50)
-		anchors.bottomMargin: thumbKeyboard ? UI.keyHeight / 1.5 : UI.formFactor === "tablet" ? UI.keyHeight / 0.8 : UI.keyHeight / 3  //Units.gu(1.00) : Units.gu(0.50)
-
+        anchors.bottomMargin: thumbKeyboard ? UI.keyHeight / 1.5 : UI.formFactor === "tablet" ? UI.keyHeight / 0.8 : UI.keyHeight / 3  //Units.gu(1.00) : Units.gu(0.50)
 
         font.family: UI.fontFamily
         font.pixelSize: FontUtils.sizeToPixels(UI.annotationFontSize)
@@ -176,7 +173,7 @@ Item {
         style: Text.Raised
         styleColor: "white"
         color: UI.fontColor //: UI.annotationFontColor
-		smooth: true
+        smooth: true
         visible: showAnnotation2
     }
 
@@ -208,7 +205,7 @@ Item {
             }
         }
         onKeyPressed: {
-			event_handler.onKeyPressed(valueToSubmit, action);
+            event_handler.onKeyPressed(valueToSubmit, action);
         }
     }
 

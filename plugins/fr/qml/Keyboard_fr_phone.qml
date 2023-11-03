@@ -39,7 +39,7 @@ KeyPad {
 
             CharKey { label: "a"; shifted: "A"; extended: ["a", "à", "á", "â", "ã" , "ä", "å", "æ", "ª"]; extendedShifted: ["A", "À", "Á", "Â", "Ã", "Ä", "Å", "Æ", "ª"] }
             CharKey { label: "z"; shifted: "Z"; extended: ["z", "ž", "ź", "ż"]; extendedShifted: ["Z", "Ž", "Ź", "Ż"]; }
-			CharKey { label: "e"; shifted: "E"; extended: ["e", "è", "é", "ê", "ë", "ę", "ē", "€", "ě"]; extendedShifted: ["E", "È", "É", "Ê", "Ë", "Ę", "Ē", "€", "Ě"] }
+            CharKey { label: "e"; shifted: "E"; extended: ["e", "è", "é", "ê", "ë", "ę", "ē", "€", "ě"]; extendedShifted: ["E", "È", "É", "Ê", "Ë", "Ę", "Ē", "€", "Ě"] }
             CharKey { label: "r"; shifted: "R"; extended: ["r", "®", "ř", "ŕ"]; extendedShifted: ["R","®", "Ř", "Ŕ"] }
             CharKey { label: "t"; shifted: "T"; extended: ["t", "™", "þ", "ť", "ţ"]; extendedShifted: ["T", "™", "Þ", "Ť", "Ţ"] }
             CharKey { label: "y"; shifted: "Y"; extended: ["y", "ý", "ÿ", "¥"]; extendedShifted: ["Y", "Ý", "Ÿ", "¥"] }
@@ -64,7 +64,7 @@ KeyPad {
             CharKey { label: "j"; shifted: "J"; }
             CharKey { label: "k"; shifted: "K"; }
             CharKey { label: "l"; shifted: "L"; extended: ["l", "ł", "ĺ"]; extendedShifted: ["L", "Ł", "Ĺ"]}
-            CharKey { label: "m"; shifted: "M"; extended: ["m", "μ"]; extendedShifted: ["M", "Μ"]; }			
+            CharKey { label: "m"; shifted: "M"; extended: ["m", "μ"]; extendedShifted: ["M", "Μ"]; }            
          }
 
         Item {
@@ -80,7 +80,7 @@ KeyPad {
             CharKey { id: vKey; anchors.left: cKey.right; width: UI.keyWidth * 9/8; label: "v"; shifted: "V"; }
             CharKey { id: bKey; anchors.left: vKey.right; width: UI.keyWidth * 9/8; label: "b"; shifted: "B"; }
             CharKey { id: nKey; anchors.left: bKey.right; width: UI.keyWidth * 9/8; label: "n"; shifted: "N"; extended: ["n", "ñ", "ń", "ň"]; extendedShifted: ["N", "Ñ", "Ń", "Ň"]; }
-			CharKey { id: apostropheKey; anchors.left: nKey.right; width: UI.keyWidth * 9/8; label: "'"; shifted: "\"";}
+            CharKey { id: apostropheKey; anchors.left: nKey.right; width: UI.keyWidth * 9/8; label: "'"; shifted: "\"";}
             BackspaceKey {id: backspaceKey; anchors.left: apostropheKey.right; anchors.right: parent.right}
         }
 

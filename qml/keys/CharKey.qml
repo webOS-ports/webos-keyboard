@@ -26,7 +26,7 @@ Item {
     id: key
 
     property int padding: 0
-	property bool thumbKeyboard: false
+    property bool thumbKeyboard: false
 
     width: UI.keyWidth
     height: parent.height
@@ -48,10 +48,10 @@ Item {
     property string imgPressed: UI.imageWhiteKeyPressed
     // fontSize can be overwritten when using the component, e.g. SymbolShiftKey uses smaller fontSize
     property string fontSize: thumbKeyboard ? UI.thumbFontSize : UI.fontSize
-	
-	//We only want the maginifier for phone, so set the noMagnifier to true for tablets
+
+    //We only want the maginifier for phone, so set the noMagnifier to true for tablets
     property bool noMagnifier: UI.formFactor==="tablet" ? true : false
-	
+
     /// annotation shows a small label in the upper right corner
     // if the annotiation property is set, it will be used. If not, the first position in extended[] list or extendedShifted[] list will
     // be used, depending on the state. If no extended/extendedShifted arrays exist, no annotation is shown
@@ -83,26 +83,26 @@ Item {
 
     Component.onCompleted: {
         if (annotation) {
-			__annotationLabelNormal = annotation
+            __annotationLabelNormal = annotation
             __annotationLabelShifted = annotation
         } else {
-     		if (extended) {
+             if (extended) {
                 if(imgNormal === UI.imageGreyKey && !action === "url") {
-					__annotationLabelNormal = extended[0]
-					__annotationLabelShifted = label
-				}
-				else{
+                    __annotationLabelNormal = extended[0]
+                    __annotationLabelShifted = label
+                }
+                else{
                     __annotationLabelNormal = "…"
-				}
-			}
+                }
+            }
             if (extendedShifted) {
                 if(imgNormal === UI.imageGreyKey && !action === "url") {
-					__annotationLabelShifted = extendedShifted[0]
-				}
-				else{
-					__annotationLabelShifted = "…"
-				}
-			}
+                    __annotationLabelShifted = extendedShifted[0]
+                }
+                else{
+                    __annotationLabelShifted = "…"
+                }
+            }
         }
     }
 
@@ -127,14 +127,14 @@ Item {
         id: keyLabel
         text: (UI.currentShiftState === "NORMAL") ? label : shifted;
         anchors.horizontalCenter: buttonImage.horizontalCenter
-		anchors.verticalCenter: buttonImage.verticalCenter 
+        anchors.verticalCenter: buttonImage.verticalCenter 
         anchors.verticalCenterOffset: UI.keyHeight / -2 //Units.gu(-0.25)
         font.family: UI.fontFamily
         font.pixelSize: FontUtils.sizeToPixels(fontSize)
         font.bold: UI.fontBold
         color: UI.fontColor
-		smooth: true
-		visible: action === "" || action === "url"
+        smooth: true
+        visible: action === "" || action === "url"
     }
 
     /// shows an annotation
@@ -148,7 +148,7 @@ Item {
         //anchors.horizontalCenterOffset: thumbKeyboard ? UI.keyWidth / 14 : UI.formFactor === "tablet" ? UI.keyWidth / 4 : UI.keyWidth / 8
         anchors.horizontalCenterOffset: thumbKeyboard ? UI.keyWidth / 14 : UI.formFactor === "phone" && !UI.isLandscape ? UI.keyWidth / 4 : UI.keyWidth / 3.5
         
-		anchors.bottom: parent.bottom
+        anchors.bottom: parent.bottom
         anchors.bottomMargin: thumbKeyboard ? UI.keyHeight / 1.5 : UI.formFactor === "tablet" ? UI.keyHeight / 0.8 : UI.keyHeight / 3  //Units.gu(1.00) : Units.gu(0.50)
 
         font.family: UI.fontFamily
@@ -157,7 +157,7 @@ Item {
         style: Text.Raised
         styleColor: "white"
         color: UI.annotationFontColor
-		smooth: true
+        smooth: true
         visible: UI.formFactor === "tablet" || !noMagnifier
     }
 

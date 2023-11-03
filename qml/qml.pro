@@ -39,17 +39,16 @@ OTHER_FILES += \
     keys/BackspaceKey.qml \
     keys/ExtendedListSelector.qml \
     keys/LanguageKey.qml \
-	keys/KeyPad.qml \
+    keys/KeyPad.qml \
     keys/Magnifier.qml \
     keys/PressArea.qml \
     keys/ReturnKey.qml \
     keys/ShiftKey.qml \
     keys/SpaceKey.qml \
     keys/SymbolShiftKey.qml \
-	keys/TabKey.qml \
+    keys/TabKey.qml \
     keys/UrlKey.qml \
     keys/qmldir \
     languages/Keyboard_numbers.qml \
     languages/Keyboard_symbols.qml \
     languages/Keyboard_telephone.qml \
-

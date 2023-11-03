@@ -108,7 +108,7 @@ KeyPad {
 
                 SymbolShiftKey { id: symShiftKey;                            anchors.left: parent.left; }
                 LanguageKey    { id: languageMenuButton;                     anchors.left: symShiftKey.right; }
-				UrlKey         { id: atKey;    label: "@"; shifted: "@";     anchors.left: languageMenuButton.right; }
+                UrlKey         { id: atKey;    label: "@"; shifted: "@";     anchors.left: languageMenuButton.right; }
                 SpaceKey       { id: spaceKey;                               anchors.left: atKey.right; anchors.right: urlKey.left; }
                 UrlKey         { id: urlKey; label: ".ru"; extended: [".ru", ".ua", ".su", ".kg", ".рф", ".укр", ".by", ".tj"]; anchors.right: dotKey.left; }
                 AnnotatedKey   { id: dotKey;      label: "."; shifted: "?"; showAnnotation2: false; anchors.right: dismissKey.left; }

@@ -69,7 +69,7 @@ Item {
         }
     ]
     
-	Row {
+    Row {
         id: borderImageRow
         anchors.bottom: parent.bottom
         anchors.horizontalCenter: parent.horizontalCenter

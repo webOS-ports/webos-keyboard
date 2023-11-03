@@ -19,11 +19,11 @@ import keys 1.0
 
 KeyPad {
     id: keypadRoot
-    
+
     content: c1
     symbols: "languages/Keyboard_symbols_tablet.qml"
     alternativeLayouts: [ "Thumb" ] // list of alternative layouts, like Dvorak, Bepo, Splitted...
-	
+
     Column {
         id: c1
         anchors.right: parent.right
@@ -49,7 +49,7 @@ KeyPad {
             NumKey { label: "0"; shifted: "э"; extended: ["0", "э", ")", "]", "}"]; extendedShifted: ["0", "Э", ")", "]", "}"]; width: UI.keyWidth;}
             TrackBall { width: keypadRoot.width - (UI.keyWidth*10); anchors.verticalCenter: parent.verticalCenter }
         }
-        
+
         Row {
             anchors.horizontalCenter: parent.horizontalCenter;
             spacing: 0
@@ -106,7 +106,7 @@ KeyPad {
             CharKey { label: "ь"; shifted: "Ь"; width: UI.keyWidth * 0.95;}
             CharKey { label: "б"; shifted: "Б"; width: UI.keyWidth * 0.95;}
             CharKey { label: "ю"; shifted: "Ю"; width: UI.keyWidth * 0.95;}
-			AnnotatedKey { id: dotKey; label: "."; shifted: ","; extended: [".", ",", "/", "\\"]; extendedShifted: [".", ",", "/", "\\"]; width: UI.keyWidth * 0.95;}
+            AnnotatedKey { id: dotKey; label: "."; shifted: ","; extended: [".", ",", "/", "\\"]; extendedShifted: [".", ",", "/", "\\"]; width: UI.keyWidth * 0.95;}
             ShiftKey { width: UI.keyWidth * 1.5; }
         }
 
@@ -115,7 +115,7 @@ KeyPad {
             Item {
                 height: keyHeight
 
-                TabKey         { id: tabKey; 				label: "Tab"; shifted: "Tab";                       anchors.left: parent.left; }
+                TabKey         { id: tabKey;                 label: "Tab"; shifted: "Tab";                       anchors.left: parent.left; }
                 SymbolShiftKey { id: symShiftKey;                             anchors.left: tabKey.right; }
                 LanguageKey    { id: languageMenuButton;                       anchors.left: symShiftKey.right; }
                 SpaceKey       { id: spaceKey;                                 anchors.left: languageMenuButton.right; anchors.right: apostropheKey.left; }

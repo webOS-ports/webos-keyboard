@@ -23,5 +23,5 @@ import keys 1.0
 ActionKey {
     width: UI.keyWidth;
     fontSize: UI.xsFontSize;
-	action: "tab"
+    action: "tab"
 }

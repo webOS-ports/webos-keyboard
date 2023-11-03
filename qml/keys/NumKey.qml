@@ -24,7 +24,7 @@ AnnotatedKey {
     id: key
 
     property int padding: 0
-	property real keyWidth: UI.keyWidth * UI.numKeyWidthRatio
+    property real keyWidth: UI.keyWidth * UI.numKeyWidthRatio
 
     width: keyWidth
     height: parent.height

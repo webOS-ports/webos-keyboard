@@ -54,8 +54,8 @@ QtObject {
     property variant keyboardSizeChoices: DesignConstants.keyHeightRatio.map(function(obj) {return obj.name});
 
     property string fontSize: DesignConstants.fontSize[formFactor];
-	property string thumbFontSize: DesignConstants.thumbFontSize;
-	property string thumbAnnotationFontSize: DesignConstants.thumbAnnotationFontSize;
+    property string thumbFontSize: DesignConstants.thumbFontSize;
+    property string thumbAnnotationFontSize: DesignConstants.thumbAnnotationFontSize;
     property string fontFamily: DesignConstants.fontFamily;
     property color fontColor: DesignConstants.fontColor[formFactor];
     property bool fontBold: DesignConstants.fontBold[formFactor];
@@ -77,12 +77,12 @@ QtObject {
     /* special keys */
     property real actionKeyPadding: DesignConstants.actionKeyPadding;
     property string smallFontSize: DesignConstants.smallFontSize[formFactor];
-	property string xsFontSize: DesignConstants.xsFontSize[formFactor];
+    property string xsFontSize: DesignConstants.xsFontSize[formFactor];
 
     /* extended keys */
     property real popoverTopMargin: DesignConstants.popoverTopMargin;
     property string popoverFontSize: DesignConstants.popoverFontSize[formFactor];
-	property string popoverFontSizeLong: DesignConstants.popoverFontSizeLong[formFactor];
+    property string popoverFontSizeLong: DesignConstants.popoverFontSizeLong[formFactor];
 
     property string imageWhiteKey: DesignConstants.imageWhiteKey[formFactor];
     property string imageWhiteKeyPressed: DesignConstants.imageWhiteKeyPressed[formFactor];

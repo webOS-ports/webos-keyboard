@@ -22,7 +22,7 @@ import keys 1.0
 import LunaNext.Common 0.1
 
 Item {
-	id: trackBall
+    id: trackBall
 
     height: 45
     property Item highlightedKey;
@@ -36,7 +36,7 @@ Item {
 
     Image {
         anchors.centerIn: sliderMouseArea.pressed? undefined : parent
-		id: slider
+        id: slider
         source: "../images/"+UI.formFactor+"/track-center.png"
         width: sourceSize.width * 0.8
         height: sourceSize.height * 0.8

@@ -18,7 +18,7 @@
 
 .pragma library
 
-var keyMargins  	=   0 //gu
+var keyMargins      =   0 //gu
 
 var keyHeight       =   {"tabletLandscape" : "7",
                          "tabletPortrait"  : "7",
@@ -39,27 +39,26 @@ var numKeyWidthRatio       =   [ { "name": "XS", "ratio" : 0.925 },	/* 243 / 768
                        { "name":  "S", "ratio" : 0.925 }, 	/* (340+243 / 2)  / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
                        { "name":  "M", "ratio" : 0.925 },         	/* 340 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
                        { "name":  "L", "ratio" : 0.925 } ];	/* 393 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
-                       
-                       
-var fontSize    	=   {"tablet" : "22pt",
-                         "phone"  : "16pt"};    
+
+var fontSize        =   {"tablet" : "22pt",
+                         "phone"  : "16pt"};
 
 var thumbFontSize   =   "18pt";
 var thumbAnnotationFontSize   =   "10pt";
-						 
-var fontFamily  	=   "Prelude";
 
-var fontColor  		=   {"tablet" : "#141414",
+var fontFamily      =   "Prelude";
+
+var fontColor       =   {"tablet" : "#141414",
                          "phone"  : "#FFFFFF"};
 
-var fontBold    	=   {"tablet" : false,
+var fontBold        =   {"tablet" : false,
                          "phone"  : true};
 
 var fontBoldAction  =   true
 
 var annotationFontSize = {"tablet" : "14pt",
                          "phone"  : "14pt"};
-						 
+
 var annotationMargins = 0.7; // gu
 
 var annotationFontColor = {"tablet" : "#646464",
@@ -69,12 +68,12 @@ var magnifierFontColor = {"tablet" : "#141414",
                            "phone"  : "#141414"};
 
 var extendedHighLightColor = {"tablet" : "#4B97DE",
-                           "phone"  : "#4B97DE"};						   
+                           "phone"  : "#4B97DE"};
 
 var extendedFontColor = {"tablet" : "#141414",
-                         "phone"  : "#141414"};							   
-						   
-var greyColor	=	{"tablet" : "#D2D2D2",
+                         "phone"  : "#141414"};
+
+var greyColor    =    {"tablet" : "#D2D2D2",
                      "phone"  : "#D2D2D2"};
 
 /* magnifier */
@@ -85,11 +84,11 @@ var magnifierVerticalPadding = 0; // gu, stretch the magnifier a little bit in y
 var actionKeyPadding = 2;  // gu, action keys are a bit bigger
 
 var smallFontSize = {"tablet" : "14pt",
-				     "phone"  : "14pt"}; 
+                     "phone"  : "14pt"}; 
 
 var xsFontSize = {"tablet" : "14pt",
-                     "phone"  : "10pt"};
-					 
+                  "phone"  : "10pt"};
+
 /* extended keys */
 var popoverTopMargin   = 1; // gu
 
@@ -97,9 +96,8 @@ var popoverFontSize   = {"tablet" : "32pt",
                          "phone"  : "32pt"};    // gu
 
 var popoverFontSizeLong   = {"tablet" : "32pt",
-                         "phone"  : "24pt"};    // gu
-						 
-						 
+                             "phone"  : "24pt"};    // gu
+
 var imageWhiteKey        = { "tablet" : "../images/tablet/key_bg_white.png",
                              "phone"  : "../images/phone/key_bg_white.png"  };
 
@@ -118,9 +116,9 @@ var imageGreyKey         = { "tablet" : "../images/tablet/key_bg_grey.png",
 var imageGreyKeyPressed  = { "tablet" : "../images/tablet/key_bg_grey_active.png",
                              "phone"  : "../images/phone/key_bg_grey_active.png"  };
 
-var imagePopover 	     = { "tablet" : "../images/tablet/keyboard_popover.png",
+var imagePopover          = { "tablet" : "../images/tablet/keyboard_popover.png",
                              "phone"  : "../images/phone/keyboard_popover.png"  };
-							
+
 var imagePopupKey        = { "tablet" : "../images/tablet/popup_key_inactive.png",
                              "phone"  : "../images/phone/popup_key_inactive.png"  };
 
@@ -150,9 +148,8 @@ var imageShiftLockKey    = { "tablet" : "../images/tablet/key_bg_shift.png",
 
 var imageShiftLockKeyPressed    = { "tablet" : "../images/tablet/key_bg_shift_active.png",
                                     "phone"  : "../images/phone/key_bg_shift_active.png"  };
-							 
+
 var top_margin = 1.1;  // gu
 var bottom_margin = 0; // gu
 
 var wordribbonHeight = 5; //gu
-
