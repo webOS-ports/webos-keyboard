@@ -207,7 +207,6 @@ Item {
                 UI.currentShiftState = "SHIFTED";
             }
         }
-
     } // canvas
 
     // calculates the size of the visible keyboard to report to the window system
@@ -226,5 +225,4 @@ Item {
     Component.onCompleted: {
         UI.isLandscape = Qt.binding( function() { return fullScreenItem.width > fullScreenItem.height; } );
     }
-
 } // fullScreenItem

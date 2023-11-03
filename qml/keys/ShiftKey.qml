@@ -30,7 +30,7 @@ ActionKey {
 
     imgNormal: UI.currentShiftState === "CAPSLOCK" ? UI.imageShiftLockKey : UI.currentShiftState === "SHIFTED" ? UI.imageShiftKey : UI.imageBlackKey
     imgPressed: UI.currentShiftState === "CAPSLOCK" ? UI.imageShiftLockKeyPressed : UI.currentShiftState === "SHIFTED" ? UI.imageShiftKeyPressed : UI.imageBlackKeyPressed
-	
+
     action: "shift"
 
     PressArea {

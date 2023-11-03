@@ -66,7 +66,7 @@ KeyPad {
             CharKey { label: "i"; shifted: "I"; extended: ["i", "ì","í", "î", "ï", "İ", "ı"]; extendedShifted: ["I", "Ì", "Í", "Î", "Ï", "İ", "ı"] }
             CharKey { label: "o"; shifted: "O"; extended: ["o", "ò", "ó", "ô", "õ", "ö", "ø", "ő", "œ", "º", "ω"]; extendedShifted: ["O", "Ò", "Ó", "Ô", "Õ", "Ö", "Ø", "Ő", "Œ", "º", "Ω"] }
             CharKey { label: "p"; shifted: "P"; extended: ["p", "¶", "§", "π"]; extendedShifted: ["P", "¶", "§", "Π"]}
-			CharKey { label: "ç"; shifted: "Ç"; }
+            CharKey { label: "ç"; shifted: "Ç"; }
             BackspaceKey {}
         }
 
@@ -85,7 +85,7 @@ KeyPad {
             CharKey { label: "j"; shifted: "J"; }
             CharKey { label: "k"; shifted: "K"; }
             CharKey { label: "l"; shifted: "L"; extended: ["l", "ł", "ĺ"]; extendedShifted: ["L", "Ł", "Ĺ"]}
-			CharKey { label: "ñ"; shifted: "Ñ"; }
+            CharKey { label: "ñ"; shifted: "Ñ"; }
             ReturnKey { id: enterKey; label: "Enter"; shifted: "Enter"; width: UI.keyWidth * 1.5; fontSize: UI.isLandscape ? UI.xsFontSize : "10pt"; }
         }
 
@@ -113,7 +113,7 @@ KeyPad {
             Item {
                 height: keyHeight
 
-                TabKey         { id: tabKey; 				label: "Tab"; shifted: "Tab";                       anchors.left: parent.left; }
+                TabKey         { id: tabKey;                 label: "Tab"; shifted: "Tab";                       anchors.left: parent.left; }
                 SymbolShiftKey { id: symShiftKey;                             anchors.left: tabKey.right; }
                 LanguageKey    { id: languageMenuButton;                       anchors.left: symShiftKey.right; }
                 SpaceKey       { id: spaceKey;                                 anchors.left: languageMenuButton.right; anchors.right: apostropheKey.left; }

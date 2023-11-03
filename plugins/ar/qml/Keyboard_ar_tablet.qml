@@ -21,8 +21,8 @@ import keys 1.0
 
 KeyPad {
     id: keypadRoot
-	
-	content: c1
+
+    content: c1
     symbols: "languages/Keyboard_symbols_tablet.qml"
 
     Column {
@@ -67,7 +67,7 @@ KeyPad {
             CharKey { label: "خ"; }
             CharKey { label: "ح"; }
             CharKey { label: "ج"; }
-			BackspaceKey { padding: 0 }
+            BackspaceKey { padding: 0 }
         }
 
         Row {
@@ -106,8 +106,7 @@ KeyPad {
             CharKey { label: "و"; }
             CharKey { label: "ز"; }
             CharKey { label: "ظ"; }
-			ShiftKey { width: UI.keyWidth * 1.5; }
-            
+            ShiftKey { width: UI.keyWidth * 1.5; }
         }
 
         Component {
@@ -115,7 +114,7 @@ KeyPad {
             Item {
                 height: keyHeight
 
-                TabKey         { id: tabKey; 				label: "Tab"; shifted: "Tab";                       anchors.left: parent.left; }
+                TabKey         { id: tabKey;                 label: "Tab"; shifted: "Tab";                       anchors.left: parent.left; }
                 SymbolShiftKey { id: symShiftKey;                             anchors.left: tabKey.right; }
                 LanguageKey    { id: languageMenuButton;                       anchors.left: symShiftKey.right; }
                 CharKey        { id: commaKey;    label: "ذ"; shifted: "/";  anchors.left: languageMenuButton.right; }
@@ -125,13 +124,14 @@ KeyPad {
                 DismissKey     { id: dismissKey;                               anchors.right: parent.right;}
             }
         }
+
         Component {
             id: contentTypeEmail
 
             Item {
                 height: keyHeight
 
-                TabKey         { id: tabKey; 				label: "Tab"; shifted: "Tab";                       anchors.left: parent.left; }
+                TabKey         { id: tabKey;                 label: "Tab"; shifted: "Tab";                       anchors.left: parent.left; }
                 SymbolShiftKey { id: symShiftKey;                             anchors.left: tabKey.right; }
                 LanguageKey    { id: languageMenuButton;                       anchors.left: symShiftKey.right; }
                 CharKey        { id: atKey;    label: "@"; shifted: "@";     anchors.left: languageMenuButton.right; }
@@ -142,6 +142,7 @@ KeyPad {
                 DismissKey     { id: dismissKey;                               anchors.right: parent.right;}
             }
         }
+
         Component {
             id: contentTypeUrl
 
@@ -149,24 +150,23 @@ KeyPad {
                 height: keyHeight
 
                 // note FIXME: full list of tld:
-                // [".ma", ".dz", ".ly", ".tn", ".iq", ".lb", ".ps", ".jo", ".ye", ".bh", ".dj", ".kw", ".km", ".mr‎", ".om", ".qa", ".sa", ".sy", ".so‎", ".sd", ".ae"]
-                TabKey         { id: tabKey; 				label: "Tab"; shifted: "Tab";                       anchors.left: parent.left; }
-                SymbolShiftKey { id: symShiftKey;                            anchors.left: tabKey.right; }
-                LanguageKey    { id: languageMenuButton;                     anchors.left: symShiftKey.right; }
-                CharKey        { id: slashKey; label: "/"; shifted: "/";     anchors.left: languageMenuButton.right; }
-                SpaceKey       { id: spaceKey;                               anchors.left: slashKey.right; anchors.right: urlKey.left; }
-                UrlKey         { id: urlKey; label: ".eg"; extended: [".ma", ".dz", ".ly", ".tn", ".iq", ".lb", ".ps", ".jo", ".ye", ".bh", ".dj", ".kw", ".km", ".mr‎", ".om", ".qa", ".sa", ".sy", ".so‎", ".sd", ".ae"]; anchors.right: dotKey.left; }
-                CharKey        { id: dotKey;      label: "."; shifted: "ذ";  anchors.right: specialChar.left; }
-                CharKey        { id: specialChar; label: "ط";                anchors.right: dismissKey.left }
-                DismissKey     { id: dismissKey;                               anchors.right: parent.right;}
+                // [".ma", ".dz", ".ly", ".tn", ".iq", ".lb", ".ps", ".jo", ".ye", ".bh", ".dj", ".kw", ".km", ".mr", ".om", ".qa", ".sa", ".sy", ".so", ".sd", ".ae"]
+                TabKey         { id: tabKey; label: "Tab"; shifted: "Tab"; anchors.left: parent.left; }
+                SymbolShiftKey { id: symShiftKey; anchors.left: tabKey.right; }
+                LanguageKey    { id: languageMenuButton; anchors.left: symShiftKey.right; }
+                CharKey        { id: slashKey; label: "/"; shifted: "/"; anchors.left: languageMenuButton.right; }
+                SpaceKey       { id: spaceKey; anchors.left: slashKey.right; anchors.right: urlKey.left; }
+                UrlKey         { id: urlKey; label: ".eg"; extended: [".ma", ".dz", ".ly", ".tn", ".iq", ".lb", ".ps", ".jo", ".ye", ".bh", ".dj", ".kw", ".km", ".mr", ".om", ".qa", ".sa", ".sy", ".so", ".sd", ".ae"]; anchors.right: dotKey.left; }
+                CharKey        { id: dotKey; label: "."; shifted: "ذ"; anchors.right: specialChar.left; }
+                CharKey        { id: specialChar; label: "ط"; anchors.right: dismissKey.left }
+                DismissKey     { id: dismissKey; anchors.right: parent.right;}
             }
         }
         Loader {
             anchors.left: parent.left
             anchors.right: parent.right
 
-            sourceComponent: currentContentType === 0 ? contentTypeNormal :
-                             currentContentType === 3 ? contentTypeEmail : contentTypeUrl
+            sourceComponent: currentContentType === 0 ? contentTypeNormal : currentContentType === 3 ? contentTypeEmail : contentTypeUrl
         }
     } // column
 }

@@ -49,8 +49,8 @@ CharKey {
 
     // fontSize can be overwritten when using the component, e.g. SymbolShiftKey uses smaller fontSize
     property string fontSize: UI.fontSize
-	
-	
+
+
     // was: Icon (the source is an image from the icons directory)
     Image {
 
@@ -58,12 +58,12 @@ CharKey {
 
         id: iconImage
         source: Qt.resolvedUrl("../images/" + UI.formFactor + "/" + __icon + ".png")
-		anchors.verticalCenter: parent.verticalCenter
-		anchors.horizontalCenter: parent.horizontalCenter
+        anchors.verticalCenter: parent.verticalCenter
+        anchors.horizontalCenter: parent.horizontalCenter
         visible: (label == "")
         height: UI.formFactor === "tablet" ? parent.height * 0.7 : actionKeyRoot.height > actionKeyRoot.width ? parent.height * 0.5 : parent.width * 0.5
-	   	smooth: true
-		fillMode: Image.PreserveAspectFit
+        smooth: true
+        fillMode: Image.PreserveAspectFit
     }
 
     Text {

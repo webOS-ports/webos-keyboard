@@ -47,8 +47,8 @@ KeyPad {
             CharKey { label: "i"; shifted: "I"; extended: ["i", "ì","í", "î", "ï", "İ", "ı"]; extendedShifted: ["I", "Ì", "Í", "Î", "Ï", "İ", "ı"] }
             CharKey { label: "o"; shifted: "O"; extended: ["o", "ò", "ó", "ô", "õ", "ö", "ø", "ő", "œ", "º", "ω"]; extendedShifted: ["O", "Ò", "Ó", "Ô", "Õ", "Ö", "Ø", "Ő", "Œ", "º", "Ω"] }
             CharKey { label: "p"; shifted: "P"; extended: ["p", "¶", "§", "π"]; extendedShifted: ["P", "§", "Π"]}
-			CharKey { label: "ç"; shifted: "Ç"; }
-			}
+            CharKey { label: "ç"; shifted: "Ç"; }
+            }
 
         Row {
             anchors.horizontalCenter: parent.horizontalCenter;
@@ -65,7 +65,7 @@ KeyPad {
             CharKey { label: "j"; shifted: "J"; }
             CharKey { label: "k"; shifted: "K"; }
             CharKey { label: "l"; shifted: "L"; extended: ["l", "ł", "ĺ"]; extendedShifted: ["L", "Ł", "Ĺ"]}
-			CharKey { label: "ñ"; shifted: "Ñ"; }
+            CharKey { label: "ñ"; shifted: "Ñ"; }
          }
 
      //   Row {

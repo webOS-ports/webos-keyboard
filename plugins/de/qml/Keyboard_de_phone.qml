@@ -74,7 +74,7 @@ KeyPad {
 
             ShiftKey {id: shiftKey; anchors.left: parent.left; }
             CharKey { id: yKey; anchors.left: shiftKey.right; width: UI.keyWidth * 8/7; label: "y"; shifted: "Y"; extended: ["y", "ý", "ÿ", "¥"]; extendedShifted: ["Y", "Ý", "Ÿ", "¥"] }
-			CharKey { id: xKey; anchors.left: yKey.right; width: UI.keyWidth * 8/7; label: "x"; shifted: "X"; extended: ["x", "Rec", "Mute"]; extendedShifted: ["X", "Rec", "Mute"]; }
+            CharKey { id: xKey; anchors.left: yKey.right; width: UI.keyWidth * 8/7; label: "x"; shifted: "X"; extended: ["x", "Rec", "Mute"]; extendedShifted: ["X", "Rec", "Mute"]; }
             CharKey { id: cKey; anchors.left: xKey.right; width: UI.keyWidth * 8/7; label: "c"; shifted: "C"; extended: ["c", "ç", "ć", "©", "¢", "č"]; extendedShifted: ["C", "Ç", "Ć", "©", "¢", "Č"]; }
             CharKey { id: vKey; anchors.left: cKey.right; width: UI.keyWidth * 8/7; label: "v"; shifted: "V"; }
             CharKey { id: bKey; anchors.left: vKey.right; width: UI.keyWidth * 8/7; label: "b"; shifted: "B"; }

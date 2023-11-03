@@ -54,7 +54,7 @@ KeyPad {
             anchors.left:parent.left;
             anchors.right: parent.right;
 
-			//anchors.horizontalCenter: parent.horizontalCenter;
+            //anchors.horizontalCenter: parent.horizontalCenter;
             spacing: 0
 
             height: keyHeight
@@ -70,7 +70,7 @@ KeyPad {
             CharKey { label: "o"; shifted: "O"; extended: ["o", "ò", "ó", "ô", "õ", "ö", "ø", "ő", "œ", "º", "ω"]; extendedShifted: ["O", "Ò", "Ó", "Ô", "Õ", "Ö", "Ø", "Ő", "Œ", "º", "Ω"]; width: UI.keyWidth * 0.95;}
             CharKey { label: "p"; shifted: "P"; extended: ["p", "¶", "§", "π"]; extendedShifted: ["P", "¶", "§", "Π"]; width: UI.keyWidth * 0.95;}
             CharKey { label: "å"; shifted: "Å"; width: UI.keyWidth * 0.95;}
-			BackspaceKey { width: keypadRoot.width - (UI.keyWidth * 0.95 * 11);}
+            BackspaceKey { width: keypadRoot.width - (UI.keyWidth * 0.95 * 11);}
         }
 
         Row {
@@ -88,8 +88,8 @@ KeyPad {
             CharKey { label: "j"; shifted: "J"; width: UI.keyWidth * 0.98;}
             CharKey { label: "k"; shifted: "K"; width: UI.keyWidth * 0.98;}
             CharKey { label: "l"; shifted: "L"; extended: ["l", "ł", "ĺ"]; extendedShifted: ["L", "Ł", "Ĺ"]; width: UI.keyWidth * 0.98;}
-			CharKey { label: "ö"; shifted: "Ö"; width: UI.keyWidth * 0.98;}
-			CharKey { label: "ä"; shifted: "Ä"; width: UI.keyWidth * 0.98;}
+            CharKey { label: "ö"; shifted: "Ö"; width: UI.keyWidth * 0.98;}
+            CharKey { label: "ä"; shifted: "Ä"; width: UI.keyWidth * 0.98;}
             ReturnKey { id: enterKey; label: "Enter"; shifted: "Enter"; alignTextRight: true; width: UI.keyWidth * 0.98;}
         }
 
@@ -117,7 +117,7 @@ KeyPad {
             Item {
                 height: keyHeight
 
-                TabKey         { id: tabKey; 				label: "Tab"; shifted: "Tab";                       anchors.left: parent.left; }
+                TabKey         { id: tabKey;                 label: "Tab"; shifted: "Tab";                       anchors.left: parent.left; }
                 SymbolShiftKey { id: symShiftKey;                             anchors.left: tabKey.right; }
                 LanguageKey    { id: languageMenuButton;                       anchors.left: symShiftKey.right; }
                 SpaceKey       { id: spaceKey;                                 anchors.left: languageMenuButton.right; anchors.right: apostropheKey.left; }

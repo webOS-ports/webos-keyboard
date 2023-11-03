@@ -48,7 +48,7 @@ Item {
     property int currentlyAssignedKeyWidth: currentlyAssignedKey ? currentlyAssignedKey.width : 0
 
     property int numberOfLines: Math.ceil(keyRepeater.count / 4)
-	
+
     onCurrentlyAssignedKeyXChanged: if(currentlyAssignedKey) __repositionPopoverTo(currentlyAssignedKey);
     onCurrentlyAssignedKeyYChanged: if(currentlyAssignedKey) __repositionPopoverTo(currentlyAssignedKey)
     onCurrentlyAssignedKeyParentYChanged: if(currentlyAssignedKey) __repositionPopoverTo(currentlyAssignedKey);
@@ -83,15 +83,15 @@ Item {
 
         width: Math.max(popover.keyWidth * (keyRepeater.count <=4 ? keyRepeater.count : 4), rowOfKeys.width + 10*2)
         height: ((Units.gu(3.0) + numberOfLines * popover.keyHeight))
-	
+
         Row {
             x: 0; y: 0; height: parent.height
             BorderImage {
                 source: UI.imagePopupBgLeft
                 border {left: 21; top: 21; bottom: 36;}
-				height: parent.height
+                height: parent.height
                 verticalTileMode: BorderImage.Stretch
-				width: 21
+                width: 21
             }
             BorderImage {
                 source: UI.imagePopupBgBetween
@@ -154,7 +154,7 @@ Item {
                     id: textCell
                     anchors.centerIn: parent
                     //anchors.verticalCenterOffset: UI.formFactor === "phone" ? Units.gu (-0.15) : 0
-					anchors.verticalCenterOffset: Units.gu(-0.15)
+                    anchors.verticalCenterOffset: Units.gu(-0.15)
                     text: modelData
                     font.family: UI.fontFamily
                     font.pixelSize: text.length > 2 ? FontUtils.sizeToPixels(UI.smallFontSize) : FontUtils.sizeToPixels(UI.fontSize)
@@ -214,5 +214,3 @@ Item {
         popover.extendedListDismissed();
     }
 }
-
-
