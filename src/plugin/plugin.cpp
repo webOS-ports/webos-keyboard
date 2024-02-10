@@ -55,6 +55,7 @@ MAbstractInputMethod * MaliitKeyboardPlugin::createInputMethod(MAbstractInputMet
 QSet<Maliit::HandlerState> MaliitKeyboardPlugin::supportedStates() const
 {
     QSet<Maliit::HandlerState> set;
+    set.insert(Maliit::Hardware);
     set.insert(Maliit::OnScreen);
 
     return set;

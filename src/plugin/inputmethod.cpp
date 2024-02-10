@@ -216,6 +216,9 @@ void InputMethod::handleFocusChange(bool focusIn)
     } else {
         hide();
     }
+
+    // this is for hardware keyboard
+    inputMethodHost()->setRedirectKeys(focusIn);
 }
 
 void InputMethod::handleAppOrientationChanged(int angle)
