@@ -16,13 +16,13 @@
  */
 
 
-import QtQuick 2.3
-import QtQuick.Controls 1.1
+import QtQuick
+import QtQuick.Controls
 
 import LunaNext.Common 0.1
 import keys 1.0
 
-import "../../qml"
+import "../../qml" as App
 
 Rectangle {
     id: testRoot
@@ -116,7 +116,7 @@ Rectangle {
             color: "black"
             width: 10
         }
-        color: "darkgray"
+        color: "midnightblue"
         clip: true
 
         Flickable {
@@ -152,14 +152,14 @@ Rectangle {
                     text: "rotate orientation (current is " + (((!isRotated) && (Settings.displayWidth > Settings.displayHeight)) ? "landscape" : "portrait") + ")";
                     onClicked: testRoot.isRotated = !testRoot.isRotated
                 }
-                ExclusiveGroup { id: tabPositionGroup }
+                //ExclusiveGroup { id: tabPositionGroup }
                 Repeater {
                     id: listSimulatedEnvs
                     model: Settings.testEnvs
                     delegate: RadioButton {
                         anchors.horizontalCenter: parent.horizontalCenter
                         text: "switch to : " + model.name
-                        exclusiveGroup: tabPositionGroup
+                        //exclusiveGroup: tabPositionGroup
                         onClicked: {
                             keyboardLoader.sourceComponent = undefined;
                             Settings.currentTestEnv = index;
@@ -175,7 +175,7 @@ Rectangle {
 
     Component {
         id: kbdComponent
-        Keyboard {}
+        App.Keyboard {}
     }
     Loader {
         id: keyboardLoader
