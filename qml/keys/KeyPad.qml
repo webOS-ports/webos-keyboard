@@ -36,7 +36,10 @@ Item {
 
     property Column content
 
-    height: content.height
+    Connections {
+        target: content
+        onHeightChanged: keyPadRoot.height = content.height;
+    }
 
     Component.onCompleted:
     {
