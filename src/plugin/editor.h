@@ -59,6 +59,11 @@ public:
 
     void setHost(MAbstractInputMethodHost *host);
 
+    //! Commits whatever is currently in the preedit, unchanged. Needed before
+    //! handing a key back to the application, so it does not move its cursor
+    //! out from under text the editor still holds.
+    Q_SLOT void commit();
+
 private:
     //! \reimp
     virtual void sendPreeditString(const QString &preedit,

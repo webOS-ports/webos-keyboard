@@ -138,6 +138,9 @@ public:
     Q_SIGNAL void leftLayoutSelected();
     Q_SIGNAL void rightLayoutSelected();
 
+protected:
+    void commitPreedit();
+
 private:
     const QScopedPointer<AbstractTextEditorPrivate> d_ptr;
 
@@ -153,7 +156,6 @@ private:
 
     virtual void singleBackspace();
 
-    void commitPreedit();
     Q_SLOT void autoRepeatBackspace();
     void autoRepeatWordBackspace();
     QString wordLeftOfCursor() const;

@@ -77,6 +77,11 @@ public:
     virtual void reset();
     virtual void setPreedit(const QString &preedit,
                             int cursor_position);
+    virtual void processKeyEvent(QEvent::Type keyType, Qt::Key keyCode,
+                                 Qt::KeyboardModifiers modifiers,
+                                 const QString &text, bool autoRepeat, int count,
+                                 quint32 nativeScanCode, quint32 nativeModifiers,
+                                 unsigned long time);
     virtual void switchContext(Maliit::SwitchDirection direction,
                                bool animated);
     virtual QList<MAbstractInputMethod::MInputMethodSubView>

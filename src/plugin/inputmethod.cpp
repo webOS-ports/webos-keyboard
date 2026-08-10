@@ -169,6 +169,73 @@ void InputMethod::setPreedit(const QString &preedit,
     d->editor.replacePreedit(preedit);
 }
 
+//! \brief Handles a key coming from a physical keyboard.
+//!
+//! While an editor is focused the compositor hands every key to whoever holds
+//! the input method's keyboard grab, so a hardware key never reaches the
+//! application on its own -- this plugin has to deliver it. Text producing keys
+//! are pushed through the same editor path the on-screen keyboard uses, which
+//! keeps preedit, word prediction and auto-caps consistent between the two
+//! keyboards. Everything else (arrows, Tab, Escape, function keys, shortcuts)
+//! is handed back to the application untouched.
+void InputMethod::processKeyEvent(QEvent::Type keyType, Qt::Key keyCode,
+                                  Qt::KeyboardModifiers modifiers,
+                                  const QString &text, bool autoRepeat, int count,
+                                  quint32 nativeScanCode, quint32 nativeModifiers,
+                                  unsigned long time)
+{
+    Q_D(InputMethod);
+
+    Key key;
+    const bool isShortcut = modifiers & (Qt::ControlModifier | Qt::AltModifier |
+                                         Qt::MetaModifier);
+
+    if (isShortcut) {
+        key.setAction(Key::NumActions);
+    } else switch (keyCode) {
+    case Qt::Key_Backspace:
+        key.setAction(Key::ActionBackspace);
+        break;
+
+    case Qt::Key_Space:
+        key.setAction(Key::ActionSpace);
+        break;
+
+    case Qt::Key_Return:
+    case Qt::Key_Enter:
+        key.setAction(Key::ActionReturn);
+        break;
+
+    default:
+        if (text.size() == 1 && text.at(0).isPrint()) {
+            key.setAction(Key::ActionInsert);
+            key.setLabel(text);
+        } else {
+            key.setAction(Key::NumActions);
+        }
+        break;
+    }
+
+    if (key.action() == Key::NumActions) {
+        // Not ours: cursor keys, Home/End, Delete, function keys, shortcuts.
+        // Commit first -- otherwise the application moves its cursor away from
+        // a preedit the editor still holds, and every later keystroke is
+        // applied against a stale position.
+        if (keyType == QEvent::KeyPress)
+            d->editor.commit();
+
+        MAbstractInputMethod::processKeyEvent(keyType, keyCode, modifiers, text,
+                                              autoRepeat, count, nativeScanCode,
+                                              nativeModifiers, time);
+        return;
+    }
+
+    if (keyType == QEvent::KeyPress)
+        d->editor.onKeyPressed(key);
+    else if (keyType == QEvent::KeyRelease)
+        d->editor.onKeyReleased(key);
+}
+
 void InputMethod::switchContext(Maliit::SwitchDirection direction,
                                 bool animated)
 {

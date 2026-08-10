@@ -54,6 +54,11 @@ void Editor::setHost(MAbstractInputMethodHost *host)
     m_host = host;
 }
 
+void Editor::commit()
+{
+    commitPreedit();
+}
+
 void Editor::sendPreeditString(const QString &preedit,
                                Model::Text::PreeditFace face,
                                const Replacement &replacement)
