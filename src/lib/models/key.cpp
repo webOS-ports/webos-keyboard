@@ -42,6 +42,7 @@ Key::Key()
     , m_margins()
     , m_icon()
     , m_has_extended_keys(false)
+    , m_flags_padding(0)
 {}
 
 bool Key::valid() const

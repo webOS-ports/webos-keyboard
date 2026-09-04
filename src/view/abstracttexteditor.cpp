@@ -400,13 +400,13 @@ void AbstractTextEditor::onKeyReleased(const Key &key)
         return;
     }
 
-    const QString text = key.label();
+    const QString key_label = key.label();
     QString keyText = QString("");
     Qt::Key event_key = Qt::Key_unknown;
 
     switch(key.action()) {
     case Key::ActionInsert: {
-        d->text->appendToPreedit(text);
+        d->text->appendToPreedit(key_label);
 
         // computeCandidates can change preedit face, so needs to happen
         // before sending preedit:
@@ -431,7 +431,7 @@ void AbstractTextEditor::onKeyReleased(const Key &key)
     } break;
 
     case Key::ActionSpace: {
-        QString textOnLeft = d->text->surroundingLeft() + d->text->preedit();
+        const QString textOnLeft = d->text->surroundingLeft() + d->text->preedit();
         const bool auto_caps_activated = d->word_engine->languageFeature()->activateAutoCaps(textOnLeft);
         const bool replace_preedit = d->auto_correct_enabled && not d->text->primaryCandidate().isEmpty();
 
@@ -479,7 +479,8 @@ void AbstractTextEditor::onKeyReleased(const Key &key)
         break;
 
     case Key::ActionCommand:
-        invokeAction(text, QKeySequence::fromString(key.commandSequence()));
+        invokeAction(key_label, QKeySequence::fromString(key.commandSequence()));
+        break;
 
     case Key::ActionLeftLayout:
         Q_EMIT leftLayoutSelected();
@@ -493,12 +494,22 @@ void AbstractTextEditor::onKeyReleased(const Key &key)
         break;
     }
 
-    if (event_key != Qt::Key_unknown) {
-        commitPreedit();
+    if (event_key == Qt::Key_unknown) {
+        // Nothing left to hand to the application. The keys that produce text
+        // -- inserts, space, backspace -- have already gone out above as a
+        // preedit, a commit or a backspace of their own, and the rest (close,
+        // layout switches, modifiers) are ours alone. Sending an unknown key
+        // on top of that only produces a key event the application cannot act
+        // on, and one "No conversion from Qt::Key" warning per keystroke from
+        // the framework, which has to map it to a keysym to pass it on.
+        return;
     }
-    QKeyEvent evPress(QEvent::KeyPress, event_key, Qt::NoModifier, keyText);
+
+    commitPreedit();
+
+    const QKeyEvent evPress(QEvent::KeyPress, event_key, Qt::NoModifier, keyText);
     sendKeyEvent(evPress);
-    QKeyEvent evRelease(QEvent::KeyRelease, event_key, Qt::NoModifier, keyText);
+    const QKeyEvent evRelease(QEvent::KeyRelease, event_key, Qt::NoModifier, keyText);
     sendKeyEvent(evRelease);
 }
 
@@ -578,6 +589,29 @@ void AbstractTextEditor::replaceAndCommitPreedit(const QString &replacement)
 void AbstractTextEditor::clearPreedit()
 {
     replacePreedit("");
+}
+
+//! \brief Drops the preedit without telling the application about it.
+//!
+//! For the cases where the application has already thrown its own preedit
+//! away and is only telling us after the fact -- an input context reset,
+//! a focus change. Anything we sent back at that point would be applied to
+//! text we no longer know the shape of, so the buffer is dropped locally
+//! instead. Note that the preedit we hold is sent in full on every
+//! keystroke, so leaving a stale one behind makes the letters typed before
+//! the reset reappear alongside the next one.
+void AbstractTextEditor::resetPreedit()
+{
+    Q_D(AbstractTextEditor);
+
+    if (not d->valid()) {
+        return;
+    }
+
+    d->text->setPreedit("");
+    d->text->setPreeditFace(Model::Text::PreeditDefault);
+    d->text->setPrimaryCandidate("");
+    d->word_engine->clearCandidates();
 }
 
 //! \brief Returns whether preedit functionality is enabled.
@@ -683,7 +717,7 @@ void AbstractTextEditor::autoRepeatWordBackspace()
     Q_D(AbstractTextEditor);
 
     if (d->text->surroundingOffset() > 0) {
-        QString word = wordLeftOfCursor();
+        const QString word = wordLeftOfCursor();
         for (int i=0; i<word.length(); ++i)
             singleBackspace();
     } else {
@@ -707,7 +741,7 @@ QString AbstractTextEditor::wordLeftOfCursor() const
     while (idx >= 0 && !isSeparator(leftSurrounding.at(idx))) {
         --idx;
     }
-    int length = d->text->surroundingOffset() - idx;
+    const int length = d->text->surroundingOffset() - idx;
 
     return leftSurrounding.right(length);
 }
@@ -723,7 +757,7 @@ void AbstractTextEditor::showUserCandidate()
     }
 
     WordCandidateList candidates;
-    WordCandidate candidate(WordCandidate::SourceUser, d->text->preedit());
+    const WordCandidate candidate(WordCandidate::SourceUser, d->text->preedit());
 
     candidates << candidate;
 
@@ -758,7 +792,7 @@ void AbstractTextEditor::singleBackspace()
     Q_D(AbstractTextEditor);
 
     if (d->text->preedit().isEmpty()) {
-        QKeyEvent ev(QEvent::KeyPress, Qt::Key_Backspace, Qt::NoModifier);
+        const QKeyEvent ev(QEvent::KeyPress, Qt::Key_Backspace, Qt::NoModifier);
         sendKeyEvent(ev);
     } else {
         d->text->removeFromPreedit(1);
@@ -800,7 +834,7 @@ void AbstractTextEditor::onCursorPositionChanged(int cursor_position,
         const int cursor_pos_relative_word_begin(r.start - r.cursor_position);
         const int word_begin_relative_cursor_pos(r.cursor_position - r.start);
         const QString word(surrounding_text.mid(r.start, r.length));
-        Replacement word_r(cursor_pos_relative_word_begin, r.length,
+        const Replacement word_r(cursor_pos_relative_word_begin, r.length,
                            word_begin_relative_cursor_pos);
 
         d->text->setPreedit(word, word_begin_relative_cursor_pos);

@@ -56,6 +56,8 @@ const QLatin1String KEYBOARD_LAYOUT_KEY = QLatin1String("keyboardLayout");
  */
 KeyboardSettings::KeyboardSettings(QObject *parent) :
     QObject(parent),
+    mServiceHandle(nullptr),
+    mMainLoop(nullptr),
     mActiveLanguage("en"),
     mAutoCapitalization(false),
     mAutoCorrection(false),
@@ -74,7 +76,9 @@ KeyboardSettings::KeyboardSettings(QObject *parent) :
         return;
     }
 
-    if (!LSGmainAttach(mServiceHandle, g_main_loop_new(g_main_context_default(), TRUE), &error)) {
+    mMainLoop = g_main_loop_new(g_main_context_default(), TRUE);
+
+    if (!LSGmainAttach(mServiceHandle, mMainLoop, &error)) {
         qWarning("Failed to attach to glib mainloop: %s", error.message);
         LSErrorFree(&error);
         return;
@@ -91,8 +95,30 @@ KeyboardSettings::KeyboardSettings(QObject *parent) :
     g_message("Service setup successfully");
 }
 
+KeyboardSettings::~KeyboardSettings()
+{
+    if (mServiceHandle) {
+        LSError error;
+        LSErrorInit(&error);
+        if (!LSUnregister(mServiceHandle, &error)) {
+            qWarning("LSUnregister failed: %s", error.message);
+            LSErrorFree(&error);
+        }
+        mServiceHandle = nullptr;
+    }
+
+    // After LSUnregister, so the handle is detached before the loop it was
+    // attached to goes away.
+    if (mMainLoop) {
+        g_main_loop_unref(mMainLoop);
+        mMainLoop = nullptr;
+    }
+}
+
 bool KeyboardSettings::systemServiceStatusCallback(LSHandle *handle, LSMessage *message, void *user_data)
 {
+    Q_UNUSED(handle);
+
     if (!message)
         return true;
 
@@ -100,13 +126,13 @@ bool KeyboardSettings::systemServiceStatusCallback(LSHandle *handle, LSMessage *
     if (!payload)
         return true;
 
-    QJsonDocument document = QJsonDocument::fromJson(QByteArray(payload));
+    const QJsonDocument document = QJsonDocument::fromJson(QByteArray(payload));
 
-    QJsonObject root = document.object();
+    const QJsonObject root = document.object();
     if (!root.contains("connected") || !root.value("connected").isBool())
         return true;
 
-    bool connected = root.value("connected").toBool();
+    const bool connected = root.value("connected").toBool();
     if (!connected)
         return true;
 
@@ -125,7 +151,7 @@ void KeyboardSettings::preferenceServiceIsAvailable()
 
     if (!LSCall(mServiceHandle, "palm://com.palm.systemservice/getPreferences",
               "{\"subscribe\":true,\"keys\":[\"keyboard\"]}",
-              preferencesChangedCallback, this, NULL, &error)) {
+              preferencesChangedCallback, this, nullptr, &error)) {
         qWarning("Setting up subscription for keyboard preferences failed: %s", error.message);
         LSErrorFree(&error);
     }
@@ -134,6 +160,8 @@ void KeyboardSettings::preferenceServiceIsAvailable()
 
 bool KeyboardSettings::preferencesChangedCallback(LSHandle *handle, LSMessage *message, void *user_data)
 {
+    Q_UNUSED(handle);
+
     if (!message)
         return true;
 
@@ -144,7 +172,7 @@ bool KeyboardSettings::preferencesChangedCallback(LSHandle *handle, LSMessage *m
     g_message("Got updated keyboard preferences from service:");
     g_message("%s", payload);
 
-    QByteArray data(payload);
+    const QByteArray data(payload);
     KeyboardSettings *settings = static_cast<KeyboardSettings*>(user_data);
     settings->preferencesChanged(data);
 
@@ -153,17 +181,17 @@ bool KeyboardSettings::preferencesChangedCallback(LSHandle *handle, LSMessage *m
 
 void KeyboardSettings::preferencesChanged(const QByteArray &data)
 {
-    QJsonDocument document = QJsonDocument::fromJson(data);
+    const QJsonDocument document = QJsonDocument::fromJson(data);
 
-    QJsonObject root = document.object();
+    const QJsonObject root = document.object();
 
     if (!root.contains("keyboard") || !root.value("keyboard").isObject())
         return;
 
-    QJsonObject keyboardPref = root.value("keyboard").toObject();
+    const QJsonObject keyboardPref = root.value("keyboard").toObject();
 
     if (keyboardPref.contains(ACTIVE_LANGUAGE_KEY) && keyboardPref.value(ACTIVE_LANGUAGE_KEY).isString()) {
-        QString value = keyboardPref.value(ACTIVE_LANGUAGE_KEY).toString();
+        const QString value = keyboardPref.value(ACTIVE_LANGUAGE_KEY).toString();
         if (value != mActiveLanguage) {
             mActiveLanguage = value;
             Q_EMIT activeLanguageChanged(mActiveLanguage);
@@ -171,11 +199,11 @@ void KeyboardSettings::preferencesChanged(const QByteArray &data)
     }
 
     if (keyboardPref.contains(ENABLED_LANGUAGES_KEY) && keyboardPref.value(ENABLED_LANGUAGES_KEY).isArray()) {
-        QJsonArray languages = keyboardPref.value(ENABLED_LANGUAGES_KEY).toArray();
+        const QJsonArray languages = keyboardPref.value(ENABLED_LANGUAGES_KEY).toArray();
         QStringList newLanguages;
 
         for (int n = 0; n < languages.size(); n++) {
-            QJsonValue value = languages.at(n);
+            const QJsonValue value = languages.at(n);
             newLanguages.append(value.toString());
         }
 
@@ -186,7 +214,7 @@ void KeyboardSettings::preferencesChanged(const QByteArray &data)
     }
 
     if (keyboardPref.contains(AUTO_CAPITALIZATION_KEY) && keyboardPref.value(AUTO_CAPITALIZATION_KEY).isBool()) {
-        bool value = keyboardPref.value(AUTO_CAPITALIZATION_KEY).toBool();
+        const bool value = keyboardPref.value(AUTO_CAPITALIZATION_KEY).toBool();
         if (value != mAutoCapitalization) {
             mAutoCapitalization = value;
             Q_EMIT autoCapitalizationChanged(mAutoCapitalization);
@@ -194,7 +222,7 @@ void KeyboardSettings::preferencesChanged(const QByteArray &data)
     }
 
     if (keyboardPref.contains(AUTO_CORRECTION_KEY) && keyboardPref.value(AUTO_CORRECTION_KEY).isBool()) {
-        bool value = keyboardPref.value(AUTO_CORRECTION_KEY).toBool();
+        const bool value = keyboardPref.value(AUTO_CORRECTION_KEY).toBool();
         if (value != mAutoCorrection) {
             mAutoCorrection = value;
             Q_EMIT autoCorrectionChanged(mAutoCorrection);
@@ -202,7 +230,7 @@ void KeyboardSettings::preferencesChanged(const QByteArray &data)
     }
 
     if (keyboardPref.contains(PREDICTIVE_TEXT_KEY) && keyboardPref.value(PREDICTIVE_TEXT_KEY).isBool()) {
-        bool value = keyboardPref.value(PREDICTIVE_TEXT_KEY).toBool();
+        const bool value = keyboardPref.value(PREDICTIVE_TEXT_KEY).toBool();
         if (value != mPredictiveText) {
             mPredictiveText = value;
             Q_EMIT predictiveTextChanged(mPredictiveText);
@@ -210,7 +238,7 @@ void KeyboardSettings::preferencesChanged(const QByteArray &data)
     }
 
     if (keyboardPref.contains(SPELL_CHECKING_KEY) && keyboardPref.value(SPELL_CHECKING_KEY).isBool()) {
-        bool value = keyboardPref.value(SPELL_CHECKING_KEY).toBool();
+        const bool value = keyboardPref.value(SPELL_CHECKING_KEY).toBool();
         if (value != mSpellchecking) {
             mSpellchecking = value;
             Q_EMIT spellCheckingChanged(mSpellchecking);
@@ -218,7 +246,7 @@ void KeyboardSettings::preferencesChanged(const QByteArray &data)
     }
 
     if (keyboardPref.contains(KEY_PRESS_FEEDBACK_KEY) && keyboardPref.value(KEY_PRESS_FEEDBACK_KEY).isBool()) {
-        bool value = keyboardPref.value(KEY_PRESS_FEEDBACK_KEY).toBool();
+        const bool value = keyboardPref.value(KEY_PRESS_FEEDBACK_KEY).toBool();
         if (value != mKeyPressFeedback) {
             mKeyPressFeedback = value;
             Q_EMIT keyPressFeedbackChanged(mKeyPressFeedback);
@@ -226,7 +254,7 @@ void KeyboardSettings::preferencesChanged(const QByteArray &data)
     }
 	
     if (keyboardPref.contains(KEYBOARD_SIZE_KEY) && keyboardPref.value(KEYBOARD_SIZE_KEY).isString()) {
-        QString value = keyboardPref.value(KEYBOARD_SIZE_KEY).toString();
+        const QString value = keyboardPref.value(KEYBOARD_SIZE_KEY).toString();
         if (value != mKeyboardSize) {
             mKeyboardSize = value;
             Q_EMIT keyboardSizeChanged(mKeyboardSize);
@@ -234,7 +262,7 @@ void KeyboardSettings::preferencesChanged(const QByteArray &data)
     }
 
     if (keyboardPref.contains(KEYBOARD_LAYOUT_KEY) && keyboardPref.value(KEYBOARD_LAYOUT_KEY).isString()) {
-        QString value = keyboardPref.value(KEYBOARD_LAYOUT_KEY).toString();
+        const QString value = keyboardPref.value(KEYBOARD_LAYOUT_KEY).toString();
         if (value != mKeyboardLayout) {
             mKeyboardLayout = value;
             Q_EMIT keyboardLayoutChanged(mKeyboardLayout);
@@ -356,11 +384,11 @@ void KeyboardSettings::savePreferences(InputMethod *q)
 
     QJsonDocument document;
     document.setObject(prefObj);
-    QString payload = document.toJson();
+    const QString payload = document.toJson();
     LSError error;
     LSErrorInit(&error);
     if (!LSCallOneReply(mServiceHandle, "palm://com.palm.systemservice/setPreferences",
-                        payload.toStdString().c_str(), NULL, this, NULL, &error)) {
+                        payload.toStdString().c_str(), nullptr, this, nullptr, &error)) {
         qWarning("Failed to save keyboard preferences: %s", error.message);
         LSErrorFree(&error);
     }

@@ -93,8 +93,8 @@ void Style::setProfile(const QString &profile)
     Q_D(Style);
     d->profile = profile;
 
-    StyleAttributes *attributes = 0;
-    StyleAttributes *extended_keys_attributes = 0;
+    StyleAttributes *main_attributes = nullptr;
+    StyleAttributes *extended_keys_attributes = nullptr;
 
     if (not d->profile.isEmpty()) {
         const QString main_file_name(g_main_fn_format
@@ -104,13 +104,13 @@ void Style::setProfile(const QString &profile)
                                               .arg(CoreUtils::maliitKeyboardStyleProfilesDirectory())
                                               .arg(profile));
 
-        attributes =  new StyleAttributes(
+        main_attributes =  new StyleAttributes(
             new QSettings(main_file_name, QSettings::IniFormat));
         extended_keys_attributes = new StyleAttributes(
             new QSettings(extended_keys_file_name, QSettings::IniFormat));
     }
 
-    d->attributes.reset(attributes);
+    d->attributes.reset(main_attributes);
     d->extended_keys_attributes.reset(extended_keys_attributes);
 
     Q_EMIT profileChanged();
@@ -174,7 +174,7 @@ StyleAttributes * Style::attributes() const
     Q_D(const Style);
 
     if (d->attributes.isNull()) {
-        Style *s = const_cast<Style *>(this);
+        Style  const*s = const_cast<Style *>(this);
         s->d_ptr->attributes.reset(new StyleAttributes(new QSettings));
     }
 
@@ -190,7 +190,7 @@ StyleAttributes * Style::extendedKeysAttributes() const
     Q_D(const Style);
 
     if (d->extended_keys_attributes.isNull()) {
-        Style *s = const_cast<Style *>(this);
+        Style  const*s = const_cast<Style *>(this);
         s->d_ptr->extended_keys_attributes.reset(new StyleAttributes(new QSettings));
     }
 

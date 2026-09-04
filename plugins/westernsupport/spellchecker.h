@@ -2,6 +2,7 @@
  * This file is part of Maliit Plugins
  *
  * Copyright (C) 2011 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
+ * Copyright (C) 2026 WebOS Ports
  *
  * Contact: Mohammad Anwari <Mohammad.Anwari@nokia.com>
  *
@@ -34,6 +35,9 @@
 
 #include <QtCore>
 
+#include <luna-service2/lunaservice.h>
+#include <glib.h>
+
 class SpellCheckerPrivate;
 
 class SpellChecker
@@ -41,9 +45,20 @@ class SpellChecker
     Q_DISABLE_COPY(SpellChecker)
     Q_DECLARE_PRIVATE(SpellChecker)
 public:
-    // FIXME: Find better way to discover default dictionaries.
-    // FIXME: Allow changing languages in between.
-    explicit SpellChecker(const QString &user_dictionary = QString("%1/.config/maliit/userwords.txt").arg(QDir::homePath()));
+    // The db8 kind org.webosports.app.settings' Text Assist page keeps its
+    // user dictionary in - one record per word, in a "word" property. A
+    // poll timer (see POLL_INTERVAL_SECONDS in the .cpp) is what replaces
+    // the flat file this used to read: db8 stays the one place a word
+    // gets added or removed, and this picks up both a live edit and a
+    // post-restore db8 already populated before this ever ran, neither of
+    // which the file this used to read (~/.config/maliit/userwords.txt)
+    // could do without something else writing to it first. find's own
+    // "subscribe":true does not push updates when the result set changes,
+    // and "watch":true (see findWordsAndWatch() in the .cpp) turned out to
+    // only ever fire once for the life of a subscription rather than
+    // continuously - the poll timer is the actual freshness mechanism;
+    // watch is kept only as a fast path for the first change.
+    explicit SpellChecker(const QString &user_dictionary_kind = QLatin1String("org.webosports.app.settings.dictionary:1"));
 
     ~SpellChecker();
 
@@ -61,6 +76,15 @@ public:
     static QString dictPath();
 
 private:
+    void findWordsAndWatch();
+    void refreshWords();
+
+    static bool findCallback(LSHandle *handle, LSMessage *message, void *user_data);
+    static bool putCallback(LSHandle *handle, LSMessage *message, void *user_data);
+    static gboolean pollCallback(gpointer user_data);
+
+    static const unsigned int POLL_INTERVAL_SECONDS = 30;
+
     const QScopedPointer<SpellCheckerPrivate> d_ptr;
 };
 

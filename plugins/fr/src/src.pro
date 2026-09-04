@@ -6,6 +6,7 @@ include($${TOP_SRCDIR}/config.pri)
 TEMPLATE        = lib
 CONFIG         += plugin
 QT             += widgets
+QT             += core5compat
 INCLUDEPATH    += \
     $${TOP_SRCDIR}/src/ \
     $${TOP_SRCDIR}/src/lib/ \
@@ -42,6 +43,9 @@ OTHER_FILES += \
     les_trois_mousquetaires.txt
 
 LIBS += $${TOP_BUILDDIR}/plugins/plugins/libwesternsupport.a -lpresage
+
+CONFIG += link_pkgconfig
+PKGCONFIG += luna-service2 glib-2.0
 
 enable-hunspell {
     # hunspell

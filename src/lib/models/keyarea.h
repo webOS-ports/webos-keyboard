@@ -43,7 +43,6 @@ private:
     QVector<Key> m_keys;
     QPoint m_origin;
     Area m_area;
-    qreal m_margin;
 
 public:
     explicit KeyArea();

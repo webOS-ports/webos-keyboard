@@ -43,7 +43,7 @@ Editor::Editor(const EditorOptions &options,
                Logic::AbstractWordEngine *word_engine,
                QObject *parent)
     : AbstractTextEditor(options, text, word_engine, parent)
-    , m_host(0)
+    , m_host(nullptr)
 {}
 
 Editor::~Editor()
@@ -52,6 +52,11 @@ Editor::~Editor()
 void Editor::setHost(MAbstractInputMethodHost *host)
 {
     m_host = host;
+}
+
+void Editor::commit()
+{
+    commitPreedit();
 }
 
 void Editor::sendPreeditString(const QString &preedit,

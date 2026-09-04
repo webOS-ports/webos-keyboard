@@ -25,7 +25,7 @@ typedef QScopedPointer<Maliit::Plugins::AbstractPluginSetting> ScopedSetting;
 typedef QSharedPointer<MKeyOverride> SharedOverride;
 typedef QMap<QString, SharedOverride>::const_iterator OverridesIterator;
 
-QQuickView *createWindow(MAbstractInputMethodHost *host)
+static QQuickView *createWindow(MAbstractInputMethodHost *host)
 {
     QScopedPointer<QQuickView> view(new QQuickView);
 
@@ -41,6 +41,8 @@ QQuickView *createWindow(MAbstractInputMethodHost *host)
 
 class InputMethodPrivate
 {
+    Q_DISABLE_COPY(InputMethodPrivate)
+
 public:
     InputMethod* q;
     Editor editor;
@@ -64,6 +66,10 @@ public:
 
     WordRibbon* wordRibbon;
 
+    //! Where the application's cursor sat when the preedit we are holding
+    //! started, or -1 when we are not tracking one. See InputMethod::update().
+    int preeditCursorAnchor;
+
     explicit InputMethodPrivate(InputMethod * const _q,
                                 MAbstractInputMethodHost *host)
         : q(_q)
@@ -71,7 +77,7 @@ public:
         , key_overrides()
         , event_handler()
         , host(host)
-        , view(0)
+        , view(nullptr)
         , applicationApiWrapper(new LuneOSApplicationApiWrapper)
         , autocapsEnabled(false)
         , wordEngineEnabled(false)
@@ -84,6 +90,7 @@ public:
         , m_geometry(new KeyboardGeometry(q))
         , m_settings()
         , wordRibbon(new WordRibbon)
+        , preeditCursorAnchor(-1)
     {
         applicationApiWrapper->setGeometryItem(m_geometry);
 
@@ -145,7 +152,7 @@ public:
         delete applicationApiWrapper;
     }
 
-    Logic::LayoutHelper::Orientation screenToMaliitOrientation(Qt::ScreenOrientation screenOrientation) const
+    static Logic::LayoutHelper::Orientation screenToMaliitOrientation(Qt::ScreenOrientation screenOrientation)
     {
         switch (screenOrientation) {
         case Qt::LandscapeOrientation:
@@ -267,7 +274,16 @@ public:
         m_settings.savePreferences(q);
     }
 
-    void truncateEnabledLanguageLocales(QStringList locales)
+    //! Drops the preedit we hold, and with it the cursor position we were
+    //! tracking it against. For the points where the application has already
+    //! discarded its own preedit and is only telling us afterwards.
+    void dropPreedit()
+    {
+        editor.resetPreedit();
+        preeditCursorAnchor = -1;
+    }
+
+    void truncateEnabledLanguageLocales(const QStringList& locales)
     {
         enabledLanguages.clear();
         foreach (QString locale, locales) {

@@ -47,19 +47,19 @@ EventHandler::EventHandler(QObject *parent)
 EventHandler::~EventHandler()
 {}
 
-void EventHandler::onWordCandidatePressed(QString word)
+void EventHandler::onWordCandidatePressed(const QString& word)
 {
-    WordCandidate candidate(WordCandidate::SourcePrediction, word);
+    const WordCandidate candidate(WordCandidate::SourcePrediction, word);
     Q_EMIT wordCandidatePressed(candidate);
 }
 
-void EventHandler::onWordCandidateReleased(QString word)
+void EventHandler::onWordCandidateReleased(const QString& word)
 {
-    WordCandidate candidate(WordCandidate::SourcePrediction, word);
+    const WordCandidate candidate(WordCandidate::SourcePrediction, word);
     Q_EMIT wordCandidateReleased(candidate);
 }
 
-void EventHandler::onKeyPressed(QString label, QString action)
+void EventHandler::onKeyPressed(const QString& label, const QString& action)
 {
     Key key;
     key.setLabel(label);
@@ -80,7 +80,7 @@ void EventHandler::onKeyPressed(QString label, QString action)
     Q_EMIT keyPressed(key);
 }
 
-void EventHandler::onKeyReleased(QString label, QString action)
+void EventHandler::onKeyReleased(const QString& label, const QString& action)
 {
     Key key;
     key.setLabel(label);

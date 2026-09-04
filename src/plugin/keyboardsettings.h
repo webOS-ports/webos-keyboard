@@ -42,7 +42,8 @@ class KeyboardSettings : public QObject
 {
     Q_OBJECT
 public:
-    explicit KeyboardSettings(QObject *parent = 0);
+    explicit KeyboardSettings(QObject *parent = nullptr);
+    ~KeyboardSettings() override;
     
     QString activeLanguage() const;
     QStringList enabledLanguages() const;
@@ -74,6 +75,7 @@ Q_SIGNALS:
 
 private:
     LSHandle *mServiceHandle;
+    GMainLoop *mMainLoop; //!< The loop the service handle is attached to.
     LSMessageToken mServerStatusToken;
     QStringList mEnabledLanguages;
     QString mActiveLanguage;

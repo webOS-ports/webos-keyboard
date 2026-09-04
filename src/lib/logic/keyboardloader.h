@@ -50,8 +50,8 @@ class KeyboardLoader
     Q_DECLARE_PRIVATE(KeyboardLoader)
 
 public:
-    explicit KeyboardLoader(QObject *parent = 0);
-    virtual ~KeyboardLoader();
+    explicit KeyboardLoader(QObject *parent = nullptr);
+    ~KeyboardLoader() override;
 
     virtual QStringList ids() const;
     virtual QString activeId() const;

@@ -38,8 +38,8 @@ namespace {
 
 LuneOSApplicationApiWrapper::LuneOSApplicationApiWrapper()
     : m_runningOnMir(false)
-    , m_clientConnection(0)
-    , m_geometry(0)
+    , m_clientConnection(nullptr)
+    , m_geometry(nullptr)
 {
     if (qgetenv("QT_QPA_PLATFORM") == "luneosmirclient") {
         m_runningOnMir = true;
@@ -59,7 +59,7 @@ LuneOSApplicationApiWrapper::LuneOSApplicationApiWrapper()
 
 void LuneOSApplicationApiWrapper::startLocalServer()
 {
-    QString socketFilePath = buildSocketFilePath();
+    const QString socketFilePath = buildSocketFilePath();
 
     {
         QFile socketFile(socketFilePath);
@@ -76,7 +76,7 @@ void LuneOSApplicationApiWrapper::startLocalServer()
 
     connect(&m_localServer, &QLocalServer::newConnection,
             this, &LuneOSApplicationApiWrapper::onNewConnection);
-    bool ok = m_localServer.listen(socketFilePath);
+    const bool ok = m_localServer.listen(socketFilePath);
     if (!ok) {
         qWarning() << "LuneOSApplicationApiWrapper: failed to listen for connections on"
                    << socketFilePath;
@@ -138,7 +138,7 @@ void LuneOSApplicationApiWrapper::sendInfoToClientConnection()
     }
 
     const qint64 sharedInfoSize = sizeof(struct SharedInfo);
-    qint64 bytesWritten = m_clientConnection->write(reinterpret_cast<char *>(&m_sharedInfo),
+    const qint64 bytesWritten = m_clientConnection->write(reinterpret_cast<char *>(&m_sharedInfo),
                                                     sharedInfoSize);
 
     if (bytesWritten < 0) {
@@ -173,12 +173,12 @@ void LuneOSApplicationApiWrapper::onNewConnection()
 void LuneOSApplicationApiWrapper::onClientDisconnected()
 {
     m_clientConnection->deleteLater();
-    m_clientConnection = 0;
+    m_clientConnection = nullptr;
 }
 
 QString LuneOSApplicationApiWrapper::buildSocketFilePath() const
 {
-    char *xdgRuntimeDir = getenv("XDG_RUNTIME_DIR");
+    char  const*xdgRuntimeDir = getenv("XDG_RUNTIME_DIR");
 
     if (xdgRuntimeDir) {
         return QDir(xdgRuntimeDir).filePath(gServerName);
@@ -225,7 +225,7 @@ void LuneOSApplicationApiWrapper::setGeometryItem(KeyboardGeometry *geometry)
 
 // ------------------------------- SharedInfo ----------------------------
 
-bool LuneOSApplicationApiWrapper::SharedInfo::operator ==(const struct SharedInfo &other)
+bool LuneOSApplicationApiWrapper::SharedInfo::operator ==(const struct SharedInfo &other) const
 {
     return keyboardX == other.keyboardX
         && keyboardY == other.keyboardY

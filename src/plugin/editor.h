@@ -54,19 +54,24 @@ public:
     explicit Editor(const EditorOptions &options,
                     Model::Text *text,
                     Logic::AbstractWordEngine *word_engine,
-                    QObject *parent = 0);
-    virtual ~Editor();
+                    QObject *parent = nullptr);
+    ~Editor() override;
 
     void setHost(MAbstractInputMethodHost *host);
 
+    //! Commits whatever is currently in the preedit, unchanged. Needed before
+    //! handing a key back to the application, so it does not move its cursor
+    //! out from under text the editor still holds.
+    Q_SLOT void commit();
+
 private:
     //! \reimp
-    virtual void sendPreeditString(const QString &preedit,
+    void sendPreeditString(const QString &preedit,
                                    Model::Text::PreeditFace face,
-                                   const Replacement &replacement);
-    virtual void sendCommitString(const QString &commit);
-    virtual void sendKeyEvent(const QKeyEvent &ev);
-    virtual void invokeAction(const QString &command, const QKeySequence &sequence);
+                                   const Replacement &replacement) override;
+    void sendCommitString(const QString &commit) override;
+    void sendKeyEvent(const QKeyEvent &ev) override;
+    void invokeAction(const QString &action, const QKeySequence &sequence) override;
     //! \reimp_end
 };
 

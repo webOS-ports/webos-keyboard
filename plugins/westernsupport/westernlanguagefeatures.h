@@ -39,11 +39,11 @@ class WesternLanguageFeatures : public QObject, public AbstractLanguageFeatures
 {
     Q_OBJECT
 public:
-    explicit WesternLanguageFeatures(QObject *parent = 0);
-    virtual ~WesternLanguageFeatures();
+    explicit WesternLanguageFeatures(QObject *parent = nullptr);
+    ~WesternLanguageFeatures() override;
 
-    virtual bool activateAutoCaps(const QString &preedit) const;
-    virtual QString appendixForReplacedPreedit(const QString &preedit) const;
+    bool activateAutoCaps(const QString &preedit) const override;
+    QString appendixForReplacedPreedit(const QString &preedit) const override;
 };
 
 #endif // MALIITKEYBOARD_LANGUAGEFEATURES_H

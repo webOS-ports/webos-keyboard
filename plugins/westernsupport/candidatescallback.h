@@ -13,8 +13,8 @@ private:
 public:
     explicit CandidatesCallback(const std::string& past_context);
 
-    std::string get_past_stream() const;
-    std::string get_future_stream() const;
+    std::string get_past_stream() const override;
+    std::string get_future_stream() const override;
 };
 
 #endif // CANDIDATESCALLBACK_H

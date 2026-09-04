@@ -87,7 +87,7 @@ private:
     QMargins m_margins;
     QByteArray m_icon;
     bool m_has_extended_keys: 1;
-    int m_flags_padding: 7;
+    [[maybe_unused]] int m_flags_padding: 7;
     QString m_command_sequence;
 
 public:

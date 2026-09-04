@@ -79,7 +79,7 @@ public:
             , cursor_position(-1)
         {}
 
-        Replacement(int position)
+        explicit Replacement(int position)
             : start(0)
             , length(0)
             , cursor_position(position)
@@ -101,8 +101,8 @@ public:
     explicit AbstractTextEditor(const EditorOptions &options,
                                 Model::Text *text,
                                 Logic::AbstractWordEngine *word_engine,
-                                QObject *parent = 0);
-    virtual ~AbstractTextEditor() = 0;
+                                QObject *parent = nullptr);
+    ~AbstractTextEditor() override = 0;
 
     Model::Text * text() const;
     Logic::AbstractWordEngine * wordEngine() const;
@@ -116,6 +116,7 @@ public:
     Q_SLOT void replacePreedit(const QString &replacement);
     Q_SLOT void replaceAndCommitPreedit(const QString &replacement);
     Q_SLOT void clearPreedit();
+    Q_SLOT void resetPreedit();
 
     bool isPreeditEnabled() const;
     Q_SLOT void setPreeditEnabled(bool enabled);
@@ -138,6 +139,9 @@ public:
     Q_SIGNAL void leftLayoutSelected();
     Q_SIGNAL void rightLayoutSelected();
 
+protected:
+    void commitPreedit();
+
 private:
     const QScopedPointer<AbstractTextEditorPrivate> d_ptr;
 
@@ -153,7 +157,6 @@ private:
 
     virtual void singleBackspace();
 
-    void commitPreedit();
     Q_SLOT void autoRepeatBackspace();
     void autoRepeatWordBackspace();
     QString wordLeftOfCursor() const;

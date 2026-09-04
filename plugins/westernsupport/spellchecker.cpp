@@ -3,6 +3,7 @@
  *
  * Copyright (C) 2011 Nokia Corporation and/or its subsidiary(-ies). All rights reserved.
  * Copyright (C) 2012 Openismus GmbH
+ * Copyright (C) 2026 WebOS Ports
  *
  * Contact: Mohammad Anwari <Mohammad.Anwari@nokia.com>
  *
@@ -53,8 +54,9 @@ private:
 };
 #endif
 
-#include <QFile>
-#include <QTextStream>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
 #if QT_VERSION >= 0x060000
 #include <QtCore5Compat/QTextCodec>
 #else
@@ -68,54 +70,85 @@ private:
 //! Checks spelling and suggest words. Currently Spellchecker is
 //! implemented by using Hunspell.
 
-struct SpellCheckerPrivate
+class SpellCheckerPrivate
 {
+public:
     Hunspell *hunspell; //!< The spellchecker backend, Hunspell.
     QTextCodec *codec; //!< Which codec to use.
     QSet<QString> ignored_words; //!< The words to ignore.
-    QString user_dictionary_file;
+    QString user_dictionary_kind;
     QString aff_file;
     QString dic_file;
 
-    SpellCheckerPrivate(const QString &user_dictionary);
+    // The db8-backed replacement for what used to be a flat file read once
+    // per setEnabled(true)/setLanguage() call: a standing subscription (see
+    // SpellChecker::findCallback) keeps this current, live, for as long as
+    // the process runs, and applyUserWords() pushes it into whichever
+    // Hunspell instance is active right now.
+    LSHandle *serviceHandle;
+
+    // Both are owned by this SpellChecker and must be released with it: the
+    // poll timer holds a bare "this", and the loop is what LSGmainAttach was
+    // handed. A language switch unloads this whole plugin (see
+    // WordEnginePrivate::loadPlugin), so anything left registered with glib
+    // afterwards fires into freed memory in an unmapped library.
+    GMainLoop *mainLoop; //!< The loop the service handle is attached to.
+    guint pollSourceId;  //!< The db8 poll timer, 0 when not registered.
+
+    QStringList userWords;
+
+    explicit SpellCheckerPrivate(const QString &user_dictionary_kind);
     ~SpellCheckerPrivate();
-    void addUserDictionary(const QString &user_dictionary);
+    void applyUserWords();
     void clear();
 };
 
 
-SpellCheckerPrivate::SpellCheckerPrivate(const QString &user_dictionary)
-    // XXX: toUtf8? toLatin1? toAscii? toLocal8Bit?
-    : hunspell(0)
-    , codec(0)
+SpellCheckerPrivate::SpellCheckerPrivate(const QString &user_dictionary_kind)
+    : hunspell(nullptr)
+    , codec(nullptr)
     , ignored_words()
-    , user_dictionary_file(user_dictionary)
+    , user_dictionary_kind(user_dictionary_kind)
     , aff_file()
     , dic_file()
+    , serviceHandle(nullptr)
+    , mainLoop(nullptr)
+    , pollSourceId(0)
+    , userWords()
 {
 }
 
 SpellCheckerPrivate::~SpellCheckerPrivate()
 {
     clear();
+
+    if (serviceHandle) {
+        LSError error;
+        LSErrorInit(&error);
+        if (!LSUnregister(serviceHandle, &error)) {
+            qWarning("LSUnregister failed: %s", error.message);
+            LSErrorFree(&error);
+        }
+        serviceHandle = nullptr;
+    }
+
+    // After LSUnregister, so the handle is detached before the loop it was
+    // attached to goes away.
+    if (mainLoop) {
+        g_main_loop_unref(mainLoop);
+        mainLoop = nullptr;
+    }
 }
 
-//! \brief SpellCheckerPrivate::addUserDictionary adds the users custom words to the dictionary
-//! \param user_dictionary filename of the user's dictionary
-void SpellCheckerPrivate::addUserDictionary(const QString &user_dictionary)
+//! \brief SpellCheckerPrivate::applyUserWords adds the cached db8 word list
+//! to whichever Hunspell instance is currently active.
+void SpellCheckerPrivate::applyUserWords()
 {
     if (not hunspell)
         return;
 
-    if (not user_dictionary.isEmpty() and QFile::exists(user_dictionary)) {
-        QFile file(user_dictionary);
-        if (file.open(QFile::ReadOnly)) {
-            QTextStream stream(&file);
-            while (!stream.atEnd()) {
-                hunspell->add(codec->fromUnicode(stream.readLine()));
-            }
-        }
-    }
+    for (const QString &word : userWords)
+        hunspell->add(codec->fromUnicode(word).toStdString());
 }
 
 //! \brief SpellCheckerPrivate::clear cleans up all memory and does reset
@@ -123,20 +156,29 @@ void SpellCheckerPrivate::addUserDictionary(const QString &user_dictionary)
 void SpellCheckerPrivate::clear()
 {
     delete(hunspell);
-    hunspell = 0;
+    hunspell = nullptr;
     aff_file.clear();
     dic_file.clear();
 }
 
 SpellChecker::~SpellChecker()
-{}
+{
+    Q_D(SpellChecker);
+
+    // Must happen before ~SpellCheckerPrivate: pollCallback casts its
+    // user_data straight back to this object.
+    if (d->pollSourceId != 0) {
+        g_source_remove(d->pollSourceId);
+        d->pollSourceId = 0;
+    }
+}
 
 //! \brief SpellChecker::enabled returns if the spechchecking is active
 //! \return
 bool SpellChecker::enabled() const
 {
     Q_D(const SpellChecker);
-    return (d->hunspell != 0);
+    return (d->hunspell != nullptr);
 }
 
 //! \brief SpellChecker::setEnabled
@@ -150,7 +192,7 @@ bool SpellChecker::setEnabled(bool on)
         return true;
 
     delete(d->hunspell);
-    d->hunspell = 0;
+    d->hunspell = nullptr;
 
     if (not on) {
         return true;
@@ -171,14 +213,157 @@ bool SpellChecker::setEnabled(bool on)
         return false;
     }
 
-    d->addUserDictionary(d->user_dictionary_file);
+    d->applyUserWords();
     return true;
 }
 
-//! \param user_dictionary The file path to the user's own dictionary.
-SpellChecker::SpellChecker(const QString &user_dictionary)
-    : d_ptr(new SpellCheckerPrivate(user_dictionary))
-{}
+//! \param user_dictionary_kind The db8 kind the user dictionary lives in.
+SpellChecker::SpellChecker(const QString &user_dictionary_kind)
+    : d_ptr(new SpellCheckerPrivate(user_dictionary_kind))
+{
+    Q_D(SpellChecker);
+
+    LSError error;
+    LSErrorInit(&error);
+
+    // Same registration + subscription shape as KeyboardSettings elsewhere
+    // in this plugin (see keyboardsettings.cpp) - a distinct identity of
+    // its own, since a process registering the same LS2 name twice fails
+    // the second call.
+    if (!LSRegister("org.webosports.keyboard.dictionary", &d->serviceHandle, &error)) {
+        qWarning("Failed to register service handle: %s", error.message);
+        LSErrorFree(&error);
+        return;
+    }
+
+    d->mainLoop = g_main_loop_new(g_main_context_default(), TRUE);
+
+    if (!LSGmainAttach(d->serviceHandle, d->mainLoop, &error)) {
+        qWarning("Failed to attach to glib mainloop: %s", error.message);
+        LSErrorFree(&error);
+        return;
+    }
+
+    // The actual freshness mechanism - see the header comment for why this
+    // exists instead of relying on watch alone. Registered exactly once,
+    // for the life of this SpellChecker, and removed again in ~SpellChecker:
+    // it holds a bare "this", and glib knows nothing about our lifetime.
+    d->pollSourceId = g_timeout_add_seconds(POLL_INTERVAL_SECONDS,
+                                            SpellChecker::pollCallback, this);
+
+    findWordsAndWatch();
+}
+
+// Registers ONE long-lived find, with "watch":true alongside "query" (the
+// db8 API's actual live-notification flag - see the header comment). Call
+// this exactly once: the subscription it creates keeps delivering "fired"
+// notifications on its own for as long as it stays open, so it must never
+// be re-registered from inside findCallback.
+void SpellChecker::findWordsAndWatch()
+{
+    Q_D(SpellChecker);
+
+    LSError error;
+    LSErrorInit(&error);
+
+    const QByteArray payload = "{\"query\":{\"from\":\"" + d->user_dictionary_kind.toUtf8() +
+                         "\",\"orderBy\":\"word\"},\"watch\":true}";
+
+    if (!LSCall(d->serviceHandle, "luna://com.palm.db/find", payload.constData(),
+              SpellChecker::findCallback, this, nullptr, &error)) {
+        qWarning("Loading user dictionary failed: %s", error.message);
+        LSErrorFree(&error);
+    }
+}
+
+// One-shot refresh, no watch - used to pick up what changed once the
+// standing subscription above reports a fired notification.
+void SpellChecker::refreshWords()
+{
+    Q_D(SpellChecker);
+
+    LSError error;
+    LSErrorInit(&error);
+
+    const QByteArray payload = "{\"query\":{\"from\":\"" +
+                         d->user_dictionary_kind.toUtf8() + "\",\"orderBy\":\"word\"}}";
+
+    if (!LSCall(d->serviceHandle, "luna://com.palm.db/find", payload.constData(),
+              SpellChecker::findCallback, this, nullptr, &error)) {
+        qWarning("Refreshing user dictionary failed: %s", error.message);
+        LSErrorFree(&error);
+    }
+}
+
+bool SpellChecker::findCallback(LSHandle *handle, LSMessage *message, void *user_data)
+{
+    Q_UNUSED(handle);
+
+    if (!message)
+        return true;
+
+    const char *payload = LSMessageGetPayload(message);
+    if (!payload)
+        return true;
+
+    const QJsonDocument document = QJsonDocument::fromJson(QByteArray(payload));
+    const QJsonObject root = document.object();
+
+    if (root.contains("results") && root.value("results").isArray()) {
+        const QJsonArray results = root.value("results").toArray();
+        QStringList words;
+        for (const QJsonValue entry : results) {
+            const QJsonObject obj = entry.toObject();
+            if (obj.contains("word") && obj.value("word").isString())
+                words.append(obj.value("word").toString());
+        }
+
+        SpellChecker *self = static_cast<SpellChecker*>(user_data);
+        self->d_func()->userWords = words;
+        self->d_func()->applyUserWords();
+    }
+
+    // The find+watch subscription's later replies carry "fired":true when
+    // the result set changes, and may or may not repeat "results" - fetch
+    // it explicitly with a plain one-shot find rather than relying on
+    // that. This does NOT re-register the watch: the original find+watch
+    // call stays open and keeps delivering future fired notifications by
+    // itself. (Re-registering here was an infinite-loop bug - see
+    // findWordsAndWatch()'s comment.)
+    if (root.value("fired").toBool())
+        static_cast<SpellChecker*>(user_data)->refreshWords();
+
+    return true;
+}
+
+// Fires on a fixed POLL_INTERVAL_SECONDS cadence for the life of this
+// SpellChecker - see the header comment for why this, and not watch alone,
+// is what actually keeps userWords current. Returns TRUE unconditionally
+// so glib keeps calling it; it cannot loop tighter than its own fixed
+// interval, unlike re-arming a watch from its own handler.
+gboolean SpellChecker::pollCallback(gpointer user_data)
+{
+    static_cast<SpellChecker*>(user_data)->refreshWords();
+    return G_SOURCE_CONTINUE;
+}
+
+bool SpellChecker::putCallback(LSHandle *handle, LSMessage *message, void *user_data)
+{
+    Q_UNUSED(handle);
+    Q_UNUSED(user_data);
+
+    if (!message)
+        return true;
+
+    const char *payload = LSMessageGetPayload(message);
+    if (payload) {
+        const QJsonObject root = QJsonDocument::fromJson(QByteArray(payload)).object();
+        if (!root.value("returnValue").toBool())
+            qWarning() << "com.palm.db/put failed:" << payload;
+    }
+
+    return true;
+}
 
 
 //! \brief Checks whether given word is spelled correctly.
@@ -195,7 +380,7 @@ bool SpellChecker::spell(const QString &word)
         return true;
     }
 
-    return d->hunspell->spell(d->codec->fromUnicode(word));
+    return d->hunspell->spell(d->codec->fromUnicode(word).toStdString());
 }
 
 
@@ -212,8 +397,8 @@ QStringList SpellChecker::suggest(const QString &word,
         return QStringList();
     }
 
-    char** suggestions = NULL;
-    const int suggestions_count = d->hunspell->suggest(&suggestions, d->codec->fromUnicode(word));
+    char **suggestions = nullptr;
+    const int suggestions_count = d->hunspell->suggest(&suggestions, d->codec->fromUnicode(word).toStdString().c_str());
 
     // Less than zero means some error.
     if (suggestions_count < 0) {
@@ -256,16 +441,25 @@ void SpellChecker::addToUserWordlist(const QString &word)
         return;
     }
 
-    QFile user_dictionary(d->user_dictionary_file);
-    QDir::home().mkpath(QFileInfo(user_dictionary).absolutePath());
-    if (user_dictionary.open(QFile::Append)) {
-        QTextStream stream(&user_dictionary);
-        stream << word << Qt::endl;
+    // db8 is the one place this list lives now - org.webosports.app.settings'
+    // Text Assist page reads and writes the very same kind, so a word added
+    // from either place shows up in both. Applied to the live Hunspell
+    // instance immediately rather than waiting on the round trip; the
+    // subscription in the constructor will reconfirm it a moment later.
+    if (!d->userWords.contains(word)) {
+        d->userWords.append(word);
+        if (d->hunspell)
+            d->hunspell->add(d->codec->fromUnicode(word).toStdString());
     }
 
-    // Non-zero return value means some error.
-    if (d->hunspell->add(d->codec->fromUnicode(word))) {
-        qWarning() << __PRETTY_FUNCTION__ << ": Failed to add '" << word << "' to user dictionary.";
+    LSError error;
+    LSErrorInit(&error);
+    const QByteArray payload = "{\"objects\":[{\"_kind\":\"" + d->user_dictionary_kind.toUtf8() +
+                         "\",\"word\":\"" + word.toUtf8() + "\"}]}";
+    if (!LSCall(d->serviceHandle, "luna://com.palm.db/put", payload.constData(),
+              SpellChecker::putCallback, this, nullptr, &error)) {
+        qWarning("Failed to add '%s' to user dictionary: %s", qPrintable(word), error.message);
+        LSErrorFree(&error);
     }
 }
 
@@ -279,7 +473,7 @@ bool SpellChecker::setLanguage(const QString &language)
 
     qDebug() << "spellechecker.cpp in setLanguage() lang=" << language << "dictPath=" << dictPath();
 
-    QDir dictDir(dictPath());
+    const QDir dictDir(dictPath());
     QStringList affMatches = dictDir.entryList(QStringList(language+"*.aff"));
     QStringList dicMatches = dictDir.entryList(QStringList(language+"*.dic"));
 

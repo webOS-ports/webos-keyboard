@@ -17,23 +17,24 @@ class WesternLanguagesPlugin : /*public QObject,*/ public LanguagePluginInterfac
 {
     //Q_OBJECT
     Q_INTERFACES(LanguagePluginInterface)
+    Q_DISABLE_COPY(WesternLanguagesPlugin)
 
 public:
     explicit WesternLanguagesPlugin(/*QObject *parent = 0*/);
-    virtual ~WesternLanguagesPlugin();
+    ~WesternLanguagesPlugin() override;
 
-    virtual void parse(const QString& surroundingLeft, const QString& preedit);
-    virtual QStringList getWordCandidates();
-    virtual void wordCandidateSelected(QString word);
-    virtual AbstractLanguageFeatures* languageFeature();
+    void parse(const QString& surroundingLeft, const QString& preedit) override;
+    QStringList getWordCandidates() override;
+    void wordCandidateSelected(QString word) override;
+    AbstractLanguageFeatures* languageFeature() override;
 
     //! spell checker
-    virtual bool spellCheckerEnabled();
-    virtual bool setSpellCheckerEnabled(bool enabled);
-    virtual bool spell(const QString& word);
-    virtual QStringList spellCheckerSuggest(const QString& word, int limit);
-    virtual void addToSpellCheckerUserWordList(const QString& word);
-    virtual bool setSpellCheckerLanguage(const QString& languageId);
+    bool spellCheckerEnabled() override;
+    bool setSpellCheckerEnabled(bool enabled) override;
+    bool spell(const QString& word) override;
+    QStringList spellCheckerSuggest(const QString& word, int limit) override;
+    void addToSpellCheckerUserWordList(const QString& word) override;
+    bool setSpellCheckerLanguage(const QString& languageId) override;
 
 signals:
 

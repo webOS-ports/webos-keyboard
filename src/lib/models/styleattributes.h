@@ -86,7 +86,7 @@ public:
     qreal keyAreaWidth(Logic::LayoutHelper::Orientation orientation) const;
 
     qreal keyMargin(Logic::LayoutHelper::Orientation orientation) const;
-    qreal keyAreaPadding(Logic::LayoutHelper::Orientation orienation) const;
+    qreal keyAreaPadding(Logic::LayoutHelper::Orientation orientation) const;
 
     qreal verticalOffset(Logic::LayoutHelper::Orientation orientation) const;
     qreal magnifierKeyLabelVerticalOffset(Logic::LayoutHelper::Orientation orientation) const;

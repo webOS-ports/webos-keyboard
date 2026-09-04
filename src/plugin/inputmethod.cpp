@@ -58,7 +58,7 @@ namespace {
 
 Qt::ScreenOrientation rotationAngleToScreenOrientation(int angle)
 {
-    bool portraitIsPrimary = QGuiApplication::primaryScreen()->primaryOrientation()
+    const bool portraitIsPrimary = QGuiApplication::primaryScreen()->primaryOrientation()
         == Qt::PortraitOrientation;
 
     switch (angle) {
@@ -157,8 +157,18 @@ void InputMethod::hide()
     d->closeOskWindow();
 }
 
+//! \brief Called by the framework when the application resets its input
+//! context -- the focused field changed, its cursor moved, or its text was
+//! changed behind our back.
+//!
+//! The application has dropped whatever preedit it was showing, so ours has
+//! to go too. It is sent in full on every keystroke, so a preedit left over
+//! from before the reset would come back attached to the next letter typed.
 void InputMethod::reset()
 {
+    Q_D(InputMethod);
+
+    d->dropPreedit();
 }
 
 void InputMethod::setPreedit(const QString &preedit,
@@ -167,6 +177,73 @@ void InputMethod::setPreedit(const QString &preedit,
     Q_UNUSED(cursor_position)
     Q_D(InputMethod);
     d->editor.replacePreedit(preedit);
+}
+
+//! \brief Handles a key coming from a physical keyboard.
+//!
+//! While an editor is focused the compositor hands every key to whoever holds
+//! the input method's keyboard grab, so a hardware key never reaches the
+//! application on its own -- this plugin has to deliver it. Text producing keys
+//! are pushed through the same editor path the on-screen keyboard uses, which
+//! keeps preedit, word prediction and auto-caps consistent between the two
+//! keyboards. Everything else (arrows, Tab, Escape, function keys, shortcuts)
+//! is handed back to the application untouched.
+void InputMethod::processKeyEvent(QEvent::Type keyType, Qt::Key keyCode,
+                                  Qt::KeyboardModifiers modifiers,
+                                  const QString &text, bool autoRepeat, int count,
+                                  quint32 nativeScanCode, quint32 nativeModifiers,
+                                  unsigned long time)
+{
+    Q_D(InputMethod);
+
+    Key key;
+    const bool isShortcut = modifiers & (Qt::ControlModifier | Qt::AltModifier |
+                                         Qt::MetaModifier);
+
+    if (isShortcut) {
+        key.setAction(Key::NumActions);
+    } else switch (keyCode) {
+    case Qt::Key_Backspace:
+        key.setAction(Key::ActionBackspace);
+        break;
+
+    case Qt::Key_Space:
+        key.setAction(Key::ActionSpace);
+        break;
+
+    case Qt::Key_Return:
+    case Qt::Key_Enter:
+        key.setAction(Key::ActionReturn);
+        break;
+
+    default:
+        if (text.size() == 1 && text.at(0).isPrint()) {
+            key.setAction(Key::ActionInsert);
+            key.setLabel(text);
+        } else {
+            key.setAction(Key::NumActions);
+        }
+        break;
+    }
+
+    if (key.action() == Key::NumActions) {
+        // Not ours: cursor keys, Home/End, Delete, function keys, shortcuts.
+        // Commit first -- otherwise the application moves its cursor away from
+        // a preedit the editor still holds, and every later keystroke is
+        // applied against a stale position.
+        if (keyType == QEvent::KeyPress)
+            d->editor.commit();
+
+        MAbstractInputMethod::processKeyEvent(keyType, keyCode, modifiers, text,
+                                              autoRepeat, count, nativeScanCode,
+                                              nativeModifiers, time);
+        return;
+    }
+
+    if (keyType == QEvent::KeyPress)
+        d->editor.onKeyPressed(key);
+    else if (keyType == QEvent::KeyRelease)
+        d->editor.onKeyReleased(key);
 }
 
 void InputMethod::switchContext(Maliit::SwitchDirection direction,
@@ -211,9 +288,13 @@ QString InputMethod::activeSubView(Maliit::HandlerState state) const
 
 void InputMethod::handleFocusChange(bool focusIn)
 {
+    Q_D(InputMethod);
+
     if (focusIn) {
         checkInitialAutocaps();
     } else {
+        // Whatever was in the preedit belongs to the field we just left.
+        d->dropPreedit();
         hide();
     }
 
@@ -262,7 +343,7 @@ void InputMethod::updateAutoCaps()
     bool enabled = d->m_settings.autoCapitalization();
     enabled &= d->contentType == FreeTextContentType;
     bool valid = true;
-    bool autocap = d->host->autoCapitalizationEnabled(valid);
+    const bool autocap = d->host->autoCapitalizationEnabled(valid);
     enabled &= autocap;
 
     if (enabled != d->autocapsEnabled) {
@@ -316,7 +397,7 @@ void InputMethod::updateKey(const QString &key_id,
 
     Q_UNUSED(changed_attributes);
 
-    QMap<QString, SharedOverride>::iterator iter(d->key_overrides.find(key_id));
+    const QMap<QString, SharedOverride>::iterator iter(d->key_overrides.find(key_id));
 
     if (iter != d->key_overrides.end()) {
         const Key &override_key(overrideToKey(iter.value()));
@@ -380,8 +461,28 @@ void InputMethod::update()
 
     QString text;
     int position;
-    bool ok = d->host->surroundingText(text, position);
+    const bool ok = d->host->surroundingText(text, position);
     if (ok) {
+        // The application tells us where its cursor is, but never that it
+        // moved it, and not every client sends an input context reset when
+        // the user taps somewhere else in the field. While we hold a preedit
+        // the cursor belongs inside it: clients that leave the preedit out of
+        // the surrounding text they report keep the cursor at its start,
+        // clients that count it in put the cursor at its end, and a backspace
+        // walks back through it -- so anywhere in [anchor, anchor + length]
+        // is us. Outside that span the application moved the cursor away from
+        // text we still think we own, and the preedit has to go now: it is
+        // sent in full on every keystroke, so keeping it would paste the word
+        // typed here into wherever the cursor went.
+        const int preeditLength = d->editor.text()->preedit().length();
+
+        if (preeditLength < 1 || d->preeditCursorAnchor < 0) {
+            d->preeditCursorAnchor = position;
+        } else if (position < d->preeditCursorAnchor
+                   || position > d->preeditCursorAnchor + preeditLength) {
+            d->dropPreedit();
+        }
+
         d->editor.text()->setSurrounding(text);
         d->editor.text()->setSurroundingOffset(position);
     }
@@ -404,7 +505,7 @@ void InputMethod::updateWordEngine()
 //! \return
 InputMethod::TextContentType InputMethod::contentType()
 {
-    Q_D(InputMethod);
+    Q_D(const InputMethod);
     return d->contentType;
 }
 
@@ -436,7 +537,7 @@ void InputMethod::checkInitialAutocaps()
     if (d->autocapsEnabled) {
         QString text;
         int position;
-        bool ok = d->host->surroundingText(text, position);
+        const bool ok = d->host->surroundingText(text, position);
         if (ok && text.isEmpty() && position == 0)
             Q_EMIT activateAutocaps();
     }
@@ -501,7 +602,7 @@ const QString &InputMethod::keyboardSize() const
 
 //! \brief InputMethod::setKeyboardSize
 //! Sets the keyboard size
-//! \param keyboardSize of the new size. For example "XS", "S", "M" or "L"
+//! \param newKeyboardSize the new size. For example "XS", "S", "M" or "L"
 //! FIXME check if the size is supported - if not use "M" as fallback
 void InputMethod::setKeyboardSize(const QString &newKeyboardSize)
 {
@@ -531,7 +632,7 @@ const QString &InputMethod::keyboardLayout() const
 
 //! \brief InputMethod::setKeyboardLayout
 //! Sets the keyboard layout
-//! \param keyboardLayout of the new layout. For example "LuneOS", "Dvorak" or "Thumb"
+//! \param newKeyboardLayout the new layout. For example "LuneOS", "Dvorak" or "Thumb"
 //! FIXME check if the layout is supported - if not use "LuneOS" as fallback
 void InputMethod::setKeyboardLayout(const QString &newKeyboardLayout)
 {
@@ -562,7 +663,7 @@ void InputMethod::onVisibleRectChanged()
 {
     Q_D(InputMethod);
 
-    QRect visibleRect = d->m_geometry->visibleRect().toRect();
+    const QRect visibleRect = d->m_geometry->visibleRect().toRect();
 
     qDebug() << "keyboard is reporting <x y w h>: <"
                 << visibleRect.x()

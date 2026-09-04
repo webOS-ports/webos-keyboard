@@ -54,13 +54,13 @@ class EventHandler
     Q_DISABLE_COPY(EventHandler)
 
 public:
-    explicit EventHandler(QObject *parent = 0);
-    virtual ~EventHandler();
+    explicit EventHandler(QObject *parent = nullptr);
+    ~EventHandler() override;
 
-    Q_INVOKABLE void onWordCandidatePressed(QString word);
-    Q_INVOKABLE void onWordCandidateReleased(QString word);
-    Q_INVOKABLE void onKeyPressed(QString label, QString action = QString());
-    Q_INVOKABLE void onKeyReleased(QString label, QString action = QString());
+    Q_INVOKABLE void onWordCandidatePressed(const QString& word);
+    Q_INVOKABLE void onWordCandidateReleased(const QString& word);
+    Q_INVOKABLE void onKeyPressed(const QString& label, const QString& action = QString());
+    Q_INVOKABLE void onKeyReleased(const QString& label, const QString& action = QString());
 
     // Key signals:
     Q_SIGNAL void keyPressed(const Key &key);
