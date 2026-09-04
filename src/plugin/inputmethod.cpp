@@ -157,8 +157,18 @@ void InputMethod::hide()
     d->closeOskWindow();
 }
 
+//! \brief Called by the framework when the application resets its input
+//! context -- the focused field changed, its cursor moved, or its text was
+//! changed behind our back.
+//!
+//! The application has dropped whatever preedit it was showing, so ours has
+//! to go too. It is sent in full on every keystroke, so a preedit left over
+//! from before the reset would come back attached to the next letter typed.
 void InputMethod::reset()
 {
+    Q_D(InputMethod);
+
+    d->dropPreedit();
 }
 
 void InputMethod::setPreedit(const QString &preedit,
@@ -278,9 +288,13 @@ QString InputMethod::activeSubView(Maliit::HandlerState state) const
 
 void InputMethod::handleFocusChange(bool focusIn)
 {
+    Q_D(InputMethod);
+
     if (focusIn) {
         checkInitialAutocaps();
     } else {
+        // Whatever was in the preedit belongs to the field we just left.
+        d->dropPreedit();
         hide();
     }
 
@@ -449,6 +463,26 @@ void InputMethod::update()
     int position;
     bool ok = d->host->surroundingText(text, position);
     if (ok) {
+        // The application tells us where its cursor is, but never that it
+        // moved it, and not every client sends an input context reset when
+        // the user taps somewhere else in the field. While we hold a preedit
+        // the cursor belongs inside it: clients that leave the preedit out of
+        // the surrounding text they report keep the cursor at its start,
+        // clients that count it in put the cursor at its end, and a backspace
+        // walks back through it -- so anywhere in [anchor, anchor + length]
+        // is us. Outside that span the application moved the cursor away from
+        // text we still think we own, and the preedit has to go now: it is
+        // sent in full on every keystroke, so keeping it would paste the word
+        // typed here into wherever the cursor went.
+        const int preeditLength = d->editor.text()->preedit().length();
+
+        if (preeditLength < 1 || d->preeditCursorAnchor < 0) {
+            d->preeditCursorAnchor = position;
+        } else if (position < d->preeditCursorAnchor
+                   || position > d->preeditCursorAnchor + preeditLength) {
+            d->dropPreedit();
+        }
+
         d->editor.text()->setSurrounding(text);
         d->editor.text()->setSurroundingOffset(position);
     }

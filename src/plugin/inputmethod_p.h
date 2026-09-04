@@ -64,6 +64,10 @@ public:
 
     WordRibbon* wordRibbon;
 
+    //! Where the application's cursor sat when the preedit we are holding
+    //! started, or -1 when we are not tracking one. See InputMethod::update().
+    int preeditCursorAnchor;
+
     explicit InputMethodPrivate(InputMethod * const _q,
                                 MAbstractInputMethodHost *host)
         : q(_q)
@@ -84,6 +88,7 @@ public:
         , m_geometry(new KeyboardGeometry(q))
         , m_settings()
         , wordRibbon(new WordRibbon)
+        , preeditCursorAnchor(-1)
     {
         applicationApiWrapper->setGeometryItem(m_geometry);
 
@@ -265,6 +270,15 @@ public:
         applicationApiWrapper->reportOSKInvisible();
 
         m_settings.savePreferences(q);
+    }
+
+    //! Drops the preedit we hold, and with it the cursor position we were
+    //! tracking it against. For the points where the application has already
+    //! discarded its own preedit and is only telling us afterwards.
+    void dropPreedit()
+    {
+        editor.resetPreedit();
+        preeditCursorAnchor = -1;
     }
 
     void truncateEnabledLanguageLocales(QStringList locales)

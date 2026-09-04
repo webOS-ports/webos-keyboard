@@ -580,6 +580,29 @@ void AbstractTextEditor::clearPreedit()
     replacePreedit("");
 }
 
+//! \brief Drops the preedit without telling the application about it.
+//!
+//! For the cases where the application has already thrown its own preedit
+//! away and is only telling us after the fact -- an input context reset,
+//! a focus change. Anything we sent back at that point would be applied to
+//! text we no longer know the shape of, so the buffer is dropped locally
+//! instead. Note that the preedit we hold is sent in full on every
+//! keystroke, so leaving a stale one behind makes the letters typed before
+//! the reset reappear alongside the next one.
+void AbstractTextEditor::resetPreedit()
+{
+    Q_D(AbstractTextEditor);
+
+    if (not d->valid()) {
+        return;
+    }
+
+    d->text->setPreedit("");
+    d->text->setPreeditFace(Model::Text::PreeditDefault);
+    d->text->setPrimaryCandidate("");
+    d->word_engine->clearCandidates();
+}
+
 //! \brief Returns whether preedit functionality is enabled.
 //! \sa preeditEnabled
 bool AbstractTextEditor::isPreeditEnabled() const
