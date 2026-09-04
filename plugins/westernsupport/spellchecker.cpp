@@ -104,14 +104,14 @@ struct SpellCheckerPrivate
 
 
 SpellCheckerPrivate::SpellCheckerPrivate(const QString &user_dictionary_kind)
-    : hunspell(0)
-    , codec(0)
+    : hunspell(nullptr)
+    , codec(nullptr)
     , ignored_words()
     , user_dictionary_kind(user_dictionary_kind)
     , aff_file()
     , dic_file()
-    , serviceHandle(0)
-    , mainLoop(0)
+    , serviceHandle(nullptr)
+    , mainLoop(nullptr)
     , pollSourceId(0)
     , userWords()
 {
@@ -128,14 +128,14 @@ SpellCheckerPrivate::~SpellCheckerPrivate()
             qWarning("LSUnregister failed: %s", error.message);
             LSErrorFree(&error);
         }
-        serviceHandle = 0;
+        serviceHandle = nullptr;
     }
 
     // After LSUnregister, so the handle is detached before the loop it was
     // attached to goes away.
     if (mainLoop) {
         g_main_loop_unref(mainLoop);
-        mainLoop = 0;
+        mainLoop = nullptr;
     }
 }
 
@@ -155,7 +155,7 @@ void SpellCheckerPrivate::applyUserWords()
 void SpellCheckerPrivate::clear()
 {
     delete(hunspell);
-    hunspell = 0;
+    hunspell = nullptr;
     aff_file.clear();
     dic_file.clear();
 }
@@ -177,7 +177,7 @@ SpellChecker::~SpellChecker()
 bool SpellChecker::enabled() const
 {
     Q_D(const SpellChecker);
-    return (d->hunspell != 0);
+    return (d->hunspell != nullptr);
 }
 
 //! \brief SpellChecker::setEnabled
@@ -191,7 +191,7 @@ bool SpellChecker::setEnabled(bool on)
         return true;
 
     delete(d->hunspell);
-    d->hunspell = 0;
+    d->hunspell = nullptr;
 
     if (not on) {
         return true;
@@ -269,7 +269,7 @@ void SpellChecker::findWordsAndWatch()
                          "\",\"orderBy\":\"word\"},\"watch\":true}";
 
     if (!LSCall(d->serviceHandle, "luna://com.palm.db/find", payload.constData(),
-              SpellChecker::findCallback, this, NULL, &error)) {
+              SpellChecker::findCallback, this, nullptr, &error)) {
         qWarning("Loading user dictionary failed: %s", error.message);
         LSErrorFree(&error);
     }
@@ -288,7 +288,7 @@ void SpellChecker::refreshWords()
                          d->user_dictionary_kind.toUtf8() + "\",\"orderBy\":\"word\"}}";
 
     if (!LSCall(d->serviceHandle, "luna://com.palm.db/find", payload.constData(),
-              SpellChecker::findCallback, this, NULL, &error)) {
+              SpellChecker::findCallback, this, nullptr, &error)) {
         qWarning("Refreshing user dictionary failed: %s", error.message);
         LSErrorFree(&error);
     }
@@ -396,7 +396,7 @@ QStringList SpellChecker::suggest(const QString &word,
         return QStringList();
     }
 
-    char** suggestions = NULL;
+    char** suggestions = nullptr;
     const int suggestions_count = d->hunspell->suggest(&suggestions, d->codec->fromUnicode(word).toStdString().c_str());
 
     // Less than zero means some error.
@@ -456,7 +456,7 @@ void SpellChecker::addToUserWordlist(const QString &word)
     QByteArray payload = "{\"objects\":[{\"_kind\":\"" + d->user_dictionary_kind.toUtf8() +
                          "\",\"word\":\"" + word.toUtf8() + "\"}]}";
     if (!LSCall(d->serviceHandle, "luna://com.palm.db/put", payload.constData(),
-              SpellChecker::putCallback, this, NULL, &error)) {
+              SpellChecker::putCallback, this, nullptr, &error)) {
         qWarning("Failed to add '%s' to user dictionary: %s", qPrintable(word), error.message);
         LSErrorFree(&error);
     }

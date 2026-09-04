@@ -111,7 +111,7 @@ public:
         // still pointing into it dangles from here on. Drop it before the new
         // load can fail and leave us holding the old, freed plugin.
         pluginLoader.unload();
-        languagePlugin = 0;
+        languagePlugin = nullptr;
         currentPlugin.clear();
 
         // to avoid hickups in libpresage, libpinyin
@@ -150,7 +150,7 @@ public:
 WordEnginePrivate::WordEnginePrivate()
     : use_predictive_text(false)
     , use_spell_checker(false)
-    , languagePlugin(0)
+    , languagePlugin(nullptr)
 {
     loadPlugin(DEFAULT_PLUGIN);
 }

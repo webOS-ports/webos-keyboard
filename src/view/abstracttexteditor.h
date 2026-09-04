@@ -101,8 +101,8 @@ public:
     explicit AbstractTextEditor(const EditorOptions &options,
                                 Model::Text *text,
                                 Logic::AbstractWordEngine *word_engine,
-                                QObject *parent = 0);
-    virtual ~AbstractTextEditor() = 0;
+                                QObject *parent = nullptr);
+    ~AbstractTextEditor() override = 0;
 
     Model::Text * text() const;
     Logic::AbstractWordEngine * wordEngine() const;

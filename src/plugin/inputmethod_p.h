@@ -75,7 +75,7 @@ public:
         , key_overrides()
         , event_handler()
         , host(host)
-        , view(0)
+        , view(nullptr)
         , applicationApiWrapper(new LuneOSApplicationApiWrapper)
         , autocapsEnabled(false)
         , wordEngineEnabled(false)

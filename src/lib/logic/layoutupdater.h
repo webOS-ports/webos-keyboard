@@ -54,8 +54,8 @@ class LayoutUpdater
     Q_DECLARE_PRIVATE(LayoutUpdater)
 
 public:
-    explicit LayoutUpdater(QObject *parent = 0);
-    virtual ~LayoutUpdater();
+    explicit LayoutUpdater(QObject *parent = nullptr);
+    ~LayoutUpdater() override;
 
     void init();
 

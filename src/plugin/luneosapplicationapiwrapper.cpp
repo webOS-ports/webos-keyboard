@@ -38,8 +38,8 @@ namespace {
 
 LuneOSApplicationApiWrapper::LuneOSApplicationApiWrapper()
     : m_runningOnMir(false)
-    , m_clientConnection(0)
-    , m_geometry(0)
+    , m_clientConnection(nullptr)
+    , m_geometry(nullptr)
 {
     if (qgetenv("QT_QPA_PLATFORM") == "luneosmirclient") {
         m_runningOnMir = true;
@@ -173,7 +173,7 @@ void LuneOSApplicationApiWrapper::onNewConnection()
 void LuneOSApplicationApiWrapper::onClientDisconnected()
 {
     m_clientConnection->deleteLater();
-    m_clientConnection = 0;
+    m_clientConnection = nullptr;
 }
 
 QString LuneOSApplicationApiWrapper::buildSocketFilePath() const

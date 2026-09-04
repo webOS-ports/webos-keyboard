@@ -125,7 +125,7 @@ void KeyboardSettings::preferenceServiceIsAvailable()
 
     if (!LSCall(mServiceHandle, "palm://com.palm.systemservice/getPreferences",
               "{\"subscribe\":true,\"keys\":[\"keyboard\"]}",
-              preferencesChangedCallback, this, NULL, &error)) {
+              preferencesChangedCallback, this, nullptr, &error)) {
         qWarning("Setting up subscription for keyboard preferences failed: %s", error.message);
         LSErrorFree(&error);
     }
@@ -360,7 +360,7 @@ void KeyboardSettings::savePreferences(InputMethod *q)
     LSError error;
     LSErrorInit(&error);
     if (!LSCallOneReply(mServiceHandle, "palm://com.palm.systemservice/setPreferences",
-                        payload.toStdString().c_str(), NULL, this, NULL, &error)) {
+                        payload.toStdString().c_str(), nullptr, this, nullptr, &error)) {
         qWarning("Failed to save keyboard preferences: %s", error.message);
         LSErrorFree(&error);
     }

@@ -54,15 +54,15 @@ class WordRibbon : public QAbstractListModel
     bool m_enabled;
 
 public:
-    explicit WordRibbon(QObject* parent = 0);
+    explicit WordRibbon(QObject* parent = nullptr);
 
     enum WordRibbonRoles {
              WordRole = Qt::UserRole + 1
          };
 
-    virtual QVariant data(const QModelIndex &index, int role) const;
-    virtual int rowCount(const QModelIndex &parent = QModelIndex()) const;
-    virtual QHash<int, QByteArray> roleNames() const;
+    QVariant data(const QModelIndex &index, int role) const override;
+    int rowCount(const QModelIndex &parent = QModelIndex()) const override;
+    QHash<int, QByteArray> roleNames() const override;
 
     bool valid() const;
     QRect rect() const;

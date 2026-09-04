@@ -51,25 +51,25 @@ class WordEngine
     Q_DECLARE_PRIVATE(WordEngine)
 
 public:
-    explicit WordEngine(QObject *parent = 0);
-    virtual ~WordEngine();
+    explicit WordEngine(QObject *parent = nullptr);
+    ~WordEngine() override;
 
     //! \reimp
-    virtual bool isEnabled() const;
-    virtual void setWordPredictionEnabled(bool enabled);
+    bool isEnabled() const override;
+    void setWordPredictionEnabled(bool enabled) override;
 
-    virtual void addToUserDictionary(const QString &word);
-    virtual void setSpellcheckerEnabled(bool enabled);
+    void addToUserDictionary(const QString &word) override;
+    void setSpellcheckerEnabled(bool enabled) override;
     //! \reimp_end
 
     Q_SLOT void onWordCandidateSelected(QString word);
     Q_SLOT void onLanguageChanged(const QString& languageId);
 
-    virtual AbstractLanguageFeatures* languageFeature();
+    AbstractLanguageFeatures* languageFeature() override;
 
 private:
     //! \reimp
-    virtual WordCandidateList fetchCandidates(Model::Text *text);
+    WordCandidateList fetchCandidates(Model::Text *text) override;
     //! \reimp_end
 
     const QScopedPointer<WordEnginePrivate> d_ptr;

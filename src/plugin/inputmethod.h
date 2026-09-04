@@ -69,31 +69,31 @@ public:
     };
 
     explicit InputMethod(MAbstractInputMethodHost *host);
-    virtual ~InputMethod();
+    ~InputMethod() override;
 
     //! \reimp
-    virtual void show();
-    Q_SLOT virtual void hide();
-    virtual void reset();
-    virtual void setPreedit(const QString &preedit,
-                            int cursor_position);
-    virtual void processKeyEvent(QEvent::Type keyType, Qt::Key keyCode,
+    void show() override;
+    Q_SLOT void hide() override;
+    void reset() override;
+    void setPreedit(const QString &preedit,
+                            int cursor_position) override;
+    void processKeyEvent(QEvent::Type keyType, Qt::Key keyCode,
                                  Qt::KeyboardModifiers modifiers,
                                  const QString &text, bool autoRepeat, int count,
                                  quint32 nativeScanCode, quint32 nativeModifiers,
-                                 unsigned long time);
-    virtual void switchContext(Maliit::SwitchDirection direction,
-                               bool animated);
-    virtual QList<MAbstractInputMethod::MInputMethodSubView>
-    subViews(Maliit::HandlerState state = Maliit::OnScreen) const;
-    virtual void setActiveSubView(const QString &id,
-                                  Maliit::HandlerState state = Maliit::OnScreen);
-    virtual QString activeSubView(Maliit::HandlerState state = Maliit::OnScreen) const;
-    virtual void handleFocusChange(bool focusIn);
-    virtual void handleAppOrientationChanged(int angle);
-    virtual void handleClientChange();
-    virtual bool imExtensionEvent(MImExtensionEvent *event);
-    virtual void setKeyOverrides(const QMap<QString, QSharedPointer<MKeyOverride> > &overrides);
+                                 unsigned long time) override;
+    void switchContext(Maliit::SwitchDirection direction,
+                               bool animated) override;
+    QList<MAbstractInputMethod::MInputMethodSubView>
+    subViews(Maliit::HandlerState state = Maliit::OnScreen) const override;
+    void setActiveSubView(const QString &id,
+                                  Maliit::HandlerState state = Maliit::OnScreen) override;
+    QString activeSubView(Maliit::HandlerState state = Maliit::OnScreen) const override;
+    void handleFocusChange(bool focusIn) override;
+    void handleAppOrientationChanged(int angle) override;
+    void handleClientChange() override;
+    bool imExtensionEvent(MImExtensionEvent *event) override;
+    void setKeyOverrides(const QMap<QString, QSharedPointer<MKeyOverride> > &overrides) override;
     //! \reimp_end
 
     Q_SLOT void deviceOrientationChanged(Qt::ScreenOrientation orientation);
@@ -103,7 +103,7 @@ public:
     TextContentType contentType();
     Q_SLOT void setContentType(TextContentType contentType);
 
-    void update();
+    void update() override;
 
     const QStringList &enabledLanguages() const;
 

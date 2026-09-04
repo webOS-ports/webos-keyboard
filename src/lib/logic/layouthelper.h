@@ -81,8 +81,8 @@ public:
     Q_ENUMS(Orientation)
     Q_ENUMS(Panel)
 
-    explicit LayoutHelper(QObject *parent = 0);
-    virtual ~LayoutHelper();
+    explicit LayoutHelper(QObject *parent = nullptr);
+    ~LayoutHelper() override;
 
     QSize screenSize() const;
     void setScreenSize(const QSize &size);

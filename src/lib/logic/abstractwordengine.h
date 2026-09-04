@@ -55,8 +55,8 @@ class AbstractWordEngine
                             NOTIFY enabledChanged)
 
 public:
-    explicit AbstractWordEngine(QObject *parent = 0);
-    virtual ~AbstractWordEngine();
+    explicit AbstractWordEngine(QObject *parent = nullptr);
+    ~AbstractWordEngine() override;
 
     virtual bool isEnabled() const;
     Q_SLOT virtual void setEnabled(bool enabled);
