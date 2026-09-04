@@ -85,6 +85,15 @@ struct SpellCheckerPrivate
     // the process runs, and applyUserWords() pushes it into whichever
     // Hunspell instance is active right now.
     LSHandle *serviceHandle;
+
+    // Both are owned by this SpellChecker and must be released with it: the
+    // poll timer holds a bare "this", and the loop is what LSGmainAttach was
+    // handed. A language switch unloads this whole plugin (see
+    // WordEnginePrivate::loadPlugin), so anything left registered with glib
+    // afterwards fires into freed memory in an unmapped library.
+    GMainLoop *mainLoop; //!< The loop the service handle is attached to.
+    guint pollSourceId;  //!< The db8 poll timer, 0 when not registered.
+
     QStringList userWords;
 
     SpellCheckerPrivate(const QString &user_dictionary_kind);
@@ -102,6 +111,8 @@ SpellCheckerPrivate::SpellCheckerPrivate(const QString &user_dictionary_kind)
     , aff_file()
     , dic_file()
     , serviceHandle(0)
+    , mainLoop(0)
+    , pollSourceId(0)
     , userWords()
 {
 }
@@ -117,6 +128,14 @@ SpellCheckerPrivate::~SpellCheckerPrivate()
             qWarning("LSUnregister failed: %s", error.message);
             LSErrorFree(&error);
         }
+        serviceHandle = 0;
+    }
+
+    // After LSUnregister, so the handle is detached before the loop it was
+    // attached to goes away.
+    if (mainLoop) {
+        g_main_loop_unref(mainLoop);
+        mainLoop = 0;
     }
 }
 
@@ -142,7 +161,16 @@ void SpellCheckerPrivate::clear()
 }
 
 SpellChecker::~SpellChecker()
-{}
+{
+    Q_D(SpellChecker);
+
+    // Must happen before ~SpellCheckerPrivate: pollCallback casts its
+    // user_data straight back to this object.
+    if (d->pollSourceId != 0) {
+        g_source_remove(d->pollSourceId);
+        d->pollSourceId = 0;
+    }
+}
 
 //! \brief SpellChecker::enabled returns if the spechchecking is active
 //! \return
@@ -207,7 +235,9 @@ SpellChecker::SpellChecker(const QString &user_dictionary_kind)
         return;
     }
 
-    if (!LSGmainAttach(d->serviceHandle, g_main_loop_new(g_main_context_default(), TRUE), &error)) {
+    d->mainLoop = g_main_loop_new(g_main_context_default(), TRUE);
+
+    if (!LSGmainAttach(d->serviceHandle, d->mainLoop, &error)) {
         qWarning("Failed to attach to glib mainloop: %s", error.message);
         LSErrorFree(&error);
         return;
@@ -215,8 +245,10 @@ SpellChecker::SpellChecker(const QString &user_dictionary_kind)
 
     // The actual freshness mechanism - see the header comment for why this
     // exists instead of relying on watch alone. Registered exactly once,
-    // for the life of this SpellChecker.
-    g_timeout_add_seconds(POLL_INTERVAL_SECONDS, SpellChecker::pollCallback, this);
+    // for the life of this SpellChecker, and removed again in ~SpellChecker:
+    // it holds a bare "this", and glib knows nothing about our lifetime.
+    d->pollSourceId = g_timeout_add_seconds(POLL_INTERVAL_SECONDS,
+                                            SpellChecker::pollCallback, this);
 
     findWordsAndWatch();
 }
