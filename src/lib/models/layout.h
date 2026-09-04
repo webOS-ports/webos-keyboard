@@ -79,8 +79,6 @@ class Layout
     Q_PROPERTY(QString activeView READ activeView WRITE setActiveView
                                          NOTIFY activeViewChanged)
 
-    Q_ENUMS(State)
-
 public:
     enum State {
         DefaultState,
@@ -89,6 +87,7 @@ public:
         SecondarySymbolState,
         DeadkeyState
     };
+    Q_ENUM(State)
 
     enum Roles {
         RoleKeyRectangle = Qt::UserRole + 1,

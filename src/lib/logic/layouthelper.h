@@ -78,8 +78,8 @@ public:
         NumPanels
     };
 
-    Q_ENUMS(Orientation)
-    Q_ENUMS(Panel)
+    Q_ENUM(Orientation)
+    Q_ENUM(Panel)
 
     explicit LayoutHelper(QObject *parent = nullptr);
     ~LayoutHelper() override;

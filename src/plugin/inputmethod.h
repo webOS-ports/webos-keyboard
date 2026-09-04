@@ -55,8 +55,6 @@ class InputMethod
     Q_PROPERTY(QString keyboardLayout READ keyboardLayout WRITE setKeyboardLayout NOTIFY keyboardLayoutChanged)
     Q_PROPERTY(bool useAudioFeedback READ useAudioFeedback NOTIFY useAudioFeedbackChanged)
 
-    Q_ENUMS(TextContentType)
-
 public:
     /// Same as Maliit::TextContentType but usable in QML
     enum TextContentType {
@@ -67,6 +65,7 @@ public:
         UrlContentType = Maliit::UrlContentType,
         CustomContentType = Maliit::CustomContentType
     };
+    Q_ENUM(TextContentType)
 
     explicit InputMethod(MAbstractInputMethodHost *host);
     ~InputMethod() override;
