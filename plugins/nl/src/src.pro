@@ -6,6 +6,7 @@ include($${TOP_SRCDIR}/config.pri)
 TEMPLATE        = lib
 CONFIG         += plugin
 QT             += widgets
+QT             += core5compat
 INCLUDEPATH    += \
     $${TOP_SRCDIR}/src/ \
     $${TOP_SRCDIR}/src/lib/ \
