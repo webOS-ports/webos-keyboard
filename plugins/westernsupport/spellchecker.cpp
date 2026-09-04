@@ -213,12 +213,51 @@ SpellChecker::SpellChecker(const QString &user_dictionary_kind)
         return;
     }
 
-    QByteArray payload = "{\"subscribe\":true,\"query\":{\"from\":\"" +
+    // The actual freshness mechanism - see the header comment for why this
+    // exists instead of relying on watch alone. Registered exactly once,
+    // for the life of this SpellChecker.
+    g_timeout_add_seconds(POLL_INTERVAL_SECONDS, SpellChecker::pollCallback, this);
+
+    findWordsAndWatch();
+}
+
+// Registers ONE long-lived find, with "watch":true alongside "query" (the
+// db8 API's actual live-notification flag - see the header comment). Call
+// this exactly once: the subscription it creates keeps delivering "fired"
+// notifications on its own for as long as it stays open, so it must never
+// be re-registered from inside findCallback.
+void SpellChecker::findWordsAndWatch()
+{
+    Q_D(SpellChecker);
+
+    LSError error;
+    LSErrorInit(&error);
+
+    QByteArray payload = "{\"query\":{\"from\":\"" + d->user_dictionary_kind.toUtf8() +
+                         "\",\"orderBy\":\"word\"},\"watch\":true}";
+
+    if (!LSCall(d->serviceHandle, "luna://com.palm.db/find", payload.constData(),
+              SpellChecker::findCallback, this, NULL, &error)) {
+        qWarning("Loading user dictionary failed: %s", error.message);
+        LSErrorFree(&error);
+    }
+}
+
+// One-shot refresh, no watch - used to pick up what changed once the
+// standing subscription above reports a fired notification.
+void SpellChecker::refreshWords()
+{
+    Q_D(SpellChecker);
+
+    LSError error;
+    LSErrorInit(&error);
+
+    QByteArray payload = "{\"query\":{\"from\":\"" +
                          d->user_dictionary_kind.toUtf8() + "\",\"orderBy\":\"word\"}}";
 
     if (!LSCall(d->serviceHandle, "luna://com.palm.db/find", payload.constData(),
               SpellChecker::findCallback, this, NULL, &error)) {
-        qWarning("Setting up subscription for user dictionary failed: %s", error.message);
+        qWarning("Refreshing user dictionary failed: %s", error.message);
         LSErrorFree(&error);
     }
 }
@@ -236,22 +275,43 @@ bool SpellChecker::findCallback(LSHandle *handle, LSMessage *message, void *user
 
     QJsonDocument document = QJsonDocument::fromJson(QByteArray(payload));
     QJsonObject root = document.object();
-    if (!root.contains("results") || !root.value("results").isArray())
-        return true;
 
-    QJsonArray results = root.value("results").toArray();
-    QStringList words;
-    for (const QJsonValue &entry : results) {
-        QJsonObject obj = entry.toObject();
-        if (obj.contains("word") && obj.value("word").isString())
-            words.append(obj.value("word").toString());
+    if (root.contains("results") && root.value("results").isArray()) {
+        QJsonArray results = root.value("results").toArray();
+        QStringList words;
+        for (const QJsonValue &entry : results) {
+            QJsonObject obj = entry.toObject();
+            if (obj.contains("word") && obj.value("word").isString())
+                words.append(obj.value("word").toString());
+        }
+
+        SpellChecker *self = static_cast<SpellChecker*>(user_data);
+        self->d_func()->userWords = words;
+        self->d_func()->applyUserWords();
     }
 
-    SpellChecker *self = static_cast<SpellChecker*>(user_data);
-    self->d_func()->userWords = words;
-    self->d_func()->applyUserWords();
+    // The find+watch subscription's later replies carry "fired":true when
+    // the result set changes, and may or may not repeat "results" - fetch
+    // it explicitly with a plain one-shot find rather than relying on
+    // that. This does NOT re-register the watch: the original find+watch
+    // call stays open and keeps delivering future fired notifications by
+    // itself. (Re-registering here was an infinite-loop bug - see
+    // findWordsAndWatch()'s comment.)
+    if (root.value("fired").toBool())
+        static_cast<SpellChecker*>(user_data)->refreshWords();
 
     return true;
+}
+
+// Fires on a fixed POLL_INTERVAL_SECONDS cadence for the life of this
+// SpellChecker - see the header comment for why this, and not watch alone,
+// is what actually keeps userWords current. Returns TRUE unconditionally
+// so glib keeps calling it; it cannot loop tighter than its own fixed
+// interval, unlike re-arming a watch from its own handler.
+gboolean SpellChecker::pollCallback(gpointer user_data)
+{
+    static_cast<SpellChecker*>(user_data)->refreshWords();
+    return G_SOURCE_CONTINUE;
 }
 
 bool SpellChecker::putCallback(LSHandle *handle, LSMessage *message, void *user_data)
