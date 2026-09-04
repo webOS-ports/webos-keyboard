@@ -319,9 +319,9 @@ QByteArray StyleAttributes::customIcon(const QString &icon_name) const
 //! Pure" if there was no such value in style.ini.
 QByteArray StyleAttributes::fontName(Logic::LayoutHelper::Orientation orientation) const
 {
-    const QByteArray font_name(lookup(m_store, orientation,
-                                      m_style_name.toLocal8Bit(),
-                                      QByteArray("font-name")).toByteArray());
+    QByteArray font_name(lookup(m_store, orientation,
+                                m_style_name.toLocal8Bit(),
+                                QByteArray("font-name")).toByteArray());
 
     if (font_name.isEmpty()) {
         return "Nokia Pure";

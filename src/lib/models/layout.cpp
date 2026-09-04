@@ -322,6 +322,9 @@ QVariant Layout::data(const QModelIndex &index,
 
     case RoleKeyAction:
         return QVariant(key.action());
+
+    default:
+        break;
     }
 
     qWarning() << __PRETTY_FUNCTION__

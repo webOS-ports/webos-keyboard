@@ -69,9 +69,9 @@ const QRectF &KeyboardGeometry::popoverRect() const
     return m_popoverRect;
 }
 
-//! \brief KeyboardGeometry::setCanvasHeight
+//! \brief KeyboardGeometry::setPopoverRect
 //! FIXME this should not be needed, and calculated in QML directly
-//! \param height
+//! \param rect the new popover rectangle
 void KeyboardGeometry::setPopoverRect(const QRectF &rect)
 {
     if (rect == m_popoverRect)

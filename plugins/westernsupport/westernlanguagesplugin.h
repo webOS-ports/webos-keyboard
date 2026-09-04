@@ -17,6 +17,7 @@ class WesternLanguagesPlugin : /*public QObject,*/ public LanguagePluginInterfac
 {
     //Q_OBJECT
     Q_INTERFACES(LanguagePluginInterface)
+    Q_DISABLE_COPY(WesternLanguagesPlugin)
 
 public:
     explicit WesternLanguagesPlugin(/*QObject *parent = 0*/);

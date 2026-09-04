@@ -118,7 +118,7 @@ public:
 
         // to avoid hickups in libpresage, libpinyin
         QLocale::setDefault(QLocale::c());
-        setlocale(LC_NUMERIC, "C");
+        (void)setlocale(LC_NUMERIC, "C");
 
         const QDir pluginsDir("/usr/share/maliit/plugins/org/luneos/lib/"+subfolder);
 

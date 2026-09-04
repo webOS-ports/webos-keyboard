@@ -225,7 +225,7 @@ void LuneOSApplicationApiWrapper::setGeometryItem(KeyboardGeometry *geometry)
 
 // ------------------------------- SharedInfo ----------------------------
 
-bool LuneOSApplicationApiWrapper::SharedInfo::operator ==(const struct SharedInfo &other)
+bool LuneOSApplicationApiWrapper::SharedInfo::operator ==(const struct SharedInfo &other) const
 {
     return keyboardX == other.keyboardX
         && keyboardY == other.keyboardY

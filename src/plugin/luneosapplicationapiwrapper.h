@@ -63,7 +63,7 @@ private:
         qint32 keyboardWidth;
         qint32 keyboardHeight;
 
-        bool operator ==(const struct SharedInfo &other);
+        bool operator ==(const struct SharedInfo &other) const;
         void reset();
     };
     void sendInfoToClientConnection();

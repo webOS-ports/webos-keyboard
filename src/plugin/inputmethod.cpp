@@ -505,7 +505,7 @@ void InputMethod::updateWordEngine()
 //! \return
 InputMethod::TextContentType InputMethod::contentType()
 {
-    Q_D(InputMethod);
+    Q_D(const InputMethod);
     return d->contentType;
 }
 
@@ -602,7 +602,7 @@ const QString &InputMethod::keyboardSize() const
 
 //! \brief InputMethod::setKeyboardSize
 //! Sets the keyboard size
-//! \param keyboardSize of the new size. For example "XS", "S", "M" or "L"
+//! \param newKeyboardSize the new size. For example "XS", "S", "M" or "L"
 //! FIXME check if the size is supported - if not use "M" as fallback
 void InputMethod::setKeyboardSize(const QString &newKeyboardSize)
 {
@@ -632,7 +632,7 @@ const QString &InputMethod::keyboardLayout() const
 
 //! \brief InputMethod::setKeyboardLayout
 //! Sets the keyboard layout
-//! \param keyboardLayout of the new layout. For example "LuneOS", "Dvorak" or "Thumb"
+//! \param newKeyboardLayout the new layout. For example "LuneOS", "Dvorak" or "Thumb"
 //! FIXME check if the layout is supported - if not use "LuneOS" as fallback
 void InputMethod::setKeyboardLayout(const QString &newKeyboardLayout)
 {

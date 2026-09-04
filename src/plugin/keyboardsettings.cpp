@@ -117,6 +117,8 @@ KeyboardSettings::~KeyboardSettings()
 
 bool KeyboardSettings::systemServiceStatusCallback(LSHandle *handle, LSMessage *message, void *user_data)
 {
+    Q_UNUSED(handle);
+
     if (!message)
         return true;
 
@@ -158,6 +160,8 @@ void KeyboardSettings::preferenceServiceIsAvailable()
 
 bool KeyboardSettings::preferencesChangedCallback(LSHandle *handle, LSMessage *message, void *user_data)
 {
+    Q_UNUSED(handle);
+
     if (!message)
         return true;
 

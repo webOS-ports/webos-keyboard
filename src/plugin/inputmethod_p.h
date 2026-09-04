@@ -25,7 +25,7 @@ typedef QScopedPointer<Maliit::Plugins::AbstractPluginSetting> ScopedSetting;
 typedef QSharedPointer<MKeyOverride> SharedOverride;
 typedef QMap<QString, SharedOverride>::const_iterator OverridesIterator;
 
-QQuickView *createWindow(MAbstractInputMethodHost *host)
+static QQuickView *createWindow(MAbstractInputMethodHost *host)
 {
     QScopedPointer<QQuickView> view(new QQuickView);
 
@@ -41,6 +41,8 @@ QQuickView *createWindow(MAbstractInputMethodHost *host)
 
 class InputMethodPrivate
 {
+    Q_DISABLE_COPY(InputMethodPrivate)
+
 public:
     InputMethod* q;
     Editor editor;
@@ -150,7 +152,7 @@ public:
         delete applicationApiWrapper;
     }
 
-    Logic::LayoutHelper::Orientation screenToMaliitOrientation(Qt::ScreenOrientation screenOrientation) const
+    static Logic::LayoutHelper::Orientation screenToMaliitOrientation(Qt::ScreenOrientation screenOrientation)
     {
         switch (screenOrientation) {
         case Qt::LandscapeOrientation:

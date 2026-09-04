@@ -93,7 +93,7 @@ void Style::setProfile(const QString &profile)
     Q_D(Style);
     d->profile = profile;
 
-    StyleAttributes *attributes = nullptr;
+    StyleAttributes *main_attributes = nullptr;
     StyleAttributes *extended_keys_attributes = nullptr;
 
     if (not d->profile.isEmpty()) {
@@ -104,13 +104,13 @@ void Style::setProfile(const QString &profile)
                                               .arg(CoreUtils::maliitKeyboardStyleProfilesDirectory())
                                               .arg(profile));
 
-        attributes =  new StyleAttributes(
+        main_attributes =  new StyleAttributes(
             new QSettings(main_file_name, QSettings::IniFormat));
         extended_keys_attributes = new StyleAttributes(
             new QSettings(extended_keys_file_name, QSettings::IniFormat));
     }
 
-    d->attributes.reset(attributes);
+    d->attributes.reset(main_attributes);
     d->extended_keys_attributes.reset(extended_keys_attributes);
 
     Q_EMIT profileChanged();

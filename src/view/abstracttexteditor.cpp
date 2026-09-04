@@ -400,13 +400,13 @@ void AbstractTextEditor::onKeyReleased(const Key &key)
         return;
     }
 
-    const QString text = key.label();
+    const QString key_label = key.label();
     QString keyText = QString("");
     Qt::Key event_key = Qt::Key_unknown;
 
     switch(key.action()) {
     case Key::ActionInsert: {
-        d->text->appendToPreedit(text);
+        d->text->appendToPreedit(key_label);
 
         // computeCandidates can change preedit face, so needs to happen
         // before sending preedit:
@@ -479,7 +479,7 @@ void AbstractTextEditor::onKeyReleased(const Key &key)
         break;
 
     case Key::ActionCommand:
-        invokeAction(text, QKeySequence::fromString(key.commandSequence()));
+        invokeAction(key_label, QKeySequence::fromString(key.commandSequence()));
         break;
 
     case Key::ActionLeftLayout:

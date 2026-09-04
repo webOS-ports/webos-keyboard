@@ -71,7 +71,7 @@ private:
                                    const Replacement &replacement) override;
     void sendCommitString(const QString &commit) override;
     void sendKeyEvent(const QKeyEvent &ev) override;
-    void invokeAction(const QString &command, const QKeySequence &sequence) override;
+    void invokeAction(const QString &action, const QKeySequence &sequence) override;
     //! \reimp_end
 };
 

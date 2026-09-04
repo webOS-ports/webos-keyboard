@@ -79,7 +79,7 @@ public:
             , cursor_position(-1)
         {}
 
-        Replacement(int position)
+        explicit Replacement(int position)
             : start(0)
             , length(0)
             , cursor_position(position)

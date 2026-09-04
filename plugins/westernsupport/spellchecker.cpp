@@ -70,8 +70,9 @@ private:
 //! Checks spelling and suggest words. Currently Spellchecker is
 //! implemented by using Hunspell.
 
-struct SpellCheckerPrivate
+class SpellCheckerPrivate
 {
+public:
     Hunspell *hunspell; //!< The spellchecker backend, Hunspell.
     QTextCodec *codec; //!< Which codec to use.
     QSet<QString> ignored_words; //!< The words to ignore.
@@ -96,7 +97,7 @@ struct SpellCheckerPrivate
 
     QStringList userWords;
 
-    SpellCheckerPrivate(const QString &user_dictionary_kind);
+    explicit SpellCheckerPrivate(const QString &user_dictionary_kind);
     ~SpellCheckerPrivate();
     void applyUserWords();
     void clear();
@@ -311,7 +312,7 @@ bool SpellChecker::findCallback(LSHandle *handle, LSMessage *message, void *user
     if (root.contains("results") && root.value("results").isArray()) {
         const QJsonArray results = root.value("results").toArray();
         QStringList words;
-        for (const QJsonValue &entry : results) {
+        for (const QJsonValue entry : results) {
             const QJsonObject obj = entry.toObject();
             if (obj.contains("word") && obj.value("word").isString())
                 words.append(obj.value("word").toString());
