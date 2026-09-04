@@ -56,6 +56,8 @@ const QLatin1String KEYBOARD_LAYOUT_KEY = QLatin1String("keyboardLayout");
  */
 KeyboardSettings::KeyboardSettings(QObject *parent) :
     QObject(parent),
+    mServiceHandle(nullptr),
+    mMainLoop(nullptr),
     mActiveLanguage("en"),
     mAutoCapitalization(false),
     mAutoCorrection(false),
@@ -74,7 +76,9 @@ KeyboardSettings::KeyboardSettings(QObject *parent) :
         return;
     }
 
-    if (!LSGmainAttach(mServiceHandle, g_main_loop_new(g_main_context_default(), TRUE), &error)) {
+    mMainLoop = g_main_loop_new(g_main_context_default(), TRUE);
+
+    if (!LSGmainAttach(mServiceHandle, mMainLoop, &error)) {
         qWarning("Failed to attach to glib mainloop: %s", error.message);
         LSErrorFree(&error);
         return;
@@ -89,6 +93,26 @@ KeyboardSettings::KeyboardSettings(QObject *parent) :
     }
 
     g_message("Service setup successfully");
+}
+
+KeyboardSettings::~KeyboardSettings()
+{
+    if (mServiceHandle) {
+        LSError error;
+        LSErrorInit(&error);
+        if (!LSUnregister(mServiceHandle, &error)) {
+            qWarning("LSUnregister failed: %s", error.message);
+            LSErrorFree(&error);
+        }
+        mServiceHandle = nullptr;
+    }
+
+    // After LSUnregister, so the handle is detached before the loop it was
+    // attached to goes away.
+    if (mMainLoop) {
+        g_main_loop_unref(mMainLoop);
+        mMainLoop = nullptr;
+    }
 }
 
 bool KeyboardSettings::systemServiceStatusCallback(LSHandle *handle, LSMessage *message, void *user_data)
