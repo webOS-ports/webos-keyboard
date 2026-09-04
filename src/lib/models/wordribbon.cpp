@@ -174,7 +174,7 @@ void WordRibbon::onWordCandidatesChanged(const WordCandidateList &candidates)
     clearCandidates();
 
     for (int index = 0; index < candidates.count(); ++index) {
-        WordCandidate word_candidate(candidates.at(index));
+        const WordCandidate &word_candidate(candidates.at(index));
         appendCandidate(word_candidate);
     }
 }

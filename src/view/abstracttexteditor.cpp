@@ -431,7 +431,7 @@ void AbstractTextEditor::onKeyReleased(const Key &key)
     } break;
 
     case Key::ActionSpace: {
-        QString textOnLeft = d->text->surroundingLeft() + d->text->preedit();
+        const QString textOnLeft = d->text->surroundingLeft() + d->text->preedit();
         const bool auto_caps_activated = d->word_engine->languageFeature()->activateAutoCaps(textOnLeft);
         const bool replace_preedit = d->auto_correct_enabled && not d->text->primaryCandidate().isEmpty();
 
@@ -507,9 +507,9 @@ void AbstractTextEditor::onKeyReleased(const Key &key)
 
     commitPreedit();
 
-    QKeyEvent evPress(QEvent::KeyPress, event_key, Qt::NoModifier, keyText);
+    const QKeyEvent evPress(QEvent::KeyPress, event_key, Qt::NoModifier, keyText);
     sendKeyEvent(evPress);
-    QKeyEvent evRelease(QEvent::KeyRelease, event_key, Qt::NoModifier, keyText);
+    const QKeyEvent evRelease(QEvent::KeyRelease, event_key, Qt::NoModifier, keyText);
     sendKeyEvent(evRelease);
 }
 
@@ -717,7 +717,7 @@ void AbstractTextEditor::autoRepeatWordBackspace()
     Q_D(AbstractTextEditor);
 
     if (d->text->surroundingOffset() > 0) {
-        QString word = wordLeftOfCursor();
+        const QString word = wordLeftOfCursor();
         for (int i=0; i<word.length(); ++i)
             singleBackspace();
     } else {
@@ -741,7 +741,7 @@ QString AbstractTextEditor::wordLeftOfCursor() const
     while (idx >= 0 && !isSeparator(leftSurrounding.at(idx))) {
         --idx;
     }
-    int length = d->text->surroundingOffset() - idx;
+    const int length = d->text->surroundingOffset() - idx;
 
     return leftSurrounding.right(length);
 }
@@ -757,7 +757,7 @@ void AbstractTextEditor::showUserCandidate()
     }
 
     WordCandidateList candidates;
-    WordCandidate candidate(WordCandidate::SourceUser, d->text->preedit());
+    const WordCandidate candidate(WordCandidate::SourceUser, d->text->preedit());
 
     candidates << candidate;
 
@@ -792,7 +792,7 @@ void AbstractTextEditor::singleBackspace()
     Q_D(AbstractTextEditor);
 
     if (d->text->preedit().isEmpty()) {
-        QKeyEvent ev(QEvent::KeyPress, Qt::Key_Backspace, Qt::NoModifier);
+        const QKeyEvent ev(QEvent::KeyPress, Qt::Key_Backspace, Qt::NoModifier);
         sendKeyEvent(ev);
     } else {
         d->text->removeFromPreedit(1);
@@ -834,7 +834,7 @@ void AbstractTextEditor::onCursorPositionChanged(int cursor_position,
         const int cursor_pos_relative_word_begin(r.start - r.cursor_position);
         const int word_begin_relative_cursor_pos(r.cursor_position - r.start);
         const QString word(surrounding_text.mid(r.start, r.length));
-        Replacement word_r(cursor_pos_relative_word_begin, r.length,
+        const Replacement word_r(cursor_pos_relative_word_begin, r.length,
                            word_begin_relative_cursor_pos);
 
         d->text->setPreedit(word, word_begin_relative_cursor_pos);

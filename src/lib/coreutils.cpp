@@ -14,7 +14,7 @@ const char *const g_action_key_id = "actionKey";
 const QString &pluginLanguageDirectory()
 {
     static const QByteArray env_data_directory = qgetenv("LUNEOS_KEYBOARD_DATA_DIR");
-    static QString language_directory = QString::fromUtf8(env_data_directory.isEmpty()
+    const static QString language_directory = QString::fromUtf8(env_data_directory.isEmpty()
                                                             ? LUNEOS_KEYBOARD_DATA_DIR
                                                             : env_data_directory);
 

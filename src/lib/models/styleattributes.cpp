@@ -472,7 +472,7 @@ qreal StyleAttributes::keyWidth(Logic::LayoutHelper::Orientation orientation,
 //! @returns Value of "${style}\${orientation}\key-area-width".
 qreal StyleAttributes::keyAreaWidth(Logic::LayoutHelper::Orientation orientation) const
 {
-    QVariant result(lookup(m_store, orientation,
+    const QVariant result(lookup(m_store, orientation,
                   m_style_name.toLocal8Bit(),
                   QByteArray("key-area-width")));
 

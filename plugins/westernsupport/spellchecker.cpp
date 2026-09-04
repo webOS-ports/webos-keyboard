@@ -265,7 +265,7 @@ void SpellChecker::findWordsAndWatch()
     LSError error;
     LSErrorInit(&error);
 
-    QByteArray payload = "{\"query\":{\"from\":\"" + d->user_dictionary_kind.toUtf8() +
+    const QByteArray payload = "{\"query\":{\"from\":\"" + d->user_dictionary_kind.toUtf8() +
                          "\",\"orderBy\":\"word\"},\"watch\":true}";
 
     if (!LSCall(d->serviceHandle, "luna://com.palm.db/find", payload.constData(),
@@ -284,7 +284,7 @@ void SpellChecker::refreshWords()
     LSError error;
     LSErrorInit(&error);
 
-    QByteArray payload = "{\"query\":{\"from\":\"" +
+    const QByteArray payload = "{\"query\":{\"from\":\"" +
                          d->user_dictionary_kind.toUtf8() + "\",\"orderBy\":\"word\"}}";
 
     if (!LSCall(d->serviceHandle, "luna://com.palm.db/find", payload.constData(),
@@ -305,14 +305,14 @@ bool SpellChecker::findCallback(LSHandle *handle, LSMessage *message, void *user
     if (!payload)
         return true;
 
-    QJsonDocument document = QJsonDocument::fromJson(QByteArray(payload));
-    QJsonObject root = document.object();
+    const QJsonDocument document = QJsonDocument::fromJson(QByteArray(payload));
+    const QJsonObject root = document.object();
 
     if (root.contains("results") && root.value("results").isArray()) {
-        QJsonArray results = root.value("results").toArray();
+        const QJsonArray results = root.value("results").toArray();
         QStringList words;
         for (const QJsonValue &entry : results) {
-            QJsonObject obj = entry.toObject();
+            const QJsonObject obj = entry.toObject();
             if (obj.contains("word") && obj.value("word").isString())
                 words.append(obj.value("word").toString());
         }
@@ -356,7 +356,7 @@ bool SpellChecker::putCallback(LSHandle *handle, LSMessage *message, void *user_
 
     const char *payload = LSMessageGetPayload(message);
     if (payload) {
-        QJsonObject root = QJsonDocument::fromJson(QByteArray(payload)).object();
+        const QJsonObject root = QJsonDocument::fromJson(QByteArray(payload)).object();
         if (!root.value("returnValue").toBool())
             qWarning() << "com.palm.db/put failed:" << payload;
     }
@@ -396,7 +396,7 @@ QStringList SpellChecker::suggest(const QString &word,
         return QStringList();
     }
 
-    char** suggestions = nullptr;
+    char **suggestions = nullptr;
     const int suggestions_count = d->hunspell->suggest(&suggestions, d->codec->fromUnicode(word).toStdString().c_str());
 
     // Less than zero means some error.
@@ -453,7 +453,7 @@ void SpellChecker::addToUserWordlist(const QString &word)
 
     LSError error;
     LSErrorInit(&error);
-    QByteArray payload = "{\"objects\":[{\"_kind\":\"" + d->user_dictionary_kind.toUtf8() +
+    const QByteArray payload = "{\"objects\":[{\"_kind\":\"" + d->user_dictionary_kind.toUtf8() +
                          "\",\"word\":\"" + word.toUtf8() + "\"}]}";
     if (!LSCall(d->serviceHandle, "luna://com.palm.db/put", payload.constData(),
               SpellChecker::putCallback, this, nullptr, &error)) {
@@ -472,7 +472,7 @@ bool SpellChecker::setLanguage(const QString &language)
 
     qDebug() << "spellechecker.cpp in setLanguage() lang=" << language << "dictPath=" << dictPath();
 
-    QDir dictDir(dictPath());
+    const QDir dictDir(dictPath());
     QStringList affMatches = dictDir.entryList(QStringList(language+"*.aff"));
     QStringList dicMatches = dictDir.entryList(QStringList(language+"*.dic"));
 

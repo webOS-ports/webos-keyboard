@@ -281,7 +281,7 @@ public:
         preeditCursorAnchor = -1;
     }
 
-    void truncateEnabledLanguageLocales(QStringList locales)
+    void truncateEnabledLanguageLocales(const QStringList& locales)
     {
         enabledLanguages.clear();
         foreach (QString locale, locales) {

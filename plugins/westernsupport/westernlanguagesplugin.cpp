@@ -85,7 +85,7 @@ bool WesternLanguagesPlugin::setSpellCheckerLanguage(const QString& languageId)
 
 void WesternLanguagesPlugin::_useDatabase(const QString &locale)
 {
-    QString dbFileName = "database_"+locale+".db";
+    const QString dbFileName = "database_"+locale+".db";
     QString fullPath("/usr/share/maliit/plugins/org/luneos/lib/"+locale+"/");
     fullPath.append(dbFileName);
 

@@ -30,6 +30,8 @@
  */
 
 #include "wordengine.h"
+
+#include <utility>
 #include "logic/abstractlanguagefeatures.h"
 
 namespace MaliitKeyboard {
@@ -72,7 +74,7 @@ void appendToCandidates(WordCandidateList *candidates,
         changed_candidate[0] = changed_candidate.at(0).toUpper();
     }
 
-    WordCandidate word_candidate(source, changed_candidate);
+    const WordCandidate word_candidate(source, changed_candidate);
 
     if (not candidates->contains(word_candidate)) {
         candidates->append(word_candidate);
@@ -102,7 +104,7 @@ public:
     explicit WordEnginePrivate();
 
     QString currentPlugin;
-    void loadPlugin(QString pluginName, QString subfolder="en")
+    void loadPlugin(const QString& pluginName, const QString& subfolder="en")
     {
         if (pluginName == currentPlugin)
             return;
@@ -118,7 +120,7 @@ public:
         QLocale::setDefault(QLocale::c());
         setlocale(LC_NUMERIC, "C");
 
-        QDir pluginsDir("/usr/share/maliit/plugins/org/luneos/lib/"+subfolder);
+        const QDir pluginsDir("/usr/share/maliit/plugins/org/luneos/lib/"+subfolder);
 
         pluginLoader.setFileName(pluginsDir.absoluteFilePath(pluginName));
         QObject *plugin = pluginLoader.instance();
@@ -192,7 +194,7 @@ void WordEngine::setWordPredictionEnabled(bool enabled)
     if (enabled == d->use_predictive_text)
         return;
 
-    bool totalEnabled = isEnabled();
+    const bool totalEnabled = isEnabled();
 
     d->use_predictive_text = enabled;
 
@@ -205,7 +207,7 @@ void WordEngine::setWordPredictionEnabled(bool enabled)
 void WordEngine::setSpellcheckerEnabled(bool enabled)
 {
     Q_D(WordEngine);
-    bool totalEnabled = isEnabled();
+    const bool totalEnabled = isEnabled();
 
     d->use_spell_checker = enabled;
 
@@ -220,7 +222,7 @@ void WordEngine::onWordCandidateSelected(QString word)
     Q_D(WordEngine);
 
     if (d->languagePlugin)
-        d->languagePlugin->wordCandidateSelected(word);
+        d->languagePlugin->wordCandidateSelected(std::move(word));
 }
 
 WordCandidateList WordEngine::fetchCandidates(Model::Text *text)
@@ -313,7 +315,7 @@ void WordEngine::onLanguageChanged(const QString &languageId)
     if (!d->languagePlugin)
         return;
 
-    bool ok = d->languagePlugin->setSpellCheckerLanguage(languageId);
+    const bool ok = d->languagePlugin->setSpellCheckerLanguage(languageId);
     if (ok)
         d->languagePlugin->setSpellCheckerEnabled(d->use_spell_checker);
 }

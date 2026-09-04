@@ -58,7 +58,7 @@ namespace {
 
 Qt::ScreenOrientation rotationAngleToScreenOrientation(int angle)
 {
-    bool portraitIsPrimary = QGuiApplication::primaryScreen()->primaryOrientation()
+    const bool portraitIsPrimary = QGuiApplication::primaryScreen()->primaryOrientation()
         == Qt::PortraitOrientation;
 
     switch (angle) {
@@ -343,7 +343,7 @@ void InputMethod::updateAutoCaps()
     bool enabled = d->m_settings.autoCapitalization();
     enabled &= d->contentType == FreeTextContentType;
     bool valid = true;
-    bool autocap = d->host->autoCapitalizationEnabled(valid);
+    const bool autocap = d->host->autoCapitalizationEnabled(valid);
     enabled &= autocap;
 
     if (enabled != d->autocapsEnabled) {
@@ -397,7 +397,7 @@ void InputMethod::updateKey(const QString &key_id,
 
     Q_UNUSED(changed_attributes);
 
-    QMap<QString, SharedOverride>::iterator iter(d->key_overrides.find(key_id));
+    const QMap<QString, SharedOverride>::iterator iter(d->key_overrides.find(key_id));
 
     if (iter != d->key_overrides.end()) {
         const Key &override_key(overrideToKey(iter.value()));
@@ -461,7 +461,7 @@ void InputMethod::update()
 
     QString text;
     int position;
-    bool ok = d->host->surroundingText(text, position);
+    const bool ok = d->host->surroundingText(text, position);
     if (ok) {
         // The application tells us where its cursor is, but never that it
         // moved it, and not every client sends an input context reset when
@@ -537,7 +537,7 @@ void InputMethod::checkInitialAutocaps()
     if (d->autocapsEnabled) {
         QString text;
         int position;
-        bool ok = d->host->surroundingText(text, position);
+        const bool ok = d->host->surroundingText(text, position);
         if (ok && text.isEmpty() && position == 0)
             Q_EMIT activateAutocaps();
     }
@@ -663,7 +663,7 @@ void InputMethod::onVisibleRectChanged()
 {
     Q_D(InputMethod);
 
-    QRect visibleRect = d->m_geometry->visibleRect().toRect();
+    const QRect visibleRect = d->m_geometry->visibleRect().toRect();
 
     qDebug() << "keyboard is reporting <x y w h>: <"
                 << visibleRect.x()

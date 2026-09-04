@@ -174,7 +174,7 @@ StyleAttributes * Style::attributes() const
     Q_D(const Style);
 
     if (d->attributes.isNull()) {
-        Style *s = const_cast<Style *>(this);
+        Style  const*s = const_cast<Style *>(this);
         s->d_ptr->attributes.reset(new StyleAttributes(new QSettings));
     }
 
@@ -190,7 +190,7 @@ StyleAttributes * Style::extendedKeysAttributes() const
     Q_D(const Style);
 
     if (d->extended_keys_attributes.isNull()) {
-        Style *s = const_cast<Style *>(this);
+        Style  const*s = const_cast<Style *>(this);
         s->d_ptr->extended_keys_attributes.reset(new StyleAttributes(new QSettings));
     }
 

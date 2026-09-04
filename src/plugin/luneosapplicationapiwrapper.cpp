@@ -59,7 +59,7 @@ LuneOSApplicationApiWrapper::LuneOSApplicationApiWrapper()
 
 void LuneOSApplicationApiWrapper::startLocalServer()
 {
-    QString socketFilePath = buildSocketFilePath();
+    const QString socketFilePath = buildSocketFilePath();
 
     {
         QFile socketFile(socketFilePath);
@@ -76,7 +76,7 @@ void LuneOSApplicationApiWrapper::startLocalServer()
 
     connect(&m_localServer, &QLocalServer::newConnection,
             this, &LuneOSApplicationApiWrapper::onNewConnection);
-    bool ok = m_localServer.listen(socketFilePath);
+    const bool ok = m_localServer.listen(socketFilePath);
     if (!ok) {
         qWarning() << "LuneOSApplicationApiWrapper: failed to listen for connections on"
                    << socketFilePath;
@@ -138,7 +138,7 @@ void LuneOSApplicationApiWrapper::sendInfoToClientConnection()
     }
 
     const qint64 sharedInfoSize = sizeof(struct SharedInfo);
-    qint64 bytesWritten = m_clientConnection->write(reinterpret_cast<char *>(&m_sharedInfo),
+    const qint64 bytesWritten = m_clientConnection->write(reinterpret_cast<char *>(&m_sharedInfo),
                                                     sharedInfoSize);
 
     if (bytesWritten < 0) {
@@ -178,7 +178,7 @@ void LuneOSApplicationApiWrapper::onClientDisconnected()
 
 QString LuneOSApplicationApiWrapper::buildSocketFilePath() const
 {
-    char *xdgRuntimeDir = getenv("XDG_RUNTIME_DIR");
+    char  const*xdgRuntimeDir = getenv("XDG_RUNTIME_DIR");
 
     if (xdgRuntimeDir) {
         return QDir(xdgRuntimeDir).filePath(gServerName);
