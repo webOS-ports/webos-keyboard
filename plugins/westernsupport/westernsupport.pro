@@ -55,3 +55,11 @@ DEFINES += HAVE_HUNSPELL
 # presage
 LIBS += -lpresage
 DEFINES += HUNSPELL_DICT_PATH=\\\"$$HUNSPELL_DICT_PATH\\\"
+
+# db8, for SpellChecker's user dictionary - see spellchecker.cpp.
+# luna-service2.pc does not expose glib-2.0's cflags to a plain pkg-config
+# query even though lunaservice.h #includes <glib.h> directly - presage hit
+# the identical "fatal error: glib.h: No such file or directory" building
+# Db8Predictor, and needed glib-2.0 requested explicitly there too.
+CONFIG += link_pkgconfig
+PKGCONFIG += luna-service2 glib-2.0

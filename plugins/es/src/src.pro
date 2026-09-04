@@ -43,6 +43,9 @@ OTHER_FILES += \
 
 LIBS += $${TOP_BUILDDIR}/plugins/plugins/libwesternsupport.a -lpresage
 
+CONFIG += link_pkgconfig
+PKGCONFIG += luna-service2 glib-2.0
+
 enable-hunspell {
     # hunspell
     CONFIG += link_pkgconfig
