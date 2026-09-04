@@ -30,11 +30,32 @@
  */
 
 #include "wordengine.h"
+#include "logic/abstractlanguagefeatures.h"
 
 namespace MaliitKeyboard {
 namespace Logic {
 
 namespace {
+
+//! Stand-in for a real plugin's features when no language plugin could be
+//! loaded. WordEngine::languageFeature()'s callers dereference the result
+//! unconditionally, so it has to return something rather than a null.
+class NoLanguageFeatures
+    : public AbstractLanguageFeatures
+{
+public:
+    bool activateAutoCaps(const QString &preedit) const override
+    {
+        Q_UNUSED(preedit)
+        return false;
+    }
+
+    QString appendixForReplacedPreedit(const QString &preedit) const override
+    {
+        Q_UNUSED(preedit)
+        return QString();
+    }
+};
 
 void appendToCandidates(WordCandidateList *candidates,
                         WordCandidate::Source source,
@@ -86,7 +107,12 @@ public:
         if (pluginName == currentPlugin)
             return;
 
+        // unload() destroys the instance and unmaps the library, so anything
+        // still pointing into it dangles from here on. Drop it before the new
+        // load can fail and leave us holding the old, freed plugin.
         pluginLoader.unload();
+        languagePlugin = 0;
+        currentPlugin.clear();
 
         // to avoid hickups in libpresage, libpinyin
         QLocale::setDefault(QLocale::c());
@@ -109,6 +135,14 @@ public:
                 qDebug() << "wordengine.cpp plugin" << pluginName << "loaded";
                 currentPlugin = pluginName;
             }
+        } else {
+            // Same fallback as the failed-cast case above: without it, a
+            // language whose plugin is missing would leave us with none at
+            // all rather than dropping back to English.
+            qCritical() << "wordengine.cpp - loading plugin failed: " + pluginName;
+
+            if (pluginName != DEFAULT_PLUGIN)
+                loadPlugin(DEFAULT_PLUGIN);
         }
     }
 };
@@ -140,7 +174,8 @@ bool WordEngine::isEnabled() const
 {
     Q_D(const WordEngine);
     return (AbstractWordEngine::isEnabled() &&
-            (d->use_predictive_text || d->languagePlugin->spellCheckerEnabled()));
+            (d->use_predictive_text ||
+             (d->languagePlugin && d->languagePlugin->spellCheckerEnabled())));
 }
 
 void WordEngine::setWordPredictionEnabled(bool enabled)
@@ -174,7 +209,8 @@ void WordEngine::setSpellcheckerEnabled(bool enabled)
 
     d->use_spell_checker = enabled;
 
-    d->languagePlugin->setSpellCheckerEnabled(d->use_spell_checker);
+    if (d->languagePlugin)
+        d->languagePlugin->setSpellCheckerEnabled(d->use_spell_checker);
     if(totalEnabled != isEnabled())
         Q_EMIT enabledChanged(isEnabled());
 }
@@ -183,7 +219,8 @@ void WordEngine::onWordCandidateSelected(QString word)
 {
     Q_D(WordEngine);
 
-    d->languagePlugin->wordCandidateSelected(word);
+    if (d->languagePlugin)
+        d->languagePlugin->wordCandidateSelected(word);
 }
 
 WordCandidateList WordEngine::fetchCandidates(Model::Text *text)
@@ -194,7 +231,7 @@ WordCandidateList WordEngine::fetchCandidates(Model::Text *text)
     const QString &preedit(text->preedit());
     const bool is_preedit_capitalized(not preedit.isEmpty() && preedit.at(0).isUpper());
 
-    if (d->use_predictive_text) {
+    if (d->use_predictive_text && d->languagePlugin) {
 
         d->languagePlugin->parse(text->surroundingLeft(), preedit);
         const QStringList suggestions = d->languagePlugin->getWordCandidates();
@@ -205,7 +242,8 @@ WordCandidateList WordEngine::fetchCandidates(Model::Text *text)
     }
 
     // spell checking
-    const bool correct_spelling(d->languagePlugin->spell(preedit));
+    const bool correct_spelling(d->languagePlugin ? d->languagePlugin->spell(preedit)
+                                                  : true);
 
     if (candidates.isEmpty() and not correct_spelling) {
         Q_FOREACH(const QString &correction, d->languagePlugin->spellCheckerSuggest(preedit, 5)) {
@@ -227,7 +265,8 @@ WordCandidateList WordEngine::fetchCandidates(Model::Text *text)
 void WordEngine::addToUserDictionary(const QString &word)
 {
     Q_D(WordEngine);
-    d->languagePlugin->addToSpellCheckerUserWordList(word);
+    if (d->languagePlugin)
+        d->languagePlugin->addToSpellCheckerUserWordList(word);
 }
 
 void WordEngine::onLanguageChanged(const QString &languageId)
@@ -271,6 +310,9 @@ void WordEngine::onLanguageChanged(const QString &languageId)
     else
         d->loadPlugin(DEFAULT_PLUGIN);
 
+    if (!d->languagePlugin)
+        return;
+
     bool ok = d->languagePlugin->setSpellCheckerLanguage(languageId);
     if (ok)
         d->languagePlugin->setSpellCheckerEnabled(d->use_spell_checker);
@@ -279,6 +321,12 @@ void WordEngine::onLanguageChanged(const QString &languageId)
 AbstractLanguageFeatures* WordEngine::languageFeature()
 {
     Q_D(WordEngine);
+
+    if (!d->languagePlugin) {
+        static NoLanguageFeatures no_features;
+        return &no_features;
+    }
+
     return d->languagePlugin->languageFeature();
 }
 
