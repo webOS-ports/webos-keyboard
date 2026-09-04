@@ -493,9 +493,19 @@ void AbstractTextEditor::onKeyReleased(const Key &key)
         break;
     }
 
-    if (event_key != Qt::Key_unknown) {
-        commitPreedit();
+    if (event_key == Qt::Key_unknown) {
+        // Nothing left to hand to the application. The keys that produce text
+        // -- inserts, space, backspace -- have already gone out above as a
+        // preedit, a commit or a backspace of their own, and the rest (close,
+        // layout switches, modifiers) are ours alone. Sending an unknown key
+        // on top of that only produces a key event the application cannot act
+        // on, and one "No conversion from Qt::Key" warning per keystroke from
+        // the framework, which has to map it to a keysym to pass it on.
+        return;
     }
+
+    commitPreedit();
+
     QKeyEvent evPress(QEvent::KeyPress, event_key, Qt::NoModifier, keyText);
     sendKeyEvent(evPress);
     QKeyEvent evRelease(QEvent::KeyRelease, event_key, Qt::NoModifier, keyText);
