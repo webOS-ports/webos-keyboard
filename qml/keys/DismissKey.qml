@@ -31,6 +31,8 @@ ActionKey {
     weight: 1
 
     PressArea {
+        // cFirstRepeatLongDelay: harder to open the size menu by accident
+        holdDelay: longHoldDelay
         anchors.fill: parent
         onlyExclusive: true
 

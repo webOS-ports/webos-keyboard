@@ -25,5 +25,7 @@ ActionKey {
     iconNormal: "backspace";
     iconShifted: "backspace";
     iconCapsLock: "backspace";
-    action: "backspace";
+    /* repeatChar(): wordDelete = isShiftDown() || elapsed > cWordDeleteDelay.
+       Holding shift deletes whole words straight away rather than after 1850ms. */
+    action: UI.currentShiftState === "NORMAL" ? "backspace" : "backspaceWord";
 }

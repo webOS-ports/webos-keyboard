@@ -391,7 +391,8 @@ void AbstractTextEditor::onKeyPressed(const Key &key)
         d->repeating_action = key.action();
         d->repeating_key = key;
 
-        if (key.action() == Key::ActionBackspace) {
+        if (key.action() == Key::ActionBackspace
+            or key.action() == Key::ActionBackspaceWord) {
             d->backspace_sent = false;
             d->backspace_hold_timer.restart();
         }
@@ -407,6 +408,7 @@ void AbstractTextEditor::onKeyPressed(const Key &key)
 bool AbstractTextEditor::canRepeat(Key::Action action)
 {
     return action == Key::ActionBackspace
+        || action == Key::ActionBackspaceWord
         || action == Key::ActionSpace
         || action == Key::ActionLeft
         || action == Key::ActionRight;
@@ -457,6 +459,7 @@ void AbstractTextEditor::onKeyReleased(const Key &key)
         }
     } break;
 
+    case Key::ActionBackspaceWord:
     case Key::ActionBackspace: {
         if (not d->backspace_sent) {
             singleBackspace();
@@ -735,6 +738,12 @@ void AbstractTextEditor::commitPreedit()
 void AbstractTextEditor::autoRepeatBackspace()
 {
     Q_D(AbstractTextEditor);
+
+    // Shift held: whole words from the first repeat, not after backspace_word_delay.
+    if (d->repeating_action == Key::ActionBackspaceWord) {
+        autoRepeatWordBackspace();
+        return;
+    }
 
     if (d->repeating_action != Key::ActionBackspace) {
         // Space and the arrows repeat by simply being sent again.

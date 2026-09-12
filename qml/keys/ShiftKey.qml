@@ -84,35 +84,19 @@ ActionKey {
             }
         }
 
-        // Add double-click management
-        signal doubleClicked();
-        Timer {
-            id: doubleClickTimer
-            interval: 300; running: false; repeat: false
-        }
+        /* There used to be a second double-click path here, on its own 300ms timer,
+           racing the one above. The timing above is the reference's
+           DOUBLE_TAP_DURATION and it handles the unlock case, so this only keeps the
+           part the other handler did not cover: a press arriving from a slide onto
+           the shift key still shifts. */
         onPressed: {
-            if(!afterMove) {
-                if (doubleClickTimer.running) {
-                    doubleClicked();
-                    doubleClickTimer.stop();
-                }
-                else {
-                    doubleClickTimer.start();
-                }
-            }
-            else {
-                /* even if the press is due to a move on the shift area, go to Shifted mode */
-                if (UI.currentShiftState === "NORMAL")
-                    UI.currentShiftState = "SHIFTED";
-            }
-            UI.isShiftKeyPressed =  true;
+            if (afterMove && UI.currentShiftState === "NORMAL")
+                UI.currentShiftState = "SHIFTED";
+
+            UI.isShiftKeyPressed = true;
         }
         onReleased: {
-            UI.isShiftKeyPressed =  false;
-        }
-
-        onDoubleClicked: {
-            UI.currentShiftState = "CAPSLOCK"
+            UI.isShiftKeyPressed = false;
         }
 
         Connections {
