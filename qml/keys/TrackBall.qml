@@ -24,7 +24,15 @@ import LunaNext.Common 0.1
 Item {
     id: trackBall
 
-    height: 45
+    /* Reference: the trackball occupies a full 2-unit cell on the number row
+       (TabletKeymap en.h: KEY_1(2, cKey_Trackball)) and the slider pixmap is drawn
+       centred inside it. The cell is the touch target; the artwork stays 45px. */
+    property real weight: 2
+    property real keyUnit: UI.keyWidth
+
+    width: keyUnit * weight
+    height: parent ? parent.height : 45
+
     property Item highlightedKey;
 
     Item {

@@ -21,7 +21,7 @@ import QtQuick 2.0
 import keys 1.0
 
 ActionKey {
-    width: UI.keyWidth;
+    weight: 1
     iconNormal: "backspace";
     iconShifted: "backspace";
     iconCapsLock: "backspace";

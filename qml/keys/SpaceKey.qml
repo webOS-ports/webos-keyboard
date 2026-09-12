@@ -27,5 +27,9 @@ ActionKey {
     imgNormal: UI.imageSpaceKey
     imgPressed: UI.imageSpaceKeyPressed
 
+    // SPACE_SIZE is 5 on tablet and SPACE_KEY_WEIGHT 4 on phone, less any key
+    // flanking it. Converted layouts set this explicitly.
+    weight: 1
+
     action: "space"
 }

@@ -34,8 +34,9 @@ CharKey {
     alignTextRight: false
     property int padding: UI.actionKeyPadding
 
-    // action keys are a bit wider
-    width: UI.keyWidth + Units.gu( padding )
+    // Width comes from the row weight, as in the reference keymaps. padding is
+    // kept only because a few layouts still set it; it no longer affects width.
+    width: keyUnit * weight
 
     imgNormal: UI.imageBlackKey
     imgPressed: UI.imageBlackKeyPressed

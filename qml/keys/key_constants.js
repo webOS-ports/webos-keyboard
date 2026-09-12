@@ -30,10 +30,13 @@ var keyHeightRatio = [ { "name": "XS", "ratio" : 0.7147058877 },	/* 243 / 768 ba
                        { "name":  "M", "ratio" : 1.0 },         	/* 340 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
                        { "name":  "L", "ratio" : 1.15588236 } ];	/* 393 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
 
-var topRowKeyHeightRatio = [ { "name": "XS", "ratio" : 0.82 },	/* 243 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
-                       { "name":  "S", "ratio" : 0.74 }, 	/* (340+243 / 2)  / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
-                       { "name":  "M", "ratio" : 0.74 },         	/* 340 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
-                       { "name":  "L", "ratio" : 0.74 } ];	/* 393 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
+/* Golden reference: TabletKeyboard sets row 0 from key-gray-short.png (110/2 = 55px)
+   and rows 1-4 from key-white.png (140/2 = 70px). The ratio is a property of the
+   artwork, so it is the same for every keyboard size: 55 / 70 = 0.785714. */
+var topRowKeyHeightRatio = [ { "name": "XS", "ratio" : 0.785714286 },
+                       { "name":  "S", "ratio" : 0.785714286 },
+                       { "name":  "M", "ratio" : 0.785714286 },
+                       { "name":  "L", "ratio" : 0.785714286 } ];
 
 var numKeyWidthRatio       =   [ { "name": "XS", "ratio" : 0.925 },	/* 243 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
                        { "name":  "S", "ratio" : 0.925 }, 	/* (340+243 / 2)  / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
@@ -149,7 +152,7 @@ var imageShiftLockKey    = { "tablet" : "../images/tablet/key_bg_shift.png",
 var imageShiftLockKeyPressed    = { "tablet" : "../images/tablet/key_bg_shift_active.png",
                                     "phone"  : "../images/phone/key_bg_shift_active.png"  };
 
-var top_margin = 1.1;  // gu
+var top_margin = 0.5;  // gu - golden keyboardTopPading is 4/5/5/6px for XS/S/M/L
 var bottom_margin = 0; // gu
 
-var wordribbonHeight = 5; //gu
+var wordribbonHeight = 5.5; //gu - golden candidate bar is a fixed 55px (key-gray-short.png / 2)

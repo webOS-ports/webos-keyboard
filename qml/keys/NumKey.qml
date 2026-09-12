@@ -24,9 +24,13 @@ AnnotatedKey {
     id: key
 
     property int padding: 0
+
+    /* The reference number row declares its own weight sum (12 for a row of ten
+       digits plus the 2-unit trackball), so a digit is a plain 1-unit key. Layouts
+       that still use the single global unit keep the old approximation. */
     property real keyWidth: UI.keyWidth * UI.numKeyWidthRatio
 
-    width: keyWidth
+    width: unitFromRow ? keyUnit * weight : keyWidth
     height: parent.height
 
     useHorizontalLayout: true

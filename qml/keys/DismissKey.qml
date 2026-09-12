@@ -28,7 +28,7 @@ ActionKey {
     iconShifted: "icon-hide-keyboard"
     iconCapsLock: "icon-hide-keyboard"
 
-    width: UI.keyWidth;
+    weight: 1
 
     PressArea {
         anchors.fill: parent

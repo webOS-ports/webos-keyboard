@@ -27,7 +27,9 @@ ActionKey {
     action: "symbols";
 
     fontSize: UI.xsFontSize;
-    width: UI.keyWidth //* 2
+    // 2 units in the reference keymaps, split 1 + 1 when a language key is shown.
+    // Converted layouts set this explicitly; 1 keeps the legacy layouts unchanged.
+    weight: 1
     
     PressArea {
         anchors.fill: parent
