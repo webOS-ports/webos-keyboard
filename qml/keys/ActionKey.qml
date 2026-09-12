@@ -70,13 +70,19 @@ CharKey {
     Text {
         id: keyLabel
         text: (UI.currentShiftState === "NORMAL") ? label : shifted;
-        anchors.verticalCenter: parent.verticalCenter
+        anchors.verticalCenter: (alignTextRight && !thumbKeyboard) ? undefined : parent.verticalCenter
         anchors.verticalCenterOffset: thumbKeyboard ? (action === "keyLeft" || action === "keyRight" ) ? Units.gu(-0.4) : Units.gu(-0.25) : Units.gu(0);
+        anchors.bottom: (alignTextRight && !thumbKeyboard) ? parent.bottom : undefined
+        anchors.bottomMargin: (alignTextRight && !thumbKeyboard) ? actionKeyRoot.height * 0.2 : undefined
         anchors.right: alignTextRight ? parent.right : undefined
-        anchors.rightMargin: alignTextRight ? thumbKeyboard ? UI.keyWidth / 12 : UI.keyWidth / 4 : undefined
+        /* The reference shrinks the Return key's box to 85% of the width and 80% of
+           the height and aligns the label bottom-right inside it. */
+        anchors.rightMargin: alignTextRight ? (thumbKeyboard ? UI.keyWidth / 12
+                                                             : actionKeyRoot.width * 0.15)
+                                            : undefined
         anchors.horizontalCenter: !alignTextRight ? parent.horizontalCenter : undefined
         font.family: UI.fontFamily
-        font.pixelSize: FontUtils.sizeToPixels(fontSize);
+        font.pixelSize: UI.labelFontPx;
         font.bold: UI.fontBoldAction
         style: Text.Raised
         styleColor: "black"

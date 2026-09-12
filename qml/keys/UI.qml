@@ -53,6 +53,54 @@ QtObject {
         
     property variant keyboardSizeChoices: DesignConstants.keyHeightRatio.map(function(obj) {return obj.name});
 
+    /* Key height in pixels. keyHeight itself is in grid units; mixing the two was
+       the reason the glyph offsets below drifted. */
+    property real keyHeightPx: Units.gu(keyHeight);
+
+    /* drawKeyCap's sizing rule: start from the cap, then clamp to half the key
+       height so a short key still fits its glyph. */
+    function __capped(gu) {
+        return Math.min(Units.gu(gu), Math.floor((keyHeightPx + 1) / 2));
+    }
+    property real charFontPx: __capped(DesignConstants.charFontCap[formFactor]);
+    property real dualFontPx: __capped(DesignConstants.dualFontCap);
+    property real labelFontPx: Math.min(dualFontPx, Units.gu(DesignConstants.labelFontCap));
+    property real elipsisFontPx: Units.gu(DesignConstants.elipsisFontCap);
+    property real boostFontPx: Units.gu(DesignConstants.boostFontSize);
+    property string boostedGlyphs: DesignConstants.boostedGlyphs;
+
+    /* Where the two glyphs sit on a dual-label key. The reference trims 4px off the
+       bottom of the key, splits what is left into thirds, puts the alt glyph in the
+       top third and the primary in the bottom one - +9px and -14px from the centre
+       of a 70px key. The horizontal variant used on the number row splits the key
+       into halves instead. */
+    property real dualPrimaryOffset: keyHeightPx * 0.128571;
+    property real dualAltOffset: -keyHeightPx * 0.2;
+    property real singleGlyphOffset: -Units.gu(0.2);
+    property real dualPrimaryFactor: 0.206;
+    property real dualAltFactor: -0.217;
+
+    /* The "..." hint sits 9px in from the right and bottom edges. */
+    property real elipsisMargin: Units.gu(0.9);
+
+    property real popupFontPx: Units.gu(DesignConstants.popupFontCap);
+    property real popupFontPxLong: Units.gu(DesignConstants.popupFontCapLong);
+    property int popupLongAt: DesignConstants.popupLongAt;
+    property real previewFontPx: Units.gu(DesignConstants.previewFontCap);
+
+    function popupGlyphFontPx(text) {
+        return (text && text.length >= popupLongAt) ? popupFontPxLong : popupFontPx;
+    }
+
+    function glyphFontPx(text, isDual) {
+        var size = isDual ? dualFontPx : charFontPx;
+        if (text && text.length > 1)
+            return labelFontPx;
+        if (text && text.length === 1 && boostedGlyphs.indexOf(text) >= 0)
+            return size + boostFontPx;
+        return size;
+    }
+
     property string fontSize: DesignConstants.fontSize[formFactor];
     property string thumbFontSize: DesignConstants.thumbFontSize;
     property string thumbAnnotationFontSize: DesignConstants.thumbAnnotationFontSize;

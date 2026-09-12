@@ -157,7 +157,7 @@ Item {
                     anchors.verticalCenterOffset: Units.gu(-0.15)
                     text: modelData
                     font.family: UI.fontFamily
-                    font.pixelSize: text.length > 2 ? FontUtils.sizeToPixels(UI.smallFontSize) : FontUtils.sizeToPixels(UI.fontSize)
+                    font.pixelSize: UI.popupGlyphFontPx(text)
                     font.bold: false //UI.fontBold
                     color: key.highlight ? UI.extendedHighLightColor : UI.extendedFontColor
                 }

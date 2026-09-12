@@ -43,6 +43,34 @@ var numKeyWidthRatio       =   [ { "name": "XS", "ratio" : 0.925 },	/* 243 / 768
                        { "name":  "M", "ratio" : 0.925 },         	/* 340 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
                        { "name":  "L", "ratio" : 0.925 } ];	/* 393 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
 
+/* Glyph sizes come from {Tablet,Phone}Keyboard::drawKeyCap, which starts at a
+   fixed pixel size and only shrinks it to half the key height when the key is too
+   short to hold it. The caps are expressed in grid units so they still scale with
+   density: at the TouchPad's gridUnit of 10 they are exactly the reference
+   26 / 24 / 22 / 14 px.
+
+     charFontCap   a key showing one glyph              26px tablet, 24px phone
+     dualFontCap   a key showing a glyph and its alt    24px
+     labelFontCap  a multi-character label ("Tab")      22px
+     elipsisFontCap  the "..." extended-keys hint       14px */
+var charFontCap     =   {"tablet" : 2.6, "phone" : 2.4};  // gu
+var dualFontCap     =   2.4;                              // gu
+var labelFontCap    =   2.2;                              // gu
+var elipsisFontCap  =   1.4;                              // gu
+
+/* The extended-keys popup: cPopupFontSize is 22px, dropping to 22 - 8 once the
+   label runs to six characters or more. The magnified preview on phone is the
+   "extra large" case, 32px and bold. */
+var popupFontCap      =   2.2;                            // gu
+var popupFontCapLong  =   1.4;                            // gu
+var popupLongAt       =   6;                              // characters
+var previewFontCap    =   3.2;                            // gu
+
+/* boostSize(): the reference adds 2px to '. , ; : \' "' so they do not look lost
+   next to a letter. */
+var boostedGlyphs   =   ".,;:'\"";
+var boostFontSize   =   0.2;                              // gu
+
 var fontSize        =   {"tablet" : "22pt",
                          "phone"  : "16pt"};
 
@@ -51,11 +79,13 @@ var thumbAnnotationFontSize   =   "10pt";
 
 var fontFamily      =   "Prelude";
 
-var fontColor       =   {"tablet" : "#141414",
-                         "phone"  : "#FFFFFF"};
+var fontColor       =   {"tablet" : "#141414",   /* cActiveColor, tablet */
+                         "phone"  : "#D2D2D2"};  /* cActiveColor, phone  */
 
+/* drawKeyCap only sets bold for multi-character function-key labels and for the
+   magnified preview, never for a plain letter. */
 var fontBold        =   {"tablet" : false,
-                         "phone"  : true};
+                         "phone"  : false};
 
 var fontBoldAction  =   true
 
@@ -64,8 +94,8 @@ var annotationFontSize = {"tablet" : "14pt",
 
 var annotationMargins = 0.7; // gu
 
-var annotationFontColor = {"tablet" : "#646464",
-                           "phone"  : "#646464"};
+var annotationFontColor = {"tablet" : "#646464",   /* cDisabledColor, tablet */
+                           "phone"  : "#808080"};  /* cDisabledColor, phone  */
 
 var magnifierFontColor = {"tablet" : "#141414",
                            "phone"  : "#141414"};
