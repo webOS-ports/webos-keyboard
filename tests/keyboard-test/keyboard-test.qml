@@ -43,9 +43,12 @@ Rectangle {
     property int wantedWidth: keyboardLoader.width
     property int wantedHeight: keyboardLoader.height
 
+    /*! Defaults if nothing is passed on the command line: the TouchPad profile,
+        English, size M, the plain qwerty layout. */
+    readonly property int defaultEnv: 4   // tenderloin - 1024x768, gridUnit 10
+
     Component.onCompleted: {
-        if (stubs.startEnv >= 0)
-            Settings.currentTestEnv = stubs.startEnv;
+        Settings.currentTestEnv = stubs.startEnv >= 0 ? stubs.startEnv : defaultEnv;
     }
 
     Rectangle {
@@ -108,7 +111,17 @@ Rectangle {
                     id: inputtextarea
                     anchors.horizontalCenter: parent.horizontalCenter
                     text: "Last received text from keyboard: " + stubs.lastKey
-                    font.bold:true
+                    font.bold: true
+                    color: "white"
+                }
+                Text {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    color: "#b0b8c4"
+                    text: Settings.currentTestEnvName
+                          + "  ·  " + maliit_input_method.activeLanguage
+                          + "  ·  size " + maliit_input_method.keyboardSize
+                          + "  ·  " + maliit_input_method.keyboardLayout
+                          + "  ·  " + UI.formFactor
                 }
                 Button {
                     anchors.horizontalCenter: parent.horizontalCenter
@@ -144,6 +157,32 @@ Rectangle {
                     }
                 }
             }
+        }
+    }
+
+    /* The keyboard reports its own height through maliit_geometry. If that stays at
+       nothing, the pad failed to build - almost always a QML error in the layout or
+       in one of the key components, which the console will have printed. Say so on
+       screen rather than showing an empty strip. */
+    Rectangle {
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        height: 64
+        z: 100
+        color: "#7a1d16"
+        visible: keyboardLoader.status === Loader.Ready
+                 && maliit_geometry.visibleRect.height < 40
+
+        Text {
+            anchors.centerIn: parent
+            width: parent.width - 40
+            horizontalAlignment: Text.AlignHCenter
+            wrapMode: Text.WordWrap
+            color: "white"
+            font.bold: true
+            text: "The keyboard built with no height (" + maliit_geometry.visibleRect.height
+                  + "px). Check the console for a QML error in the layout or in qml/keys."
         }
     }
 

@@ -60,13 +60,13 @@ KeyPad {
         KeyRow {
             height: keyHeight
 
-            CharKey { label: "й"; shifted: "Й"; extended: ["й", "ї"]; extendedShifted: ["Й", "Ї"] }
+            CharKey { label: "\u0439"; shifted: "\u0419"; extended: ["\u0439", "\u0457"]; extendedShifted: ["\u0419", "\u0407"] }
             CharKey { label: "ц"; shifted: "Ц" }
             CharKey { label: "у"; shifted: "У"; extended: ["ў"]; extendedShifted: ["Ў"] }
             CharKey { label: "к"; shifted: "К" }
-            CharKey { label: "е"; shifted: "Е"; extended: ["е", "ё"]; extendedShifted: ["Е", "Ё"] }
+            CharKey { label: "\u0435"; shifted: "\u0415"; extended: ["\u0435", "\u0451"]; extendedShifted: ["\u0415", "\u0401"] }
             CharKey { label: "н"; shifted: "Н" }
-            CharKey { label: "г"; shifted: "Г"; extended: ["г", "ґ"]; extendedShifted: ["Г", "Ґ"] }
+            CharKey { label: "\u0433"; shifted: "\u0413"; extended: ["\u0433", "\u0491"]; extendedShifted: ["\u0413", "\u0490"] }
             CharKey { label: "ш"; shifted: "Ш" }
             CharKey { label: "щ"; shifted: "Щ" }
             CharKey { label: "з"; shifted: "З" }
@@ -79,7 +79,7 @@ KeyPad {
             height: keyHeight
 
             CharKey { label: "ф"; shifted: "Ф" }
-            CharKey { label: "ы"; shifted: "Ы"; extended: ["ы", "і"]; extendedShifted: ["Ы", "І"] }
+            CharKey { label: "\u044b"; shifted: "\u042b"; extended: ["\u044b", "\u0456"]; extendedShifted: ["\u042b", "\u0406"] }
             CharKey { label: "в"; shifted: "В" }
             CharKey { label: "а"; shifted: "А" }
             CharKey { label: "п"; shifted: "П" }
@@ -88,7 +88,7 @@ KeyPad {
             CharKey { label: "л"; shifted: "Л" }
             CharKey { label: "д"; shifted: "Д" }
             CharKey { label: "ж"; shifted: "Ж" }
-            CharKey { label: "э"; shifted: "Э"; extended: ["э", "є"]; extendedShifted: ["Э", "Є"] }
+            CharKey { label: "\u044d"; shifted: "\u042d"; extended: ["\u044d", "\u0454"]; extendedShifted: ["\u042d", "\u0404"] }
             ReturnKey { weight: 1.5; label: "Enter"; shifted: "Enter"; alignTextRight: true }
         }
 
@@ -103,7 +103,7 @@ KeyPad {
             CharKey { label: "м"; shifted: "М" }
             CharKey { label: "и"; shifted: "И" }
             CharKey { label: "т"; shifted: "Т" }
-            CharKey { label: "ь"; shifted: "Ь"; extended: ["ь", "ъ"]; extendedShifted: ["Ь", "Ъ"] }
+            CharKey { label: "\u044c"; shifted: "\u042c"; extended: ["\u044c", "\u044a"]; extendedShifted: ["\u042c", "\u042a"] }
             CharKey { label: "б"; shifted: "Б" }
             CharKey { label: "ю"; shifted: "Ю" }
             AnnotatedKey { label: "."; shifted: "?"; extended: [".", "?", "•", "…", "¿"]; extendedShifted: [".", "?", "•", "…", "¿"] }
@@ -138,7 +138,7 @@ KeyPad {
                 LanguageKey    { id: languageMenuButtonEmail }
                 UrlKey         { label: "@"; shifted: "@" }
                 SpaceKey       { weight: 3 }
-                UrlKey { label: ".ua"; extended: [".ua",".su",".kg",".рф","укр",".by",".tj"] }
+                UrlKey { label: ".ru"; extended: [".ua",".su",".kg",".рф","укр",".by",".tj"] }
                 AnnotatedKey { label: "'"; shifted: "\""; extended: ["'", "\"", "`", "‘", "’", "“", "”", "«", "»"]; extendedShifted: ["'", "\"", "`", "‘", "’", "“", "”", "«", "»"] }
                 AnnotatedKey { label: "-"; shifted: "_"; extended: ["-", "_", "±", "¬"]; extendedShifted: ["-", "_", "±", "¬"] }
                 DismissKey     { }
@@ -156,7 +156,7 @@ KeyPad {
                 LanguageKey    { id: languageMenuButtonUrl }
                 CharKey { imgNormal: UI.imageGreyKey; imgPressed: UI.imageGreyKeyPressed; label: "/"; shifted: "/"; extended: ["http://", "https://", "www."] }
                 SpaceKey       { weight: 3 }
-                UrlKey { label: ".ua"; extended: [".ua",".su",".kg",".рф","укр",".by",".tj"] }
+                UrlKey { label: ".ru"; extended: [".ua",".su",".kg",".рф","укр",".by",".tj"] }
                 AnnotatedKey { label: "'"; shifted: "\""; extended: ["'", "\"", "`", "‘", "’", "“", "”", "«", "»"]; extendedShifted: ["'", "\"", "`", "‘", "’", "“", "”", "«", "»"] }
                 AnnotatedKey { label: "-"; shifted: "_"; extended: ["-", "_", "±", "¬"]; extendedShifted: ["-", "_", "±", "¬"] }
                 DismissKey     { }
@@ -165,6 +165,7 @@ KeyPad {
 
         Loader {
             width: parent.width
+
             sourceComponent: currentContentType === 0 ? contentTypeNormal :
                              currentContentType === 3 ? contentTypeEmail : contentTypeUrl
         }

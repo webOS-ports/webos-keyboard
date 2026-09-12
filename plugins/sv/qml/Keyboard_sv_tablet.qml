@@ -165,6 +165,7 @@ KeyPad {
 
         Loader {
             width: parent.width
+
             sourceComponent: currentContentType === 0 ? contentTypeNormal :
                              currentContentType === 3 ? contentTypeEmail : contentTypeUrl
         }
