@@ -1,0 +1,57 @@
+# Qt Creator
+.qtcreator/
+*.pro.user
+*.pro.user.*
+*.qmlproject.user
+*.qmlproject.user.*
+CMakeLists.txt.user*
+.qtc_clangd/
+
+# Out-of-source build directories, including the ones Qt Creator names after the
+# kit (build/Desktop_Qt_6_11_1_Debug and friends).
+/build/
+build-*/
+tests/keyboard-test/build/
+
+# qmake
+Makefile
+Makefile.*
+!Makefile.am
+.qmake.stash
+.qmake.cache
+*.pri.user
+object_script.*
+
+# Build output
+*.o
+*.obj
+*.lo
+*.la
+*.so
+*.so.*
+*.a
+*.dylib
+*.dll
+*.exe
+moc_*.cpp
+moc_*.h
+moc_predefs.h
+qrc_*.cpp
+ui_*.h
+*_plugin_import.cpp
+*.qmltypes
+qmldir.copy
+
+# The desktop preview binary, if it is built in-tree
+/tests/keyboard-test/keyboard-test
+
+# Prediction databases, generated from plugins/*/src/*.txt at build time
+database_*.db
+
+# Editors and OS
+*~
+*.swp
+*.swo
+.DS_Store
+.vscode/
+.idea/
