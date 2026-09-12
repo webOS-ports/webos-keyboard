@@ -188,9 +188,7 @@ Rectangle {
                         implicitHeight: 30
                         enabled: __layouts.length > 1
                         readonly property var __layouts:
-                            stubs.altLayouts[maliit_input_method.activeLanguage] !== undefined
-                            ? stubs.altLayouts[maliit_input_method.activeLanguage]
-                            : [ "LuneOS" ]
+                            stubs.layoutsFor(maliit_input_method.activeLanguage)
                         text: __layouts.length > 1
                               ? "Layout: " + maliit_input_method.keyboardLayout
                               : "Layout: LuneOS (no alternatives)"

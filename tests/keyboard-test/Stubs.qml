@@ -47,12 +47,15 @@ QtObject {
         "it", "nl", "no", "pl", "pt", "ru", "sv", "uk", "zh"
     ]
 
-    /*! Alternative layouts, per language. An entry missing here means the language
-        only has the plain one. */
+    /*! Alternative layouts, per language. Every language has a split thumb layout;
+        Dvorak only exists where it means something. */
     readonly property var altLayouts: {
         "en": [ "LuneOS", "Dvorak", "Thumb" ],
-        "sv": [ "LuneOS", "Dvorak" ],
-        "ru": [ "LuneOS", "Thumb" ]
+        "sv": [ "LuneOS", "Dvorak", "Thumb" ]
+    }
+
+    function layoutsFor(lang) {
+        return altLayouts[lang] !== undefined ? altLayouts[lang] : [ "LuneOS", "Thumb" ];
     }
 
     property QtObject maliit_input_method: QtObject {

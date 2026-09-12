@@ -30,7 +30,7 @@ KeyPad {
 
     content: c1
     symbols: "languages/Keyboard_symbols_tablet.qml"
-    alternativeLayouts: [ "Dvorak" ]
+    alternativeLayouts: [ "Dvorak", "Thumb" ]
 
     Column {
         id: c1

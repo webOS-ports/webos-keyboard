@@ -28,6 +28,7 @@ KeyPad {
 
     content: c1
     symbols: "languages/Keyboard_symbols_tablet.qml"
+    alternativeLayouts: [ "Thumb" ]
 
     Column {
         id: c1
