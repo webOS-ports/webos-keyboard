@@ -103,7 +103,7 @@ KeyPad {
                 AnnotatedKey { weight: 1.5; label: ","; shifted: "/" }
                 SpaceKey       { weight: 5 }
                 AnnotatedKey { weight: 1.5; label: "."; shifted: "." }
-                ReturnKey      { label: "Enter"; shifted: "Enter"; weight: 1.5 }
+                ReturnKey      { weight: 1.5 }
             }
         }
 
@@ -119,7 +119,7 @@ KeyPad {
                 SpaceKey       { weight: 3 }
                 UrlKey { label: ".ru"; extended: [".ru", ".ua", ".su", ".kg", ".рф", ".укр", ".by", ".tj"] }
                 AnnotatedKey { weight: 1.5; label: "."; shifted: "." }
-                ReturnKey      { label: "Enter"; shifted: "Enter"; weight: 1.5 }
+                ReturnKey      { weight: 1.5 }
             }
         }
 
@@ -135,7 +135,7 @@ KeyPad {
                 SpaceKey       { weight: 3 }
                 UrlKey { label: ".ru"; extended: [".ru", ".ua", ".su", ".kg", ".рф", ".укр", ".by", ".tj"] }
                 AnnotatedKey { weight: 1.5; label: "."; shifted: "." }
-                ReturnKey      { label: "Enter"; shifted: "Enter"; weight: 1.5 }
+                ReturnKey      { weight: 1.5 }
             }
         }
 

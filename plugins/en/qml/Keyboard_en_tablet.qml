@@ -84,7 +84,7 @@ KeyPad {
             CharKey { label: "j"; shifted: "J"; }
             CharKey { label: "k"; shifted: "K"; }
             CharKey { label: "l"; shifted: "L"; extended: ["l", "ł", "ĺ"]; extendedShifted: ["L", "Ł", "Ĺ"]; }
-            ReturnKey { id: enterKey; label: "Enter"; shifted: "Enter"; alignTextRight: true; }
+            ReturnKey { id: enterKey; alignTextRight: true; }
         }
 
         // KEY_1(1, Qt::Key_Shift) + US_QWERTY_LOW_9(1) + KEY_1(1, Qt::Key_Shift)

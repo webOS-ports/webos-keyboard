@@ -92,7 +92,7 @@ KeyPad {
             CharKey { label: "д"; shifted: "Д" }
             CharKey { label: "ж"; shifted: "Ж" }
             CharKey { label: "є"; shifted: "Є"; extended: ["є", "е"]; extendedShifted: ["Є", "Е"] }
-            ReturnKey { weight: 1.5; label: "Enter"; shifted: "Enter"; alignTextRight: true }
+            ReturnKey { weight: 1.5; alignTextRight: true }
         }
 
         // Shift, bottom row, Shift  [sum 12.5]

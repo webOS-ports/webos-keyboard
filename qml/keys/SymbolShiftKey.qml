@@ -36,10 +36,13 @@ ActionKey {
         onlyExclusive: true
 
         onKeyPressed: {
-            if (UI.currentSymbolState === "CHARACTERS")
+            if (UI.currentSymbolState === "CHARACTERS") {
                 UI.currentSymbolState = "SYMBOLS";
-            else
+                // symbolMode = eSymbolMode_Lock, shiftMode = eShiftMode_Off
+                UI.currentShiftState = "NORMAL";
+            } else {
                 UI.currentSymbolState = "CHARACTERS";
+            }
         }
     }
 }

@@ -89,7 +89,7 @@ KeyPad {
             CharKey { label: "д"; shifted: "Д" }
             CharKey { label: "ж"; shifted: "Ж" }
             CharKey { label: "э"; shifted: "Э" }
-            ReturnKey { weight: 1.5; label: "Enter"; shifted: "Enter"; alignTextRight: true }
+            ReturnKey { weight: 1.5; alignTextRight: true }
         }
 
         // KEY_1(1, Shift) + RU_QWERTY_LOW(1) + KEY_1(1.5, Shift)  [sum 12.5]

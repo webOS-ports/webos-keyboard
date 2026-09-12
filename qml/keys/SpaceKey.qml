@@ -21,8 +21,14 @@ import QtQuick 2.0
 import keys 1.0
 
 ActionKey {
-    label: " ";
-    shifted: " ";
+    /* drawKeyCap opens with
+         if (key == Qt::Key_Space) text = m_candidateBar.autoSelectCandidate();
+       so the space bar shows the word that pressing it would commit. The action,
+       not the label, is what gets sent, so this is safe to display. */
+    label: maliit_input_method.primaryCandidate;
+    shifted: label;
+
+    fontSize: UI.smallFontSize;
 
     imgNormal: UI.imageSpaceKey
     imgPressed: UI.imageSpaceKeyPressed

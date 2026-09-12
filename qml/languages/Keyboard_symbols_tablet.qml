@@ -85,7 +85,7 @@ KeyPad {
             CharKey { label: "°"; shifted: "°"; }
             CharKey { label: ";"; shifted: ";"; }
             CharKey { label: ":"; shifted: ":"; }
-            ReturnKey { id: enterKey; label: "Enter"; shifted: "Enter"; alignTextRight: true; }
+            ReturnKey { id: enterKey; alignTextRight: true; }
         }
 
         // alt of US_QWERTY_LOW_9: the seven webOS emoticons, then comma and period

@@ -70,6 +70,11 @@ QtObject {
         property string keyboardSize: "M"
         property string keyboardLayout: "LuneOS"
         property variant enabledLanguages: [ "en" ]
+
+        //! What the space bar shows: the word pressing it would commit.
+        property string primaryCandidate: ""
+        //! What the application asked the Return key to say; empty means "Enter".
+        property string actionKeyLabel: ""
     }
 
     property QtObject maliit_geometry: QtObject {

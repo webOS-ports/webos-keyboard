@@ -108,7 +108,7 @@ KeyPad {
                       imgNormal: UI.imageGreyKey; imgPressed: UI.imageGreyKeyPressed
                       extended: ["•", "…", "±", "¬", "¦", "µ", "¤"]
                       extendedShifted: ["•", "…", "±", "¬", "¦", "µ", "¤"] }
-            ReturnKey { label: "Enter"; shifted: "Enter"; weight: 1.5 }
+            ReturnKey { weight: 1.5 }
         }
     } // column
 }

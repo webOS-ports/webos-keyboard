@@ -96,7 +96,7 @@ KeyPad {
             CharKey { label: "é"; shifted: "É"; extended: ["é", "è", "ê", "ë"]; extendedShifted: ["É", "È", "Ê", "Ë"] }
             CharKey { label: "á"; shifted: "Á"; extended: ["á", "à", "â", "ä"]; extendedShifted: ["Á", "À", "Â", "Ä"] }
             CharKey { label: "ű"; shifted: "Ű"; extended: ["ű", "ü", "ú", "ù"]; extendedShifted: ["Ű", "Ü", "Ú", "Ù"] }
-            ReturnKey { weight: 1.5; label: "Enter"; shifted: "Enter"; alignTextRight: true }
+            ReturnKey { weight: 1.5; alignTextRight: true }
         }
 
         // Shift, bottom row, Shift  [sum 12.5]

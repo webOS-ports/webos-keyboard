@@ -90,7 +90,7 @@ KeyPad {
             CharKey { label: "l"; shifted: "L"; extended: ["l", "ł"]; extendedShifted: ["L", "Ł"] }
             CharKey { label: "ö"; shifted: "Ö" }
             CharKey { label: "ä"; shifted: "Ä" }
-            ReturnKey { weight: 1; label: "Enter"; shifted: "Enter" }
+            ReturnKey { weight: 1; }
         }
 
         // KEY_1(0.8, Shift) + SE_QWERTY_LOW_9(1) + KEY_1(2, Shift)  [sum 11.8]

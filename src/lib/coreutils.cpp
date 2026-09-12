@@ -11,6 +11,11 @@ const char *const g_action_key_id = "actionKey";
 
 } // unnamed namespace
 
+const char *actionKeyId()
+{
+    return g_action_key_id;
+}
+
 const QString &pluginLanguageDirectory()
 {
     static const QByteArray env_data_directory = qgetenv("LUNEOS_KEYBOARD_DATA_DIR");

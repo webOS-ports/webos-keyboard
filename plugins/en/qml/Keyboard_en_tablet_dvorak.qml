@@ -84,7 +84,7 @@ KeyPad {
             CharKey { label: "t"; shifted: "T"; extended: ["t", "™", "þ"]; extendedShifted: ["T", "™", "Þ"] }
             CharKey { label: "n"; shifted: "N"; extended: ["n", "ñ", "ń"]; extendedShifted: ["N", "Ñ", "Ń"] }
             CharKey { label: "s"; shifted: "S"; extended: ["s", "š", "ş", "ß", "σ", "$"]; extendedShifted: ["S", "Š", "Ş", "ß", "Σ", "$"] }
-            ReturnKey { weight: 1.5; label: "Enter"; shifted: "Enter" }
+            ReturnKey { weight: 1.5; }
         }
 
         // KEY_1(1, Shift) + US_DVORAK_LOW_8(1) + KEY_1(1, Shift)  [sum 11]

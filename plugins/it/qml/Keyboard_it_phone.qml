@@ -100,7 +100,7 @@ KeyPad {
                 AnnotatedKey { weight: 1.5; label: ","; shifted: "/" }
                 SpaceKey       { weight: 4 }
                 AnnotatedKey { weight: 1.5; label: "."; shifted: "." }
-                ReturnKey      { label: "Enter"; shifted: "Enter"; weight: 1.5 }
+                ReturnKey      { weight: 1.5 }
             }
         }
 
@@ -116,7 +116,7 @@ KeyPad {
                 SpaceKey       { weight: 2 }
                 UrlKey { label: ".com"; shifted: ".com" }
                 AnnotatedKey { weight: 1.5; label: "."; shifted: "." }
-                ReturnKey      { label: "Enter"; shifted: "Enter"; weight: 1.5 }
+                ReturnKey      { weight: 1.5 }
             }
         }
 
@@ -132,7 +132,7 @@ KeyPad {
                 SpaceKey       { weight: 2 }
                 UrlKey { label: ".com"; shifted: ".com" }
                 AnnotatedKey { weight: 1.5; label: "."; shifted: "." }
-                ReturnKey      { label: "Enter"; shifted: "Enter"; weight: 1.5 }
+                ReturnKey      { weight: 1.5 }
             }
         }
 

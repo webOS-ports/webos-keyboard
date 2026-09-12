@@ -104,7 +104,7 @@ KeyPad {
                 AnnotatedKey   { label: ","; shifted: "/"; weight: 1.5; extended: [",", "/", "\\"]; extendedShifted: [",", "/", "\\"]; }
                 SpaceKey       { weight: 4 }
                 AnnotatedKey   { label: "."; shifted: "?"; weight: 1.5; extended: [".", "?", "•", "…", "¿"]; extendedShifted: [".", "?", "•", "…", "¿"]; }
-                ReturnKey      { label: "Enter"; shifted: "Enter"; weight: 1.5 }
+                ReturnKey      { weight: 1.5 }
             }
         }
 
@@ -122,7 +122,7 @@ KeyPad {
                 SpaceKey       { weight: 2 }
                 UrlKey         { label: ".com"; shifted: ".com"; extended: [".com", ".net", ".edu", ".org", ".co.uk"]; }
                 AnnotatedKey   { label: "."; shifted: "?"; weight: 1.5; extended: [".", "?", "•", "…", "¿"]; extendedShifted: [".", "?", "•", "…", "¿"]; }
-                ReturnKey      { label: "Enter"; shifted: "Enter"; weight: 1.5 }
+                ReturnKey      { weight: 1.5 }
             }
         }
 
@@ -140,7 +140,7 @@ KeyPad {
                 SpaceKey       { weight: 2 }
                 UrlKey         { label: ".com"; shifted: ".com"; extended: [".com", ".net", ".edu", ".org", ".co.uk"]; }
                 AnnotatedKey   { label: "."; shifted: "?"; weight: 1.5; extended: [".", "?", "•", "…", "¿"]; extendedShifted: [".", "?", "•", "…", "¿"]; }
-                ReturnKey      { label: "Enter"; shifted: "Enter"; weight: 1.5 }
+                ReturnKey      { weight: 1.5 }
             }
         }
 

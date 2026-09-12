@@ -104,7 +104,7 @@ KeyPad {
                 AnnotatedKey   { label: ","; shifted: "/"; weight: 1.5; extended: [",", "/", "\\"]; extendedShifted: [",", "/", "\\"] }
                 SpaceKey       { weight: 6 }
                 AnnotatedKey   { label: "."; shifted: "?"; weight: 1.5; extended: [".", "?", "\u2022", "\u2026", "\u00bf"]; extendedShifted: [".", "?", "\u2022", "\u2026", "\u00bf"] }
-                ReturnKey      { label: "Enter"; shifted: "Enter"; weight: 1.5 }
+                ReturnKey      { weight: 1.5 }
             }
         }
 
@@ -119,7 +119,7 @@ KeyPad {
                 SpaceKey       { weight: 4 }
                 UrlKey         { label: ".ua"; shifted: ".ua" }
                 AnnotatedKey   { label: "."; shifted: "?"; weight: 1.5; extended: [".", "?", "\u2022", "\u2026", "\u00bf"]; extendedShifted: [".", "?", "\u2022", "\u2026", "\u00bf"] }
-                ReturnKey      { label: "Enter"; shifted: "Enter"; weight: 1.5 }
+                ReturnKey      { weight: 1.5 }
             }
         }
 
@@ -134,7 +134,7 @@ KeyPad {
                 SpaceKey       { weight: 4 }
                 UrlKey         { label: ".ua"; shifted: ".ua" }
                 AnnotatedKey   { label: "."; shifted: "?"; weight: 1.5; extended: [".", "?", "\u2022", "\u2026", "\u00bf"]; extendedShifted: [".", "?", "\u2022", "\u2026", "\u00bf"] }
-                ReturnKey      { label: "Enter"; shifted: "Enter"; weight: 1.5 }
+                ReturnKey      { weight: 1.5 }
             }
         }
 

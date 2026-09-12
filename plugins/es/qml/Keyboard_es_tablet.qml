@@ -92,7 +92,7 @@ KeyPad {
             CharKey { label: "k"; shifted: "K" }
             CharKey { label: "l"; shifted: "L"; extended: ["l", "ł", "ĺ"]; extendedShifted: ["L", "Ł", "Ĺ"] }
             CharKey { label: "ñ"; shifted: "Ñ" }
-            ReturnKey { weight: 1.5; label: "Enter"; shifted: "Enter" }
+            ReturnKey { weight: 1.5; }
         }
 
         // Shift, letters at one unit, Shift  [sum 11.5]

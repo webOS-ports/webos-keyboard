@@ -47,7 +47,11 @@ Item {
     property int currentlyAssignedKeyY: currentlyAssignedKey ? currentlyAssignedKey.y : 0
     property int currentlyAssignedKeyWidth: currentlyAssignedKey ? currentlyAssignedKey.width : 0
 
-    property int numberOfLines: Math.ceil(keyRepeater.count / 4)
+    /* cPopupSingleLineMax: up to five entries stay on one line, more break into two.
+       We were wrapping at four, so a five-entry popup came out two rows deep. */
+    readonly property int maxKeysOnOneLine: 5
+    property int numberOfLines: keyRepeater.count > maxKeysOnOneLine ? 2 : 1
+    property int keysPerLine: Math.ceil(keyRepeater.count / numberOfLines)
 
     onCurrentlyAssignedKeyXChanged: if(currentlyAssignedKey) __repositionPopoverTo(currentlyAssignedKey);
     onCurrentlyAssignedKeyYChanged: if(currentlyAssignedKey) __repositionPopoverTo(currentlyAssignedKey)
@@ -81,7 +85,7 @@ Item {
     Item {
         id: popoverBackground
 
-        width: Math.max(popover.keyWidth * (keyRepeater.count <=4 ? keyRepeater.count : 4), rowOfKeys.width + 10*2)
+        width: Math.max(popover.keyWidth * popover.keysPerLine, rowOfKeys.width + 10*2)
         height: ((Units.gu(3.0) + numberOfLines * popover.keyHeight))
 
         Row {
@@ -127,7 +131,7 @@ Item {
         id: rowOfKeys
         anchors.centerIn: popoverBackground
         anchors.verticalCenterOffset: -5
-        width: Math.min(keyRepeater.count, 4) * popover.keyWidth
+        width: popover.keysPerLine * popover.keyWidth
 
         Repeater {
             id: keyRepeater

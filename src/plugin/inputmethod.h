@@ -54,6 +54,13 @@ class InputMethod
     Q_PROPERTY(QString keyboardSize READ keyboardSize WRITE setKeyboardSize NOTIFY keyboardSizeChanged)
     Q_PROPERTY(QString keyboardLayout READ keyboardLayout WRITE setKeyboardLayout NOTIFY keyboardLayoutChanged)
     Q_PROPERTY(bool useAudioFeedback READ useAudioFeedback NOTIFY useAudioFeedbackChanged)
+    //! The word that pressing space would commit. drawKeyCap paints this on the
+    //! space bar: "if (key == Qt::Key_Space) text = m_candidateBar.autoSelectCandidate()".
+    Q_PROPERTY(QString primaryCandidate READ primaryCandidate NOTIFY primaryCandidateChanged)
+    //! Label the application asked for on the Return key, through Maliit's
+    //! "actionKey" override - the equivalent of the reference's
+    //! PalmIME::EditorState::enterKeyLabel. Empty means plain "Enter".
+    Q_PROPERTY(QString actionKeyLabel READ actionKeyLabel NOTIFY actionKeyLabelChanged)
 
 public:
     /// Same as Maliit::TextContentType but usable in QML
@@ -107,6 +114,8 @@ public:
     const QStringList &enabledLanguages() const;
 
     const QString &activeLanguage() const;
+    QString primaryCandidate() const;
+    QString actionKeyLabel() const;
     Q_SLOT void setActiveLanguage(const QString& newLanguage);
 
     const QString &keyboardSize() const;	
@@ -117,6 +126,7 @@ public:
 
     Q_SLOT void updateWindowMask();
     Q_SLOT void onVisibleRectChanged();
+    Q_SLOT void onWordCandidatesChanged();
     bool useAudioFeedback() const;
 
 Q_SIGNALS:
@@ -125,6 +135,8 @@ Q_SIGNALS:
     void enabledLanguagesChanged(QStringList languages);
     void activeLanguageChanged(QString language);
     void useAudioFeedbackChanged();
+    void primaryCandidateChanged(const QString &primaryCandidate);
+    void actionKeyLabelChanged(const QString &actionKeyLabel);
     void wordEngineEnabledChanged(bool wordEngineEnabled);
     void wordRibbonEnabledChanged(bool wordRibbonEnabled);
     void windowGeometryRectChanged(QRect rect);

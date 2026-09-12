@@ -97,6 +97,17 @@ int main(int argc, char *argv[])
                        "language key appear, which splits the symbol key."),
         QStringLiteral("list"));
     parser.addOption(languagesOption);
+    const QCommandLineOption candidateOption(
+        QStringLiteral("candidate"),
+        QStringLiteral("Word for the space bar to show, as the reference paints the "
+                       "auto-select candidate there."),
+        QStringLiteral("word"));
+    parser.addOption(candidateOption);
+    const QCommandLineOption enterOption(
+        QStringLiteral("enter-label"),
+        QStringLiteral("Label the application asks for on Return, e.g. Go or Search."),
+        QStringLiteral("text"));
+    parser.addOption(enterOption);
     parser.process(app);
 
     const QString here = QStringLiteral(KEYBOARD_TEST_DIR);
@@ -135,6 +146,10 @@ int main(int argc, char *argv[])
         im->setProperty("keyboardLayout", parser.value(layoutOption));
     if (parser.isSet(contentOption))
         im->setProperty("contentType", parser.value(contentOption).toInt());
+    if (parser.isSet(candidateOption))
+        im->setProperty("primaryCandidate", parser.value(candidateOption));
+    if (parser.isSet(enterOption))
+        im->setProperty("actionKeyLabel", parser.value(enterOption));
     if (parser.isSet(languagesOption))
         im->setProperty("enabledLanguages",
                         parser.value(languagesOption).split(QLatin1Char(',')));

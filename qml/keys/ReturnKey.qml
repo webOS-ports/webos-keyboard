@@ -21,6 +21,13 @@ import QtQuick 2.0
 import keys 1.0
 
 ActionKey {
+    /* The application can name this key through Maliit's "actionKey" override -
+       "Go", "Search", "Send" - which is what PalmIME::EditorState::enterKeyLabel
+       carried in the reference. Empty means a plain "Enter". */
+    label: maliit_input_method.actionKeyLabel.length > 0
+           ? maliit_input_method.actionKeyLabel : "Enter";
+    shifted: label;
+
     weight: 1.5
     action: "return"
     fontSize: UI.xsFontSize;

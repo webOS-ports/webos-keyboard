@@ -113,7 +113,7 @@ KeyPad {
                 AnnotatedKey { id: dotKey; label: "."; shifted: ","; extended: [".", ","]; extendedShifted: [".", ","]; width: Units.gu(3.9); anchors.right: arrowLeftKey.left; thumbKeyboard: true;}
                 ActionKey {id: arrowLeftKey; label: "←"; shifted: "←"; action: "keyLeft"; width: Units.gu(3.9); thumbKeyboard: true; anchors.right: arrowRightKey.left;}
                 ActionKey {id: arrowRightKey; label: "→"; shifted: "→";action: "keyRight"; width: Units.gu(3.9); thumbKeyboard: true;  anchors.right: enterKey.left;}
-                ReturnKey { id: enterKey; label: "Enter"; shifted: "Enter"; alignTextRight: true; anchors.right: parent.right; width: Units.gu(7.8); thumbKeyboard: true;}
+                ReturnKey { id: enterKey; alignTextRight: true; anchors.right: parent.right; width: Units.gu(7.8); thumbKeyboard: true;}
             }
         }
         Component {
@@ -136,7 +136,7 @@ KeyPad {
                 AnnotatedKey { id: dotKey; label: "."; shifted: ","; extended: [".", ","]; extendedShifted: [".", ","]; width: Units.gu(3.9); anchors.right: arrowLeftKey.left; thumbKeyboard: true;}
                 ActionKey {id: arrowLeftKey; label: "←"; shifted: "←"; action: "keyLeft"; width: Units.gu(3.9); thumbKeyboard: true; anchors.right: arrowRightKey.left;}
                 ActionKey {id: arrowRightKey; label: "→"; shifted: "→";action: "keyRight"; width: Units.gu(3.9); thumbKeyboard: true;  anchors.right: enterKey.left;}
-                ReturnKey { id: enterKey; label: "Enter"; shifted: "Enter"; alignTextRight: true; anchors.right: parent.right; width: Units.gu(7.8); thumbKeyboard: true;}
+                ReturnKey { id: enterKey; alignTextRight: true; anchors.right: parent.right; width: Units.gu(7.8); thumbKeyboard: true;}
             }
         }
         Component {
@@ -159,7 +159,7 @@ KeyPad {
                 AnnotatedKey { id: dotKey; label: "."; shifted: ","; extended: [".", ","]; extendedShifted: [".", ","]; width: Units.gu(3.9); anchors.right: arrowLeftKey.left; thumbKeyboard: true;}
                 ActionKey {id: arrowLeftKey; label: "←"; shifted: "←"; action: "keyLeft"; width: Units.gu(3.9); thumbKeyboard: true; anchors.right: arrowRightKey.left;}
                 ActionKey {id: arrowRightKey; label: "→"; shifted: "→";action: "keyRight"; width: Units.gu(3.9); thumbKeyboard: true;  anchors.right: enterKey.left;}
-                ReturnKey { id: enterKey; label: "Enter"; shifted: "Enter"; alignTextRight: true; anchors.right: parent.right; width: Units.gu(7.8); thumbKeyboard: true;}
+                ReturnKey { id: enterKey; alignTextRight: true; anchors.right: parent.right; width: Units.gu(7.8); thumbKeyboard: true;}
             }
         }
         Loader {

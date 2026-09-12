@@ -87,7 +87,7 @@ KeyPad {
             CharKey { label: "k"; shifted: "K" }
             CharKey { label: "l"; shifted: "L"; extended: ["l", "ł", "ĺ"]; extendedShifted: ["L", "Ł", "Ĺ"] }
             CharKey { label: "m"; shifted: "M"; extended: ["m", "μ"]; extendedShifted: ["M", "Μ"] }
-            ReturnKey { weight: 1; label: "Enter"; shifted: "Enter" }
+            ReturnKey { weight: 1; }
         }
 
         // KEY_1(1, Shift) + FR_AZERTY_LOW_9(1) + KEY_1(1.5, Shift)  [sum 11.5]

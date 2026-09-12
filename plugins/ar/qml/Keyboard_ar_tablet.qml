@@ -93,7 +93,7 @@ KeyPad {
             CharKey { label: "م" }
             CharKey { label: "ك" }
             CharKey { label: "د" }
-            ReturnKey { weight: 1.5; label: "Enter"; shifted: "Enter" }
+            ReturnKey { weight: 1.5; }
         }
 
         // Shift, letters at one unit, Shift  [sum 11.5]

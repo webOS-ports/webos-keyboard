@@ -43,12 +43,13 @@ namespace MaliitKeyboard {
 //! \fn EditorOptions::EditorOptions()
 //! \brief Constructor.
 //!
-//! Sets backspace_auto_repeat_delay to 500 miliseconds and backspace_auto_repeat_interval to 300 miliseconds.
+//! Uses the reference keyboard's timings: 350ms before the first repeat, 120ms
+//! between repeats, and backspace escalating to whole words after 1850ms.
 
-//! \var EditorOptions::backspace_auto_repeat_delay
+//! \var EditorOptions::auto_repeat_delay
 //! \brief Delay before first automatically repeated key in miliseconds.
 
-//! \var EditorOptions::backspace_auto_repeat_interval
+//! \var EditorOptions::auto_repeat_interval
 //! \brief Interval between automatically repeated key in miliseconds.
 
 //! \class AbstractTextEditor
@@ -262,10 +263,10 @@ bool extractWordBoundariesAtCursor(const QString& surrounding_text,
 } // unnamed namespace
 
 EditorOptions::EditorOptions()
-    : backspace_auto_repeat_delay(500)
-    , backspace_auto_repeat_interval(200)
-    , backspace_word_delay(3000)
-    , backspace_word_interval(400)
+    : auto_repeat_delay(350)          // cFirstRepeatDelay
+    , auto_repeat_interval(120)       // cLetterDeleteRepeatDelay
+    , backspace_word_delay(1850)      // cWordDeleteDelay: cFirstRepeatDelay + 1500
+    , backspace_word_interval(275)    // cWordDeleteRepeatDelay
 {}
 
 class AbstractTextEditorPrivate
@@ -274,6 +275,13 @@ public:
     QTimer auto_repeat_backspace_timer;
     QElapsedTimer backspace_hold_timer;
     bool backspace_sent;
+    //! canRepeat() covers space, backspace and the two arrows; this is the one
+    //! currently held, or ActionInsert when nothing is repeating.
+    Key::Action repeating_action;
+    Key repeating_key;
+    //! Set while autoRepeatBackspace() is re-sending a key, so the release
+    //! handler does not mistake that for the user letting go.
+    bool in_auto_repeat;
     EditorOptions options;
     QScopedPointer<Model::Text> text;
     QScopedPointer<Logic::AbstractWordEngine> word_engine;
@@ -293,6 +301,8 @@ AbstractTextEditorPrivate::AbstractTextEditorPrivate(const EditorOptions &new_op
                                                      Model::Text *new_text,
                                                      Logic::AbstractWordEngine *new_word_engine)
     : auto_repeat_backspace_timer()
+    , repeating_action(Key::ActionInsert)
+    , in_auto_repeat(false)
     , backspace_sent(false)
     , options(new_options)
     , text(new_text)
@@ -377,11 +387,29 @@ void AbstractTextEditor::onKeyPressed(const Key &key)
         return;
     }
 
-    if (key.action() == Key::ActionBackspace) {
-        d->backspace_sent = false;
-        d->auto_repeat_backspace_timer.start(d->options.backspace_auto_repeat_delay);
-        d->backspace_hold_timer.restart();
+    if (canRepeat(key.action())) {
+        d->repeating_action = key.action();
+        d->repeating_key = key;
+
+        if (key.action() == Key::ActionBackspace) {
+            d->backspace_sent = false;
+            d->backspace_hold_timer.restart();
+        }
+
+        d->auto_repeat_backspace_timer.start(d->options.auto_repeat_delay);
     }
+}
+
+//! \brief Keys the reference keyboard repeats while they are held.
+//!
+//! TabletKeyboard::canRepeat(): space, backspace and the two horizontal arrows.
+//! Everything else fires once, however long it is held.
+bool AbstractTextEditor::canRepeat(Key::Action action)
+{
+    return action == Key::ActionBackspace
+        || action == Key::ActionSpace
+        || action == Key::ActionLeft
+        || action == Key::ActionRight;
 }
 
 //! \brief Reacts to key release.
@@ -398,6 +426,13 @@ void AbstractTextEditor::onKeyReleased(const Key &key)
 
     if (not d->valid()) {
         return;
+    }
+
+    // A real release ends the repeat; a synthesised one from the repeat timer
+    // must not.
+    if (not d->in_auto_repeat and canRepeat(key.action())) {
+        d->auto_repeat_backspace_timer.stop();
+        d->repeating_action = Key::ActionInsert;
     }
 
     const QString key_label = key.label();
@@ -428,6 +463,7 @@ void AbstractTextEditor::onKeyReleased(const Key &key)
         }
 
         d->auto_repeat_backspace_timer.stop();
+        d->repeating_action = Key::ActionInsert;
     } break;
 
     case Key::ActionSpace: {
@@ -524,7 +560,7 @@ void AbstractTextEditor::onKeyEntered(const Key &key)
 
     if (key.action() == Key::ActionBackspace) {
         d->backspace_sent = false;
-        d->auto_repeat_backspace_timer.start(d->options.backspace_auto_repeat_delay);
+        d->auto_repeat_backspace_timer.start(d->options.auto_repeat_delay);
     }
 }
 
@@ -700,9 +736,20 @@ void AbstractTextEditor::autoRepeatBackspace()
 {
     Q_D(AbstractTextEditor);
 
+    if (d->repeating_action != Key::ActionBackspace) {
+        // Space and the arrows repeat by simply being sent again.
+        if (canRepeat(d->repeating_action)) {
+            d->in_auto_repeat = true;
+            onKeyReleased(d->repeating_key);
+            d->in_auto_repeat = false;
+            d->auto_repeat_backspace_timer.start(d->options.auto_repeat_interval);
+        }
+        return;
+    }
+
     if (d->backspace_hold_timer.elapsed() < d->options.backspace_word_delay) {
         singleBackspace();
-        d->auto_repeat_backspace_timer.start(d->options.backspace_auto_repeat_interval);
+        d->auto_repeat_backspace_timer.start(d->options.auto_repeat_interval);
     } else {
         autoRepeatWordBackspace();
     }

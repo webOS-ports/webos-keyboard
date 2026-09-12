@@ -39,16 +39,36 @@ ActionKey {
         compatibleWithPopover: true
         property bool keySentDuringShiftState: false;
 
+        /* Caps lock is a double tap within DOUBLE_TAP_DURATION, not a long press.
+           The unlock case records its time so that a quick tap straight after
+           unlocking is swallowed rather than locking again immediately - without
+           that, unlocking and carrying on typing re-locks. */
+        readonly property int doubleTapDuration: 500
+        property double lastShiftTime: 0
+        property double lastUnlockTime: 0
+
         onKeyPressed: {
             keySentDuringShiftState = false; // reset state
 
-            if (UI.currentShiftState === "NORMAL")
+            var now = new Date().getTime();
+
+            if (lastUnlockTime + doubleTapDuration > now) {
+                // quick tap after unlocking: eat it, and start over
+                lastUnlockTime = 0;
+                now = 0;
+            } else if (lastShiftTime + doubleTapDuration > now) {
+                UI.currentShiftState = "CAPSLOCK";
+            } else if (UI.currentShiftState === "CAPSLOCK") {
+                UI.currentShiftState = "NORMAL";
+                lastUnlockTime = now;
+            } else if (UI.currentShiftState === "NORMAL") {
                 UI.currentShiftState = "SHIFTED";
+            } else {
+                UI.currentShiftState = "NORMAL";
+            }
 
-            else if (UI.currentShiftState === "SHIFTED" || UI.currentShiftState === "CAPSLOCK")
-                UI.currentShiftState = "NORMAL"
-
-            UI.isShiftKeyPressed =  true;
+            lastShiftTime = now;
+            UI.isShiftKeyPressed = true;
         }
 
         onKeyPressedAndHold: {

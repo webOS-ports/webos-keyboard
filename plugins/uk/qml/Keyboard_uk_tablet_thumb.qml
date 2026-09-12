@@ -127,7 +127,7 @@ KeyPad {
                 AnnotatedKey   { id: dotKey; label: "."; shifted: ","; extended: [".", ","]; extendedShifted: [".", ","]; width: Units.gu(3.9); anchors.right: arrowLeftKey.left; thumbKeyboard: true }
                 ActionKey      { id: arrowLeftKey; label: "\u2190"; shifted: "\u2190"; action: "keyLeft"; width: Units.gu(3.9); anchors.right: arrowRightKey.left; thumbKeyboard: true }
                 ActionKey      { id: arrowRightKey; label: "\u2192"; shifted: "\u2192"; action: "keyRight"; width: Units.gu(3.9); anchors.right: enterKey.left; thumbKeyboard: true }
-                ReturnKey      { id: enterKey; label: "Enter"; shifted: "Enter"; alignTextRight: true; width: Units.gu(7.8); anchors.right: parent.right; thumbKeyboard: true }
+                ReturnKey      { id: enterKey; alignTextRight: true; width: Units.gu(7.8); anchors.right: parent.right; thumbKeyboard: true }
             }
         }
         Component {
@@ -150,7 +150,7 @@ KeyPad {
                 AnnotatedKey   { id: dotKey; label: "."; shifted: ","; extended: [".", ","]; extendedShifted: [".", ","]; width: Units.gu(3.9); anchors.right: arrowLeftKey.left; thumbKeyboard: true }
                 ActionKey      { id: arrowLeftKey; label: "\u2190"; shifted: "\u2190"; action: "keyLeft"; width: Units.gu(3.9); anchors.right: arrowRightKey.left; thumbKeyboard: true }
                 ActionKey      { id: arrowRightKey; label: "\u2192"; shifted: "\u2192"; action: "keyRight"; width: Units.gu(3.9); anchors.right: enterKey.left; thumbKeyboard: true }
-                ReturnKey      { id: enterKey; label: "Enter"; shifted: "Enter"; alignTextRight: true; width: Units.gu(7.8); anchors.right: parent.right; thumbKeyboard: true }
+                ReturnKey      { id: enterKey; alignTextRight: true; width: Units.gu(7.8); anchors.right: parent.right; thumbKeyboard: true }
             }
         }
         Component {
@@ -173,7 +173,7 @@ KeyPad {
                 AnnotatedKey   { id: dotKey; label: "."; shifted: ","; extended: [".", ","]; extendedShifted: [".", ","]; width: Units.gu(3.9); anchors.right: arrowLeftKey.left; thumbKeyboard: true }
                 ActionKey      { id: arrowLeftKey; label: "\u2190"; shifted: "\u2190"; action: "keyLeft"; width: Units.gu(3.9); anchors.right: arrowRightKey.left; thumbKeyboard: true }
                 ActionKey      { id: arrowRightKey; label: "\u2192"; shifted: "\u2192"; action: "keyRight"; width: Units.gu(3.9); anchors.right: enterKey.left; thumbKeyboard: true }
-                ReturnKey      { id: enterKey; label: "Enter"; shifted: "Enter"; alignTextRight: true; width: Units.gu(7.8); anchors.right: parent.right; thumbKeyboard: true }
+                ReturnKey      { id: enterKey; alignTextRight: true; width: Units.gu(7.8); anchors.right: parent.right; thumbKeyboard: true }
             }
         }
 
