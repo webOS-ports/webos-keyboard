@@ -36,8 +36,11 @@ HEADERS += \
     spellchecker.h
 
 
-target.path = $${LUNEOS_KEYBOARD_LIB_DIR}
-INSTALLS += target
+# Deliberately not installed. This is a staticlib: every language plugin links
+# it out of the build tree ($${TOP_BUILDDIR}/plugins/plugins/libwesternsupport.a,
+# see e.g. plugins/en/src/src.pro), so the installed copy never had a consumer
+# and was just riding along to the device - 5.2 MB of link-time archive under
+# /usr/share/maliit/plugins/org/luneos/lib/ on every image.
 
 # for plugins
 API_HEADERS = westernlanguagesplugin.h
