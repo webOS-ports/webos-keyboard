@@ -24,6 +24,17 @@ back undefined, every ratio lookup in `key_constants.js` missed, and each key wa
 properties to a context property of the same name. All the faked behaviour stays in
 `Stubs.qml`, so it can be changed without rebuilding.
 
+## Defaults
+
+With no arguments: the **tenderloin** profile (TouchPad, 1024x768, gridUnit 10 -
+the device the reference sizes were measured on), **English**, size **M**, the
+plain **qwerty** layout. The panel above the keyboard shows which of those are
+live.
+
+If the keyboard area comes up empty, a red banner says so: it means the pad built
+with no height, which is almost always a QML error in the layout or in `qml/keys`,
+and the console will have printed it.
+
 ## Options
 
     --env <index>       device profile from SettingsStub.testEnvs:

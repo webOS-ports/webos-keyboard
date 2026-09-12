@@ -18,6 +18,7 @@
 
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Controls.Basic as B
 
 import LunaNext.Common 0.1
 import keys 1.0
@@ -86,73 +87,142 @@ Rectangle {
     }
 
 
+    // The simulated application area above the keyboard.
     Rectangle {
         anchors.fill: parent
         anchors.bottomMargin: maliit_geometry.visibleRect.height
 
-        border {
-            color: "black"
-            width: 10
-        }
-        color: "midnightblue"
+        border { color: "black"; width: 10 }
+        color: "#14183a"
         clip: true
 
         Flickable {
+            id: controlFlick
             anchors.fill: parent
-            anchors.margins: 50
-
+            anchors.margins: 12
+            anchors.rightMargin: 20
+            contentHeight: controlCard.height + 24
             flickableDirection: Flickable.VerticalFlick
+            boundsBehavior: Flickable.StopAtBounds
+            ScrollBar.vertical: B.ScrollBar { policy: ScrollBar.AlwaysOn }
 
-            Column {
-                anchors.top: parent.top
-                anchors.left: parent.left
-                anchors.right: parent.right
-                Text {
-                    id: inputtextarea
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    text: "Last received text from keyboard: " + stubs.lastKey
-                    font.bold: true
-                    color: "white"
-                }
-                Text {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    color: "#b0b8c4"
-                    text: Settings.currentTestEnvName
-                          + "  ·  " + maliit_input_method.activeLanguage
-                          + "  ·  size " + maliit_input_method.keyboardSize
-                          + "  ·  " + maliit_input_method.keyboardLayout
-                          + "  ·  " + UI.formFactor
-                }
-                Button {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    text: "contentType = " + maliit_input_method.contentType
-                    onClicked: maliit_input_method.contentType = (maliit_input_method.contentType + 1)%5;
-                }
-                CheckBox {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    text: "word engine : " + (maliit_word_engine.enabled ? "enabled" : "disabled")
-                    checked: maliit_word_engine.enabled
-                    onClicked: maliit_word_engine.enabled = !maliit_word_engine.enabled;
-                }
-                Button {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    text: "rotate orientation (current is " + (((!isRotated) && (Settings.displayWidth > Settings.displayHeight)) ? "landscape" : "portrait") + ")";
-                    onClicked: testRoot.isRotated = !testRoot.isRotated
-                }
-                //ExclusiveGroup { id: tabPositionGroup }
-                Repeater {
-                    id: listSimulatedEnvs
-                    model: Settings.testEnvs
-                    delegate: RadioButton {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        text: "switch to : " + model.name
-                        //exclusiveGroup: tabPositionGroup
+            // The controls sit on their own light surface. They used to be default
+            // Controls on midnightblue, which meant black text on a dark ground.
+            Rectangle {
+                id: controlCard
+                anchors.horizontalCenter: parent.horizontalCenter
+                width: Math.min(parent.width, 400)
+                height: controls.height + 24
+                radius: 8
+                color: "#eef1f5"
+                border { color: "#c3cad3"; width: 1 }
+
+                Column {
+                    id: controls
+                    y: 12
+                    x: 12
+                    width: parent.width - 24
+                    spacing: 6
+
+                    Text {
+                        width: parent.width
+                        horizontalAlignment: Text.AlignHCenter
+                        wrapMode: Text.WordWrap
+                        color: "#1a1d23"
+                        font.bold: true
+                        text: stubs.lastKey.length > 0
+                              ? "Last key: \u201c" + stubs.lastKey + "\u201d"
+                              : "Tap a key"
+                    }
+
+                    Text {
+                        width: parent.width
+                        horizontalAlignment: Text.AlignHCenter
+                        wrapMode: Text.WordWrap
+                        color: "#55606d"
+                        font.pixelSize: 12
+                        text: Settings.currentTestEnvName
+                              + "  \u00b7  " + maliit_input_method.activeLanguage
+                              + "  \u00b7  size " + maliit_input_method.keyboardSize
+                              + "  \u00b7  " + maliit_input_method.keyboardLayout
+                              + "  \u00b7  " + UI.formFactor
+                              + "  \u00b7  " + Settings.displayWidth + "x" + Settings.displayHeight
+                              + " @ gu " + Settings.gridUnit
+                    }
+
+                    Rectangle { width: parent.width; height: 1; color: "#d5dae1" }
+
+                    Button {
+                        width: parent.width
+                        implicitHeight: 30
+                        text: "Content type: " + [ "text", "number", "telephone",
+                                                   "email", "url" ][maliit_input_method.contentType]
+                        onClicked: maliit_input_method.contentType =
+                                   (maliit_input_method.contentType + 1) % 5
+                    }
+
+                    Button {
+                        width: parent.width
+                        implicitHeight: 30
+                        text: "Keyboard size: " + maliit_input_method.keyboardSize
                         onClicked: {
-                            keyboardLoader.sourceComponent = undefined;
-                            Settings.currentTestEnv = index;
-                            // reset UI singleton values
-                            UI.keyboardSizeChoice = "M";
-                            keyboardLoader.sourceComponent = kbdComponent;
+                            var sizes = UI.keyboardSizeChoices;
+                            var i = sizes.indexOf(maliit_input_method.keyboardSize);
+                            maliit_input_method.keyboardSize = sizes[(i + 1) % sizes.length];
+                        }
+                    }
+
+                    Button {
+                        width: parent.width
+                        implicitHeight: 30
+                        text: "Orientation: " + (((!isRotated) && (Settings.displayWidth > Settings.displayHeight))
+                                                 ? "landscape" : "portrait")
+                        onClicked: testRoot.isRotated = !testRoot.isRotated
+                    }
+
+                    CheckBox {
+                        width: parent.width
+                        text: "Word engine"
+                        checked: maliit_word_engine.enabled
+                        onClicked: maliit_word_engine.enabled = !maliit_word_engine.enabled
+                        contentItem: Text {
+                            text: parent.text
+                            color: "#1a1d23"
+                            leftPadding: parent.indicator.width + parent.spacing
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                    }
+
+                    Rectangle { width: parent.width; height: 1; color: "#d5dae1" }
+
+                    Text {
+                        color: "#55606d"
+                        font.pixelSize: 12
+                        text: "Device profile"
+                    }
+
+                    Repeater {
+                        model: Settings.testEnvs
+                        delegate: RadioButton {
+                            width: controls.width
+                            implicitHeight: 26
+                            text: model.name + "  (" + model.displayWidth + "x"
+                                  + model.displayHeight + ", gu " + model.gridUnit
+                                  + ", " + (model.tabletUi ? "tablet" : "phone") + ")"
+                            checked: Settings.currentTestEnv === index
+                            onClicked: {
+                                keyboardLoader.sourceComponent = undefined;
+                                Settings.currentTestEnv = index;
+                                UI.keyboardSizeChoice = "M";
+                                keyboardLoader.sourceComponent = kbdComponent;
+                            }
+                            contentItem: Text {
+                                text: parent.text
+                                color: "#1a1d23"
+                                font.pixelSize: 13
+                                leftPadding: parent.indicator.width + parent.spacing
+                                verticalAlignment: Text.AlignVCenter
+                            }
                         }
                     }
                 }
