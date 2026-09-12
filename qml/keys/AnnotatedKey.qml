@@ -132,7 +132,8 @@ Item {
                                      : UI.dualPrimaryOffset
 
         font.family: UI.fontFamily
-        font.pixelSize: UI.glyphFontPx(text, true)
+        font.pixelSize: thumbKeyboard ? FontUtils.sizeToPixels(fontSize)
+                                      : UI.glyphFontPx(text, true)
         font.bold: UI.fontBold
         color: (UI.currentShiftState === "NORMAL") ? UI.fontColor : UI.annotationFontColor
         style: (UI.currentShiftState === "NORMAL") ? Text.Raised : Text.Normal

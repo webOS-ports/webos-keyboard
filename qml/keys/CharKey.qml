@@ -137,7 +137,8 @@ Item {
         anchors.verticalCenter: buttonImage.verticalCenter 
         anchors.verticalCenterOffset: UI.singleGlyphOffset
         font.family: UI.fontFamily
-        font.pixelSize: UI.glyphFontPx(text, false)
+        font.pixelSize: thumbKeyboard ? FontUtils.sizeToPixels(fontSize)
+                                      : UI.glyphFontPx(text, false)
         font.bold: UI.fontBold
         color: UI.fontColor
         smooth: true

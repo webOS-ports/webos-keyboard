@@ -86,10 +86,12 @@ Item {
                 "hu",
                 "it",
                 "nl",
+                "no",
                 "pl",
                 "pt",
                 "ru",
                 "sv",
+                "uk",
                 "zh"
             ];
             return (supportedLocales.indexOf( locale ) > -1);

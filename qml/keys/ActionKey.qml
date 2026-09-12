@@ -82,7 +82,8 @@ CharKey {
                                             : undefined
         anchors.horizontalCenter: !alignTextRight ? parent.horizontalCenter : undefined
         font.family: UI.fontFamily
-        font.pixelSize: UI.labelFontPx;
+        font.pixelSize: thumbKeyboard ? FontUtils.sizeToPixels(fontSize)
+                                      : UI.labelFontPx;
         font.bold: UI.fontBoldAction
         style: Text.Raised
         styleColor: "black"
