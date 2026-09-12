@@ -157,9 +157,7 @@ KeyPad {
             }
         }
         Loader {
-            anchors.left: parent.left
-            anchors.right: parent.right
-
+            width: parent.width
             sourceComponent: currentContentType === 0 ? contentTypeNormal :
                              currentContentType === 3 ? contentTypeEmail : contentTypeUrl
         }

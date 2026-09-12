@@ -94,9 +94,7 @@ KeyPad {
         }
 
         Item {
-            anchors.left: parent.left
-            anchors.right: parent.right
-
+            width: parent.width
             height: keyHeight
 
             ShiftKey {id: shiftKeyLeft; anchors.left: parent.left;}
@@ -161,9 +159,7 @@ KeyPad {
             }
         }
         Loader {
-            anchors.left: parent.left
-            anchors.right: parent.right
-
+            width: parent.width
             sourceComponent: currentContentType === 0 ? contentTypeNormal :
                              currentContentType === 3 ? contentTypeEmail : contentTypeUrl
         }

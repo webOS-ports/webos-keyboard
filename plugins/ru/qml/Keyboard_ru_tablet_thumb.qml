@@ -36,8 +36,7 @@ KeyPad {
 
         Item {
             height: keyHeight / 2 
-            anchors.left: parent.left
-            anchors.right: parent.right
+            width: parent.width
             NumKey { id: oneKey; label: "1"; shifted: "ё"; extended: ["1", "ё", "!", "¹", "¼", "½", "¡"]; anchors.left: parent.left; width: Units.gu(3.9); thumbKeyboard: true; }
             NumKey { id: twoKey; label: "2"; shifted: "@"; extended: ["2", "@", "²"]; anchors.left: oneKey.right; width: Units.gu(3.9); thumbKeyboard: true; }
             NumKey { id: threeKey; label: "3"; shifted: "№"; extended: ["3", "№", "#", "³", "¾"]; anchors.left: twoKey.right; width: Units.gu(3.9); thumbKeyboard: true; }
@@ -51,8 +50,7 @@ KeyPad {
         }
 
         Item {
-            anchors.left: parent.left
-            anchors.right: parent.right
+            width: parent.width
             height: keyHeight * 2/3
 
             CharKey { id: qKey; width: Units.gu(3.9); label: "й"; shifted: "Й"; anchors.left: parent.left; thumbKeyboard: true;}
@@ -68,8 +66,7 @@ KeyPad {
         }
 
         Item {
-            anchors.left: parent.left
-            anchors.right: parent.right
+            width: parent.width
             height: keyHeight * 2/3
 
             CharKey { id: aKey; width: Units.gu(3.9); label: "ф"; shifted: "Ф"; anchors.left: parent.left; thumbKeyboard: true;}
@@ -85,8 +82,7 @@ KeyPad {
         }
 
         Item {
-            anchors.left: parent.left
-            anchors.right: parent.right
+            width: parent.width
             height: keyHeight * 2/3
 
             CharKey { id: zKey; width: Units.gu(3.9); label: "я"; shifted: "Я"; anchors.left: parent.left; thumbKeyboard: true; }
@@ -168,9 +164,7 @@ KeyPad {
             }
         }
         Loader {
-            anchors.left: parent.left
-            anchors.right: parent.right
-
+            width: parent.width
             sourceComponent: currentContentType === 0 ? contentTypeNormal :
                              currentContentType === 3 ? contentTypeEmail : contentTypeUrl
         }
