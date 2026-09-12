@@ -27,9 +27,9 @@ lang_db_nl.path = $$PLUGIN_INSTALL_PATH
 lang_db_nl.files += $$OUT_PWD/database_nl.db
 lang_db_nl.commands += \
   rm -f $$lang_db_nl.files && \
-  text2ngram -n 1 -l -f sqlite -o $$lang_db_nl.files $$PWD/free_ebook.txt && \
-  text2ngram -n 2 -l -f sqlite -o $$lang_db_nl.files $$PWD/free_ebook.txt && \
-  text2ngram -n 3 -l -f sqlite -o $$lang_db_nl.files $$PWD/free_ebook.txt && \
+  text2ngram -n 1 -l -f sqlite -o $$lang_db_nl.files $$PWD/tatoeba_nl.txt && \
+  text2ngram -n 2 -l -f sqlite -o $$lang_db_nl.files $$PWD/tatoeba_nl.txt && \
+  text2ngram -n 3 -l -f sqlite -o $$lang_db_nl.files $$PWD/tatoeba_nl.txt && \
   cp $$lang_db_nl.files \"$(INSTALL_ROOT)\"$$PLUGIN_INSTALL_PATH
 
 QMAKE_EXTRA_TARGETS += lang_db_nl
@@ -39,7 +39,7 @@ INSTALLS += target lang_db_nl
 
 OTHER_FILES += \
     dutchplugin.json \
-    free_ebook.txt
+    tatoeba_nl.txt
 
 LIBS += $${TOP_BUILDDIR}/plugins/plugins/libwesternsupport.a -lpresage
 

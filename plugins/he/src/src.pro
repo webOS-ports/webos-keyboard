@@ -27,9 +27,9 @@ lang_db_he.path = $$PLUGIN_INSTALL_PATH
 lang_db_he.files += $$OUT_PWD/database_he.db
 lang_db_he.commands += \
   rm -f $$lang_db_he.files && \
-  text2ngram -n 1 -l -f sqlite -o $$lang_db_he.files $$PWD/free_ebook.txt && \
-  text2ngram -n 2 -l -f sqlite -o $$lang_db_he.files $$PWD/free_ebook.txt && \
-  text2ngram -n 3 -l -f sqlite -o $$lang_db_he.files $$PWD/free_ebook.txt && \
+  text2ngram -n 1 -l -f sqlite -o $$lang_db_he.files $$PWD/tatoeba_he.txt && \
+  text2ngram -n 2 -l -f sqlite -o $$lang_db_he.files $$PWD/tatoeba_he.txt && \
+  text2ngram -n 3 -l -f sqlite -o $$lang_db_he.files $$PWD/tatoeba_he.txt && \
   cp $$lang_db_he.files \"$(INSTALL_ROOT)\"$$PLUGIN_INSTALL_PATH
 
 QMAKE_EXTRA_TARGETS += lang_db_he
@@ -39,7 +39,7 @@ INSTALLS += target lang_db_he
 
 OTHER_FILES += \
     hebrewplugin.json \
-    free_ebook.txt
+    tatoeba_he.txt
 
 LIBS += $${TOP_BUILDDIR}/plugins/plugins/libwesternsupport.a -lpresage
 

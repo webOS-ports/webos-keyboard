@@ -27,9 +27,9 @@ lang_db_sv.path = $$PLUGIN_INSTALL_PATH
 lang_db_sv.files += $$OUT_PWD/database_sv.db
 lang_db_sv.commands += \
   rm -f $$lang_db_sv.files && \
-  text2ngram -n 1 -l -f sqlite -o $$lang_db_sv.files $$PWD/free_ebook.txt && \
-  text2ngram -n 2 -l -f sqlite -o $$lang_db_sv.files $$PWD/free_ebook.txt && \
-  text2ngram -n 3 -l -f sqlite -o $$lang_db_sv.files $$PWD/free_ebook.txt && \
+  text2ngram -n 1 -l -f sqlite -o $$lang_db_sv.files $$PWD/tatoeba_sv.txt && \
+  text2ngram -n 2 -l -f sqlite -o $$lang_db_sv.files $$PWD/tatoeba_sv.txt && \
+  text2ngram -n 3 -l -f sqlite -o $$lang_db_sv.files $$PWD/tatoeba_sv.txt && \
   cp $$lang_db_sv.files \"$(INSTALL_ROOT)\"$$PLUGIN_INSTALL_PATH
 
 QMAKE_EXTRA_TARGETS += lang_db_sv
@@ -39,7 +39,7 @@ INSTALLS += target lang_db_sv
 
 OTHER_FILES += \
     swedishplugin.json \
-    free_ebook.txt
+    tatoeba_sv.txt
 
 LIBS += $${TOP_BUILDDIR}/plugins/plugins/libwesternsupport.a -lpresage
 
