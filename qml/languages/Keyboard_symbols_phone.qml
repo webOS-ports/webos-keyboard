@@ -16,26 +16,34 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/*
+ * The alternate layer of PhoneKeymap.cpp sQwerty: every key's altkey column, with
+ * cCustom_QWERT_symbol on the bottom row. Same geometry as the letter page, so the
+ * rows sum to 10 here too.
+ *
+ * The shift key's altkey is cKey_ToggleLanguage, which is why this page - and only
+ * this page - carries the language key.
+ */
+
 import QtQuick 2.0
 
 import keys 1.0
 
 KeyPad {
     id: keypadRoot
+
     content: c1
 
     Column {
         id: c1
         anchors.right: parent.right
         anchors.left: parent.left
-        anchors.margins: 0;
+        anchors.margins: 0
 
         spacing: 0
 
-        Row {
-            anchors.horizontalCenter: parent.horizontalCenter;
-            spacing: 0
-
+        // alt of QWERTY_TOP_10: q..p -> 1..0
+        KeyRow {
             height: keyHeight
 
             CharKey { label: "1"; shifted: "1"; }
@@ -50,54 +58,57 @@ KeyPad {
             CharKey { label: "0"; shifted: "0"; }
         }
 
-        Row {
-            anchors.horizontalCenter: parent.horizontalCenter;
-            // anchors.margins: 50;
-            spacing: 0
-
+        // alt of QWERTY_MID_9: a..l -> ! @ # $ % & * ( )
+        KeyRow {
             height: keyHeight
 
-            CharKey { label: "!"; shifted: "!"; }
+            SpacerKey { weight: 0.5; forwardTo: exclamKey }
+            CharKey { id: exclamKey; label: "!"; shifted: "!"; }
             CharKey { label: "@"; shifted: "@"; }
-            CharKey { label: "#"; shifted: "#";}
-            CharKey { label: "$"; shifted: "$";}
-            CharKey { label: "%"; shifted: "%";}
-            CharKey { label: "&"; shifted: "&";}
-            CharKey { label: "*"; shifted: "*";}
-            CharKey { label: "("; shifted: "(";}
-            CharKey { label: ")"; shifted: ")";}
+            CharKey { label: "#"; shifted: "#"; }
+            CharKey { label: "$"; shifted: "$"; }
+            CharKey { label: "%"; shifted: "%"; }
+            CharKey { label: "&"; shifted: "&"; }
+            CharKey { label: "*"; shifted: "*"; }
+            CharKey { label: "("; shifted: "("; }
+            CharKey { id: parenRightKey; label: ")"; shifted: ")"; }
+            SpacerKey { weight: 0.5; forwardTo: parenRightKey }
         }
 
-        Item {
-            anchors.left: parent.left
-            anchors.right: parent.right
+        // alt of QWERTY_LOW_7: z..m -> ; : = + - ' " , and the shift position becomes
+        // the language key.
+        KeyRow {
+            height: keyHeight
 
-            height: keyHeight;
-
-            ShiftKey {id: shiftKey; anchors.left: parent.left;}
-            CharKey {width: UI.keyWidth; id: semicolonKey; anchors.left: shiftKey.right; label: ";"; shifted: ";"; }
-            CharKey {width: UI.keyWidth; id: colonKey; anchors.left: semicolonKey.right; label: ":"; shifted: ":";}
-            CharKey {width: UI.keyWidth; id: equalKey; anchors.left: colonKey.right; label: "="; shifted: "=";}
-            CharKey {width: UI.keyWidth; id: plusKey; anchors.left: equalKey.right; label: "+"; shifted: "+";}
-            CharKey {width: UI.keyWidth; id: minusKey; anchors.left: plusKey.right; label: "-"; shifted: "-";}
-            CharKey {width: UI.keyWidth; id: underscoreKey; anchors.left: minusKey.right; label: "_"; shifted: "_";}
-            CharKey {width: UI.keyWidth; id: apostropheKeyM; anchors.left: underscoreKey.right; label: "'"; shifted: "'";}
-            CharKey {width: UI.keyWidth; id: quoteKey; anchors.left: apostropheKeyM.right; label: "\""; shifted: "\"";}
-            BackspaceKey {id: backspaceKey; anchors.right: parent.right; anchors.left: quoteKey.right     }
+            LanguageKey { weight: 1.25 }
+            SpacerKey { weight: 0.25; forwardTo: semicolonKey }
+            CharKey { id: semicolonKey; label: ";"; shifted: ";"; }
+            CharKey { label: ":"; shifted: ":"; }
+            CharKey { label: "="; shifted: "="; }
+            CharKey { label: "+"; shifted: "+"; }
+            CharKey { label: "-"; shifted: "-"; }
+            CharKey { label: "'"; shifted: "'"; }
+            CharKey { label: "\""; shifted: "\""; }
+            SpacerKey { weight: 0.25; forwardTo: backspaceKey }
+            BackspaceKey { id: backspaceKey; weight: 1.25 }
         }
 
-        Item {
-            anchors.left: parent.left
-            anchors.right: parent.right
+        // cCustom_QWERT_symbol: cKey_Emoticon_Options before the space key,
+        // cKey_MorePopup after it.
+        KeyRow {
+            height: keyHeight
 
-            height: keyHeight;
-
-            SymbolShiftKey { id: symShiftKey; label: "ABC"; shifted: "ABC"; anchors.left: parent.left; }
-            LanguageKey    { id: languageMenuButton; anchors.left: symShiftKey.right; }
-            SpaceKey       { id: spaceKey; anchors.left: languageMenuButton.right; anchors.right: smileyKey.left; }
-            CharKey        { imgNormal: UI.imageGreyKey; imgPressed: UI.imageGreyKeyPressed; id: smileyKey; label: "..."; shifted: "..."; anchors.right: dismissKey.left; }
-            DismissKey     { id: dismissKey; anchors.right: enterKey.left}
-            ReturnKey      { id: enterKey; label: "Enter"; shifted: "Enter"; extended: "Enter"; anchors.right: parent.right;}
+            SymbolShiftKey { label: "ABC"; shifted: "ABC"; weight: 1.5 }
+            CharKey { label: ":)"; shifted: ":)"; weight: 1.5
+                      imgNormal: UI.imageGreyKey; imgPressed: UI.imageGreyKeyPressed
+                      extended: [":-)", ";-)", ":-(", ":'(", ":-P", ":-O", "<3"]
+                      extendedShifted: [":-)", ";-)", ":-(", ":'(", ":-P", ":-O", "<3"] }
+            SpaceKey { weight: 4 }
+            CharKey { label: "…"; shifted: "…"; weight: 1.5
+                      imgNormal: UI.imageGreyKey; imgPressed: UI.imageGreyKeyPressed
+                      extended: ["•", "…", "±", "¬", "¦", "µ", "¤"]
+                      extendedShifted: ["•", "…", "±", "¬", "¦", "µ", "¤"] }
+            ReturnKey { label: "Enter"; shifted: "Enter"; weight: 1.5 }
         }
     } // column
 }
