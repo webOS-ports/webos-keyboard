@@ -17,11 +17,11 @@
  */
 
 /*
- * Weights follow tabletkeymaps/uk.h, sUkQwertyLayout. Row sums: 12 / 12.5 / 12.5 / 12.5 / 11.
- * The reference builds Ukrainian on the Russian base and reaches the four
- * Ukrainian letters through long-press only: yi behind short i, ghe-upturn
- * behind ghe, i behind yeru and ie behind e. Ported as-is for parity; a native
- * layout would put them on the main rows in place of yeru, e and hard sign.
+ * tabletkeymaps/uk.h builds Ukrainian on the Russian keymap and leaves the four
+ * Ukrainian letters reachable by long press only - a Ukrainian speaker gets a
+ * Russian keyboard. This is the real layout instead: yeru is i, e is ie, and yi
+ * closes the top row, with ghe-with-upturn a long press from ghe and the
+ * apostrophe from soft sign. Row weights follow the reference idiom.
  */
 
 import QtQuick 2.0
@@ -39,7 +39,7 @@ KeyPad {
         anchors.left: parent.left
         spacing: 0
 
-        // UK_QWERTY_NUMBERS(1) + KEY_1(2, cKey_Trackball)  [sum 12]
+        // Digits + trackball  [sum 12]
         KeyRow {
             height: keyHeight * UI.topRowKeyHeightRatio
 
@@ -56,30 +56,32 @@ KeyPad {
             TrackBall { }
         }
 
-        // UK_QWERTY_TOP(1) + KEY_1(1.5, Backspace)  [sum 12.5]
+        // Top row + Backspace  [sum 13.5]
         KeyRow {
             height: keyHeight
 
-            CharKey { label: "\u0439"; shifted: "\u0419"; extended: ["\u0439", "\u0457"]; extendedShifted: ["\u0419", "\u0407"] }
+            CharKey { label: "й"; shifted: "Й" }
             CharKey { label: "ц"; shifted: "Ц" }
-            CharKey { label: "у"; shifted: "У"; extended: ["ў"]; extendedShifted: ["Ў"] }
+            CharKey { label: "у"; shifted: "У" }
             CharKey { label: "к"; shifted: "К" }
-            CharKey { label: "\u0435"; shifted: "\u0415"; extended: ["\u0435", "\u0451"]; extendedShifted: ["\u0415", "\u0401"] }
+            CharKey { label: "е"; shifted: "Е" }
             CharKey { label: "н"; shifted: "Н" }
-            CharKey { label: "\u0433"; shifted: "\u0413"; extended: ["\u0433", "\u0491"]; extendedShifted: ["\u0413", "\u0490"] }
+            CharKey { label: "г"; shifted: "Г"; extended: ["г", "ґ"]; extendedShifted: ["Г", "Ґ"] }
             CharKey { label: "ш"; shifted: "Ш" }
             CharKey { label: "щ"; shifted: "Щ" }
             CharKey { label: "з"; shifted: "З" }
             CharKey { label: "х"; shifted: "Х" }
+            CharKey { label: "ї"; shifted: "Ї"; extended: ["ї", "і"]; extendedShifted: ["Ї", "І"] }
             BackspaceKey { weight: 1.5 }
         }
 
-        // UK_QWERTY_MID(1) + KEY_1(1.5, Return)  [sum 12.5]
+        // Half-key inset, home row, Return  [sum 13]
         KeyRow {
             height: keyHeight
 
-            CharKey { label: "ф"; shifted: "Ф" }
-            CharKey { label: "\u044b"; shifted: "\u042b"; extended: ["\u044b", "\u0456"]; extendedShifted: ["\u042b", "\u0406"] }
+            SpacerKey { weight: 0.5; forwardTo: homeFirstKey }
+            CharKey { id: homeFirstKey; label: "ф"; shifted: "Ф" }
+            CharKey { label: "і"; shifted: "І"; extended: ["і", "ї", "и"]; extendedShifted: ["І", "Ї", "И"] }
             CharKey { label: "в"; shifted: "В" }
             CharKey { label: "а"; shifted: "А" }
             CharKey { label: "п"; shifted: "П" }
@@ -88,11 +90,11 @@ KeyPad {
             CharKey { label: "л"; shifted: "Л" }
             CharKey { label: "д"; shifted: "Д" }
             CharKey { label: "ж"; shifted: "Ж" }
-            CharKey { label: "\u044d"; shifted: "\u042d"; extended: ["\u044d", "\u0454"]; extendedShifted: ["\u042d", "\u0404"] }
+            CharKey { label: "є"; shifted: "Є"; extended: ["є", "е"]; extendedShifted: ["Є", "Е"] }
             ReturnKey { weight: 1.5; label: "Enter"; shifted: "Enter"; alignTextRight: true }
         }
 
-        // KEY_1(1, Shift) + UK_QWERTY_LOW(1) + KEY_1(1.5, Shift)  [sum 12.5]
+        // Shift, bottom row, Shift  [sum 12.5]
         KeyRow {
             height: keyHeight
 
@@ -103,15 +105,14 @@ KeyPad {
             CharKey { label: "м"; shifted: "М" }
             CharKey { label: "и"; shifted: "И" }
             CharKey { label: "т"; shifted: "Т" }
-            CharKey { label: "\u044c"; shifted: "\u042c"; extended: ["\u044c", "\u044a"]; extendedShifted: ["\u042c", "\u042a"] }
+            CharKey { label: "ь"; shifted: "Ь"; extended: ["ь", "’"]; extendedShifted: ["Ь", "’"] }
             CharKey { label: "б"; shifted: "Б" }
             CharKey { label: "ю"; shifted: "Ю" }
             AnnotatedKey { label: "."; shifted: "?"; extended: [".", "?", "•", "…", "¿"]; extendedShifted: [".", "?", "•", "…", "¿"] }
             ShiftKey { weight: 1.5 }
         }
 
-        // Bottom row, default field. cKey_Symbol is 2 units and gives up its right half
-        // only when updateLanguageKey() has a language to show.
+        // Bottom row, default field  [sum 11]
         Component {
             id: contentTypeNormal
             KeyRow {
@@ -127,7 +128,7 @@ KeyPad {
             }
         }
 
-        // Bottom row, email field: space drops to SPACE_SIZE - 2.
+        // Bottom row, email field  [sum 11]
         Component {
             id: contentTypeEmail
             KeyRow {
@@ -137,15 +138,15 @@ KeyPad {
                 SymbolShiftKey { weight: languageMenuButtonEmail.visible ? 1 : 2 }
                 LanguageKey    { id: languageMenuButtonEmail }
                 UrlKey         { label: "@"; shifted: "@" }
-                SpaceKey       { weight: 3 }
-                UrlKey { label: ".ru"; extended: [".ua",".su",".kg",".рф","укр",".by",".tj"] }
+                SpaceKey       { weight: 4 }
+                UrlKey { label: ".ua"; shifted: ".ua" }
                 AnnotatedKey { label: "'"; shifted: "\""; extended: ["'", "\"", "`", "‘", "’", "“", "”", "«", "»"]; extendedShifted: ["'", "\"", "`", "‘", "’", "“", "”", "«", "»"] }
                 AnnotatedKey { label: "-"; shifted: "_"; extended: ["-", "_", "±", "¬"]; extendedShifted: ["-", "_", "±", "¬"] }
                 DismissKey     { }
             }
         }
 
-        // Bottom row, URL field.
+        // Bottom row, URL field  [sum 11]
         Component {
             id: contentTypeUrl
             KeyRow {
@@ -154,9 +155,9 @@ KeyPad {
                 TabKey         { label: "Tab"; shifted: "Tab" }
                 SymbolShiftKey { weight: languageMenuButtonUrl.visible ? 1 : 2 }
                 LanguageKey    { id: languageMenuButtonUrl }
-                CharKey { imgNormal: UI.imageGreyKey; imgPressed: UI.imageGreyKeyPressed; label: "/"; shifted: "/"; extended: ["http://", "https://", "www."] }
-                SpaceKey       { weight: 3 }
-                UrlKey { label: ".ru"; extended: [".ua",".su",".kg",".рф","укр",".by",".tj"] }
+                UrlKey         { label: "/"; shifted: "/"; extended: ["http://", "https://", "www."] }
+                SpaceKey       { weight: 4 }
+                UrlKey { label: ".ua"; shifted: ".ua" }
                 AnnotatedKey { label: "'"; shifted: "\""; extended: ["'", "\"", "`", "‘", "’", "“", "”", "«", "»"]; extendedShifted: ["'", "\"", "`", "‘", "’", "“", "”", "«", "»"] }
                 AnnotatedKey { label: "-"; shifted: "_"; extended: ["-", "_", "±", "¬"]; extendedShifted: ["-", "_", "±", "¬"] }
                 DismissKey     { }

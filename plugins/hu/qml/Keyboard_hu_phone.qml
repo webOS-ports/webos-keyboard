@@ -17,12 +17,11 @@
  */
 
 /*
- * Weights follow PhoneKeymap.cpp: letters stay one unit wide so they line up
- * with the row above, shift and backspace take 1.25 with a quarter-unit pad
- * beside them, and the bottom row is Sym 1.5 / comma 1.5 / space / period 1.5 /
- * Enter 1.5. There is no language key and no hide key on this keyboard - the
- * shift key's symbol-layer identity is cKey_ToggleLanguage, so language
- * switching lives on the 123 page.
+ * Weights follow PhoneKeymap.cpp: letters at one unit so they line up with the
+ * row above, shift and backspace taking the slack with a quarter-unit pad beside
+ * them, and the bottom row Sym 1.5 / comma 1.5 / space / period 1.5 / Enter 1.5.
+ * No language key and no hide key - the shift key's symbol-layer identity is
+ * cKey_ToggleLanguage, so language switching lives on the 123 page.
  */
 
 import QtQuick 2.0
@@ -40,7 +39,7 @@ KeyPad {
         anchors.left: parent.left
         spacing: 0
 
-        // Letters at one unit  [sum 10]
+        // Letters at one unit  [sum 12]
         KeyRow {
             height: keyHeight
 
@@ -49,19 +48,20 @@ KeyPad {
             CharKey { label: "e"; shifted: "E"; extended: ["é","ę","ě","€"]; extendedShifted: ["É","Ę","Ě","€"] }
             CharKey { label: "r"; shifted: "R"; extended: ["ŕ","ř"]; extendedShifted: ["Ŕ","Ř"] }
             CharKey { label: "t"; shifted: "T"; extended: ["ţ","ť"]; extendedShifted: ["Ţ","Ť"] }
-            CharKey { label: "z"; shifted: "Z"; extended: ["ź","ż",,"ž"]; extendedShifted: ["Ź","Ż","Ž"] }
+            CharKey { label: "z"; shifted: "Z"; extended: ["ź","ż", "ž"]; extendedShifted: ["Ź","Ż","Ž"] }
             CharKey { label: "u"; shifted: "U"; extended: ["ú","ü","ű","ů"]; extendedShifted: ["Ú","Ü","Ű","Ů"] }
             CharKey { label: "i"; shifted: "I"; extended: ["í","î"]; extendedShifted: ["Í","Î"] }
             CharKey { label: "o"; shifted: "O"; extended: ["ó","ö","ő","ô"]; extendedShifted: ["Ó","Ö","Ő","Ô"] }
             CharKey { label: "p"; shifted: "P" }
+            CharKey { label: "ő"; shifted: "Ő"; extended: ["ő", "ö", "ó", "ô"]; extendedShifted: ["Ő", "Ö", "Ó", "Ô"] }
+            CharKey { label: "ú"; shifted: "Ú"; extended: ["ú", "ü", "ű", "ů"]; extendedShifted: ["Ú", "Ü", "Ű", "Ů"] }
         }
 
-        // Letters at one unit, inset by 0.5 of a key at each end  [sum 10]
+        // Letters at one unit  [sum 12]
         KeyRow {
             height: keyHeight
 
-            SpacerKey { weight: 0.5; forwardTo: row1First }
-            CharKey { id: row1First; label: "a"; shifted: "A"; extended: ["á","ä","â","ă","ą"]; extendedShifted: ["Á","Ä","Â","Ă","Ą"] }
+            CharKey { label: "a"; shifted: "A"; extended: ["á","ä","â","ă","ą"]; extendedShifted: ["Á","Ä","Â","Ă","Ą"] }
             CharKey { label: "s"; shifted: "S"; extended: ["ß","ś","ş","š","$"]; extendedShifted: ["ß","Ś","Ş","Š","$"] }
             CharKey { label: "d"; shifted: "D"; extended: ["đ","ď"]; extendedShifted: ["Đ","Ď"] }
             CharKey { label: "f"; shifted: "F" }
@@ -69,17 +69,20 @@ KeyPad {
             CharKey { label: "h"; shifted: "H" }
             CharKey { label: "j"; shifted: "J" }
             CharKey { label: "k"; shifted: "K" }
-            CharKey { id: row1Last; label: "l"; shifted: "L" }
-            SpacerKey { weight: 0.5; forwardTo: row1Last }
+            CharKey { label: "l"; shifted: "L" }
+            CharKey { label: "é"; shifted: "É"; extended: ["é", "è", "ê", "ë"]; extendedShifted: ["É", "È", "Ê", "Ë"] }
+            CharKey { label: "á"; shifted: "Á"; extended: ["á", "à", "â", "ä"]; extendedShifted: ["Á", "À", "Â", "Ä"] }
+            CharKey { label: "ű"; shifted: "Ű"; extended: ["ű", "ü", "ú", "ù"]; extendedShifted: ["Ű", "Ü", "Ú", "Ù"] }
         }
 
-        // Shift 1.25 + a quarter-unit pad, the letters at 1, then the same pad and Backspace 1.25  [sum 10]
+        // Shift 1.75, quarter-unit pads, letters at one unit, Backspace 1.75  [sum 12]
         KeyRow {
             height: keyHeight
 
-            ShiftKey { weight: 1.25 }
+            ShiftKey { weight: 1.75 }
             SpacerKey { weight: 0.25; forwardTo: lowFirstKey }
-            CharKey { id: lowFirstKey; label: "y"; shifted: "Y"; extended: ["¥"]; extendedShifted: ["¥"] }
+            CharKey { id: lowFirstKey; label: "í"; shifted: "Í"; extended: ["í", "ì", "î", "ï"]; extendedShifted: ["Í", "Ì", "Î", "Ï"] }
+            CharKey { label: "y"; shifted: "Y"; extended: ["¥"]; extendedShifted: ["¥"] }
             CharKey { label: "x"; shifted: "X" }
             CharKey { label: "c"; shifted: "C"; extended: ["ć","č","ç"]; extendedShifted: ["Ć","Č","Ç"] }
             CharKey { label: "v"; shifted: "V" }
@@ -87,40 +90,37 @@ KeyPad {
             CharKey { label: "n"; shifted: "N"; extended: ["ń","ň","ñ"]; extendedShifted: ["Ń","Ň","Ñ"] }
             CharKey { label: "m"; shifted: "M" }
             SpacerKey { weight: 0.25; forwardTo: backspaceKey }
-            BackspaceKey { id: backspaceKey; weight: 1.25 }
+            BackspaceKey { id: backspaceKey; weight: 1.75 }
         }
 
-        // cCustom_*_plain  [sum 10]
         Component {
             id: contentTypeNormal
             KeyRow {
                 height: keyHeight
 
                 SymbolShiftKey { label: "123"; shifted: "123"; weight: 1.5 }
-                AnnotatedKey { weight: 1.5; label: ","; shifted: "/" }
-                SpaceKey       { weight: 4 }
-                AnnotatedKey { weight: 1.5; label: "."; shifted: "." }
+                AnnotatedKey   { label: ","; shifted: "/"; weight: 1.5; extended: [",", "/", "\\"]; extendedShifted: [",", "/", "\\"] }
+                SpaceKey       { weight: 6 }
+                AnnotatedKey   { label: "."; shifted: "?"; weight: 1.5; extended: [".", "?", "\u2022", "\u2026", "\u00bf"]; extendedShifted: [".", "?", "\u2022", "\u2026", "\u00bf"] }
                 ReturnKey      { label: "Enter"; shifted: "Enter"; weight: 1.5 }
             }
         }
 
-        // cCustom_*_email: @ and .com flank the space key  [sum 10]
         Component {
             id: contentTypeEmail
             KeyRow {
                 height: keyHeight
 
                 SymbolShiftKey { label: "123"; shifted: "123"; weight: 1.5 }
-                AnnotatedKey { weight: 1.5; label: ","; shifted: "/" }
+                AnnotatedKey   { label: ","; shifted: "/"; weight: 1.5; extended: [",", "/", "\\"]; extendedShifted: [",", "/", "\\"] }
                 UrlKey         { label: "@"; shifted: "@" }
-                SpaceKey       { weight: 2 }
-                UrlKey { label: ".com"; shifted: ".com" }
-                AnnotatedKey { weight: 1.5; label: "."; shifted: "." }
+                SpaceKey       { weight: 4 }
+                UrlKey         { label: ".com"; shifted: ".com" }
+                AnnotatedKey   { label: "."; shifted: "?"; weight: 1.5; extended: [".", "?", "\u2022", "\u2026", "\u00bf"]; extendedShifted: [".", "?", "\u2022", "\u2026", "\u00bf"] }
                 ReturnKey      { label: "Enter"; shifted: "Enter"; weight: 1.5 }
             }
         }
 
-        // cCustom_*_url: a plain slash, then a colon carrying the scheme prefixes  [sum 9.5]
         Component {
             id: contentTypeUrl
             KeyRow {
@@ -129,15 +129,16 @@ KeyPad {
                 SymbolShiftKey { label: "123"; shifted: "123"; weight: 1.5 }
                 UrlKey         { label: "/"; shifted: "/" }
                 UrlKey         { label: ":"; shifted: ":"; extended: ["://", "http://", "https://"] }
-                SpaceKey       { weight: 2 }
-                UrlKey { label: ".com"; shifted: ".com" }
-                AnnotatedKey { weight: 1.5; label: "."; shifted: "." }
+                SpaceKey       { weight: 4 }
+                UrlKey         { label: ".com"; shifted: ".com" }
+                AnnotatedKey   { label: "."; shifted: "?"; weight: 1.5; extended: [".", "?", "\u2022", "\u2026", "\u00bf"]; extendedShifted: [".", "?", "\u2022", "\u2026", "\u00bf"] }
                 ReturnKey      { label: "Enter"; shifted: "Enter"; weight: 1.5 }
             }
         }
 
         Loader {
             width: parent.width
+
             sourceComponent: currentContentType === 0 ? contentTypeNormal :
                              currentContentType === 3 ? contentTypeEmail : contentTypeUrl
         }

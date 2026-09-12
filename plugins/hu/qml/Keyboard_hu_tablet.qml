@@ -17,17 +17,14 @@
  */
 
 /*
- * There is no keymap for this language in the reference, so the row weights are
- * the reference's own shape rather than a port of a specific file: digits at one
- * unit with the 2-unit trackball, letters at one unit with the function keys
- * taking the ends, and the bottom row exactly as every tabletkeymaps/ file has it
- * - Tab 1, symbol 2 split into 1 + 1 when a language key is shown, space 5, two
- * punctuation keys and hide, summing to 11. Rows are sized independently, which
- * is why their sums differ.
+ * No keymap for Hungarian in the reference, so the row weights follow its idiom:
+ * digits at one unit with the 2-unit trackball, letters at one unit with the
+ * function keys taking the ends, and the bottom row as every tabletkeymaps/ file
+ * has it, summing to 11.
  * 
- * This layout used to be a phone layout shown on a tablet: no number row, no
- * trackball, no Tab and no hide key, with comma and full stop on the bottom row
- * instead of beside M. It now has the tablet shape the reference uses.
+ * The alphabet is the Hungarian one rather than English with z and y swapped:
+ * o-double-acute and u-acute close the top row, e-acute, a-acute and
+ * u-double-acute close the home row, and i-acute opens the bottom one.
  */
 
 import QtQuick 2.0
@@ -45,7 +42,7 @@ KeyPad {
         anchors.left: parent.left
         spacing: 0
 
-        // Digits at one unit + the 2-unit trackball  [sum 12]
+        // Digits + trackball  [sum 12]
         KeyRow {
             height: keyHeight * UI.topRowKeyHeightRatio
 
@@ -62,7 +59,7 @@ KeyPad {
             TrackBall { }
         }
 
-        // Letters at one unit + Backspace  [sum 11.5]
+        // Top row + Backspace  [sum 13.5]
         KeyRow {
             height: keyHeight
 
@@ -71,15 +68,17 @@ KeyPad {
             CharKey { label: "e"; shifted: "E"; extended: ["é","ę","ě","€"]; extendedShifted: ["É","Ę","Ě","€"] }
             CharKey { label: "r"; shifted: "R"; extended: ["ŕ","ř"]; extendedShifted: ["Ŕ","Ř"] }
             CharKey { label: "t"; shifted: "T"; extended: ["ţ","ť"]; extendedShifted: ["Ţ","Ť"] }
-            CharKey { label: "z"; shifted: "Z"; extended: ["ź","ż",,"ž"]; extendedShifted: ["Ź","Ż","Ž"] }
+            CharKey { label: "z"; shifted: "Z"; extended: ["ź","ż", "ž"]; extendedShifted: ["Ź","Ż","Ž"] }
             CharKey { label: "u"; shifted: "U"; extended: ["ú","ü","ű","ů"]; extendedShifted: ["Ú","Ü","Ű","Ů"] }
             CharKey { label: "i"; shifted: "I"; extended: ["í","î"]; extendedShifted: ["Í","Î"] }
             CharKey { label: "o"; shifted: "O"; extended: ["ó","ö","ő","ô"]; extendedShifted: ["Ó","Ö","Ő","Ô"] }
             CharKey { label: "p"; shifted: "P" }
+            CharKey { label: "ő"; shifted: "Ő"; extended: ["ő", "ö", "ó", "ô"]; extendedShifted: ["Ő", "Ö", "Ó", "Ô"] }
+            CharKey { label: "ú"; shifted: "Ú"; extended: ["ú", "ü", "ű", "ů"]; extendedShifted: ["Ú", "Ü", "Ű", "Ů"] }
             BackspaceKey { weight: 1.5 }
         }
 
-        // Half-key inset, letters at one unit, Return  [sum 11]
+        // Half-key inset, home row, Return  [sum 14]
         KeyRow {
             height: keyHeight
 
@@ -93,14 +92,18 @@ KeyPad {
             CharKey { label: "j"; shifted: "J" }
             CharKey { label: "k"; shifted: "K" }
             CharKey { label: "l"; shifted: "L" }
+            CharKey { label: "é"; shifted: "É"; extended: ["é", "è", "ê", "ë"]; extendedShifted: ["É", "È", "Ê", "Ë"] }
+            CharKey { label: "á"; shifted: "Á"; extended: ["á", "à", "â", "ä"]; extendedShifted: ["Á", "À", "Â", "Ä"] }
+            CharKey { label: "ű"; shifted: "Ű"; extended: ["ű", "ü", "ú", "ù"]; extendedShifted: ["Ű", "Ü", "Ú", "Ù"] }
             ReturnKey { weight: 1.5; label: "Enter"; shifted: "Enter"; alignTextRight: true }
         }
 
-        // Shift, letters at one unit, Shift  [sum 11.5]
+        // Shift, bottom row, Shift  [sum 12.5]
         KeyRow {
             height: keyHeight
 
             ShiftKey { }
+            CharKey { label: "í"; shifted: "Í"; extended: ["í", "ì", "î", "ï"]; extendedShifted: ["Í", "Ì", "Î", "Ï"] }
             CharKey { label: "y"; shifted: "Y"; extended: ["¥"]; extendedShifted: ["¥"] }
             CharKey { label: "x"; shifted: "X" }
             CharKey { label: "c"; shifted: "C"; extended: ["ć","č","ç"]; extendedShifted: ["Ć","Č","Ç"] }
