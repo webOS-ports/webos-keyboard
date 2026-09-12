@@ -57,15 +57,26 @@ QtObject {
        the reason the glyph offsets below drifted. */
     property real keyHeightPx: Units.gu(keyHeight);
 
-    /* drawKeyCap's sizing rule: start from the cap, then clamp to half the key
-       height so a short key still fits its glyph. */
+    /* Tablet: start from the fixed cap, then clamp to half the key height so a short
+       key still fits its glyph, exactly as drawKeyCap does.
+       Phone: scale the reference glyph by how our key height compares to the
+       reference's, since the phone keyboard has no size setting to clamp against. */
     function __capped(gu) {
         return Math.min(Units.gu(gu), Math.floor((keyHeightPx + 1) / 2));
     }
-    property real charFontPx: __capped(DesignConstants.charFontCap[formFactor]);
-    property real dualFontPx: __capped(DesignConstants.dualFontCap);
-    property real labelFontPx: Math.min(dualFontPx, Units.gu(DesignConstants.labelFontCap));
-    property real elipsisFontPx: Units.gu(DesignConstants.elipsisFontCap);
+    function __scaled(px) {
+        return keyHeightPx * px / DesignConstants.phoneRefKeyHeight;
+    }
+    readonly property bool __tablet: formFactor === "tablet"
+
+    property real charFontPx: __tablet ? __capped(DesignConstants.tabletCharFontCap)
+                                       : __scaled(DesignConstants.phoneCharFontPx);
+    property real dualFontPx: __tablet ? __capped(DesignConstants.tabletDualFontCap)
+                                       : __scaled(DesignConstants.phoneDualFontPx);
+    property real labelFontPx: __tablet ? Math.min(dualFontPx, Units.gu(DesignConstants.tabletLabelFontCap))
+                                        : __scaled(DesignConstants.phoneLabelFontPx);
+    property real elipsisFontPx: __tablet ? Units.gu(DesignConstants.tabletElipsisFontCap)
+                                          : __scaled(DesignConstants.phoneElipsisFontPx);
     property real boostFontPx: Units.gu(DesignConstants.boostFontSize);
     property string boostedGlyphs: DesignConstants.boostedGlyphs;
 
@@ -74,19 +85,24 @@ QtObject {
        top third and the primary in the bottom one - +9px and -14px from the centre
        of a 70px key. The horizontal variant used on the number row splits the key
        into halves instead. */
-    property real dualPrimaryOffset: keyHeightPx * 0.128571;
-    property real dualAltOffset: -keyHeightPx * 0.2;
-    property real singleGlyphOffset: -Units.gu(0.2);
+    /* drawKeyCap renders each glyph into an explicit box rather than centring it on
+       a point, which is what keeps a comma off the "..." hint below it: box height is
+       a third of the key once 4px is trimmed off the bottom, the alt box starts 10px
+       down from the top, and the primary box ends 10px above the trimmed bottom. */
+    property real dualBoxHeight: (keyHeightPx - (__tablet ? Units.gu(0.4) : __scaled(4))) / 3;
+    property real dualAltTop: __tablet ? Units.gu(1.0) : __scaled(10);
+    property real dualPrimaryBottom: __tablet ? Units.gu(1.4) : __scaled(14);
+    property real singleGlyphOffset: __tablet ? -Units.gu(0.2) : -__scaled(2);
     property real dualPrimaryFactor: 0.206;
     property real dualAltFactor: -0.217;
 
     /* The "..." hint sits 9px in from the right and bottom edges. */
-    property real elipsisMargin: Units.gu(0.9);
+    property real elipsisMargin: __tablet ? Units.gu(0.9) : __scaled(9);
 
     property real popupFontPx: Units.gu(DesignConstants.popupFontCap);
     property real popupFontPxLong: Units.gu(DesignConstants.popupFontCapLong);
     property int popupLongAt: DesignConstants.popupLongAt;
-    property real previewFontPx: Units.gu(DesignConstants.previewFontCap);
+    property real previewFontPx: __scaled(DesignConstants.phonePreviewFontPx);
 
     function popupGlyphFontPx(text) {
         return (text && text.length >= popupLongAt) ? popupFontPxLong : popupFontPx;

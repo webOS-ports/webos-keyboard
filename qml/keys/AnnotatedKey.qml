@@ -124,12 +124,16 @@ Item {
 
         anchors.horizontalCenter: buttonImage.horizontalCenter
         anchors.horizontalCenterOffset: thumbKeyboard ? UI.keyWidth / 14
-                                       : useHorizontalLayout ? width * UI.dualPrimaryFactor : 0
+                                       : useHorizontalLayout ? key.width * UI.dualPrimaryFactor : 0
 
-        anchors.verticalCenter: parent.verticalCenter
+        anchors.verticalCenter: (useHorizontalLayout || thumbKeyboard) ? parent.verticalCenter
+                                                                       : undefined
         anchors.verticalCenterOffset: thumbKeyboard ? UI.keyHeight / -2
-                                     : useHorizontalLayout ? UI.singleGlyphOffset
-                                     : UI.dualPrimaryOffset
+                                                    : UI.singleGlyphOffset
+        anchors.bottom: (useHorizontalLayout || thumbKeyboard) ? undefined : key.bottom
+        anchors.bottomMargin: UI.dualPrimaryBottom
+        height: (useHorizontalLayout || thumbKeyboard) ? undefined : UI.dualBoxHeight
+        verticalAlignment: Text.AlignVCenter
 
         font.family: UI.fontFamily
         font.pixelSize: thumbKeyboard ? FontUtils.sizeToPixels(fontSize)
@@ -150,12 +154,16 @@ Item {
 
         anchors.horizontalCenter: buttonImage.horizontalCenter
         anchors.horizontalCenterOffset: thumbKeyboard ? UI.keyWidth / -14
-                                       : useHorizontalLayout ? width * UI.dualAltFactor : 0
+                                       : useHorizontalLayout ? key.width * UI.dualAltFactor : 0
 
-        anchors.verticalCenter: parent.verticalCenter
+        anchors.verticalCenter: (useHorizontalLayout || thumbKeyboard) ? parent.verticalCenter
+                                                                       : undefined
         anchors.verticalCenterOffset: thumbKeyboard ? UI.keyHeight / -2
-                                     : useHorizontalLayout ? UI.singleGlyphOffset
-                                     : UI.dualAltOffset
+                                                    : UI.singleGlyphOffset
+        anchors.top: (useHorizontalLayout || thumbKeyboard) ? undefined : key.top
+        anchors.topMargin: UI.dualAltTop
+        height: (useHorizontalLayout || thumbKeyboard) ? undefined : UI.dualBoxHeight
+        verticalAlignment: Text.AlignVCenter
 
         font.family: UI.fontFamily
         font.pixelSize: thumbKeyboard ? FontUtils.sizeToPixels(UI.thumbAnnotationFontSize)
@@ -171,7 +179,9 @@ Item {
         id: annotationLabel2
         text: "…" //__annotationLabelNormal
 
-        anchors.horizontalCenter: buttonImage.horizontalCenter
+        anchors.right: thumbKeyboard ? undefined : key.right
+        anchors.rightMargin: UI.elipsisMargin
+        anchors.horizontalCenter: thumbKeyboard ? buttonImage.horizontalCenter : undefined
         anchors.horizontalCenterOffset: thumbKeyboard ? UI.keyWidth / 14 : 0
 
         /*anchors.verticalCenter: parent.verticalCenter

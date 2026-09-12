@@ -43,33 +43,48 @@ var numKeyWidthRatio       =   [ { "name": "XS", "ratio" : 0.925 },	/* 243 / 768
                        { "name":  "M", "ratio" : 0.925 },         	/* 340 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
                        { "name":  "L", "ratio" : 0.925 } ];	/* 393 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
 
-/* Glyph sizes come from {Tablet,Phone}Keyboard::drawKeyCap, which starts at a
-   fixed pixel size and only shrinks it to half the key height when the key is too
-   short to hold it. The caps are expressed in grid units so they still scale with
-   density: at the TouchPad's gridUnit of 10 they are exactly the reference
-   26 / 24 / 22 / 14 px.
+/* Glyph sizes come from {Tablet,Phone}Keyboard::drawKeyCap, and the two form
+   factors have to be translated differently.
 
-     charFontCap   a key showing one glyph              26px tablet, 24px phone
-     dualFontCap   a key showing a glyph and its alt    24px
-     labelFontCap  a multi-character label ("Tab")      22px
-     elipsisFontCap  the "..." extended-keys hint       14px */
-var charFontCap     =   {"tablet" : 2.6, "phone" : 2.4};  // gu
-var dualFontCap     =   2.4;                              // gu
-var labelFontCap    =   2.2;                              // gu
-var elipsisFontCap  =   1.4;                              // gu
+   The tablet sizes are fixed pixels that do not move when the user changes the
+   keyboard size - drawKeyCap only shrinks them once half the key height drops below
+   the cap. So they are grid-unit constants, which at the TouchPad's gridUnit of 10
+   come out as exactly the reference 26 / 24 / 22 / 14 px, and still scale with
+   density on other hardware.
 
-/* The extended-keys popup: cPopupFontSize is 22px, dropping to 22 - 8 once the
-   label runs to six characters or more. The magnified preview on phone is the
-   "extra large" case, 32px and bold. */
-var popupFontCap      =   2.2;                            // gu
-var popupFontCapLong  =   1.4;                            // gu
-var popupLongAt       =   6;                              // characters
-var previewFontCap    =   3.2;                            // gu
+   The phone reference has no size setting at all: its key height is fixed per
+   orientation, 90px in portrait, with a 24px glyph. A grid-unit constant would
+   therefore be wrong on a dense phone - it would give a 43px glyph on a 110px key
+   where the reference wants 29. What carries over is the ratio, so the phone values
+   are fractions of the key height.
+
+     charFont    a key showing one glyph              26px tablet, 24/90 phone
+     dualFont    a key showing a glyph and its alt    24px tablet, 24/90 phone
+     labelFont   a multi-character label ("Tab")      22px tablet, 22/90 phone
+     elipsisFont the "..." extended-keys hint         14px tablet, 14/90 phone */
+var tabletCharFontCap    =   2.6;   // gu
+var tabletDualFontCap    =   2.4;   // gu
+var tabletLabelFontCap   =   2.2;   // gu
+var tabletElipsisFontCap =   1.4;   // gu
+
+var phoneRefKeyHeight    =   90.25; // px, PhoneKeymap portrait row height
+var phoneCharFontPx      =   24;
+var phoneDualFontPx      =   24;
+var phoneLabelFontPx     =   22;
+var phoneElipsisFontPx   =   14;
+var phonePreviewFontPx   =   32;    // the magnified key preview, drawn bold
 
 /* boostSize(): the reference adds 2px to '. , ; : \' "' so they do not look lost
    next to a letter. */
 var boostedGlyphs   =   ".,;:'\"";
 var boostFontSize   =   0.2;                              // gu
+
+/* The extended-keys popup: cPopupFontSize is 22px, dropping to 22 - 8 once the
+   label runs to six characters or more. The popup artwork is the same size on both
+   form factors, so these stay grid-unit constants. */
+var popupFontCap      =   2.2;                            // gu
+var popupFontCapLong  =   1.4;                            // gu
+var popupLongAt       =   6;                              // characters
 
 var fontSize        =   {"tablet" : "22pt",
                          "phone"  : "16pt"};

@@ -36,10 +36,10 @@ Item {
 
     property Column content
 
-    Connections {
-        target: content
-        onHeightChanged: keyPadRoot.height = content.height;
-    }
+    /* Bound, not assigned from a Connections handler: that only ran when the column
+       changed height after the handler was wired, so a pad whose rows settled first
+       stayed zero high and the keyboard rendered as a bare word ribbon. */
+    height: content ? content.height : 0
 
     Component.onCompleted:
     {

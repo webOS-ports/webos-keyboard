@@ -27,10 +27,26 @@ import "../../qml" as App
 Rectangle {
     id: testRoot
 
+    /* maliit_input_method, maliit_geometry, maliit_event_handler, maliit_word_engine,
+       maliit_wordribbon and audioFeedback all arrive as context properties from
+       main.cpp, which creates them from Stubs.qml. They have to be context
+       properties rather than objects with an id here, because UI.qml is a singleton
+       and singletons only see the root context. */
+
     property bool isRotated: false
 
     width: 1024
     height: 800
+
+    /*! main.cpp resizes the window to these so the whole simulated screen is
+        visible - a portrait profile is taller than the default window. */
+    property int wantedWidth: keyboardLoader.width
+    property int wantedHeight: keyboardLoader.height
+
+    Component.onCompleted: {
+        if (stubs.startEnv >= 0)
+            Settings.currentTestEnv = stubs.startEnv;
+    }
 
     Rectangle {
         z: 10
@@ -66,47 +82,6 @@ Rectangle {
         }
     }
 
-    QtObject {
-        id: maliit_geometry
-        property rect popoverRect: Qt.rect(0,0,10,20);
-        property rect visibleRect: Qt.rect(0,0,700,300);
-        property int orientation: 0
-        property bool shown: true
-
-        onVisibleRectChanged: console.log("visibleRect is now " + visibleRect);
-    }
-    QtObject {
-        id: maliit_event_handler
-
-        function onKeyPressed(valueToSubmit, action) { console.log("onKeyPressed : " + valueToSubmit + " -> action: " + action); }
-        function onKeyReleased(valueToSubmit, action) { console.log("onKeyReleased : " + valueToSubmit + " -> action: " + action); inputtextarea.lastKey = valueToSubmit; keyReleased(); }
-        function onWordCandidatePressed(word) { console.log("onWordCandidatePressed : " + word); }
-        function onWordCandidateReleased(word) { console.log("onWordCandidateReleased : " + word); inputtextarea.lastKey = word; }
-
-        signal keyReleased();
-    }
-    QtObject {
-        id: maliit_word_engine
-        property bool enabled: true
-    }
-    ListModel {
-        id: maliit_wordribbon
-        ListElement { word: "first" }
-        ListElement { word: "second"}
-    }
-    QtObject {
-        id: maliit_input_method
-
-        signal activateAutocaps();
-        signal hide();
-
-        property int contentType: 0 // 0 ->  text, 1 -> number, 2 -> telephone, 3 -> email, 4 -> url
-        property bool testEnvironment: true
-        property string activeLanguage: "en"
-        property string keyboardSize: "M"
-        property string keyboardLayout: "LuneOS"
-        property variant enabledLanguages: [ "en", "de", "nl", "fr", "sv", "ar", "cs", "da", "es", "fi", "he", "hu", "it", "pl", "pt", "ru" ]
-    }
 
     Rectangle {
         anchors.fill: parent
@@ -132,8 +107,7 @@ Rectangle {
                 Text {
                     id: inputtextarea
                     anchors.horizontalCenter: parent.horizontalCenter
-                    property string lastKey: ""
-                    text: "Last received text from keyboard: " + lastKey
+                    text: "Last received text from keyboard: " + stubs.lastKey
                     font.bold:true
                 }
                 Button {
