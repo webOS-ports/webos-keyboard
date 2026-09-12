@@ -27,9 +27,9 @@ lang_db_ru.path = $$PLUGIN_INSTALL_PATH
 lang_db_ru.files += $$OUT_PWD/database_ru.db
 lang_db_ru.commands += \
   rm -f $$lang_db_ru.files && \
-  text2ngram -n 1 -l -f sqlite -o $$lang_db_ru.files $$PWD/free_ebook.txt && \
-  text2ngram -n 2 -l -f sqlite -o $$lang_db_ru.files $$PWD/free_ebook.txt && \
-  text2ngram -n 3 -l -f sqlite -o $$lang_db_ru.files $$PWD/free_ebook.txt && \
+  text2ngram -n 1 -l -f sqlite -o $$lang_db_ru.files $$PWD/tatoeba_ru.txt && \
+  text2ngram -n 2 -l -f sqlite -o $$lang_db_ru.files $$PWD/tatoeba_ru.txt && \
+  text2ngram -n 3 -l -f sqlite -o $$lang_db_ru.files $$PWD/tatoeba_ru.txt && \
   cp $$lang_db_ru.files \"$(INSTALL_ROOT)\"$$PLUGIN_INSTALL_PATH
 
 QMAKE_EXTRA_TARGETS += lang_db_ru
@@ -39,7 +39,7 @@ INSTALLS += target lang_db_ru
 
 OTHER_FILES += \
     russianplugin.json \
-    free_ebook.txt
+    tatoeba_ru.txt
 
 LIBS += $${TOP_BUILDDIR}/plugins/plugins/libwesternsupport.a -lpresage
 

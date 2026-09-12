@@ -27,9 +27,9 @@ lang_db_hu.path = $$PLUGIN_INSTALL_PATH
 lang_db_hu.files += $$OUT_PWD/database_hu.db
 lang_db_hu.commands += \
   rm -f $$lang_db_hu.files && \
-  text2ngram -n 1 -l -f sqlite -o $$lang_db_hu.files $$PWD/free_ebook.txt && \
-  text2ngram -n 2 -l -f sqlite -o $$lang_db_hu.files $$PWD/free_ebook.txt && \
-  text2ngram -n 3 -l -f sqlite -o $$lang_db_hu.files $$PWD/free_ebook.txt && \
+  text2ngram -n 1 -l -f sqlite -o $$lang_db_hu.files $$PWD/tatoeba_hu.txt && \
+  text2ngram -n 2 -l -f sqlite -o $$lang_db_hu.files $$PWD/tatoeba_hu.txt && \
+  text2ngram -n 3 -l -f sqlite -o $$lang_db_hu.files $$PWD/tatoeba_hu.txt && \
   cp $$lang_db_hu.files \"$(INSTALL_ROOT)\"$$PLUGIN_INSTALL_PATH
 
 QMAKE_EXTRA_TARGETS += lang_db_hu
@@ -39,7 +39,7 @@ INSTALLS += target lang_db_hu
 
 OTHER_FILES += \
     hungarianplugin.json \
-    free_ebook.txt
+    tatoeba_hu.txt
 
 LIBS += $${TOP_BUILDDIR}/plugins/plugins/libwesternsupport.a -lpresage
 

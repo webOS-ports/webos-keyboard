@@ -27,9 +27,9 @@ lang_db_ar.path = $$PLUGIN_INSTALL_PATH
 lang_db_ar.files += $$OUT_PWD/database_ar.db
 lang_db_ar.commands += \
   rm -f $$lang_db_ar.files && \
-  text2ngram -n 1 -l -f sqlite -o $$lang_db_ar.files $$PWD/free_ebook.txt && \
-  text2ngram -n 2 -l -f sqlite -o $$lang_db_ar.files $$PWD/free_ebook.txt && \
-  text2ngram -n 3 -l -f sqlite -o $$lang_db_ar.files $$PWD/free_ebook.txt && \
+  text2ngram -n 1 -l -f sqlite -o $$lang_db_ar.files $$PWD/tatoeba_ar.txt && \
+  text2ngram -n 2 -l -f sqlite -o $$lang_db_ar.files $$PWD/tatoeba_ar.txt && \
+  text2ngram -n 3 -l -f sqlite -o $$lang_db_ar.files $$PWD/tatoeba_ar.txt && \
   cp $$lang_db_ar.files \"$(INSTALL_ROOT)\"$$PLUGIN_INSTALL_PATH
 
 QMAKE_EXTRA_TARGETS += lang_db_ar
@@ -39,7 +39,7 @@ INSTALLS += target lang_db_ar
 
 OTHER_FILES += \
     arabicplugin.json \
-    free_ebook.txt
+    tatoeba_ar.txt
 
 LIBS += $${TOP_BUILDDIR}/plugins/plugins/libwesternsupport.a -lpresage
 

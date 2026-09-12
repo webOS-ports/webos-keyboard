@@ -27,9 +27,9 @@ lang_db_cs.path = $$PLUGIN_INSTALL_PATH
 lang_db_cs.files += $$OUT_PWD/database_cs.db
 lang_db_cs.commands += \
   rm -f $$lang_db_cs.files && \
-  text2ngram -n 1 -l -f sqlite -o $$lang_db_cs.files $$PWD/free_ebook.txt && \
-  text2ngram -n 2 -l -f sqlite -o $$lang_db_cs.files $$PWD/free_ebook.txt && \
-  text2ngram -n 3 -l -f sqlite -o $$lang_db_cs.files $$PWD/free_ebook.txt && \
+  text2ngram -n 1 -l -f sqlite -o $$lang_db_cs.files $$PWD/tatoeba_cs.txt && \
+  text2ngram -n 2 -l -f sqlite -o $$lang_db_cs.files $$PWD/tatoeba_cs.txt && \
+  text2ngram -n 3 -l -f sqlite -o $$lang_db_cs.files $$PWD/tatoeba_cs.txt && \
   cp $$lang_db_cs.files \"$(INSTALL_ROOT)\"$$PLUGIN_INSTALL_PATH
 
 QMAKE_EXTRA_TARGETS += lang_db_cs
@@ -39,7 +39,7 @@ INSTALLS += target lang_db_cs
 
 OTHER_FILES += \
     czechplugin.json \
-    free_ebook.txt
+    tatoeba_cs.txt
 
 LIBS += $${TOP_BUILDDIR}/plugins/plugins/libwesternsupport.a -lpresage
 

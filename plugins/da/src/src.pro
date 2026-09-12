@@ -27,9 +27,9 @@ lang_db_da.path = $$PLUGIN_INSTALL_PATH
 lang_db_da.files += $$OUT_PWD/database_da.db
 lang_db_da.commands += \
   rm -f $$lang_db_da.files && \
-  text2ngram -n 1 -l -f sqlite -o $$lang_db_da.files $$PWD/free_ebook.txt && \
-  text2ngram -n 2 -l -f sqlite -o $$lang_db_da.files $$PWD/free_ebook.txt && \
-  text2ngram -n 3 -l -f sqlite -o $$lang_db_da.files $$PWD/free_ebook.txt && \
+  text2ngram -n 1 -l -f sqlite -o $$lang_db_da.files $$PWD/tatoeba_da.txt && \
+  text2ngram -n 2 -l -f sqlite -o $$lang_db_da.files $$PWD/tatoeba_da.txt && \
+  text2ngram -n 3 -l -f sqlite -o $$lang_db_da.files $$PWD/tatoeba_da.txt && \
   cp $$lang_db_da.files \"$(INSTALL_ROOT)\"$$PLUGIN_INSTALL_PATH
 
 QMAKE_EXTRA_TARGETS += lang_db_da
@@ -39,7 +39,7 @@ INSTALLS += target lang_db_da
 
 OTHER_FILES += \
     danishplugin.json \
-    free_ebook.txt
+    tatoeba_da.txt
 
 LIBS += $${TOP_BUILDDIR}/plugins/plugins/libwesternsupport.a -lpresage
 

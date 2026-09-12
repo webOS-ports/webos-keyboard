@@ -27,9 +27,9 @@ lang_db_fi.path = $$PLUGIN_INSTALL_PATH
 lang_db_fi.files += $$OUT_PWD/database_fi.db
 lang_db_fi.commands += \
   rm -f $$lang_db_fi.files && \
-  text2ngram -n 1 -l -f sqlite -o $$lang_db_fi.files $$PWD/free_ebook.txt && \
-  text2ngram -n 2 -l -f sqlite -o $$lang_db_fi.files $$PWD/free_ebook.txt && \
-  text2ngram -n 3 -l -f sqlite -o $$lang_db_fi.files $$PWD/free_ebook.txt && \
+  text2ngram -n 1 -l -f sqlite -o $$lang_db_fi.files $$PWD/tatoeba_fi.txt && \
+  text2ngram -n 2 -l -f sqlite -o $$lang_db_fi.files $$PWD/tatoeba_fi.txt && \
+  text2ngram -n 3 -l -f sqlite -o $$lang_db_fi.files $$PWD/tatoeba_fi.txt && \
   cp $$lang_db_fi.files \"$(INSTALL_ROOT)\"$$PLUGIN_INSTALL_PATH
 
 QMAKE_EXTRA_TARGETS += lang_db_fi
@@ -39,7 +39,7 @@ INSTALLS += target lang_db_fi
 
 OTHER_FILES += \
     finnishplugin.json \
-    free_ebook.txt
+    tatoeba_fi.txt
 
 LIBS += $${TOP_BUILDDIR}/plugins/plugins/libwesternsupport.a -lpresage
 
