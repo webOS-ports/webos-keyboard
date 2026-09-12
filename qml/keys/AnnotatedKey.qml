@@ -28,7 +28,14 @@ Item {
     property int padding: 0
     property bool thumbKeyboard: false
 
-    width: UI.keyWidth
+    /* Horizontal metric. KeyRow assigns keyUnit from its own weight sum; outside a
+       KeyRow the key falls back to the global UI.keyWidth unit. */
+    property real weight: 1
+    property real keyUnit: UI.keyWidth
+    property bool unitFromRow: false
+    property alias pressArea: keyMouseArea
+
+    width: keyUnit * weight
     height: parent.height
 
     /* to be set in keyboard layouts */
@@ -116,18 +123,26 @@ Item {
         text: label
 
         anchors.horizontalCenter: buttonImage.horizontalCenter
-        anchors.horizontalCenterOffset: thumbKeyboard ? UI.keyWidth / 14 : useHorizontalLayout ? UI.keyWidth / 6 : 0
+        anchors.horizontalCenterOffset: thumbKeyboard ? UI.keyWidth / 14
+                                       : useHorizontalLayout ? key.width * UI.dualPrimaryFactor : 0
 
-        anchors.verticalCenter: parent.verticalCenter
-        anchors.verticalCenterOffset: useHorizontalLayout || thumbKeyboard ? UI.keyHeight / -2 : UI.keyHeight / 0.6  //Units.gu(-0.25)
-        //anchors.verticalCenterOffset: thumbKeyboard? Units.gu(0) : useHorizontalLayout ? UI.keyHeight / -2 : UI.keyHeight / 0.6 
+        anchors.verticalCenter: (useHorizontalLayout || thumbKeyboard) ? parent.verticalCenter
+                                                                       : undefined
+        anchors.verticalCenterOffset: thumbKeyboard ? UI.keyHeight / -2
+                                                    : UI.singleGlyphOffset
+        anchors.bottom: (useHorizontalLayout || thumbKeyboard) ? undefined : key.bottom
+        anchors.bottomMargin: UI.dualPrimaryBottom
+        height: (useHorizontalLayout || thumbKeyboard) ? undefined : UI.dualBoxHeight
+        verticalAlignment: Text.AlignVCenter
 
         font.family: UI.fontFamily
-        font.pixelSize: (UI.currentShiftState === "NORMAL") ? FontUtils.sizeToPixels(UI.annotationFontSize) : FontUtils.sizeToPixels(UI.xsFontSize)
+        font.pixelSize: thumbKeyboard ? FontUtils.sizeToPixels(fontSize)
+                                      : UI.dualGlyphFontPx(text, __active)
         font.bold: UI.fontBold
-        color: (UI.currentShiftState === "NORMAL") ? UI.fontColor : UI.annotationFontColor
-        style: (UI.currentShiftState === "NORMAL") ? Text.Raised : Text.Normal
-        styleColor: "white"
+        readonly property bool __active: UI.currentShiftState === "NORMAL"
+        color: __active ? UI.fontColor : UI.annotationFontColor
+        style: UI.glyphStyle(color, __active ? UI.fontStyleColor : UI.annotationStyleColor)
+        styleColor: __active ? UI.fontStyleColor : UI.annotationStyleColor
         smooth: true
     }
 
@@ -139,17 +154,26 @@ Item {
         text: __annotationLabelNormal
 
         anchors.horizontalCenter: buttonImage.horizontalCenter
-        anchors.horizontalCenterOffset: thumbKeyboard ? UI.keyWidth / -14 : useHorizontalLayout ? UI.keyWidth / -6 : 0
+        anchors.horizontalCenterOffset: thumbKeyboard ? UI.keyWidth / -14
+                                       : useHorizontalLayout ? key.width * UI.dualAltFactor : 0
 
-        anchors.verticalCenter: parent.verticalCenter
-        anchors.verticalCenterOffset: useHorizontalLayout || thumbKeyboard ? UI.keyHeight / -2 : UI.keyHeight / -0.4  //Units.gu(-0.25)
+        anchors.verticalCenter: (useHorizontalLayout || thumbKeyboard) ? parent.verticalCenter
+                                                                       : undefined
+        anchors.verticalCenterOffset: thumbKeyboard ? UI.keyHeight / -2
+                                                    : UI.singleGlyphOffset
+        anchors.top: (useHorizontalLayout || thumbKeyboard) ? undefined : key.top
+        anchors.topMargin: UI.dualAltTop
+        height: (useHorizontalLayout || thumbKeyboard) ? undefined : UI.dualBoxHeight
+        verticalAlignment: Text.AlignVCenter
 
         font.family: UI.fontFamily
-        font.pixelSize: thumbKeyboard ? FontUtils.sizeToPixels(UI.thumbAnnotationFontSize) : (UI.currentShiftState === "NORMAL") ? FontUtils.sizeToPixels(UI.annotationFontSize) : FontUtils.sizeToPixels(UI.xsFontSize)
+        font.pixelSize: thumbKeyboard ? FontUtils.sizeToPixels(UI.thumbAnnotationFontSize)
+                                      : UI.dualGlyphFontPx(text, __active)
         font.bold: false
-        color: (UI.currentShiftState !== "NORMAL") ? UI.fontColor : UI.annotationFontColor
-        style: (UI.currentShiftState !== "NORMAL") ? Text.Raised : Text.Normal
-        styleColor: "white"
+        readonly property bool __active: UI.currentShiftState !== "NORMAL"
+        color: __active ? UI.fontColor : UI.annotationFontColor
+        style: UI.glyphStyle(color, __active ? UI.fontStyleColor : UI.annotationStyleColor)
+        styleColor: __active ? UI.fontStyleColor : UI.annotationStyleColor
         smooth: true
     }
 
@@ -157,24 +181,26 @@ Item {
         id: annotationLabel2
         text: "…" //__annotationLabelNormal
 
-        anchors.horizontalCenter: buttonImage.horizontalCenter
-        anchors.horizontalCenterOffset: thumbKeyboard ? UI.keyWidth / 14 : UI.formFactor === "phone" && !UI.isLandscape ? UI.keyWidth / 4 : UI.keyWidth / 3.5
+        anchors.right: thumbKeyboard ? undefined : key.right
+        anchors.rightMargin: UI.elipsisMargin
+        anchors.horizontalCenter: thumbKeyboard ? buttonImage.horizontalCenter : undefined
+        anchors.horizontalCenterOffset: thumbKeyboard ? UI.keyWidth / 14 : 0
 
         /*anchors.verticalCenter: parent.verticalCenter
         anchors.verticalCenterOffset: thumbKeyboard ? UI.keyHeight / 14 : useHorizontalLayout ? UI.keyHeight / 1.5 : UI.formFactor === "phone" && !UI.isLandscape ? UI.keyHeight / 0.25 : UI.keyHeight / 0.5 */
         
         anchors.bottom: parent.bottom
         //anchors.bottomMargin: thumbKeyboard ? UI.keyHeight / 14 : UI.formFactor === "tablet" ? UI.keyHeight / 0.8 : UI.keyHeight / 3  //Units.gu(1.00) : Units.gu(0.50)
-        anchors.bottomMargin: thumbKeyboard ? UI.keyHeight / 1.5 : UI.formFactor === "tablet" ? UI.keyHeight / 0.8 : UI.keyHeight / 3  //Units.gu(1.00) : Units.gu(0.50)
+        anchors.bottomMargin: thumbKeyboard ? UI.keyHeight / 1.5 : UI.elipsisMargin
 
         font.family: UI.fontFamily
-        font.pixelSize: FontUtils.sizeToPixels(UI.annotationFontSize)
+        font.pixelSize: UI.elipsisFontPx
         font.bold: false
-        style: Text.Raised
-        styleColor: "white"
-        color: UI.fontColor //: UI.annotationFontColor
+        style: UI.glyphStyle(UI.fontColor, UI.fontStyleColor)
+        styleColor: UI.fontStyleColor
+        color: UI.fontColor
         smooth: true
-        visible: showAnnotation2
+        visible: showAnnotation2 && activeExtendedModel !== undefined
     }
 
     PressArea {

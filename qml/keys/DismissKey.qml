@@ -28,9 +28,11 @@ ActionKey {
     iconShifted: "icon-hide-keyboard"
     iconCapsLock: "icon-hide-keyboard"
 
-    width: UI.keyWidth;
+    weight: 1
 
     PressArea {
+        // cFirstRepeatLongDelay: harder to open the size menu by accident
+        holdDelay: longHoldDelay
         anchors.fill: parent
         onlyExclusive: true
 

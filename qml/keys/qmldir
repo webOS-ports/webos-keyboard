@@ -1,22 +1,21 @@
 module keys
 ActionKey 1.0 ActionKey.qml
-ArrowKey 1.0 ArrowKey.qml
 AnnotatedKey 1.0 AnnotatedKey.qml
 BackspaceKey 1.0 BackspaceKey.qml
 CharKey 1.0 CharKey.qml
 DismissKey 1.0 DismissKey.qml
 ExtendedListSelector 1.0 ExtendedListSelector.qml
 GreyKey 1.0 GreyKey.qml
-Key 1.0 Key.qml
 KeyPad 1.0 KeyPad.qml
+KeyRow 1.0 KeyRow.qml
 LanguageKey 1.0 LanguageKey.qml
-LanguageMenu 1.0 LanguageMenu.qml
 Magnifier 1.0 Magnifier.qml
 MultiTouchKeyArea 1.0 MultiTouchKeyArea.qml
 NumKey 1.0 NumKey.qml
 PressArea 1.0 PressArea.qml
 ReturnKey 1.0 ReturnKey.qml
 ShiftKey 1.0 ShiftKey.qml
+SpacerKey 1.0 SpacerKey.qml
 SpaceKey 1.0 SpaceKey.qml
 SymbolShiftKey 1.0 SymbolShiftKey.qml
 TabKey 1.0 TabKey.qml

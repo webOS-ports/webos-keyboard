@@ -36,13 +36,30 @@ Item {
 
     property Column content
 
+    /* Height has to be assigned, not bound: the Loader in KeyboardContainer sizes
+       the item it loads, and that assignment breaks a height binding here, leaving
+       whatever value it happened to hold. Assigning on every change of the column
+       keeps it correct.
+
+       It also has to be assigned once up front. Doing it only from the column's
+       heightChanged - as this did before - left any pad whose rows settled before
+       the handler was wired at zero height, which is why the phone keyboard and the
+       thumb layouts came up as a bare word ribbon. */
+    function updateHeight() {
+        if (content)
+            keyPadRoot.height = content.height;
+    }
+
+    onContentChanged: updateHeight()
+
     Connections {
         target: content
-        onHeightChanged: keyPadRoot.height = content.height;
+        function onHeightChanged() { keyPadRoot.updateHeight(); }
     }
 
     Component.onCompleted:
     {
+        updateHeight();
         calculateKeyWidth();
     }
     onWidthChanged: calculateKeyWidth()

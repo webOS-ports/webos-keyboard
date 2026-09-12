@@ -56,6 +56,9 @@ public:
     bool wordEngineEnabled;
     InputMethod::TextContentType contentType;
     QString activeLanguage;
+    //! Painted on the space bar, and the label the application asked for on Return.
+    QString primaryCandidate;
+    QString actionKeyLabel;
 	QString keyboardSize;
     QString keyboardLayout;
     QStringList enabledLanguages;
@@ -83,6 +86,8 @@ public:
         , wordEngineEnabled(false)
         , contentType(InputMethod::FreeTextContentType)
         , activeLanguage("en")
+        , primaryCandidate()
+        , actionKeyLabel()
 		, keyboardSize("M")
         , keyboardLayout("LuneOS")
         , enabledLanguages(activeLanguage)
@@ -107,6 +112,10 @@ public:
 
         QObject::connect(&editor,  SIGNAL(wordCandidatesChanged(WordCandidateList)),
                          wordRibbon, SLOT(onWordCandidatesChanged(WordCandidateList)));
+
+        //! the space bar shows whatever space would commit
+        QObject::connect(&editor,  SIGNAL(wordCandidatesChanged(WordCandidateList)),
+                         _q,       SLOT(onWordCandidatesChanged()));
 
         QObject::connect(wordRibbon, SIGNAL(wordCandidateSelected(QString)),
                          &editor,  SLOT(replaceAndCommitPreedit(QString)));

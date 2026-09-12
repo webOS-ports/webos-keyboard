@@ -45,6 +45,8 @@ public:
         ActionInsert, //!< Key's label is inserted into text editor.
         ActionShift, //!< Switches keyboard to shows uppercase variant.
         ActionBackspace, //!< Key deletes previous character in text editor.
+        ActionBackspaceWord, //!< Backspace with shift held: deletes whole words
+                             //!< from the first repeat rather than after a delay.
         ActionSpace, //!< Key inserts space into text editor.
         ActionCycle, //!< Key loops through set of characters when pressed in
                      //!< rapid succession and inserts currently shown key

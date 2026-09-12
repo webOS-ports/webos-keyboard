@@ -30,7 +30,7 @@ ActionKey {
     padding: 0
 
     visible: maliit_input_method.enabledLanguages.length > 1 ? true : false
-    width: visible ? UI.keyWidth : 0
+    weight: visible ? 1 : 0
 
     PressArea {
         anchors.fill: parent

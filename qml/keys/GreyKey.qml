@@ -26,7 +26,14 @@ Item {
 
     property int padding: 0
 
-    width: UI.keyWidth
+    /* Horizontal metric. KeyRow assigns keyUnit from its own weight sum; outside a
+       KeyRow the key falls back to the global UI.keyWidth unit. */
+    property real weight: 1
+    property real keyUnit: UI.keyWidth
+    property bool unitFromRow: false
+    property alias pressArea: keyMouseArea
+
+    width: keyUnit * weight
     height: UI.keyHeight
 
     /* to be set in keyboard layouts */

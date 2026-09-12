@@ -53,6 +53,89 @@ QtObject {
         
     property variant keyboardSizeChoices: DesignConstants.keyHeightRatio.map(function(obj) {return obj.name});
 
+    /* Key height in pixels. keyHeight itself is in grid units; mixing the two was
+       the reason the glyph offsets below drifted. */
+    property real keyHeightPx: Units.gu(keyHeight);
+
+    /* Tablet: start from the fixed cap, then clamp to half the key height so a short
+       key still fits its glyph, exactly as drawKeyCap does.
+       Phone: scale the reference glyph by how our key height compares to the
+       reference's, since the phone keyboard has no size setting to clamp against. */
+    function __capped(gu) {
+        return Math.min(Units.gu(gu), Math.floor((keyHeightPx + 1) / 2));
+    }
+    function __scaled(px) {
+        return keyHeightPx * px / DesignConstants.phoneRefKeyHeight;
+    }
+    readonly property bool __tablet: formFactor === "tablet"
+
+    property real charFontPx: __tablet ? __capped(DesignConstants.tabletCharFontCap)
+                                       : __scaled(DesignConstants.phoneCharFontPx);
+    property real dualFontPx: __tablet ? __capped(DesignConstants.tabletDualFontCap)
+                                       : __scaled(DesignConstants.phoneDualFontPx);
+    property real labelFontPx: __tablet ? Math.min(dualFontPx, Units.gu(DesignConstants.tabletLabelFontCap))
+                                        : __scaled(DesignConstants.phoneLabelFontPx);
+    property real elipsisFontPx: __tablet ? Units.gu(DesignConstants.tabletElipsisFontCap)
+                                          : __scaled(DesignConstants.phoneElipsisFontPx);
+    property real boostFontPx: Units.gu(DesignConstants.boostFontSize);
+    property string boostedGlyphs: DesignConstants.boostedGlyphs;
+
+    /* Where the two glyphs sit on a dual-label key. The reference trims 4px off the
+       bottom of the key, splits what is left into thirds, puts the alt glyph in the
+       top third and the primary in the bottom one - +9px and -14px from the centre
+       of a 70px key. The horizontal variant used on the number row splits the key
+       into halves instead. */
+    /* drawKeyCap renders each glyph into an explicit box rather than centring it on
+       a point, which is what keeps a comma off the "..." hint below it: box height is
+       a third of the key once 4px is trimmed off the bottom, the alt box starts 10px
+       down from the top, and the primary box ends 10px above the trimmed bottom. */
+    property real dualBoxHeight: (keyHeightPx - (__tablet ? Units.gu(0.4) : __scaled(4))) / 3;
+    property real dualAltTop: __tablet ? Units.gu(1.0) : __scaled(10);
+    property real dualPrimaryBottom: __tablet ? Units.gu(1.4) : __scaled(14);
+    property real singleGlyphOffset: __tablet ? -Units.gu(0.2) : -__scaled(2);
+    property real dualPrimaryFactor: 0.206;
+    property real dualAltFactor: -0.217;
+
+    /* The "..." hint sits 9px in from the right and bottom edges. */
+    property real elipsisMargin: __tablet ? Units.gu(0.9) : __scaled(9);
+
+    property real popupFontPx: Units.gu(DesignConstants.popupFontCap);
+    property real popupFontPxLong: Units.gu(DesignConstants.popupFontCapLong);
+    property int popupLongAt: DesignConstants.popupLongAt;
+    property real previewFontPx: __scaled(DesignConstants.phonePreviewFontPx);
+
+    function popupGlyphFontPx(text) {
+        return (text && text.length >= popupLongAt) ? popupFontPxLong : popupFontPx;
+    }
+
+    function glyphFontPx(text, isDual) {
+        var size = isDual ? dualFontPx : charFontPx;
+        if (text && text.length > 1)
+            return labelFontPx;
+        if (text && text.length === 1 && boostedGlyphs.indexOf(text) >= 0)
+            return size + boostFontPx;
+        return size;
+    }
+
+    /*! One half of a dual-label key. The half that is not currently active is the
+        grey one, and font_size() renders it at 75% of the base size. */
+    function dualGlyphFontPx(text, active) {
+        if (text && text.length > 1)
+            return labelFontPx;
+        if (!active)
+            return Math.floor(dualFontPx * DesignConstants.dimmedGlyphPercent / 100);
+        return glyphFontPx(text, true);
+    }
+
+    property color fontStyleColor: DesignConstants.fontStyleColor[formFactor];
+    property color annotationStyleColor: DesignConstants.annotationStyleColor[formFactor];
+    property color actionStyleColor: DesignConstants.actionStyleColor[formFactor];
+
+    /*! The second draw is skipped when the two colours are the same. */
+    function glyphStyle(front, back) {
+        return Qt.colorEqual(front, back) ? Text.Normal : Text.Raised;
+    }
+
     property string fontSize: DesignConstants.fontSize[formFactor];
     property string thumbFontSize: DesignConstants.thumbFontSize;
     property string thumbAnnotationFontSize: DesignConstants.thumbAnnotationFontSize;

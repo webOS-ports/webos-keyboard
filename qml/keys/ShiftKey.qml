@@ -21,7 +21,7 @@ import QtQuick 2.0
 import keys 1.0
 
 ActionKey {
-    width: UI.keyWidth;
+    weight: 1
     iconNormal: "shift"
     iconShifted: "shift-on"
     iconCapsLock: "shift-lock"
@@ -39,16 +39,36 @@ ActionKey {
         compatibleWithPopover: true
         property bool keySentDuringShiftState: false;
 
+        /* Caps lock is a double tap within DOUBLE_TAP_DURATION, not a long press.
+           The unlock case records its time so that a quick tap straight after
+           unlocking is swallowed rather than locking again immediately - without
+           that, unlocking and carrying on typing re-locks. */
+        readonly property int doubleTapDuration: 500
+        property double lastShiftTime: 0
+        property double lastUnlockTime: 0
+
         onKeyPressed: {
             keySentDuringShiftState = false; // reset state
 
-            if (UI.currentShiftState === "NORMAL")
+            var now = new Date().getTime();
+
+            if (lastUnlockTime + doubleTapDuration > now) {
+                // quick tap after unlocking: eat it, and start over
+                lastUnlockTime = 0;
+                now = 0;
+            } else if (lastShiftTime + doubleTapDuration > now) {
+                UI.currentShiftState = "CAPSLOCK";
+            } else if (UI.currentShiftState === "CAPSLOCK") {
+                UI.currentShiftState = "NORMAL";
+                lastUnlockTime = now;
+            } else if (UI.currentShiftState === "NORMAL") {
                 UI.currentShiftState = "SHIFTED";
+            } else {
+                UI.currentShiftState = "NORMAL";
+            }
 
-            else if (UI.currentShiftState === "SHIFTED" || UI.currentShiftState === "CAPSLOCK")
-                UI.currentShiftState = "NORMAL"
-
-            UI.isShiftKeyPressed =  true;
+            lastShiftTime = now;
+            UI.isShiftKeyPressed = true;
         }
 
         onKeyPressedAndHold: {
@@ -64,35 +84,19 @@ ActionKey {
             }
         }
 
-        // Add double-click management
-        signal doubleClicked();
-        Timer {
-            id: doubleClickTimer
-            interval: 300; running: false; repeat: false
-        }
+        /* There used to be a second double-click path here, on its own 300ms timer,
+           racing the one above. The timing above is the reference's
+           DOUBLE_TAP_DURATION and it handles the unlock case, so this only keeps the
+           part the other handler did not cover: a press arriving from a slide onto
+           the shift key still shifts. */
         onPressed: {
-            if(!afterMove) {
-                if (doubleClickTimer.running) {
-                    doubleClicked();
-                    doubleClickTimer.stop();
-                }
-                else {
-                    doubleClickTimer.start();
-                }
-            }
-            else {
-                /* even if the press is due to a move on the shift area, go to Shifted mode */
-                if (UI.currentShiftState === "NORMAL")
-                    UI.currentShiftState = "SHIFTED";
-            }
-            UI.isShiftKeyPressed =  true;
+            if (afterMove && UI.currentShiftState === "NORMAL")
+                UI.currentShiftState = "SHIFTED";
+
+            UI.isShiftKeyPressed = true;
         }
         onReleased: {
-            UI.isShiftKeyPressed =  false;
-        }
-
-        onDoubleClicked: {
-            UI.currentShiftState = "CAPSLOCK"
+            UI.isShiftKeyPressed = false;
         }
 
         Connections {

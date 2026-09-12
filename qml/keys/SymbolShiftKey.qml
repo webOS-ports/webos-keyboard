@@ -27,17 +27,22 @@ ActionKey {
     action: "symbols";
 
     fontSize: UI.xsFontSize;
-    width: UI.keyWidth //* 2
+    // 2 units in the reference keymaps, split 1 + 1 when a language key is shown.
+    // Converted layouts set this explicitly; 1 keeps the legacy layouts unchanged.
+    weight: 1
     
     PressArea {
         anchors.fill: parent
         onlyExclusive: true
 
         onKeyPressed: {
-            if (UI.currentSymbolState === "CHARACTERS")
+            if (UI.currentSymbolState === "CHARACTERS") {
                 UI.currentSymbolState = "SYMBOLS";
-            else
+                // symbolMode = eSymbolMode_Lock, shiftMode = eShiftMode_Off
+                UI.currentShiftState = "NORMAL";
+            } else {
                 UI.currentSymbolState = "CHARACTERS";
+            }
         }
     }
 }

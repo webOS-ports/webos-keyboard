@@ -30,15 +30,76 @@ var keyHeightRatio = [ { "name": "XS", "ratio" : 0.7147058877 },	/* 243 / 768 ba
                        { "name":  "M", "ratio" : 1.0 },         	/* 340 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
                        { "name":  "L", "ratio" : 1.15588236 } ];	/* 393 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
 
-var topRowKeyHeightRatio = [ { "name": "XS", "ratio" : 0.82 },	/* 243 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
-                       { "name":  "S", "ratio" : 0.74 }, 	/* (340+243 / 2)  / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
-                       { "name":  "M", "ratio" : 0.74 },         	/* 340 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
-                       { "name":  "L", "ratio" : 0.74 } ];	/* 393 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
+/* Golden reference: TabletKeyboard sets row 0 from key-gray-short.png (110/2 = 55px)
+   and rows 1-4 from key-white.png (140/2 = 70px). The ratio is a property of the
+   artwork, so it is the same for every keyboard size: 55 / 70 = 0.785714. */
+var topRowKeyHeightRatio = [ { "name": "XS", "ratio" : 0.785714286 },
+                       { "name":  "S", "ratio" : 0.785714286 },
+                       { "name":  "M", "ratio" : 0.785714286 },
+                       { "name":  "L", "ratio" : 0.785714286 } ];
 
 var numKeyWidthRatio       =   [ { "name": "XS", "ratio" : 0.925 },	/* 243 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
                        { "name":  "S", "ratio" : 0.925 }, 	/* (340+243 / 2)  / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
                        { "name":  "M", "ratio" : 0.925 },         	/* 340 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
                        { "name":  "L", "ratio" : 0.925 } ];	/* 393 / 768 based on Touchpads resolution, might need adjusting for widescreen tablets*/
+
+/* Glyph sizes come from {Tablet,Phone}Keyboard::drawKeyCap, and the two form
+   factors have to be translated differently.
+
+   The tablet sizes are fixed pixels that do not move when the user changes the
+   keyboard size - drawKeyCap only shrinks them once half the key height drops below
+   the cap. So they are grid-unit constants, which at the TouchPad's gridUnit of 10
+   come out as exactly the reference 26 / 24 / 22 / 14 px, and still scale with
+   density on other hardware.
+
+   The phone reference has no size setting at all: its key height is fixed per
+   orientation, 90px in portrait, with a 24px glyph. A grid-unit constant would
+   therefore be wrong on a dense phone - it would give a 43px glyph on a 110px key
+   where the reference wants 29. What carries over is the ratio, so the phone values
+   are fractions of the key height.
+
+     charFont    a key showing one glyph              26px tablet, 24/90 phone
+     dualFont    a key showing a glyph and its alt    24px tablet, 24/90 phone
+     labelFont   a multi-character label ("Tab")      22px tablet, 22/90 phone
+     elipsisFont the "..." extended-keys hint         14px tablet, 14/90 phone */
+var tabletCharFontCap    =   2.6;   // gu
+var tabletDualFontCap    =   2.4;   // gu
+var tabletLabelFontCap   =   2.2;   // gu
+var tabletElipsisFontCap =   1.4;   // gu
+
+var phoneRefKeyHeight    =   90.25; // px, PhoneKeymap portrait row height
+var phoneCharFontPx      =   24;
+var phoneDualFontPx      =   24;
+var phoneLabelFontPx     =   22;
+var phoneElipsisFontPx   =   14;
+var phonePreviewFontPx   =   32;    // the magnified key preview, drawn bold
+
+/* font_size(text, color, base, 75): the glyph that is *not* currently active on a
+   dual-label key - the grey one - is drawn at 75% of the base size, not the same
+   size. Which of the two that is swaps when shift is held. */
+var dimmedGlyphPercent =   75;
+
+/* drawKeyCap draws every glyph twice, the back colour one pixel below the front
+   one. Where the two are equal - which is the whole phone keyboard - nothing extra
+   is drawn, so no emboss at all. */
+var fontStyleColor       = {"tablet" : "#E2E2E2",   /* cActiveColor_back   */
+                            "phone"  : "#D2D2D2"};
+var annotationStyleColor = {"tablet" : "#C8C8C8",   /* cDisabledColor_back */
+                            "phone"  : "#808080"};
+var actionStyleColor     = {"tablet" : "#000000",   /* cFunctionColor_back */
+                            "phone"  : "#D2D2D2"};
+
+/* boostSize(): the reference adds 2px to '. , ; : \' "' so they do not look lost
+   next to a letter. */
+var boostedGlyphs   =   ".,;:'\"";
+var boostFontSize   =   0.2;                              // gu
+
+/* The extended-keys popup: cPopupFontSize is 22px, dropping to 22 - 8 once the
+   label runs to six characters or more. The popup artwork is the same size on both
+   form factors, so these stay grid-unit constants. */
+var popupFontCap      =   2.2;                            // gu
+var popupFontCapLong  =   1.4;                            // gu
+var popupLongAt       =   6;                              // characters
 
 var fontSize        =   {"tablet" : "22pt",
                          "phone"  : "16pt"};
@@ -48,11 +109,13 @@ var thumbAnnotationFontSize   =   "10pt";
 
 var fontFamily      =   "Prelude";
 
-var fontColor       =   {"tablet" : "#141414",
-                         "phone"  : "#FFFFFF"};
+var fontColor       =   {"tablet" : "#141414",   /* cActiveColor, tablet */
+                         "phone"  : "#D2D2D2"};  /* cActiveColor, phone  */
 
+/* drawKeyCap only sets bold for multi-character function-key labels and for the
+   magnified preview, never for a plain letter. */
 var fontBold        =   {"tablet" : false,
-                         "phone"  : true};
+                         "phone"  : false};
 
 var fontBoldAction  =   true
 
@@ -61,8 +124,8 @@ var annotationFontSize = {"tablet" : "14pt",
 
 var annotationMargins = 0.7; // gu
 
-var annotationFontColor = {"tablet" : "#646464",
-                           "phone"  : "#646464"};
+var annotationFontColor = {"tablet" : "#646464",   /* cDisabledColor, tablet */
+                           "phone"  : "#808080"};  /* cDisabledColor, phone  */
 
 var magnifierFontColor = {"tablet" : "#141414",
                            "phone"  : "#141414"};
@@ -149,7 +212,7 @@ var imageShiftLockKey    = { "tablet" : "../images/tablet/key_bg_shift.png",
 var imageShiftLockKeyPressed    = { "tablet" : "../images/tablet/key_bg_shift_active.png",
                                     "phone"  : "../images/phone/key_bg_shift_active.png"  };
 
-var top_margin = 1.1;  // gu
+var top_margin = 0.5;  // gu - golden keyboardTopPading is 4/5/5/6px for XS/S/M/L
 var bottom_margin = 0; // gu
 
-var wordribbonHeight = 5; //gu
+var wordribbonHeight = 5.5; //gu - golden candidate bar is a fixed 55px (key-gray-short.png / 2)

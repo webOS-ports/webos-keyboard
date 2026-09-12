@@ -40,10 +40,12 @@ OTHER_FILES += \
     keys/ExtendedListSelector.qml \
     keys/LanguageKey.qml \
     keys/KeyPad.qml \
+    keys/KeyRow.qml \
     keys/Magnifier.qml \
     keys/PressArea.qml \
     keys/ReturnKey.qml \
     keys/ShiftKey.qml \
+    keys/SpacerKey.qml \
     keys/SpaceKey.qml \
     keys/SymbolShiftKey.qml \
     keys/TabKey.qml \

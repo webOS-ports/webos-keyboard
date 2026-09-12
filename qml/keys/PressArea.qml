@@ -47,6 +47,14 @@ Item {
     /// Is true while the area is touched, and the finger did not yet lift
     property bool isPressed: false
 
+    /*! How long a press has to be held before it counts as a hold.
+        The reference runs one timer for both jobs - repeating a key and opening its
+        extended-keys popup - so the hold delay is cFirstRepeatDelay, 350ms. The hide
+        key gets cFirstRepeatLongDelay instead, so its size menu is harder to open by
+        accident. We were using a flat 1000ms, nearly three times the reference. */
+    property int holdDelay: 350
+    readonly property int longHoldDelay: 750
+
     /// Cancels the current pressed state of the mouse are
     function cancelPress() {
         isPressed = false;
@@ -55,7 +63,7 @@ Item {
 
     Timer {
         id: holdTimer
-        interval: 1000
+        interval: root.holdDelay
         onTriggered: {
             if (root.isPressed)
                 root.keyPressedAndHold();

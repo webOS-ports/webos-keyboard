@@ -15,11 +15,12 @@ switch, so these databases — not the demo ones presage itself ships in
 | Languages | Source | Licence |
 |---|---|---|
 | de, en, es, fr, it, pl, pt | Project Gutenberg, one public-domain novel each, kept verbatim including the PG header | Public domain |
-| ar, cs, da, fi, he, hu, nl, ru, sv | [Tatoeba](https://tatoeba.org) per-language sentence exports | CC BY 2.0 FR |
+| ar, cs, da, fi, he, hu, nl, no, ru, sv, uk | [Tatoeba](https://tatoeba.org) per-language sentence exports | CC BY 2.0 FR |
 
 The Tatoeba set replaced nine 0-byte `free_ebook.txt` placeholders inherited
 from ubuntu-keyboard, which had been producing empty 28 KB databases — those
-languages had no prediction at all.
+languages had no prediction at all. Norwegian and Ukrainian were added later,
+alongside their keyboard layouts, and were built the same way.
 
 Short everyday sentences also model phone typing considerably better than a
 19th-century novel does; compare what the two sources predict after "I":
@@ -28,7 +29,7 @@ Tatoeba gives *have / am / will / know / can*, Don Quixote does not.
 ## Regenerating the Tatoeba corpora
 
 Sources are `https://downloads.tatoeba.org/exports/per_language/<iso639-3>/<iso639-3>_sentences.tsv.bz2`
-(`ara ces dan fin heb hun nld rus swe`). From the TSV's third column, take
+(`ara ces dan fin heb hun nld nob rus swe ukr`). From the TSV's third column, take
 sentences in file order until 500 KB, dropping exact duplicates — 500 KB keeps
 each database around 6 MB, in line with the 5.5 MB English one.
 

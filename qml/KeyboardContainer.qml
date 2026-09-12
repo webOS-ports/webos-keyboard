@@ -86,10 +86,12 @@ Item {
                 "hu",
                 "it",
                 "nl",
+                "no",
                 "pl",
                 "pt",
                 "ru",
                 "sv",
+                "uk",
                 "zh"
             ];
             return (supportedLocales.indexOf( locale ) > -1);
@@ -134,8 +136,13 @@ Item {
                 if( maliit_input_method.testEnvironment )
                 {
                     // in a test environment, the "lib/<locale>/" directory is indeed a "plugins/<locale>/qml" directory
+                    // ... except for Chinese, whose plugin directory is named after the
+                    // input method rather than the locale.
+                    var pluginDirs = { "zh": "pinyin" };
                     var regexp = /lib\/(..)\//;
-                    selectedLayoutFile = selectedLayoutFile.replace(regexp, '../plugins/$1/qml/');
+                    selectedLayoutFile = selectedLayoutFile.replace(regexp, function(match, locale) {
+                        return '../plugins/' + (pluginDirs[locale] || locale) + '/qml/';
+                    });
                 }
             }
 

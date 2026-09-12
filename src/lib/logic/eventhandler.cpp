@@ -66,6 +66,8 @@ void EventHandler::onKeyPressed(const QString& label, const QString& action)
 
     if (action == "backspace")
         key.setAction(Key::ActionBackspace);
+    else if (action == "backspaceWord")
+        key.setAction(Key::ActionBackspaceWord);
     else if (action == "keyTab")
         key.setAction(Key::ActionTab);
     else if (action == "keyRight")
@@ -91,6 +93,8 @@ void EventHandler::onKeyReleased(const QString& label, const QString& action)
         key.setAction(Key::ActionTab);
     else if (action == "backspace")
         key.setAction(Key::ActionBackspace);
+    else if (action == "backspaceWord")
+        key.setAction(Key::ActionBackspaceWord);
     else if (action == "space")
         key.setAction(Key::ActionSpace);
     else if (action == "shift")

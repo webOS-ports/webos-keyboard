@@ -32,7 +32,9 @@
 #include "inputmethod.h"
 #include "inputmethod_p.h"
 
+#include "coreutils.h"
 #include "models/key.h"
+#include "models/text.h"
 #include "models/keyarea.h"
 #include "models/wordribbon.h"
 #include "models/layout.h"
@@ -388,6 +390,14 @@ void InputMethod::setKeyOverrides(const QMap<QString, QSharedPointer<MKeyOverrid
         }
     }
 
+    const QMap<QString, Key>::const_iterator action(overriden_keys.constFind(
+                                                        QLatin1String(CoreUtils::actionKeyId())));
+    const QString label(action != overriden_keys.constEnd() ? action->label() : QString());
+
+    if (label != d->actionKeyLabel) {
+        d->actionKeyLabel = label;
+        Q_EMIT actionKeyLabelChanged(d->actionKeyLabel);
+    }
 }
 // todo remove
 void InputMethod::updateKey(const QString &key_id,
@@ -404,7 +414,47 @@ void InputMethod::updateKey(const QString &key_id,
         Logic::KeyOverrides overrides_update;
 
         overrides_update.insert(key_id, override_key);
+
+        if (key_id == QLatin1String(CoreUtils::actionKeyId())
+            and override_key.label() != d->actionKeyLabel) {
+            d->actionKeyLabel = override_key.label();
+            Q_EMIT actionKeyLabelChanged(d->actionKeyLabel);
+        }
     }
+}
+
+//! \brief Republishes the word that space would commit, for the space bar to show.
+void InputMethod::onWordCandidatesChanged()
+{
+    Q_D(InputMethod);
+
+    const QString candidate(d->editor.text() ? d->editor.text()->primaryCandidate()
+                                             : QString());
+
+    if (candidate != d->primaryCandidate) {
+        d->primaryCandidate = candidate;
+        Q_EMIT primaryCandidateChanged(d->primaryCandidate);
+    }
+}
+
+//! \brief The word that pressing space would commit.
+//!
+//! drawKeyCap paints this on the space bar rather than leaving it blank:
+//! "if (key == Qt::Key_Space) text = m_candidateBar.autoSelectCandidate()".
+QString InputMethod::primaryCandidate() const
+{
+    Q_D(const InputMethod);
+    return d->primaryCandidate;
+}
+
+//! \brief Label the application asked for on the Return key.
+//!
+//! Maliit delivers it as the "actionKey" override, which is the equivalent of the
+//! reference's PalmIME::EditorState::enterKeyLabel. Empty means a plain "Enter".
+QString InputMethod::actionKeyLabel() const
+{
+    Q_D(const InputMethod);
+    return d->actionKeyLabel;
 }
 
 void InputMethod::onKeyboardClosed()

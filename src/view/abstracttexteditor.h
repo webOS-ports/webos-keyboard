@@ -42,14 +42,16 @@
 
 namespace MaliitKeyboard {
 
+//! Auto-repeat timings, taken from TabletKeyboard.cpp: cFirstRepeatDelay,
+//! cLetterDeleteRepeatDelay, cWordDeleteDelay and cWordDeleteRepeatDelay.
 struct EditorOptions
 {
     EditorOptions();
     // all delays are in milliseconds
-    int backspace_auto_repeat_delay; // delay before first automatically repeated key
-    int backspace_auto_repeat_interval; // interval between automatically repeated keys
-    int backspace_word_delay; // delay before first automatically delete whole words
-    int backspace_word_interval; // interval between deleting word on while pressing the backspace
+    int auto_repeat_delay; // delay before the first automatically repeated key
+    int auto_repeat_interval; // interval between automatically repeated keys
+    int backspace_word_delay; // how long backspace must be held before whole words go
+    int backspace_word_interval; // interval between deleting words
 };
 
 class AbstractTextEditorPrivate;
@@ -156,6 +158,8 @@ private:
     virtual void invokeAction(const QString &action, const QKeySequence &sequence) = 0;
 
     virtual void singleBackspace();
+
+    static bool canRepeat(Key::Action action);
 
     Q_SLOT void autoRepeatBackspace();
     void autoRepeatWordBackspace();

@@ -16,6 +16,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/*
+ * Weights follow PhoneKeymap.cpp, sAzerty + cCustom_AZERTY_*. The letter rows sum
+ * to 10.5 and the bottom row to 11, which is deliberate: azerty gives the symbol
+ * and Enter keys 2 units each rather than 1.5, so its bottom row keys come out
+ * slightly narrower than the letters above them.
+ *
+ * There is no language key and no hide key: the shift key's symbol-layer identity
+ * is cKey_ToggleLanguage, so language switching lives on the 123 page.
+ */
+
 import QtQuick 2.0
 import keys 1.0
 
@@ -31,110 +41,111 @@ KeyPad {
         anchors.left: parent.left
         spacing: 0
 
-        Row {
-            anchors.horizontalCenter: parent.horizontalCenter;
-            spacing: 0
+        // AZERTY_TOP_10(1) + KEY_2(-0.5, P, BracketRight)  [sum 10.5]
+        KeyRow {
+            height: keyHeight
 
-            height: keyHeight;
-
-            CharKey { label: "a"; shifted: "A"; extended: ["a", "à", "á", "â", "ã" , "ä", "å", "æ", "ª"]; extendedShifted: ["A", "À", "Á", "Â", "Ã", "Ä", "Å", "Æ", "ª"] }
-            CharKey { label: "z"; shifted: "Z"; extended: ["z", "ž", "ź", "ż"]; extendedShifted: ["Z", "Ž", "Ź", "Ż"]; }
-            CharKey { label: "e"; shifted: "E"; extended: ["e", "è", "é", "ê", "ë", "ę", "ē", "€", "ě"]; extendedShifted: ["E", "È", "É", "Ê", "Ë", "Ę", "Ē", "€", "Ě"] }
-            CharKey { label: "r"; shifted: "R"; extended: ["r", "®", "ř", "ŕ"]; extendedShifted: ["R","®", "Ř", "Ŕ"] }
+            CharKey { label: "a"; shifted: "A"; extended: ["a", "à", "â", "æ", "á", "ä", "ã", "å", "ª"]; extendedShifted: ["A", "À", "Â", "Æ", "Á", "Ä", "Ã", "Å", "ª"] }
+            CharKey { label: "z"; shifted: "Z"; extended: ["z", "ž", "ź", "ż"]; extendedShifted: ["Z", "Ž", "Ź", "Ż"] }
+            CharKey { label: "e"; shifted: "E"; extended: ["e", "é", "è", "ê", "ë", "ę", "ē", "€"]; extendedShifted: ["E", "É", "È", "Ê", "Ë", "Ę", "Ē", "€"] }
+            CharKey { label: "r"; shifted: "R"; extended: ["r", "®", "ř", "ŕ"]; extendedShifted: ["R", "®", "Ř", "Ŕ"] }
             CharKey { label: "t"; shifted: "T"; extended: ["t", "™", "þ", "ť", "ţ"]; extendedShifted: ["T", "™", "Þ", "Ť", "Ţ"] }
-            CharKey { label: "y"; shifted: "Y"; extended: ["y", "ý", "ÿ", "¥"]; extendedShifted: ["Y", "Ý", "Ÿ", "¥"] }
-            CharKey { label: "u"; shifted: "U"; extended: ["u", "û", "ù", "ú", "û", "ü", "ű"]; extendedShifted: ["U", "Û","Ù","Ú","Û", "Ü", "Ű"] }
-            CharKey { label: "i"; shifted: "I"; extended: ["i", "ì","í", "î", "ï", "İ", "ı"]; extendedShifted: ["I", "Ì", "Í", "Î", "Ï", "İ", "ı"] }
-            CharKey { label: "o"; shifted: "O"; extended: ["o", "ò", "ó", "ô", "õ", "ö", "ø", "ő", "œ", "º", "ω"]; extendedShifted: ["O", "Ò", "Ó", "Ô", "Õ", "Ö", "Ø", "Ő", "Œ", "º", "Ω"] }
-            CharKey { label: "p"; shifted: "P"; extended: ["p", "¶", "§", "π"]; extendedShifted: ["P", "§", "Π"]}
-         }
-
-        Row {
-            anchors.horizontalCenter: parent.horizontalCenter;
-            spacing: 0
-
-            height: keyHeight;
-
-            CharKey { label: "q"; shifted: "Q"; }
-            CharKey { label: "s"; shifted: "S"; extended: ["s", "š", "ş", "ß", "σ", "$", "ś"]; extendedShifted: ["S", "Š", "Ş", "ß", "Σ", "$", "Ś"] }
-            CharKey { label: "d"; shifted: "D"; extended: ["d", "ð", "†", "‡", "ď", "đ"]; extendedShifted: ["D", "Ð", "†", "‡", "Ď", "Đ"] }
-            CharKey { label: "f"; shifted: "F"; }
-            CharKey { label: "g"; shifted: "G"; extended: ["g", "ğ"]; extendedShifted: ["G", "Ğ"]}
-            CharKey { label: "h"; shifted: "H"; }
-            CharKey { label: "j"; shifted: "J"; }
-            CharKey { label: "k"; shifted: "K"; }
-            CharKey { label: "l"; shifted: "L"; extended: ["l", "ł", "ĺ"]; extendedShifted: ["L", "Ł", "Ĺ"]}
-            CharKey { label: "m"; shifted: "M"; extended: ["m", "μ"]; extendedShifted: ["M", "Μ"]; }            
-         }
-
-        Item {
-            anchors.left: parent.left
-            anchors.right: parent.right
-
-            height: keyHeight;
-
-            ShiftKey {id: shiftKey; anchors.left: parent.left; }
-            CharKey { id: wKey; anchors.left: shiftKey.right; width: UI.keyWidth * 9/8; label: "w"; shifted: "W"; }
-            CharKey { id: xKey; anchors.left: wKey.right; width: UI.keyWidth * 9/8; label: "x"; shifted: "X"; extended: ["x", "Rec", "Mute"]; extendedShifted: ["X", "Rec", "Mute"]; }
-            CharKey { id: cKey; anchors.left: xKey.right; width: UI.keyWidth * 9/8; label: "c"; shifted: "C"; extended: ["c", "ç", "ć", "©", "¢", "č"]; extendedShifted: ["C", "Ç", "Ć", "©", "¢", "Č"]; }
-            CharKey { id: vKey; anchors.left: cKey.right; width: UI.keyWidth * 9/8; label: "v"; shifted: "V"; }
-            CharKey { id: bKey; anchors.left: vKey.right; width: UI.keyWidth * 9/8; label: "b"; shifted: "B"; }
-            CharKey { id: nKey; anchors.left: bKey.right; width: UI.keyWidth * 9/8; label: "n"; shifted: "N"; extended: ["n", "ñ", "ń", "ň"]; extendedShifted: ["N", "Ñ", "Ń", "Ň"]; }
-            CharKey { id: apostropheKey; anchors.left: nKey.right; width: UI.keyWidth * 9/8; label: "'"; shifted: "\"";}
-            BackspaceKey {id: backspaceKey; anchors.left: apostropheKey.right; anchors.right: parent.right}
+            CharKey { label: "y"; shifted: "Y"; extended: ["y", "ÿ", "ý", "¥"]; extendedShifted: ["Y", "Ÿ", "Ý", "¥"] }
+            CharKey { label: "u"; shifted: "U"; extended: ["u", "ù", "û", "ü", "ú", "ű"]; extendedShifted: ["U", "Ù", "Û", "Ü", "Ú", "Ű"] }
+            CharKey { label: "i"; shifted: "I"; extended: ["i", "î", "ï", "ì", "í", "İ", "ı"]; extendedShifted: ["I", "Î", "Ï", "Ì", "Í", "İ", "ı"] }
+            CharKey { label: "o"; shifted: "O"; extended: ["o", "ô", "ö", "ò", "ó", "õ", "ø", "ő", "œ", "º"]; extendedShifted: ["O", "Ô", "Ö", "Ò", "Ó", "Õ", "Ø", "Ő", "Œ", "º"] }
+            CharKey { id: pKey; label: "p"; shifted: "P"; extended: ["p", "¶", "§", "π"]; extendedShifted: ["P", "¶", "§", "Π"] }
+            SpacerKey { weight: 0.5; forwardTo: pKey }
         }
 
+        // KEY_4(-0.5, Q, Less) + AZERTY_MID_10(1)  [sum 10.5]
+        KeyRow {
+            height: keyHeight
+
+            SpacerKey { weight: 0.5; forwardTo: qKey }
+            CharKey { id: qKey; label: "q"; shifted: "Q" }
+            CharKey { label: "s"; shifted: "S"; extended: ["s", "š", "ş", "ß", "σ", "ś"]; extendedShifted: ["S", "Š", "Ş", "ß", "Σ", "Ś"] }
+            CharKey { label: "d"; shifted: "D"; extended: ["d", "ð", "†", "‡", "ď", "đ"]; extendedShifted: ["D", "Ð", "†", "‡", "Ď", "Đ"] }
+            CharKey { label: "f"; shifted: "F" }
+            CharKey { label: "g"; shifted: "G"; extended: ["g", "ğ"]; extendedShifted: ["G", "Ğ"] }
+            CharKey { label: "h"; shifted: "H" }
+            CharKey { label: "j"; shifted: "J" }
+            CharKey { label: "k"; shifted: "K" }
+            CharKey { label: "l"; shifted: "L"; extended: ["l", "ł", "ĺ"]; extendedShifted: ["L", "Ł", "Ĺ"] }
+            CharKey { label: "m"; shifted: "M"; extended: ["m", "µ"]; extendedShifted: ["M", "Μ"] }
+        }
+
+        // KEY_4(1.25, Shift) + KEY_4(-0.25, Shift) + AZERTY_LOW_6(1)
+        // + KEY_4(1.5, Apostrophe, At) + KEY_1(-0.25, Backspace) + KEY_1(1.25, Backspace)
+        // [sum 10.5]. Azerty is the one layout whose quarter-key pad beside shift is
+        // another shift rather than the first letter.
+        KeyRow {
+            height: keyHeight
+
+            ShiftKey { id: shiftKey; weight: 1.25 }
+            SpacerKey { weight: 0.25; forwardTo: shiftKey }
+            CharKey { label: "w"; shifted: "W" }
+            CharKey { label: "x"; shifted: "X"; extended: ["x", "Rec", "Mute"]; extendedShifted: ["X", "Rec", "Mute"] }
+            CharKey { label: "c"; shifted: "C"; extended: ["c", "ç", "ć", "©", "¢", "č"]; extendedShifted: ["C", "Ç", "Ć", "©", "¢", "Č"] }
+            CharKey { label: "v"; shifted: "V" }
+            CharKey { label: "b"; shifted: "B" }
+            CharKey { label: "n"; shifted: "N"; extended: ["n", "ñ", "ń", "ň"]; extendedShifted: ["N", "Ñ", "Ń", "Ň"] }
+            AnnotatedKey { label: "'"; shifted: "@"; weight: 1.5 }
+            SpacerKey { weight: 0.25; forwardTo: backspaceKey }
+            BackspaceKey { id: backspaceKey; weight: 1.25 }
+        }
+
+        // AZERTY_BOTTOM with cCustom_AZERTY_plain  [sum 11]
         Component {
             id: contentTypeNormal
 
-            Item {
-                height: keyHeight;
+            KeyRow {
+                height: keyHeight
 
-                SymbolShiftKey { id: symShiftKey; label: "123"; shifted: "123"; anchors.left: parent.left; }
-                LanguageKey    { id: languageMenuButton;                       anchors.left: symShiftKey.right; }
-                AnnotatedKey   { id: commaKey; label: ","; shifted: "/"; extended: [",", "/", "\\"]; extendedShifted: [",", "/", "\\"]; anchors.left: languageMenuButton.right}
-                SpaceKey       { id: spaceKey;                                 anchors.right: dotKey.left; anchors.left: commaKey.right; }
-                AnnotatedKey   { id: dotKey; label: "."; shifted: "?"; extended: [".", "?", "•", "…", "¿"]; extendedShifted: [".", "?", "•", "…", "¿"]; anchors.right: dismissKey.left}
-                DismissKey     { id: dismissKey;                                anchors.right: enterKey.left}
-                ReturnKey      { id: enterKey;      label: "Enter"; shifted: "Enter"; anchors.right: parent.right;}
+                SymbolShiftKey { label: "123"; shifted: "123"; weight: 2 }
+                AnnotatedKey   { label: ","; shifted: "?"; weight: 1.5; extended: [",", "?", "¿"]; extendedShifted: [",", "?", "¿"] }
+                SpaceKey       { weight: 4 }
+                AnnotatedKey   { label: "."; shifted: "!"; weight: 1.5; extended: [".", "!", "•", "…", "¡"]; extendedShifted: [".", "!", "•", "…", "¡"] }
+                ReturnKey      { weight: 2 }
             }
         }
+
+        // cCustom_AZERTY_email  [sum 11]
         Component {
             id: contentTypeEmail
 
-            Item {
-                height: keyHeight;
+            KeyRow {
+                height: keyHeight
 
-                SymbolShiftKey { id: symShiftKey; label: "123"; shifted: "123"; anchors.left: parent.left; }
-                LanguageKey    { id: languageMenuButton;                       anchors.left: symShiftKey.right; }
-                UrlKey         { id: atKey;    label: "@"; shifted: "@";     anchors.left: languageMenuButton.right; }
-                SpaceKey       { id: spaceKey;                               anchors.left: atKey.right; anchors.right: urlKey.left; }
-                UrlKey         { id: urlKey; label: ".com"; shifted: ".fr"; extended: [".com", ".fr", ".net", ".org", ".ca", ".cd", ".ci", ".ch", ".be", ".ht", ".edu", ".gov"]; anchors.right: dotKey.left; }
-                AnnotatedKey   { id: dotKey;      label: "."; shifted: "?"; showAnnotation2: false;  anchors.right: dismissKey.left; }
-                DismissKey     { id: dismissKey;                                anchors.right: enterKey.left}
-                ReturnKey      { id: enterKey; label: "Enter"; shifted: "Enter"; anchors.right: parent.right }
+                SymbolShiftKey { label: "123"; shifted: "123"; weight: 2 }
+                AnnotatedKey   { label: ","; shifted: "?"; weight: 1.5; extended: [",", "?", "¿"]; extendedShifted: [",", "?", "¿"] }
+                UrlKey         { label: "@"; shifted: "@" }
+                SpaceKey       { weight: 2 }
+                UrlKey         { label: ".com"; shifted: ".fr"; extended: [".com", ".fr", ".net", ".org", ".edu"] }
+                AnnotatedKey   { label: "."; shifted: "!"; weight: 1.5; extended: [".", "!", "•", "…", "¡"]; extendedShifted: [".", "!", "•", "…", "¡"] }
+                ReturnKey      { weight: 2 }
             }
         }
+
+        // cCustom_AZERTY_url  [sum 10.5]
         Component {
             id: contentTypeUrl
 
-            Item {
+            KeyRow {
                 height: keyHeight
 
-                SymbolShiftKey { id: symShiftKey; label: "123"; shifted: "123"; anchors.left: parent.left; }
-                LanguageKey    { id: languageMenuButton;                       anchors.left: symShiftKey.right; }
-                UrlKey        { id: slashKey;    label: "/"; shifted: "/";  extended: ["http://", "https://", "www."]; anchors.left: languageMenuButton.right; }
-                SpaceKey       { id: spaceKey;                               anchors.left: slashKey.right; anchors.right: urlKey.left; }
-                UrlKey         { id: urlKey; label: ".com"; shifted: ".fr"; extended: [".com", ".fr", ".net", ".org", ".ca", ".cd", ".ci", ".ch", ".be", ".ht", ".edu", ".gov"]; anchors.right: dotKey.left; }
-                AnnotatedKey   { id: dotKey;      label: "."; shifted: "?"; showAnnotation2: false;  anchors.right: dismissKey.left; }
-                DismissKey     { id: dismissKey;                                anchors.right: enterKey.left}
-                ReturnKey      { id: enterKey;    label: "Enter"; shifted: "Enter"; anchors.right: parent.right }
+                SymbolShiftKey { label: "123"; shifted: "123"; weight: 2 }
+                UrlKey         { label: "/"; shifted: "/" }
+                UrlKey         { label: ":"; shifted: ":"; extended: ["://", "http://", "https://"] }
+                SpaceKey       { weight: 2 }
+                UrlKey         { label: ".com"; shifted: ".fr"; extended: [".com", ".fr", ".net", ".org", ".edu"] }
+                AnnotatedKey   { label: "."; shifted: "!"; weight: 1.5; extended: [".", "!", "•", "…", "¡"]; extendedShifted: [".", "!", "•", "…", "¡"] }
+                ReturnKey      { weight: 2 }
             }
         }
-        Loader {
-            anchors.left: parent.left
-            anchors.right: parent.right
 
+        Loader {
+            width: parent.width
             sourceComponent: currentContentType === 0 ? contentTypeNormal :
                              currentContentType === 3 ? contentTypeEmail : contentTypeUrl
         }

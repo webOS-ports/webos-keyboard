@@ -28,7 +28,14 @@ Item {
     property int padding: 0
     property bool thumbKeyboard: false
 
-    width: UI.keyWidth
+    /* Horizontal metric. KeyRow assigns keyUnit from its own weight sum; outside a
+       KeyRow the key falls back to the global UI.keyWidth unit. */
+    property real weight: 1
+    property real keyUnit: UI.keyWidth
+    property bool unitFromRow: false
+    property alias pressArea: keyPressArea
+
+    width: keyUnit * weight
     height: parent.height
 
     /* to be set in keyboard layouts */
@@ -128,11 +135,14 @@ Item {
         text: (UI.currentShiftState === "NORMAL") ? label : shifted;
         anchors.horizontalCenter: buttonImage.horizontalCenter
         anchors.verticalCenter: buttonImage.verticalCenter 
-        anchors.verticalCenterOffset: UI.keyHeight / -2 //Units.gu(-0.25)
+        anchors.verticalCenterOffset: UI.singleGlyphOffset
         font.family: UI.fontFamily
-        font.pixelSize: FontUtils.sizeToPixels(fontSize)
+        font.pixelSize: thumbKeyboard ? FontUtils.sizeToPixels(fontSize)
+                                      : UI.glyphFontPx(text, false)
         font.bold: UI.fontBold
         color: UI.fontColor
+        style: UI.glyphStyle(UI.fontColor, UI.fontStyleColor)
+        styleColor: UI.fontStyleColor
         smooth: true
         visible: action === "" || action === "url"
     }
@@ -144,21 +154,23 @@ Item {
         id: annotationLabel
         text: (UI.currentShiftState !== "NORMAL") ? __annotationLabelShifted : __annotationLabelNormal
 
-        anchors.horizontalCenter: parent.horizontalCenter
-        //anchors.horizontalCenterOffset: thumbKeyboard ? UI.keyWidth / 14 : UI.formFactor === "tablet" ? UI.keyWidth / 4 : UI.keyWidth / 8
-        anchors.horizontalCenterOffset: thumbKeyboard ? UI.keyWidth / 14 : UI.formFactor === "phone" && !UI.isLandscape ? UI.keyWidth / 4 : UI.keyWidth / 3.5
-        
+        anchors.right: thumbKeyboard ? undefined : parent.right
+        anchors.rightMargin: UI.elipsisMargin
+        anchors.horizontalCenter: thumbKeyboard ? parent.horizontalCenter : undefined
+        anchors.horizontalCenterOffset: thumbKeyboard ? UI.keyWidth / 14 : 0
+
         anchors.bottom: parent.bottom
-        anchors.bottomMargin: thumbKeyboard ? UI.keyHeight / 1.5 : UI.formFactor === "tablet" ? UI.keyHeight / 0.8 : UI.keyHeight / 3  //Units.gu(1.00) : Units.gu(0.50)
+        anchors.bottomMargin: thumbKeyboard ? UI.keyHeight / 1.5 : UI.elipsisMargin
 
         font.family: UI.fontFamily
-        font.pixelSize: thumbKeyboard ? FontUtils.sizeToPixels(UI.thumbAnnotationFontSize) : FontUtils.sizeToPixels(UI.annotationFontSize)
+        font.pixelSize: thumbKeyboard ? FontUtils.sizeToPixels(UI.thumbAnnotationFontSize) : UI.elipsisFontPx
         font.bold: false
-        style: Text.Raised
-        styleColor: "white"
+        style: UI.glyphStyle(UI.annotationFontColor, UI.annotationStyleColor)
+        styleColor: UI.annotationStyleColor
         color: UI.annotationFontColor
         smooth: true
-        visible: UI.formFactor === "tablet" || !noMagnifier
+        visible: (UI.formFactor === "tablet" || !noMagnifier)
+                 && activeExtendedModel !== undefined
     }
 
     PressArea {

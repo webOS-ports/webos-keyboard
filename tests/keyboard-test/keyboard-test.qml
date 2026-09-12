@@ -18,6 +18,7 @@
 
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Controls.Basic as B
 
 import LunaNext.Common 0.1
 import keys 1.0
@@ -27,10 +28,29 @@ import "../../qml" as App
 Rectangle {
     id: testRoot
 
+    /* maliit_input_method, maliit_geometry, maliit_event_handler, maliit_word_engine,
+       maliit_wordribbon and audioFeedback all arrive as context properties from
+       main.cpp, which creates them from Stubs.qml. They have to be context
+       properties rather than objects with an id here, because UI.qml is a singleton
+       and singletons only see the root context. */
+
     property bool isRotated: false
 
     width: 1024
     height: 800
+
+    /*! main.cpp resizes the window to these so the whole simulated screen is
+        visible - a portrait profile is taller than the default window. */
+    property int wantedWidth: keyboardLoader.width
+    property int wantedHeight: keyboardLoader.height
+
+    /*! Defaults if nothing is passed on the command line: the TouchPad profile,
+        English, size M, the plain qwerty layout. */
+    readonly property int defaultEnv: 4   // tenderloin - 1024x768, gridUnit 10
+
+    Component.onCompleted: {
+        Settings.currentTestEnv = stubs.startEnv >= 0 ? stubs.startEnv : defaultEnv;
+    }
 
     Rectangle {
         z: 10
@@ -66,110 +86,237 @@ Rectangle {
         }
     }
 
-    QtObject {
-        id: maliit_geometry
-        property rect popoverRect: Qt.rect(0,0,10,20);
-        property rect visibleRect: Qt.rect(0,0,700,300);
-        property int orientation: 0
-        property bool shown: true
 
-        onVisibleRectChanged: console.log("visibleRect is now " + visibleRect);
-    }
-    QtObject {
-        id: maliit_event_handler
-
-        function onKeyPressed(valueToSubmit, action) { console.log("onKeyPressed : " + valueToSubmit + " -> action: " + action); }
-        function onKeyReleased(valueToSubmit, action) { console.log("onKeyReleased : " + valueToSubmit + " -> action: " + action); inputtextarea.lastKey = valueToSubmit; keyReleased(); }
-        function onWordCandidatePressed(word) { console.log("onWordCandidatePressed : " + word); }
-        function onWordCandidateReleased(word) { console.log("onWordCandidateReleased : " + word); inputtextarea.lastKey = word; }
-
-        signal keyReleased();
-    }
-    QtObject {
-        id: maliit_word_engine
-        property bool enabled: true
-    }
-    ListModel {
-        id: maliit_wordribbon
-        ListElement { word: "first" }
-        ListElement { word: "second"}
-    }
-    QtObject {
-        id: maliit_input_method
-
-        signal activateAutocaps();
-        signal hide();
-
-        property int contentType: 0 // 0 ->  text, 1 -> number, 2 -> telephone, 3 -> email, 4 -> url
-        property bool testEnvironment: true
-        property string activeLanguage: "en"
-        property string keyboardSize: "M"
-        property string keyboardLayout: "LuneOS"
-        property variant enabledLanguages: [ "en", "de", "nl", "fr", "sv", "ar", "cs", "da", "es", "fi", "he", "hu", "it", "pl", "pt", "ru" ]
-    }
-
+    // The simulated application area above the keyboard.
     Rectangle {
         anchors.fill: parent
         anchors.bottomMargin: maliit_geometry.visibleRect.height
 
-        border {
-            color: "black"
-            width: 10
-        }
-        color: "midnightblue"
+        border { color: "black"; width: 10 }
+        color: "#14183a"
         clip: true
 
         Flickable {
+            id: controlFlick
             anchors.fill: parent
-            anchors.margins: 50
-
+            anchors.margins: 12
+            anchors.rightMargin: 20
+            contentHeight: controlCard.height + 24
             flickableDirection: Flickable.VerticalFlick
+            boundsBehavior: Flickable.StopAtBounds
+            ScrollBar.vertical: B.ScrollBar { policy: ScrollBar.AlwaysOn }
 
-            Column {
-                anchors.top: parent.top
-                anchors.left: parent.left
-                anchors.right: parent.right
-                Text {
-                    id: inputtextarea
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    property string lastKey: ""
-                    text: "Last received text from keyboard: " + lastKey
-                    font.bold:true
-                }
-                Button {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    text: "contentType = " + maliit_input_method.contentType
-                    onClicked: maliit_input_method.contentType = (maliit_input_method.contentType + 1)%5;
-                }
-                CheckBox {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    text: "word engine : " + (maliit_word_engine.enabled ? "enabled" : "disabled")
-                    checked: maliit_word_engine.enabled
-                    onClicked: maliit_word_engine.enabled = !maliit_word_engine.enabled;
-                }
-                Button {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    text: "rotate orientation (current is " + (((!isRotated) && (Settings.displayWidth > Settings.displayHeight)) ? "landscape" : "portrait") + ")";
-                    onClicked: testRoot.isRotated = !testRoot.isRotated
-                }
-                //ExclusiveGroup { id: tabPositionGroup }
-                Repeater {
-                    id: listSimulatedEnvs
-                    model: Settings.testEnvs
-                    delegate: RadioButton {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        text: "switch to : " + model.name
-                        //exclusiveGroup: tabPositionGroup
+            // The controls sit on their own light surface. They used to be default
+            // Controls on midnightblue, which meant black text on a dark ground.
+            Rectangle {
+                id: controlCard
+                anchors.horizontalCenter: parent.horizontalCenter
+                width: Math.min(parent.width, 400)
+                height: controls.height + 24
+                radius: 8
+                color: "#eef1f5"
+                border { color: "#c3cad3"; width: 1 }
+
+                Column {
+                    id: controls
+                    y: 12
+                    x: 12
+                    width: parent.width - 24
+                    spacing: 6
+
+                    Text {
+                        width: parent.width
+                        horizontalAlignment: Text.AlignHCenter
+                        wrapMode: Text.WordWrap
+                        color: "#1a1d23"
+                        font.bold: true
+                        text: stubs.lastKey.length > 0
+                              ? "Last key: \u201c" + stubs.lastKey + "\u201d"
+                              : "Tap a key"
+                    }
+
+                    Text {
+                        width: parent.width
+                        horizontalAlignment: Text.AlignHCenter
+                        wrapMode: Text.WordWrap
+                        color: "#55606d"
+                        font.pixelSize: 12
+                        text: Settings.currentTestEnvName
+                              + "  \u00b7  " + maliit_input_method.activeLanguage
+                              + "  \u00b7  size " + maliit_input_method.keyboardSize
+                              + "  \u00b7  " + maliit_input_method.keyboardLayout
+                              + "  \u00b7  " + UI.formFactor
+                              + "  \u00b7  " + Settings.displayWidth + "x" + Settings.displayHeight
+                              + " @ gu " + Settings.gridUnit
+                    }
+
+                    Rectangle { width: parent.width; height: 1; color: "#d5dae1" }
+
+                    // Language. Switching also drops back to the plain layout: not
+                    // every language has a Dvorak or Thumb file, and asking for one
+                    // that does not exist just loads nothing.
+                    ComboBox {
+                        id: langCombo
+                        width: parent.width
+                        implicitHeight: 32
+                        model: stubs.allLanguages
+                        currentIndex: Math.max(0, stubs.allLanguages.indexOf(
+                                                     maliit_input_method.activeLanguage))
+                        onActivated: {
+                            maliit_input_method.keyboardLayout = "LuneOS";
+                            maliit_input_method.activeLanguage = stubs.allLanguages[currentIndex];
+                        }
+                        contentItem: Text {
+                            leftPadding: 10
+                            text: "Language: " + langCombo.displayText
+                            color: "#1a1d23"
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                        delegate: ItemDelegate {
+                            width: langCombo.width
+                            contentItem: Text {
+                                text: modelData
+                                color: "#1a1d23"
+                                verticalAlignment: Text.AlignVCenter
+                            }
+                            highlighted: langCombo.highlightedIndex === index
+                        }
+                    }
+
+                    Button {
+                        width: parent.width
+                        implicitHeight: 30
+                        enabled: __layouts.length > 1
+                        readonly property var __layouts:
+                            stubs.layoutsFor(maliit_input_method.activeLanguage)
+                        text: __layouts.length > 1
+                              ? "Layout: " + maliit_input_method.keyboardLayout
+                              : "Layout: LuneOS (no alternatives)"
                         onClicked: {
-                            keyboardLoader.sourceComponent = undefined;
-                            Settings.currentTestEnv = index;
-                            // reset UI singleton values
-                            UI.keyboardSizeChoice = "M";
-                            keyboardLoader.sourceComponent = kbdComponent;
+                            var i = __layouts.indexOf(maliit_input_method.keyboardLayout);
+                            maliit_input_method.keyboardLayout = __layouts[(i + 1) % __layouts.length];
+                        }
+                    }
+
+                    CheckBox {
+                        width: parent.width
+                        text: "Several languages enabled (shows the language key)"
+                        checked: maliit_input_method.enabledLanguages.length > 1
+                        onClicked: maliit_input_method.enabledLanguages =
+                                   checked ? stubs.allLanguages : [ "en" ]
+                        contentItem: Text {
+                            text: parent.text
+                            color: "#1a1d23"
+                            font.pixelSize: 12
+                            wrapMode: Text.WordWrap
+                            leftPadding: parent.indicator.width + parent.spacing
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                    }
+
+                    Rectangle { width: parent.width; height: 1; color: "#d5dae1" }
+
+                    Button {
+                        width: parent.width
+                        implicitHeight: 30
+                        text: "Content type: " + [ "text", "number", "telephone",
+                                                   "email", "url" ][maliit_input_method.contentType]
+                        onClicked: maliit_input_method.contentType =
+                                   (maliit_input_method.contentType + 1) % 5
+                    }
+
+                    Button {
+                        width: parent.width
+                        implicitHeight: 30
+                        text: "Keyboard size: " + maliit_input_method.keyboardSize
+                        onClicked: {
+                            var sizes = UI.keyboardSizeChoices;
+                            var i = sizes.indexOf(maliit_input_method.keyboardSize);
+                            maliit_input_method.keyboardSize = sizes[(i + 1) % sizes.length];
+                        }
+                    }
+
+                    Button {
+                        width: parent.width
+                        implicitHeight: 30
+                        text: "Orientation: " + (((!isRotated) && (Settings.displayWidth > Settings.displayHeight))
+                                                 ? "landscape" : "portrait")
+                        onClicked: testRoot.isRotated = !testRoot.isRotated
+                    }
+
+                    CheckBox {
+                        width: parent.width
+                        text: "Word engine"
+                        checked: maliit_word_engine.enabled
+                        onClicked: maliit_word_engine.enabled = !maliit_word_engine.enabled
+                        contentItem: Text {
+                            text: parent.text
+                            color: "#1a1d23"
+                            leftPadding: parent.indicator.width + parent.spacing
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                    }
+
+                    Rectangle { width: parent.width; height: 1; color: "#d5dae1" }
+
+                    Text {
+                        color: "#55606d"
+                        font.pixelSize: 12
+                        text: "Device profile"
+                    }
+
+                    Repeater {
+                        model: Settings.testEnvs
+                        delegate: RadioButton {
+                            width: controls.width
+                            implicitHeight: 26
+                            text: model.name + "  (" + model.displayWidth + "x"
+                                  + model.displayHeight + ", gu " + model.gridUnit
+                                  + ", " + (model.tabletUi ? "tablet" : "phone") + ")"
+                            checked: Settings.currentTestEnv === index
+                            onClicked: {
+                                keyboardLoader.sourceComponent = undefined;
+                                Settings.currentTestEnv = index;
+                                UI.keyboardSizeChoice = "M";
+                                keyboardLoader.sourceComponent = kbdComponent;
+                            }
+                            contentItem: Text {
+                                text: parent.text
+                                color: "#1a1d23"
+                                font.pixelSize: 13
+                                leftPadding: parent.indicator.width + parent.spacing
+                                verticalAlignment: Text.AlignVCenter
+                            }
                         }
                     }
                 }
             }
+        }
+    }
+
+    /* The keyboard reports its own height through maliit_geometry. If that stays at
+       nothing, the pad failed to build - almost always a QML error in the layout or
+       in one of the key components, which the console will have printed. Say so on
+       screen rather than showing an empty strip. */
+    Rectangle {
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        height: 64
+        z: 100
+        color: "#7a1d16"
+        visible: keyboardLoader.status === Loader.Ready
+                 && maliit_geometry.visibleRect.height < 40
+
+        Text {
+            anchors.centerIn: parent
+            width: parent.width - 40
+            horizontalAlignment: Text.AlignHCenter
+            wrapMode: Text.WordWrap
+            color: "white"
+            font.bold: true
+            text: "The keyboard built with no height (" + maliit_geometry.visibleRect.height
+                  + "px). Check the console for a QML error in the layout or in qml/keys."
         }
     }
 

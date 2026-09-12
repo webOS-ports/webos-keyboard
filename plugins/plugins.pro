@@ -14,10 +14,12 @@ SUBDIRS = \
     hu \
     it \
     nl \
+    no \
     pl \
     pt \
     ru \
     sv \
+    uk \
 
 enable-pinyin {
     SUBDIRS += pinyin
