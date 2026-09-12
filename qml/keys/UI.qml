@@ -117,6 +117,25 @@ QtObject {
         return size;
     }
 
+    /*! One half of a dual-label key. The half that is not currently active is the
+        grey one, and font_size() renders it at 75% of the base size. */
+    function dualGlyphFontPx(text, active) {
+        if (text && text.length > 1)
+            return labelFontPx;
+        if (!active)
+            return Math.floor(dualFontPx * DesignConstants.dimmedGlyphPercent / 100);
+        return glyphFontPx(text, true);
+    }
+
+    property color fontStyleColor: DesignConstants.fontStyleColor[formFactor];
+    property color annotationStyleColor: DesignConstants.annotationStyleColor[formFactor];
+    property color actionStyleColor: DesignConstants.actionStyleColor[formFactor];
+
+    /*! The second draw is skipped when the two colours are the same. */
+    function glyphStyle(front, back) {
+        return Qt.colorEqual(front, back) ? Text.Normal : Text.Raised;
+    }
+
     property string fontSize: DesignConstants.fontSize[formFactor];
     property string thumbFontSize: DesignConstants.thumbFontSize;
     property string thumbAnnotationFontSize: DesignConstants.thumbAnnotationFontSize;

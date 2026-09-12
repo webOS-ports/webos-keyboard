@@ -152,6 +152,72 @@ Rectangle {
 
                     Rectangle { width: parent.width; height: 1; color: "#d5dae1" }
 
+                    // Language. Switching also drops back to the plain layout: not
+                    // every language has a Dvorak or Thumb file, and asking for one
+                    // that does not exist just loads nothing.
+                    ComboBox {
+                        id: langCombo
+                        width: parent.width
+                        implicitHeight: 32
+                        model: stubs.allLanguages
+                        currentIndex: Math.max(0, stubs.allLanguages.indexOf(
+                                                     maliit_input_method.activeLanguage))
+                        onActivated: {
+                            maliit_input_method.keyboardLayout = "LuneOS";
+                            maliit_input_method.activeLanguage = stubs.allLanguages[currentIndex];
+                        }
+                        contentItem: Text {
+                            leftPadding: 10
+                            text: "Language: " + langCombo.displayText
+                            color: "#1a1d23"
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                        delegate: ItemDelegate {
+                            width: langCombo.width
+                            contentItem: Text {
+                                text: modelData
+                                color: "#1a1d23"
+                                verticalAlignment: Text.AlignVCenter
+                            }
+                            highlighted: langCombo.highlightedIndex === index
+                        }
+                    }
+
+                    Button {
+                        width: parent.width
+                        implicitHeight: 30
+                        enabled: __layouts.length > 1
+                        readonly property var __layouts:
+                            stubs.altLayouts[maliit_input_method.activeLanguage] !== undefined
+                            ? stubs.altLayouts[maliit_input_method.activeLanguage]
+                            : [ "LuneOS" ]
+                        text: __layouts.length > 1
+                              ? "Layout: " + maliit_input_method.keyboardLayout
+                              : "Layout: LuneOS (no alternatives)"
+                        onClicked: {
+                            var i = __layouts.indexOf(maliit_input_method.keyboardLayout);
+                            maliit_input_method.keyboardLayout = __layouts[(i + 1) % __layouts.length];
+                        }
+                    }
+
+                    CheckBox {
+                        width: parent.width
+                        text: "Several languages enabled (shows the language key)"
+                        checked: maliit_input_method.enabledLanguages.length > 1
+                        onClicked: maliit_input_method.enabledLanguages =
+                                   checked ? stubs.allLanguages : [ "en" ]
+                        contentItem: Text {
+                            text: parent.text
+                            color: "#1a1d23"
+                            font.pixelSize: 12
+                            wrapMode: Text.WordWrap
+                            leftPadding: parent.indicator.width + parent.spacing
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                    }
+
+                    Rectangle { width: parent.width; height: 1; color: "#d5dae1" }
+
                     Button {
                         width: parent.width
                         implicitHeight: 30

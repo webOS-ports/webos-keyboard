@@ -35,6 +35,17 @@ If the keyboard area comes up empty, a red banner says so: it means the pad buil
 with no height, which is almost always a QML error in the layout or in `qml/keys`,
 and the console will have printed it.
 
+## Switching language
+
+Use the **Language** dropdown in the panel above the keyboard, or start with
+`--lang de`. Switching also resets the layout to the plain one, because not every
+language has a Dvorak or Thumb file and asking for a missing one just loads nothing.
+
+The keyboard's *own* language key only appears when more than one language is
+enabled - that is how `TabletKeymap::updateLanguageKey()` behaves, and it changes
+the layout, splitting the 2-unit symbol key into 1 + 1. The **Several languages
+enabled** checkbox toggles that so both cases can be compared.
+
 ## Options
 
     --env <index>       device profile from SettingsStub.testEnvs:

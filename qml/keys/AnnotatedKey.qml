@@ -137,11 +137,12 @@ Item {
 
         font.family: UI.fontFamily
         font.pixelSize: thumbKeyboard ? FontUtils.sizeToPixels(fontSize)
-                                      : UI.glyphFontPx(text, true)
+                                      : UI.dualGlyphFontPx(text, __active)
         font.bold: UI.fontBold
-        color: (UI.currentShiftState === "NORMAL") ? UI.fontColor : UI.annotationFontColor
-        style: (UI.currentShiftState === "NORMAL") ? Text.Raised : Text.Normal
-        styleColor: "white"
+        readonly property bool __active: UI.currentShiftState === "NORMAL"
+        color: __active ? UI.fontColor : UI.annotationFontColor
+        style: UI.glyphStyle(color, __active ? UI.fontStyleColor : UI.annotationStyleColor)
+        styleColor: __active ? UI.fontStyleColor : UI.annotationStyleColor
         smooth: true
     }
 
@@ -167,11 +168,12 @@ Item {
 
         font.family: UI.fontFamily
         font.pixelSize: thumbKeyboard ? FontUtils.sizeToPixels(UI.thumbAnnotationFontSize)
-                                      : UI.glyphFontPx(text, true)
+                                      : UI.dualGlyphFontPx(text, __active)
         font.bold: false
-        color: (UI.currentShiftState !== "NORMAL") ? UI.fontColor : UI.annotationFontColor
-        style: (UI.currentShiftState !== "NORMAL") ? Text.Raised : Text.Normal
-        styleColor: "white"
+        readonly property bool __active: UI.currentShiftState !== "NORMAL"
+        color: __active ? UI.fontColor : UI.annotationFontColor
+        style: UI.glyphStyle(color, __active ? UI.fontStyleColor : UI.annotationStyleColor)
+        styleColor: __active ? UI.fontStyleColor : UI.annotationStyleColor
         smooth: true
     }
 
@@ -194,9 +196,9 @@ Item {
         font.family: UI.fontFamily
         font.pixelSize: UI.elipsisFontPx
         font.bold: false
-        style: Text.Raised
-        styleColor: "white"
-        color: UI.fontColor //: UI.annotationFontColor
+        style: UI.glyphStyle(UI.fontColor, UI.fontStyleColor)
+        styleColor: UI.fontStyleColor
+        color: UI.fontColor
         smooth: true
         visible: showAnnotation2 && activeExtendedModel !== undefined
     }

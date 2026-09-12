@@ -74,6 +74,21 @@ var phoneLabelFontPx     =   22;
 var phoneElipsisFontPx   =   14;
 var phonePreviewFontPx   =   32;    // the magnified key preview, drawn bold
 
+/* font_size(text, color, base, 75): the glyph that is *not* currently active on a
+   dual-label key - the grey one - is drawn at 75% of the base size, not the same
+   size. Which of the two that is swaps when shift is held. */
+var dimmedGlyphPercent =   75;
+
+/* drawKeyCap draws every glyph twice, the back colour one pixel below the front
+   one. Where the two are equal - which is the whole phone keyboard - nothing extra
+   is drawn, so no emboss at all. */
+var fontStyleColor       = {"tablet" : "#E2E2E2",   /* cActiveColor_back   */
+                            "phone"  : "#D2D2D2"};
+var annotationStyleColor = {"tablet" : "#C8C8C8",   /* cDisabledColor_back */
+                            "phone"  : "#808080"};
+var actionStyleColor     = {"tablet" : "#000000",   /* cFunctionColor_back */
+                            "phone"  : "#D2D2D2"};
+
 /* boostSize(): the reference adds 2px to '. , ; : \' "' so they do not look lost
    next to a letter. */
 var boostedGlyphs   =   ".,;:'\"";

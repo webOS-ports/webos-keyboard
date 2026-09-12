@@ -40,6 +40,21 @@ QtObject {
         which is the TouchPad and therefore the reference device). */
     property int startEnv: -1
 
+    /*! Everything KeyboardContainer.languageIsSupported() accepts, for the picker
+        in the harness. */
+    readonly property var allLanguages: [
+        "ar", "cs", "da", "de", "en", "es", "fi", "fr", "he", "hu",
+        "it", "nl", "no", "pl", "pt", "ru", "sv", "uk", "zh"
+    ]
+
+    /*! Alternative layouts, per language. An entry missing here means the language
+        only has the plain one. */
+    readonly property var altLayouts: {
+        "en": [ "LuneOS", "Dvorak", "Thumb" ],
+        "sv": [ "LuneOS", "Dvorak" ],
+        "ru": [ "LuneOS", "Thumb" ]
+    }
+
     property QtObject maliit_input_method: QtObject {
         signal activateAutocaps()
         signal hide()

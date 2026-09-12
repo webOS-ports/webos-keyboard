@@ -85,8 +85,8 @@ CharKey {
         font.pixelSize: thumbKeyboard ? FontUtils.sizeToPixels(fontSize)
                                       : UI.labelFontPx;
         font.bold: UI.fontBoldAction
-        style: Text.Raised
-        styleColor: "black"
+        style: UI.glyphStyle(UI.greyColor, UI.actionStyleColor)
+        styleColor: UI.actionStyleColor
         color: UI.greyColor
         smooth: true
     }

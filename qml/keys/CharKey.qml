@@ -141,6 +141,8 @@ Item {
                                       : UI.glyphFontPx(text, false)
         font.bold: UI.fontBold
         color: UI.fontColor
+        style: UI.glyphStyle(UI.fontColor, UI.fontStyleColor)
+        styleColor: UI.fontStyleColor
         smooth: true
         visible: action === "" || action === "url"
     }
@@ -163,8 +165,8 @@ Item {
         font.family: UI.fontFamily
         font.pixelSize: thumbKeyboard ? FontUtils.sizeToPixels(UI.thumbAnnotationFontSize) : UI.elipsisFontPx
         font.bold: false
-        style: Text.Raised
-        styleColor: "white"
+        style: UI.glyphStyle(UI.annotationFontColor, UI.annotationStyleColor)
+        styleColor: UI.annotationStyleColor
         color: UI.annotationFontColor
         smooth: true
         visible: (UI.formFactor === "tablet" || !noMagnifier)
