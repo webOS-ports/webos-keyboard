@@ -27,6 +27,7 @@ HEADERS += \
     inputmethod.h \
     inputmethod_p.h \
     editor.h \
+    hardwarekeyboard.h \
     keyboardgeometry.h \
     keyboardsettings.h \
 #    updatenotifier.h \
@@ -36,6 +37,7 @@ SOURCES += \
     plugin.cpp \
     inputmethod.cpp \
     editor.cpp \
+    hardwarekeyboard.cpp \
     keyboardgeometry.cpp \
     keyboardsettings.cpp \
 #    updatenotifier.cpp \

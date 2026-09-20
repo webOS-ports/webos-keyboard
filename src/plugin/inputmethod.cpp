@@ -190,6 +190,10 @@ void InputMethod::setPreedit(const QString &preedit,
 //! keeps preedit, word prediction and auto-caps consistent between the two
 //! keyboards. Everything else (arrows, Tab, Escape, function keys, shortcuts)
 //! is handed back to the application untouched.
+//!
+//! On a device whose physical keyboard carries Alt and Sym levels, those are
+//! resolved first by HardwareKeyboard, which needs the scancode -- by the time
+//! a key has a Qt::Key and a text the legend printed on the key face is gone.
 void InputMethod::processKeyEvent(QEvent::Type keyType, Qt::Key keyCode,
                                   Qt::KeyboardModifiers modifiers,
                                   const QString &text, bool autoRepeat, int count,
@@ -199,10 +203,39 @@ void InputMethod::processKeyEvent(QEvent::Type keyType, Qt::Key keyCode,
     Q_D(InputMethod);
 
     Key key;
-    const bool isShortcut = modifiers & (Qt::ControlModifier | Qt::AltModifier |
-                                         Qt::MetaModifier);
 
-    if (isShortcut) {
+    // Devices with a physical QWERTY print a second and sometimes a third
+    // character on each key face, reached with Alt and Sym. The kernel reports
+    // only the plain scancode for those, so resolve them before anything else
+    // looks at the key.
+    QString hardwareText;
+    const HardwareKeyboard::Result hardwareResult =
+        d->hardwareKeyboard.handleKey(keyType, nativeScanCode, modifiers,
+                                      &hardwareText);
+
+    if (hardwareResult == HardwareKeyboard::Consumed) {
+        // An Alt or Sym key on its own: it selects a level, it is not input.
+        return;
+    }
+
+    // Those same keys sit on the scancodes a stock keymap calls Alt and AltGr,
+    // so while a profile owns them the Alt bit means "alternate character",
+    // not "keyboard shortcut".
+    Qt::KeyboardModifiers effectiveModifiers = modifiers;
+    if (d->hardwareKeyboard.ownsAltModifier())
+        effectiveModifiers &= ~Qt::AltModifier;
+
+    const bool isShortcut = effectiveModifiers & (Qt::ControlModifier | Qt::AltModifier |
+                                                  Qt::MetaModifier);
+
+    if (hardwareResult == HardwareKeyboard::Text) {
+        if (hardwareText == QLatin1String(" ")) {
+            key.setAction(Key::ActionSpace);
+        } else {
+            key.setAction(Key::ActionInsert);
+            key.setLabel(hardwareText);
+        }
+    } else if (isShortcut) {
         key.setAction(Key::NumActions);
     } else switch (keyCode) {
     case Qt::Key_Backspace:
@@ -299,6 +332,9 @@ void InputMethod::handleFocusChange(bool focusIn)
         d->dropPreedit();
         hide();
     }
+
+    // A latched Alt or Sym belonged to the field we just left.
+    d->hardwareKeyboard.reset();
 
     // this is for hardware keyboard
     inputMethodHost()->setRedirectKeys(focusIn);

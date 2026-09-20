@@ -2,6 +2,7 @@
 #include "inputmethod.h"
 
 #include "editor.h"
+#include "hardwarekeyboard.h"
 #include "keyboardgeometry.h"
 #include "keyboardsettings.h"
 
@@ -66,6 +67,9 @@ public:
 
     KeyboardGeometry *m_geometry;
     KeyboardSettings m_settings;
+    //! Resolves the Alt and Sym levels of a physical keyboard, if this device
+    //! has one we have a profile for. Inert otherwise.
+    HardwareKeyboard hardwareKeyboard;
 
     WordRibbon* wordRibbon;
 
@@ -94,6 +98,7 @@ public:
         , appsCurrentOrientation(qGuiApp->primaryScreen()->orientation())
         , m_geometry(new KeyboardGeometry(q))
         , m_settings()
+        , hardwareKeyboard()
         , wordRibbon(new WordRibbon)
         , preeditCursorAnchor(-1)
     {
@@ -190,6 +195,7 @@ public:
         qml_context->setContextProperty("maliit_event_handler", &event_handler);
         qml_context->setContextProperty("maliit_wordribbon", wordRibbon);
         qml_context->setContextProperty("maliit_word_engine", editor.wordEngine());
+        qml_context->setContextProperty("maliit_hw_keyboard", &hardwareKeyboard);
     }
 
 
