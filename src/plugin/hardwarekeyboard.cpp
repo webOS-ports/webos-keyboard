@@ -119,8 +119,10 @@ HardwareKeyboardProfile readProfile(const QJsonObject &object,
     profile.altKeys = readScanCodes(object.value("altKeys").toArray());
     profile.symKeys = readScanCodes(object.value("symKeys").toArray());
 
-    const QJsonArray names(object.value("match").toObject()
-                           .value("inputDeviceNames").toArray());
+    const QJsonObject match(object.value("match").toObject());
+    profile.requiredKeys = readScanCodes(match.value("requireKeys").toArray());
+
+    const QJsonArray names(match.value("inputDeviceNames").toArray());
     for (const QJsonValue &value : names) {
         const QString name(value.toString());
         if (not name.isEmpty())
@@ -218,24 +220,78 @@ void HardwareKeyboard::loadProfiles()
     }
 }
 
-QStringList HardwareKeyboard::readInputDeviceNames()
+bool HardwareKeyboard::InputDevice::advertises(quint32 scanCode) const
 {
-    QStringList names;
+    if (wordBits <= 0)
+        return false;
 
-    QFile devices("/proc/bus/input/devices");
-    if (not devices.open(QIODevice::ReadOnly | QIODevice::Text))
-        return names;
+    const int word = static_cast<int>(scanCode) / wordBits;
+    const int bit = static_cast<int>(scanCode) % wordBits;
+
+    if (word >= keyBits.size())
+        return false;
+
+    return (keyBits.at(word) >> bit) & 1;
+}
+
+//! \brief Every input device the kernel knows about, with its EV_KEY bitmask.
+//!
+//! /proc/bus/input/devices rather than the evdev nodes: it is world readable,
+//! and maliit-server has no business needing a seat on /dev/input.
+//!
+//! The kernel prints a bitmap most significant word first, padding every word
+//! but the first to the machine's word width -- which is therefore what the
+//! second word's length tells us, without having to assume 32 or 64 bit.
+QList<HardwareKeyboard::InputDevice> HardwareKeyboard::readInputDevices()
+{
+    QList<InputDevice> devices;
+
+    // The override lets a /proc/bus/input/devices captured off a phone be
+    // replayed anywhere, which is how a new profile's matching is checked
+    // without the hardware in hand.
+    QByteArray path(qgetenv("LUNEOS_KEYBOARD_HW_INPUT_DEVICES"));
+    if (path.isEmpty())
+        path = "/proc/bus/input/devices";
+
+    QFile proc(QString::fromLocal8Bit(path));
+    if (not proc.open(QIODevice::ReadOnly | QIODevice::Text))
+        return devices;
 
     static const QRegularExpression name_line("^N: Name=\"(.*)\"$");
+    static const QRegularExpression key_line("^B: KEY=(.*)$");
 
-    QTextStream stream(&devices);
+    QTextStream stream(&proc);
     while (not stream.atEnd()) {
-        const QRegularExpressionMatch match(name_line.match(stream.readLine()));
-        if (match.hasMatch())
-            names.append(match.captured(1));
+        const QString line(stream.readLine());
+
+        const QRegularExpressionMatch name(name_line.match(line));
+        if (name.hasMatch()) {
+            InputDevice device;
+            device.name = name.captured(1);
+            devices.append(device);
+            continue;
+        }
+
+        const QRegularExpressionMatch keys(key_line.match(line));
+        if (not keys.hasMatch() or devices.isEmpty())
+            continue;
+
+        const QStringList words(keys.captured(1).split(QLatin1Char(' '),
+                                                       Qt::SkipEmptyParts));
+        if (words.isEmpty())
+            continue;
+
+        InputDevice &device = devices.last();
+        device.wordBits = 4 * (words.size() > 1 ? words.at(1).size()
+                                                : words.at(0).size());
+
+        // Least significant word first, so a scancode indexes straight into
+        // the list.
+        for (int i = words.size() - 1; i >= 0; --i)
+            device.keyBits.append(words.at(i).toULongLong(nullptr, 16));
     }
 
-    return names;
+    return devices;
 }
 
 void HardwareKeyboard::selectProfile()
@@ -268,16 +324,42 @@ void HardwareKeyboard::selectProfile()
                        << "profile" << wanted << "but no such profile is installed";
         }
     } else {
-        const QStringList present(readInputDeviceNames());
+        const QList<InputDevice> present(readInputDevices());
 
-        for (int i = 0; i < m_profiles.size() and m_activeProfile < 0; ++i) {
-            for (const QString &name : m_profiles.at(i).inputDeviceNames) {
-                if (present.contains(name)) {
-                    m_activeProfile = i;
+        // Of the profiles that match, the most specific wins: one that names
+        // the keys it needs knows something about this keyboard that a
+        // name-only profile does not.
+        int best = -1;
+
+        for (int i = 0; i < m_profiles.size(); ++i) {
+            const HardwareKeyboardProfile &profile = m_profiles.at(i);
+
+            if (best >= 0
+                and profile.requiredKeys.size()
+                    <= m_profiles.at(best).requiredKeys.size()) {
+                continue;
+            }
+
+            for (const InputDevice &device : present) {
+                if (not profile.inputDeviceNames.contains(device.name))
+                    continue;
+
+                bool has_all = true;
+                for (quint32 key : profile.requiredKeys) {
+                    if (not device.advertises(key)) {
+                        has_all = false;
+                        break;
+                    }
+                }
+
+                if (has_all) {
+                    best = i;
                     break;
                 }
             }
         }
+
+        m_activeProfile = best;
     }
 
     if (m_activeProfile >= 0) {

@@ -61,6 +61,11 @@ struct HardwareKeyboardProfile
     QString name;
     QString description;
     QStringList inputDeviceNames;
+    //! evdev scancodes the input device must advertise for this profile to
+    //! apply. Two keyboards can share a device name -- the Unihertz Titan and
+    //! Titan Pocket are both "aw9523-key" -- and the key set is what their
+    //! drivers actually differ in.
+    QSet<quint32> requiredKeys;
     //! evdev scancodes that select the Alt level while held, latched or locked.
     QSet<quint32> altKeys;
     //! evdev scancodes that select the Sym level the same way.
@@ -83,9 +88,10 @@ struct HardwareKeyboardProfile
 //! not been committed yet.
 //!
 //! The mapping is data, not code: one JSON profile per keyboard, selected by
-//! matching the input device name the kernel driver registered. On a device
-//! with no matching profile this class does nothing at all and keys travel the
-//! path they always did.
+//! matching the input device name the kernel driver registered, and where that
+//! is not enough the set of keys the device advertises. On a device with no
+//! matching profile this class does nothing at all and keys travel the path
+//! they always did.
 //!
 //! Some keyboards need no profile because their driver already resolves the
 //! levels in the kernel and reports the resulting keycode -- the Zinwa Q25's
@@ -180,9 +186,20 @@ private:
         bool isActive() const { return state != LevelState::Off; }
     };
 
+    //! One entry per input device, from /proc/bus/input/devices.
+    struct InputDevice {
+        QString name;
+        //! The device's EV_KEY bitmask, one word per entry, least significant
+        //! first, and the width in bits of each word.
+        QList<quint64> keyBits;
+        int wordBits = 0;
+
+        bool advertises(quint32 scanCode) const;
+    };
+
     void loadProfiles();
     void selectProfile();
-    static QStringList readInputDeviceNames();
+    static QList<InputDevice> readInputDevices();
 
     void handleLevelKeyPress(LevelKeyState *level);
     void handleLevelKeyRelease(LevelKeyState *level);

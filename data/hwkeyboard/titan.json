@@ -4,15 +4,18 @@
     "match": {
         "inputDeviceNames": [
             "aw9523-key"
+        ],
+        "requireKeys": [
+            125
         ]
     },
-    "altKeys": [],
-    "symKeys": [
+    "altKeys": [
         100
     ],
+    "symKeys": [],
     "lockOnDoubleTap": true,
     "levels": {
-        "sym": {
+        "alt": {
             "16": ":",
             "17": "/",
             "18": "_",

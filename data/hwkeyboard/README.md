@@ -16,18 +16,27 @@ behaves exactly as it did before this directory existed.
 
 ## How a profile is chosen
 
-At runtime `HardwareKeyboard` reads `/proc/bus/input/devices` and picks the
-first profile whose `match.inputDeviceNames` contains one of the names it finds.
-The scan is repeated while nothing matches, because the keyboard's input device
-can appear well after `maliit-server` starts.
+At runtime `HardwareKeyboard` reads `/proc/bus/input/devices` and takes the
+profile whose `match.inputDeviceNames` contains one of the names it finds and
+whose `match.requireKeys` the device advertises. Where several match, the one
+naming the most required keys wins. The scan is repeated while nothing matches,
+because the keyboard's input device can appear well after `maliit-server`
+starts.
 
-Two environment variables override that, for trying a profile out on a running
-device without reinstalling anything:
+A device name alone is not always enough. The Unihertz Titan and Titan Pocket
+both register `aw9523-key`, with different characters on their key faces, so
+the key set is what tells them apart: the Titan's driver registers
+`KEY_LEFTMETA` (125) and the Pocket's `KEY_COMPOSE` (127), and neither has the
+other's. That is what `match.requireKeys` is for.
+
+Three environment variables override all of this, for trying a profile out on a
+running device without reinstalling anything:
 
 | Variable | Effect |
 |---|---|
 | `LUNEOS_KEYBOARD_HW_LAYOUT` | Force this profile by name, or `none` to disable the whole mechanism |
 | `LUNEOS_KEYBOARD_HW_LAYOUT_DIR` | Look for profiles here first, before the installed directory |
+| `LUNEOS_KEYBOARD_HW_INPUT_DEVICES` | Read the device list from this file instead of `/proc/bus/input/devices`, so a copy taken off a phone can be replayed on a desktop |
 
 Set them in `/etc/maliit/maliit-env.conf` and restart `maliit-server`.
 
@@ -37,7 +46,7 @@ Set them in `/etc/maliit/maliit-env.conf` and restart `maliit-server`.
 {
     "name": "athena-qwerty",
     "description": "BlackBerry KEY2 / KEY2 LE physical keyboard, QWERTY variant",
-    "match": { "inputDeviceNames": ["stmpe_keypad"] },
+    "match": { "inputDeviceNames": ["stmpe_keypad"], "requireKeys": [] },
     "altKeys": [56],
     "symKeys": [100],
     "lockOnDoubleTap": true,
@@ -59,6 +68,7 @@ not change with whatever xkb keymap the compositor happens to have loaded.
 |---|---|
 | `name` | Profile id; what `LUNEOS_KEYBOARD_HW_LAYOUT` matches |
 | `match.inputDeviceNames` | Input device names, as `N: Name="…"` in `/proc/bus/input/devices` spells them |
+| `match.requireKeys` | Scancodes the device must advertise, for telling apart two keyboards that share a name. Empty matches anything |
 | `altKeys` | Scancodes that select the `alt` level |
 | `symKeys` | Scancodes that select the `sym` level |
 | `lockOnDoubleTap` | Whether a second tap locks the level (default `true`) |
@@ -69,7 +79,7 @@ not change with whatever xkb keymap the compositor happens to have loaded.
 
 Only levels that differ from what a plain US keymap already produces need an
 entry, so a profile stays as small as the keyboard is unusual: the Titan needs
-nothing but a `sym` level.
+nothing but an `alt` level.
 
 `levels.base` and `levels.shift` exist for keys that are not really what the
 keymap calls them. The KEY2's `$` key is the example — its driver reports
@@ -116,9 +126,18 @@ character in the level-3 column. This is what the Ubuntu Touch ports ship:
 ```sh
 ./tools/make-hwkeyboard-profile.py --name titan \
     --description 'Unihertz Titan physical keyboard (aw9523 matrix), US layout' \
-    --device-name aw9523-key --sym-key 100 \
+    --device-name aw9523-key --require-key 125 --alt-key 100 \
     --xkb titan > data/hwkeyboard/titan.json
 ```
+
+An xkb file's third column becomes the `alt` level by default, since that is
+the one printed on the key faces; pass `--xkb-level3 sym` for a keyboard whose
+third column really is a separate Sym layer.
+
+Two more options exist for vendor files that describe more keyboard than the
+device has: `--baseline-kl`/`--baseline-kcm` keep only the difference from the
+AOSP `Generic` pair the vendor edited, and `--drop <scancode>` removes a key
+that survives that but still is not real -- the MP01 needs both.
 
 The converter refuses an xkb keysym name it does not know rather than guessing
 at it: a keyboard layout that is quietly wrong is worse than one that is
@@ -137,10 +156,37 @@ evtest /dev/input/eventN                     # the scancode each key reports
 |---|---|---|
 | BlackBerry KEY2 / KEY2 LE (`athena`) | `athena-qwerty`, `athena-azerty`, `athena-qwertz` | BlackBerry's own `stmpe{,_azerty,_qwertz}.{kl,kcm}` in `android_device_blackberry_sdm660-common` |
 | Unihertz Titan | `titan` | The xkb symbols file the Ubuntu Touch `unihertz-titan` port ships (`unihertz_vndr/titan`) |
+| Unihertz Titan Pocket, Titan Slim | `titanpocket` | The xkb symbols file the Ubuntu Touch `unihertz-titanslim-pocket` port ships (`unihertz_vndr/titanpocket`) |
+| Minimal Phone MP01 | `mp01` | The stock `aw9523b-key.{kl,kcm}` out of the device's own `system.img`, diffed against the `Generic.{kl,kcm}` beside them |
 | Zinwa Q25 | none, and none wanted | Its `bbqX0kbd` driver resolves both levels in the kernel and reports the resulting keycode, so there is nothing left here to do. Confirm with `evtest`: Alt+Q should report `KEY_3` with Shift, not `KEY_Q` |
-| Unihertz Titan Pocket, Titan Slim | not written yet | No authoritative layout found. Take the stock `.kl`/`.kcm` out of `/system/usr/` (or `/vendor/usr/`) on a stock ROM and run the converter |
-| Minimal Phone MP01 | not written yet | Same: its AW9523B driver's key table is only partly characterised. Dump the stock `.kl`/`.kcm`, or read the keymap out of the vendor `.ko` |
 
 The KEY2 driver renames its input device by keyboard variant
 (`stmpe_keypad`, `stmpe_azerty_keypad`, `stmpe_qwertz_keypad`), so the right one
 of the three profiles is picked automatically.
+
+### The three keyboards that report `aw9523-key`
+
+The Titan, Titan Pocket and Titan Slim all register the same input device name,
+so their key sets were read out of the drivers to see what really differs:
+
+* **Titan** — vendor source, `drivers/misc/mediatek/aw9523/aw9523_key.c` on the
+  Ubuntu Touch `unihertz-titan` kernel. Carries `KEY_LEFTCTRL`, `KEY_LEFTMETA`
+  and `KEY_RIGHTALT`; no Sym key at all. The key that reaches the printed
+  alternates is the one labelled Alt, on `KEY_RIGHTALT` (100).
+* **Titan Pocket** and **Titan Slim** — the `KEY_STATE key_map[]` table
+  recovered from each of the two prebuilt kernels the
+  `unihertz-titanslim-pocket` port ships. Both carry `KEY_COMPOSE` (the Sym
+  key), `KEY_F13`, `KEY_BACK`, `KEY_APPSELECT` and `KEY_RIGHTALT`, and no
+  `KEY_LEFTCTRL` or `KEY_LEFTMETA`.
+
+**The Pocket's and the Slim's tables are identical** — same 35 keys, same
+scancodes, differing only in which matrix row and column each key is wired to,
+which never leaves the driver. From userspace the two devices cannot be told
+apart, and the Ubuntu Touch port ships one layout for both, so they share the
+`titanpocket` profile here. If the Slim's key faces ever turn out to print
+something different, nothing automatic can separate them and the device would
+need `LUNEOS_KEYBOARD_HW_LAYOUT` set explicitly.
+
+Their Sym key (`KEY_COMPOSE`, 127) has no characters behind it in any vendor
+file, on either device -- on stock Android it opens the emoji panel. It is left
+alone here rather than swallowed, so the shell can bind it.

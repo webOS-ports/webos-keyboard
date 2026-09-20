@@ -4,7 +4,8 @@
     "match": {
         "inputDeviceNames": [
             "stmpe_qwertz_keypad"
-        ]
+        ],
+        "requireKeys": []
     },
     "altKeys": [
         56

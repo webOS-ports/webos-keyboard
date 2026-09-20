@@ -8,7 +8,9 @@ keyboard in one of two other formats, so this reads both:
 
   * Android:  a .kl (scancode -> keycode name) plus a .kcm (keycode name ->
               the character each modifier level produces).  This is what a
-              stock ROM or a LineageOS device tree ships.
+              stock ROM or a LineageOS device tree ships.  When that pair is
+              an edited copy of AOSP's Generic.kl/Generic.kcm, pass the
+              baseline too and only the device's own edits are kept.
   * xkb:      a symbols file using the usual <AD01> key names, with the
               level-3 column holding the alternate character.  This is what
               the Ubuntu Touch ports ship.
@@ -164,7 +166,8 @@ def parse_kcm(path):
     return blocks
 
 
-def levels_from_android(kl_path, kcm_path):
+def android_levels(kl_path, kcm_path):
+    """Every level the pair defines, by scancode, with nothing filtered out."""
     kl = parse_kl(kl_path)
     kcm = parse_kcm(kcm_path)
     levels = {"base": {}, "shift": {}, "alt": {}, "sym": {}}
@@ -173,23 +176,46 @@ def levels_from_android(kl_path, kcm_path):
         block = kcm.get(keycode)
         if not block:
             continue
-        natural = US_KEYMAP.get(scancode)
 
-        base = block.get("base")
-        if base and base.isprintable() and (natural is None or base != natural[0]):
-            levels["base"][scancode] = base
+        for level, names in (("base", ("base",)),
+                             ("shift", ("shift",)),
+                             ("alt", ("alt", "lalt")),
+                             ("sym", ("sym",))):
+            for name in names:
+                if name in block:
+                    levels[level][scancode] = block[name]
+                    break
 
-        shift = block.get("shift")
-        if shift and shift.isprintable() and (natural is None or shift != natural[1]):
-            levels["shift"][scancode] = shift
+    return levels
 
-        alt = block.get("alt") or block.get("lalt")
-        if alt:
-            levels["alt"][scancode] = alt
 
-        sym = block.get("sym")
-        if sym:
-            levels["sym"][scancode] = sym
+def levels_from_android(kl_path, kcm_path, baseline=None):
+    """The levels this keyboard needs a profile for.
+
+    A vendor's .kl/.kcm pair is usually AOSP's Generic pair with the device's
+    own keys edited in, so transcribing the whole thing would describe a PC
+    keyboard the phone does not have -- numpad, function row, dead keys. Given
+    the baseline pair it was derived from, only the difference is kept, which
+    is exactly the device-specific part.
+    """
+    levels = android_levels(kl_path, kcm_path)
+
+    if baseline is not None:
+        for level, characters in levels.items():
+            unchanged = [code for code, char in characters.items()
+                         if baseline[level].get(code) == char]
+            for code in unchanged:
+                del characters[code]
+
+    # The unmodified and shifted characters are only worth carrying when the
+    # keymap already loaded would get them wrong, and a level that produces a
+    # control character is an action key, not text.
+    for level, index in (("base", 0), ("shift", 1)):
+        for code in list(levels[level]):
+            char = levels[level][code]
+            natural = US_KEYMAP.get(code)
+            if not char.isprintable() or (natural is not None and char == natural[index]):
+                del levels[level][code]
 
     return levels
 
@@ -207,11 +233,11 @@ def parse_xkb(path):
     return out
 
 
-def levels_from_xkb(path):
+def levels_from_xkb(path, level3="alt"):
     levels = {"base": {}, "shift": {}, "alt": {}, "sym": {}}
     for scancode, syms in sorted(parse_xkb(path).items()):
         natural = US_KEYMAP.get(scancode)
-        for index, level in ((0, "base"), (1, "shift"), (2, "sym")):
+        for index, level in ((0, "base"), (1, "shift"), (2, level3)):
             if index >= len(syms):
                 continue
             name = syms[index]
@@ -239,28 +265,52 @@ def main():
     p.add_argument("--device-name", action="append", default=[], required=True,
                    help="input device name to match, as /proc/bus/input/devices "
                         "reports it; repeatable")
+    p.add_argument("--require-key", type=int, action="append", default=[],
+                   help="evdev scancode the device must advertise, to tell two "
+                        "keyboards apart that share a device name; repeatable")
     p.add_argument("--alt-key", type=int, action="append", default=[],
                    help="evdev scancode of an Alt (first alternate level) key")
     p.add_argument("--sym-key", type=int, action="append", default=[],
                    help="evdev scancode of a Sym (second alternate level) key")
+    p.add_argument("--xkb-level3", default="alt", choices=("alt", "sym"),
+                   help="which level an xkb file's third column becomes "
+                        "(default: alt, the characters printed on the key faces)")
     p.add_argument("--no-lock", action="store_true",
                    help="do not lock the level on a double tap")
+    p.add_argument("--drop", type=int, action="append", default=[],
+                   help="leave this evdev scancode out of every level, for a "
+                        "key the vendor file describes but the keyboard does "
+                        "not have; repeatable")
     p.add_argument("--kl")
     p.add_argument("--kcm")
+    p.add_argument("--baseline-kl",
+                   help="the Generic.kl the device's .kl was derived from; with "
+                        "--baseline-kcm, only the difference is written out")
+    p.add_argument("--baseline-kcm")
     p.add_argument("--xkb")
     args = p.parse_args()
 
     if args.xkb:
-        levels = levels_from_xkb(args.xkb)
+        levels = levels_from_xkb(args.xkb, args.xkb_level3)
     elif args.kl and args.kcm:
-        levels = levels_from_android(args.kl, args.kcm)
+        baseline = None
+        if bool(args.baseline_kl) != bool(args.baseline_kcm):
+            p.error("--baseline-kl and --baseline-kcm go together")
+        if args.baseline_kl:
+            baseline = android_levels(args.baseline_kl, args.baseline_kcm)
+        levels = levels_from_android(args.kl, args.kcm, baseline)
     else:
         p.error("give either --xkb, or both --kl and --kcm")
+
+    for level in levels.values():
+        for code in args.drop:
+            level.pop(code, None)
 
     profile = {
         "name": args.name,
         "description": args.description,
-        "match": {"inputDeviceNames": args.device_name},
+        "match": {"inputDeviceNames": args.device_name,
+                  "requireKeys": args.require_key},
         "altKeys": args.alt_key,
         "symKeys": args.sym_key,
         "lockOnDoubleTap": not args.no_lock,
