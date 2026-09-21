@@ -18,7 +18,6 @@
 #include <QtQuick>
 #include <QStringList>
 #include <QTimer>
-#include <QElapsedTimer>
 #include <qglobal.h>
 #include <QDebug>
 
@@ -86,10 +85,6 @@ public:
     Qt::Key t9Key;
     int t9Index;
     QTimer *t9Timer;
-    //! De-bounce: the compositor emits several KeyPress events for one
-    //! physical keypad tap, so collapse those into a single press per tap.
-    Qt::Key t9BurstKey;
-    QElapsedTimer t9BurstTimer;
 
     explicit InputMethodPrivate(InputMethod * const _q,
                                 MAbstractInputMethodHost *host)
@@ -118,7 +113,6 @@ public:
         , t9Key(Qt::Key(0))
         , t9Index(0)
         , t9Timer(nullptr)
-        , t9BurstKey(Qt::Key(0))
     {
         applicationApiWrapper->setGeometryItem(m_geometry);
 
@@ -323,10 +317,7 @@ public:
     }
 
     //! Abandons any half-cycled T9 character. Touches no editor state, so it
-    //! is safe to call from inside an editor operation. Deliberately leaves
-    //! the burst de-bounce alone: that collapses duplicate events from one
-    //! physical tap and is independent of what the text is doing, so clearing
-    //! it here would let the tail of a tap through as a second character.
+    //! is safe to call from inside an editor operation.
     void resetT9()
     {
         if (t9Timer)

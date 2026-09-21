@@ -229,36 +229,19 @@ bool InputMethod::t9HandleKey(QEvent::Type keyType, Qt::Key keyCode, bool autoRe
 
     const QString cycle = t9CycleFor(keyCode);
 
-    // The compositor emits several KeyPress events for a single physical keypad
-    // tap (~3 within ~130ms; not flagged as auto-repeat), while deliberate taps
-    // are >250ms apart. De-bounce same-key presses inside a short window so a
-    // tap yields exactly one character (T9 text field) or one digit (raw
-    // Number/PhoneNumber dialer field). This runs before the content-type check
-    // so it covers both paths.
-    if (keyType == QEvent::KeyPress && !cycle.isEmpty()) {
-        if (autoRepeat
-            || (keyCode == d->t9BurstKey && d->t9BurstTimer.isValid()
-                && d->t9BurstTimer.elapsed() < 180))
-            return true;
-        d->t9BurstKey = keyCode;
-        d->t9BurstTimer.restart();
-    }
-
-    // TEMP instrumentation
-    if (keyType == QEvent::KeyPress) {
-        qWarning("T9DBG in: key=0x%x cycle='%s' ct=%d t9key=0x%x idx=%d timer=%d preedit='%s' wordEngine=%d",
-                 int(keyCode), qPrintable(cycle), int(d->contentType), int(d->t9Key), d->t9Index,
-                 d->t9Timer ? int(d->t9Timer->isActive()) : -1,
-                 qPrintable(d->editor.text()->preedit()), int(d->wordEngineEnabled));
-    }
+    // Auto-repeat is held-key repetition, not a deliberate tap, so it must not
+    // advance the cycle. There is deliberately no burst de-bounce beyond that:
+    // measured on this device one physical tap produces exactly one KeyPress
+    // and one KeyRelease with autoRepeat clear, so there is nothing to
+    // collapse, while the window that used to be here swallowed genuine taps
+    // made less than ~180ms apart.
+    if (keyType == QEvent::KeyPress && autoRepeat && !cycle.isEmpty())
+        return true;
 
     // Only in text fields. Number/PhoneNumber fields (the dialer) must receive
     // raw digits, so leave those to the normal path.
-    if (d->contentType != FreeTextContentType && d->contentType != EmailContentType) {
-        if (keyType == QEvent::KeyPress)
-            qWarning("T9DBG reject: contentType=%d not free/email -> raw digit", int(d->contentType));
+    if (d->contentType != FreeTextContentType && d->contentType != EmailContentType)
         return false;
-    }
 
     // Backspace while a character is being cycled cancels it outright rather
     // than committing then deleting.
@@ -291,11 +274,7 @@ bool InputMethod::t9HandleKey(QEvent::Type keyType, Qt::Key keyCode, bool autoRe
         d->t9Key = keyCode;
         d->t9Index = 0;
     }
-    qWarning("T9DBG emit: '%s' idx=%d (preedit before='%s')",
-             qPrintable(QString(cycle.at(d->t9Index))), d->t9Index,
-             qPrintable(d->editor.text()->preedit()));
     d->editor.replacePreedit(QString(cycle.at(d->t9Index)));
-    qWarning("T9DBG emit done: preedit now='%s'", qPrintable(d->editor.text()->preedit()));
     d->t9Timer->start();
     return true;
 }
@@ -313,8 +292,6 @@ void InputMethod::finalizeT9()
     // reset(), and those call dropPreedit() -> resetT9(); clearing first keeps
     // that re-entrancy from finalising the same character twice.
     d->resetT9();
-
-    qWarning("T9DBG commit: preedit='%s'", qPrintable(d->editor.text()->preedit()));
 
     // The preedit already holds the character being cycled, so commit it as it
     // stands. Deliberately Editor::commit() and not replaceAndCommitPreedit():
@@ -752,7 +729,6 @@ void InputMethod::setContentType(TextContentType contentType)
 
     setActiveLanguage(d->activeLanguage);
 
-    qWarning("T9DBG contentType: %d -> %d", int(d->contentType), int(contentType));
     d->contentType = contentType;
     Q_EMIT contentTypeChanged(contentType);
 
