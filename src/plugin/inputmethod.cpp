@@ -457,6 +457,7 @@ void InputMethod::handleFocusChange(bool focusIn)
     // field we just left.
     d->hardwareKeyboard.reset();
     d->resetT9();
+    d->lastKnownCursorPosition = -1;
 
     // this is for hardware keyboard
     inputMethodHost()->setRedirectKeys(focusIn);
@@ -693,6 +694,44 @@ void InputMethod::update()
 
         d->editor.text()->setSurrounding(text);
         d->editor.text()->setSurroundingOffset(position);
+
+        // Tap-to-edit. AbstractTextEditor::onCursorPositionChanged() restores
+        // the word under the caret as a preedit so it can be corrected, but its
+        // only caller was UpdateNotifier, which has been commented out of
+        // plugin.pro since upstream's 2013 build cleanup -- so tapping into a
+        // word has done nothing ever since. Drive it from here rather than
+        // reviving the notifier: the framework calls imExtensionEvent() and
+        // then update() from the same loop, so a notifier would adopt the word
+        // and this function would immediately drop it again over a stale
+        // anchor. Here there is one owner of both the preedit and the anchor.
+        //
+        // Deliberately narrow, so that the failure mode is "the word was not
+        // picked up" rather than text landing somewhere it should not:
+        // only on an actual caret move, only when we hold no preedit of our own
+        // (while typing we always do, and that word is already ours), only for
+        // free text with prediction on, and never across a selection -- the
+        // user is selecting, not placing a caret, and replacing a selection
+        // with a preedit would eat it.
+        bool selectionValid = false;
+        const bool hasSelection = inputMethodHost()->hasSelection(selectionValid);
+
+        if (position != d->lastKnownCursorPosition) {
+            d->lastKnownCursorPosition = position;
+
+            if (d->editor.text()->preedit().isEmpty()
+                && d->wordEngineEnabled
+                && d->contentType == FreeTextContentType
+                && not (selectionValid && hasSelection)) {
+                // The adopted word replaces anything T9 was mid-way through.
+                d->resetT9();
+                d->editor.onCursorPositionChanged(position, text);
+                // Re-anchor on the next update(): the editor arms Qt to echo
+                // this back with the caret at the word's start and the word
+                // absent from the surrounding text, and that is the position
+                // the span check above wants to measure from.
+                d->preeditCursorAnchor = -1;
+            }
+        }
     }
 
     updateAutoCaps();
