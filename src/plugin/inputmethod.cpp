@@ -229,20 +229,6 @@ bool InputMethod::t9HandleKey(QEvent::Type keyType, Qt::Key keyCode, bool autoRe
 
     const QString cycle = t9CycleFor(keyCode);
 
-    // TEMPORARY T9 instrumentation - remove before merging.
-    {
-        static QElapsedTimer sinceLast;
-        const qint64 gap = sinceLast.isValid() ? sinceLast.elapsed() : -1;
-        sinceLast.restart();
-        qWarning("T9DBG t9: type=%s key=0x%x rep=%d gap=%lldms cycle='%s' | state key=0x%x idx=%d timer=%d preedit='%s' ct=%d",
-                 keyType == QEvent::KeyPress ? "press" : "release",
-                 int(keyCode), int(autoRepeat), gap, qPrintable(cycle),
-                 int(d->t9Key), d->t9Index,
-                 d->t9Timer ? int(d->t9Timer->isActive()) : -1,
-                 qPrintable(d->editor.text()->preedit()),
-                 int(d->contentType));
-    }
-
     // The compositor emits several KeyPress events for a single physical keypad
     // tap (~3 within ~130ms; not flagged as auto-repeat), while deliberate taps
     // are >250ms apart. De-bounce same-key presses inside a short window so a
@@ -294,8 +280,6 @@ bool InputMethod::t9HandleKey(QEvent::Type keyType, Qt::Key keyCode, bool autoRe
         d->t9Key = keyCode;
         d->t9Index = 0;
     }
-    qWarning("T9DBG out: emitting '%s' (idx=%d of \"%s\")",
-             qPrintable(QString(cycle.at(d->t9Index))), d->t9Index, qPrintable(cycle));
     d->editor.replacePreedit(QString(cycle.at(d->t9Index)));
     d->t9Timer->start();
     return true;
@@ -314,8 +298,6 @@ void InputMethod::finalizeT9()
     // reset(), and those call dropPreedit() -> resetT9(); clearing first keeps
     // that re-entrancy from finalising the same character twice.
     d->resetT9();
-
-    qWarning("T9DBG commit: preedit='%s'", qPrintable(d->editor.text()->preedit()));
 
     // The preedit already holds the character being cycled, so commit it as it
     // stands. Deliberately Editor::commit() and not replaceAndCommitPreedit():
@@ -359,15 +341,6 @@ void InputMethod::processKeyEvent(QEvent::Type keyType, Qt::Key keyCode,
 
     const bool isShortcut = effectiveModifiers & (Qt::ControlModifier | Qt::AltModifier |
                                                   Qt::MetaModifier);
-
-    // TEMPORARY instrumentation - remove before merging. Logs every key that
-    // reaches the plugin, before any T9 decision, so a keycode we do not
-    // recognise is visible rather than silent.
-    qWarning("T9DBG key: type=%s key=0x%x text='%s' rep=%d scan=%u mods=0x%x hw=%d shortcut=%d",
-             keyType == QEvent::KeyPress ? "press" : "release",
-             int(keyCode), qPrintable(text), int(autoRepeat),
-             unsigned(nativeScanCode), int(modifiers),
-             int(hardwareResult), int(isShortcut));
 
     // Hardware T9 numeric keypad -> letters (multi-tap) in text fields. Placed
     // after the profile has had its say: a key a profile already resolved to an
