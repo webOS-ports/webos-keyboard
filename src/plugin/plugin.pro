@@ -30,6 +30,7 @@ HEADERS += \
     hardwarekeyboard.h \
     keyboardgeometry.h \
     keyboardsettings.h \
+    keyboardlogging.h \
 #    updatenotifier.h \
     luneosapplicationapiwrapper.h \
 
@@ -40,6 +41,7 @@ SOURCES += \
     hardwarekeyboard.cpp \
     keyboardgeometry.cpp \
     keyboardsettings.cpp \
+    keyboardlogging.cpp \
 #    updatenotifier.cpp \
     luneosapplicationapiwrapper.cpp \
 

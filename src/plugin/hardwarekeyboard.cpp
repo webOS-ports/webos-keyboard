@@ -28,6 +28,7 @@
  */
 
 #include "hardwarekeyboard.h"
+#include "keyboardlogging.h"
 
 #include <QDebug>
 #include <QDir>
@@ -365,8 +366,16 @@ void HardwareKeyboard::selectProfile()
             }
         }
 
+        for (const InputDevice &device : present)
+            qCDebug(lcHwKeyboard) << "input device present:" << device.name;
+        qCDebug(lcHwKeyboard) << present.size() << "input devices,"
+                              << m_profiles.size() << "profiles loaded";
+
         m_activeProfile = best;
     }
+
+    if (m_activeProfile < 0)
+        qCDebug(lcHwKeyboard) << "no hardware keyboard profile matched";
 
     if (m_activeProfile >= 0) {
         qInfo() << "using the hardware keyboard profile"
