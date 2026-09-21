@@ -293,17 +293,19 @@ void InputMethod::finalizeT9()
     if (d->t9Key == 0)
         return;
 
-    const QString cycle = t9CycleFor(d->t9Key);
-    const int index = d->t9Index;
-
     // Drop the cycle state before touching the editor. Committing goes out
     // through the input-method host and can come straight back as update() or
     // reset(), and those call dropPreedit() -> resetT9(); clearing first keeps
     // that re-entrancy from finalising the same character twice.
     d->resetT9();
 
-    if (!cycle.isEmpty())
-        d->editor.replaceAndCommitPreedit(QString(cycle.at(index)));
+    // The preedit already holds the character being cycled, so commit it as it
+    // stands. Deliberately Editor::commit() and not replaceAndCommitPreedit():
+    // that one is the "user picked a candidate" path and runs the preedit
+    // through AbstractLanguageFeatures::appendixForReplacedPreedit(), which
+    // returns " " for the western languages -- every multi-tap character came
+    // out followed by a space and no word could be typed.
+    d->editor.commit();
 }
 
 void InputMethod::processKeyEvent(QEvent::Type keyType, Qt::Key keyCode,
