@@ -230,13 +230,13 @@ bool InputMethod::t9HandleKey(QEvent::Type keyType, Qt::Key keyCode, bool autoRe
     const QString cycle = t9CycleFor(keyCode);
 
     // TEMPORARY T9 instrumentation - remove before merging.
-    if (!cycle.isEmpty() || d->t9Key != 0) {
+    {
         static QElapsedTimer sinceLast;
         const qint64 gap = sinceLast.isValid() ? sinceLast.elapsed() : -1;
         sinceLast.restart();
-        qWarning("T9DBG in: type=%s key=0x%x rep=%d gap=%lldms | state key=0x%x idx=%d timer=%d preedit='%s' ct=%d",
+        qWarning("T9DBG t9: type=%s key=0x%x rep=%d gap=%lldms cycle='%s' | state key=0x%x idx=%d timer=%d preedit='%s' ct=%d",
                  keyType == QEvent::KeyPress ? "press" : "release",
-                 int(keyCode), int(autoRepeat), gap,
+                 int(keyCode), int(autoRepeat), gap, qPrintable(cycle),
                  int(d->t9Key), d->t9Index,
                  d->t9Timer ? int(d->t9Timer->isActive()) : -1,
                  qPrintable(d->editor.text()->preedit()),
@@ -359,6 +359,15 @@ void InputMethod::processKeyEvent(QEvent::Type keyType, Qt::Key keyCode,
 
     const bool isShortcut = effectiveModifiers & (Qt::ControlModifier | Qt::AltModifier |
                                                   Qt::MetaModifier);
+
+    // TEMPORARY instrumentation - remove before merging. Logs every key that
+    // reaches the plugin, before any T9 decision, so a keycode we do not
+    // recognise is visible rather than silent.
+    qWarning("T9DBG key: type=%s key=0x%x text='%s' rep=%d scan=%u mods=0x%x hw=%d shortcut=%d",
+             keyType == QEvent::KeyPress ? "press" : "release",
+             int(keyCode), qPrintable(text), int(autoRepeat),
+             unsigned(nativeScanCode), int(modifiers),
+             int(hardwareResult), int(isShortcut));
 
     // Hardware T9 numeric keypad -> letters (multi-tap) in text fields. Placed
     // after the profile has had its say: a key a profile already resolved to an
