@@ -260,9 +260,15 @@ QList<HardwareKeyboard::InputDevice> HardwareKeyboard::readInputDevices()
     static const QRegularExpression name_line("^N: Name=\"(.*)\"$");
     static const QRegularExpression key_line("^B: KEY=(.*)$");
 
-    QTextStream stream(&proc);
-    while (not stream.atEnd()) {
-        const QString line(stream.readLine());
+    // Read the whole file up front rather than streaming it. procfs reports a
+    // size of 0, and QFileDevice::atEnd() is size() == pos(), so it answers
+    // true before a single line has been read -- a QTextStream loop guarded on
+    // atEnd() silently sees no devices at all, and every profile then fails to
+    // match on real hardware while matching fine against a captured copy.
+    const QList<QByteArray> lines(proc.readAll().split('\n'));
+
+    for (const QByteArray &raw : lines) {
+        const QString line(QString::fromLocal8Bit(raw).trimmed());
 
         const QRegularExpressionMatch name(name_line.match(line));
         if (name.hasMatch()) {
