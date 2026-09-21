@@ -79,11 +79,6 @@ public:
     //! started, or -1 when we are not tracking one. See InputMethod::update().
     int preeditCursorAnchor;
 
-    //! The caret position we last saw the application report, so update() can
-    //! tell a caret move from the many other reasons it is called. -1 until we
-    //! have seen one.
-    int lastKnownCursorPosition;
-
     //! Hardware T9 multi-tap. A physical numeric keypad sends KEY_0..KEY_9,
     //! and in a text field those cycle through letters (2 -> a/b/c/2) in the
     //! preedit until t9Timer fires. t9Key is the key being cycled (0 = none),
@@ -120,7 +115,6 @@ public:
         , hardwareKeyboard()
         , wordRibbon(new WordRibbon)
         , preeditCursorAnchor(-1)
-        , lastKnownCursorPosition(-1)
         , t9Key(Qt::Key(0))
         , t9Index(0)
         , t9Timer(nullptr)
