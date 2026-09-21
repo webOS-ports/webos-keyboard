@@ -8,14 +8,12 @@
         "requireKeys": []
     },
     "altKeys": [
-        57,
-        58
+        56
     ],
     "symKeys": [],
     "lockOnDoubleTap": true,
     "levels": {
         "base": {
-            "56": ".",
             "62": " "
         },
         "shift": {
