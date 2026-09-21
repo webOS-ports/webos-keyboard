@@ -242,7 +242,7 @@ bool InputMethod::t9HandleKey(QEvent::Type keyType, Qt::Key keyCode, bool autoRe
     // Only in text fields. Number/PhoneNumber fields (the dialer) must receive
     // raw digits, so leave those to the normal path.
     if (d->contentType != FreeTextContentType && d->contentType != EmailContentType) {
-        qCDebug(lcKeys, "t9: declined, contentType %d takes raw digits",
+        qCInfo(lcKeys, "t9: declined, contentType %d takes raw digits",
                 int(d->contentType));
         return false;
     }
@@ -278,7 +278,7 @@ bool InputMethod::t9HandleKey(QEvent::Type keyType, Qt::Key keyCode, bool autoRe
         d->t9Key = keyCode;
         d->t9Index = 0;
     }
-    qCDebug(lcKeys, "t9: '%s' (index %d of \"%s\")",
+    qCInfo(lcKeys, "t9: '%s' (index %d of \"%s\")",
             qPrintable(QString(cycle.at(d->t9Index))), d->t9Index, qPrintable(cycle));
     d->editor.replacePreedit(QString(cycle.at(d->t9Index)));
     d->t9Timer->start();
@@ -299,7 +299,7 @@ void InputMethod::finalizeT9()
     // that re-entrancy from finalising the same character twice.
     d->resetT9();
 
-    qCDebug(lcKeys, "t9: committing '%s'", qPrintable(d->editor.text()->preedit()));
+    qCInfo(lcKeys, "t9: committing '%s'", qPrintable(d->editor.text()->preedit()));
 
     // The preedit already holds the character being cycled, so commit it as it
     // stands. Deliberately Editor::commit() and not replaceAndCommitPreedit():
@@ -344,7 +344,7 @@ void InputMethod::processKeyEvent(QEvent::Type keyType, Qt::Key keyCode,
     const bool isShortcut = effectiveModifiers & (Qt::ControlModifier | Qt::AltModifier |
                                                   Qt::MetaModifier);
 
-    qCDebug(lcKeys, "key %s 0x%x text='%s' repeat=%d scancode=%u mods=0x%x hw=%d shortcut=%d",
+    qCInfo(lcKeys, "key %s 0x%x text='%s' repeat=%d scancode=%u mods=0x%x hw=%d shortcut=%d",
             keyType == QEvent::KeyPress ? "press" : "release",
             int(keyCode), qPrintable(text), int(autoRepeat),
             unsigned(nativeScanCode), int(modifiers),
