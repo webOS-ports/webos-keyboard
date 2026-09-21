@@ -244,10 +244,21 @@ bool InputMethod::t9HandleKey(QEvent::Type keyType, Qt::Key keyCode, bool autoRe
         d->t9BurstTimer.restart();
     }
 
+    // TEMP instrumentation
+    if (keyType == QEvent::KeyPress) {
+        qWarning("T9DBG in: key=0x%x cycle='%s' ct=%d t9key=0x%x idx=%d timer=%d preedit='%s' wordEngine=%d",
+                 int(keyCode), qPrintable(cycle), int(d->contentType), int(d->t9Key), d->t9Index,
+                 d->t9Timer ? int(d->t9Timer->isActive()) : -1,
+                 qPrintable(d->editor.text()->preedit()), int(d->wordEngineEnabled));
+    }
+
     // Only in text fields. Number/PhoneNumber fields (the dialer) must receive
     // raw digits, so leave those to the normal path.
-    if (d->contentType != FreeTextContentType && d->contentType != EmailContentType)
+    if (d->contentType != FreeTextContentType && d->contentType != EmailContentType) {
+        if (keyType == QEvent::KeyPress)
+            qWarning("T9DBG reject: contentType=%d not free/email -> raw digit", int(d->contentType));
         return false;
+    }
 
     // Backspace while a character is being cycled cancels it outright rather
     // than committing then deleting.
@@ -280,7 +291,11 @@ bool InputMethod::t9HandleKey(QEvent::Type keyType, Qt::Key keyCode, bool autoRe
         d->t9Key = keyCode;
         d->t9Index = 0;
     }
+    qWarning("T9DBG emit: '%s' idx=%d (preedit before='%s')",
+             qPrintable(QString(cycle.at(d->t9Index))), d->t9Index,
+             qPrintable(d->editor.text()->preedit()));
     d->editor.replacePreedit(QString(cycle.at(d->t9Index)));
+    qWarning("T9DBG emit done: preedit now='%s'", qPrintable(d->editor.text()->preedit()));
     d->t9Timer->start();
     return true;
 }
@@ -298,6 +313,8 @@ void InputMethod::finalizeT9()
     // reset(), and those call dropPreedit() -> resetT9(); clearing first keeps
     // that re-entrancy from finalising the same character twice.
     d->resetT9();
+
+    qWarning("T9DBG commit: preedit='%s'", qPrintable(d->editor.text()->preedit()));
 
     // The preedit already holds the character being cycled, so commit it as it
     // stands. Deliberately Editor::commit() and not replaceAndCommitPreedit():
@@ -735,6 +752,7 @@ void InputMethod::setContentType(TextContentType contentType)
 
     setActiveLanguage(d->activeLanguage);
 
+    qWarning("T9DBG contentType: %d -> %d", int(d->contentType), int(contentType));
     d->contentType = contentType;
     Q_EMIT contentTypeChanged(contentType);
 
