@@ -229,6 +229,20 @@ bool InputMethod::t9HandleKey(QEvent::Type keyType, Qt::Key keyCode, bool autoRe
 
     const QString cycle = t9CycleFor(keyCode);
 
+    // TEMPORARY T9 instrumentation - remove before merging.
+    if (!cycle.isEmpty() || d->t9Key != 0) {
+        static QElapsedTimer sinceLast;
+        const qint64 gap = sinceLast.isValid() ? sinceLast.elapsed() : -1;
+        sinceLast.restart();
+        qWarning("T9DBG in: type=%s key=0x%x rep=%d gap=%lldms | state key=0x%x idx=%d timer=%d preedit='%s' ct=%d",
+                 keyType == QEvent::KeyPress ? "press" : "release",
+                 int(keyCode), int(autoRepeat), gap,
+                 int(d->t9Key), d->t9Index,
+                 d->t9Timer ? int(d->t9Timer->isActive()) : -1,
+                 qPrintable(d->editor.text()->preedit()),
+                 int(d->contentType));
+    }
+
     // The compositor emits several KeyPress events for a single physical keypad
     // tap (~3 within ~130ms; not flagged as auto-repeat), while deliberate taps
     // are >250ms apart. De-bounce same-key presses inside a short window so a
@@ -280,6 +294,8 @@ bool InputMethod::t9HandleKey(QEvent::Type keyType, Qt::Key keyCode, bool autoRe
         d->t9Key = keyCode;
         d->t9Index = 0;
     }
+    qWarning("T9DBG out: emitting '%s' (idx=%d of \"%s\")",
+             qPrintable(QString(cycle.at(d->t9Index))), d->t9Index, qPrintable(cycle));
     d->editor.replacePreedit(QString(cycle.at(d->t9Index)));
     d->t9Timer->start();
     return true;
@@ -298,6 +314,8 @@ void InputMethod::finalizeT9()
     // reset(), and those call dropPreedit() -> resetT9(); clearing first keeps
     // that re-entrancy from finalising the same character twice.
     d->resetT9();
+
+    qWarning("T9DBG commit: preedit='%s'", qPrintable(d->editor.text()->preedit()));
 
     // The preedit already holds the character being cycled, so commit it as it
     // stands. Deliberately Editor::commit() and not replaceAndCommitPreedit():
