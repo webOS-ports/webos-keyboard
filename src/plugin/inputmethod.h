@@ -109,6 +109,13 @@ public:
     TextContentType contentType();
     Q_SLOT void setContentType(TextContentType contentType);
 
+    //! Hardware T9 multi-tap. t9HandleKey runs a physical numeric keypad
+    //! through the multi-tap state machine and returns true when it has
+    //! consumed the event; finalizeT9 (also the inactivity-timer target)
+    //! fixes the character being cycled.
+    bool t9HandleKey(QEvent::Type keyType, Qt::Key keyCode, bool autoRepeat);
+    Q_SLOT void finalizeT9();
+
     void update() override;
 
     const QStringList &enabledLanguages() const;

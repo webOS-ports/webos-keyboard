@@ -39,6 +39,8 @@
 #include "models/wordribbon.h"
 #include "models/layout.h"
 
+#include <QTimer>
+
 
 #include "view/setup.h"
 
@@ -116,6 +118,14 @@ InputMethod::InputMethod(MAbstractInputMethodHost *host)
     connect(this, SIGNAL(activeLanguageChanged(QString)), d->editor.wordEngine(), SLOT(onLanguageChanged(QString)));
     connect(d->m_geometry, SIGNAL(visibleRectChanged()), this, SLOT(onVisibleRectChanged()));
     connect(d->m_geometry, SIGNAL(popoverRectChanged()), this, SLOT(updateWindowMask()));
+
+    // Hardware T9 multi-tap inactivity timer: when it fires, the character
+    // currently being cycled is committed and the next keypress starts anew.
+    d->t9Timer = new QTimer(this);
+    d->t9Timer->setSingleShot(true);
+    d->t9Timer->setInterval(1500); // multi-tap commit window: academic (MacKenzie) 1.5s; Android uses 2s
+    connect(d->t9Timer, SIGNAL(timeout()), this, SLOT(finalizeT9()));
+
     d->registerFeedbackSetting();
     d->registerAutoCorrectSetting();
     d->registerAutoCapsSetting();
@@ -194,6 +204,108 @@ void InputMethod::setPreedit(const QString &preedit,
 //! On a device whose physical keyboard carries Alt and Sym levels, those are
 //! resolved first by HardwareKeyboard, which needs the scancode -- by the time
 //! a key has a Qt::Key and a text the legend printed on the key face is gone.
+// The multi-tap cycle for each numeric key, ending in the digit itself. Empty
+// for keys that are not part of the T9 pad.
+static QString t9CycleFor(Qt::Key keyCode)
+{
+    switch (keyCode) {
+    case Qt::Key_1: return QStringLiteral(".,?!1");
+    case Qt::Key_2: return QStringLiteral("abc2");
+    case Qt::Key_3: return QStringLiteral("def3");
+    case Qt::Key_4: return QStringLiteral("ghi4");
+    case Qt::Key_5: return QStringLiteral("jkl5");
+    case Qt::Key_6: return QStringLiteral("mno6");
+    case Qt::Key_7: return QStringLiteral("pqrs7");
+    case Qt::Key_8: return QStringLiteral("tuv8");
+    case Qt::Key_9: return QStringLiteral("wxyz9");
+    case Qt::Key_0: return QStringLiteral(" 0");
+    default:        return QString();
+    }
+}
+
+bool InputMethod::t9HandleKey(QEvent::Type keyType, Qt::Key keyCode, bool autoRepeat)
+{
+    Q_D(InputMethod);
+
+    const QString cycle = t9CycleFor(keyCode);
+
+    // The compositor emits several KeyPress events for a single physical keypad
+    // tap (~3 within ~130ms; not flagged as auto-repeat), while deliberate taps
+    // are >250ms apart. De-bounce same-key presses inside a short window so a
+    // tap yields exactly one character (T9 text field) or one digit (raw
+    // Number/PhoneNumber dialer field). This runs before the content-type check
+    // so it covers both paths.
+    if (keyType == QEvent::KeyPress && !cycle.isEmpty()) {
+        if (autoRepeat
+            || (keyCode == d->t9BurstKey && d->t9BurstTimer.isValid()
+                && d->t9BurstTimer.elapsed() < 180))
+            return true;
+        d->t9BurstKey = keyCode;
+        d->t9BurstTimer.restart();
+    }
+
+    // Only in text fields. Number/PhoneNumber fields (the dialer) must receive
+    // raw digits, so leave those to the normal path.
+    if (d->contentType != FreeTextContentType && d->contentType != EmailContentType)
+        return false;
+
+    // Backspace while a character is being cycled cancels it outright rather
+    // than committing then deleting.
+    if (keyCode == Qt::Key_Backspace && d->t9Key != 0) {
+        if (keyType == QEvent::KeyPress) {
+            d->resetT9();
+            d->editor.clearPreedit();
+        }
+        return true;
+    }
+
+    if (cycle.isEmpty()) {
+        // A non-keypad key ends the character being cycled, so it is committed
+        // before the application sees the new key.
+        if (d->t9Key != 0 && keyType == QEvent::KeyPress)
+            finalizeT9();
+        return false;
+    }
+
+    // Act on the press; swallow the release.
+    if (keyType != QEvent::KeyPress)
+        return true;
+
+    if (keyCode == d->t9Key && d->t9Timer->isActive()) {
+        // Same key within the window: advance the multi-tap cycle in place.
+        d->t9Index = (d->t9Index + 1) % cycle.length();
+    } else {
+        // New character: fix the previous one (if any) and start fresh.
+        finalizeT9();
+        d->t9Key = keyCode;
+        d->t9Index = 0;
+    }
+    d->editor.replacePreedit(QString(cycle.at(d->t9Index)));
+    d->t9Timer->start();
+    return true;
+}
+
+//! \brief Commits the character currently being cycled, if any.
+void InputMethod::finalizeT9()
+{
+    Q_D(InputMethod);
+
+    if (d->t9Key == 0)
+        return;
+
+    const QString cycle = t9CycleFor(d->t9Key);
+    const int index = d->t9Index;
+
+    // Drop the cycle state before touching the editor. Committing goes out
+    // through the input-method host and can come straight back as update() or
+    // reset(), and those call dropPreedit() -> resetT9(); clearing first keeps
+    // that re-entrancy from finalising the same character twice.
+    d->resetT9();
+
+    if (!cycle.isEmpty())
+        d->editor.replaceAndCommitPreedit(QString(cycle.at(index)));
+}
+
 void InputMethod::processKeyEvent(QEvent::Type keyType, Qt::Key keyCode,
                                   Qt::KeyboardModifiers modifiers,
                                   const QString &text, bool autoRepeat, int count,
@@ -227,6 +339,14 @@ void InputMethod::processKeyEvent(QEvent::Type keyType, Qt::Key keyCode,
 
     const bool isShortcut = effectiveModifiers & (Qt::ControlModifier | Qt::AltModifier |
                                                   Qt::MetaModifier);
+
+    // Hardware T9 numeric keypad -> letters (multi-tap) in text fields. Placed
+    // after the profile has had its say: a key a profile already resolved to an
+    // alternate character is a QWERTY level, not a keypad digit, and a modifier
+    // makes this a shortcut - neither belongs in the multi-tap machine.
+    if (hardwareResult != HardwareKeyboard::Text && !isShortcut
+        && t9HandleKey(keyType, keyCode, autoRepeat))
+        return;
 
     if (hardwareResult == HardwareKeyboard::Text) {
         if (hardwareText == QLatin1String(" ")) {
@@ -333,8 +453,10 @@ void InputMethod::handleFocusChange(bool focusIn)
         hide();
     }
 
-    // A latched Alt or Sym belonged to the field we just left.
+    // A latched Alt or Sym, and any half-cycled T9 character, belonged to the
+    // field we just left.
     d->hardwareKeyboard.reset();
+    d->resetT9();
 
     // this is for hardware keyboard
     inputMethodHost()->setRedirectKeys(focusIn);
@@ -583,6 +705,11 @@ void InputMethod::updateWordEngine()
     if (d->contentType != FreeTextContentType)
         d->wordEngineEnabled = false;
 
+    // Clears the preedit directly rather than through dropPreedit(), so the
+    // T9 cycle that lived in it has to be dropped here too. Reached on every
+    // content-type change, which is exactly when a half-cycled letter must not
+    // survive into the next field.
+    d->resetT9();
     d->editor.clearPreedit();
     d->editor.wordEngine()->setEnabled( d->wordEngineEnabled );
 }

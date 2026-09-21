@@ -17,6 +17,8 @@
 
 #include <QtQuick>
 #include <QStringList>
+#include <QTimer>
+#include <QElapsedTimer>
 #include <qglobal.h>
 #include <QDebug>
 
@@ -77,6 +79,18 @@ public:
     //! started, or -1 when we are not tracking one. See InputMethod::update().
     int preeditCursorAnchor;
 
+    //! Hardware T9 multi-tap. A physical numeric keypad sends KEY_0..KEY_9,
+    //! and in a text field those cycle through letters (2 -> a/b/c/2) in the
+    //! preedit until t9Timer fires. t9Key is the key being cycled (0 = none),
+    //! t9Index the position in its cycle.
+    Qt::Key t9Key;
+    int t9Index;
+    QTimer *t9Timer;
+    //! De-bounce: the compositor emits several KeyPress events for one
+    //! physical keypad tap, so collapse those into a single press per tap.
+    Qt::Key t9BurstKey;
+    QElapsedTimer t9BurstTimer;
+
     explicit InputMethodPrivate(InputMethod * const _q,
                                 MAbstractInputMethodHost *host)
         : q(_q)
@@ -101,6 +115,10 @@ public:
         , hardwareKeyboard()
         , wordRibbon(new WordRibbon)
         , preeditCursorAnchor(-1)
+        , t9Key(Qt::Key(0))
+        , t9Index(0)
+        , t9Timer(nullptr)
+        , t9BurstKey(Qt::Key(0))
     {
         applicationApiWrapper->setGeometryItem(m_geometry);
 
@@ -296,6 +314,25 @@ public:
     {
         editor.resetPreedit();
         preeditCursorAnchor = -1;
+        // The character T9 was cycling lived in that preedit. Forget it too,
+        // or the next tap of the same key would resume the cycle and put the
+        // *next* letter wherever the cursor has since gone. Deliberately does
+        // not commit: every caller is a point where the text we were holding
+        // is being abandoned, not accepted.
+        resetT9();
+    }
+
+    //! Abandons any half-cycled T9 character. Touches no editor state, so it
+    //! is safe to call from inside an editor operation. Deliberately leaves
+    //! the burst de-bounce alone: that collapses duplicate events from one
+    //! physical tap and is independent of what the text is doing, so clearing
+    //! it here would let the tail of a tap through as a second character.
+    void resetT9()
+    {
+        if (t9Timer)
+            t9Timer->stop();
+        t9Key = Qt::Key(0);
+        t9Index = 0;
     }
 
     void truncateEnabledLanguageLocales(const QStringList& locales)
