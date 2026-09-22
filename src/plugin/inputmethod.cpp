@@ -392,11 +392,18 @@ void InputMethod::processKeyEvent(QEvent::Type keyType, Qt::Key keyCode,
             // the character that follows and the capital has to be applied
             // now. A profile that maps this key at its shift level has already
             // answered Text and never reaches this branch.
+            //
+            // The label is capitalised on both the press and the release, but
+            // the latch is only spent on the release: AbstractTextEditor
+            // appends the label in onKeyReleased(), so consuming it on the
+            // press would leave the release - the event that actually inserts
+            // the character - building a lowercase label from a latch that had
+            // already gone.
             QString label(text);
-            if (keyType == QEvent::KeyPress
-                && d->hardwareKeyboard.shiftLatchActive()) {
+            if (d->hardwareKeyboard.shiftLatchActive()) {
                 label = text.toUpper();
-                d->hardwareKeyboard.consumeShiftLatch();
+                if (keyType == QEvent::KeyRelease)
+                    d->hardwareKeyboard.consumeShiftLatch();
             }
 
             key.setLabel(label);
