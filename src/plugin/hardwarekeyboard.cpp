@@ -30,6 +30,8 @@
 #include "hardwarekeyboard.h"
 #include "keyboardlogging.h"
 
+#include <linux/input-event-codes.h>
+
 #include <QDebug>
 #include <QDir>
 #include <QFile>
@@ -367,6 +369,22 @@ void HardwareKeyboard::selectProfile()
             }
         }
 
+        // A telephone keypad reports the digits and none of the letters; a
+        // keyboard reports both. Worked out here because this is where the
+        // capability bitmaps are already in hand, and refreshed on every
+        // rescan so a keypad that appears late is still found.
+        m_telephoneKeypad = false;
+        for (const InputDevice &device : present) {
+            const bool digits = device.advertises(KEY_2) and device.advertises(KEY_5)
+                and device.advertises(KEY_9);
+            const bool letters = device.advertises(KEY_A) or device.advertises(KEY_Q);
+
+            if (digits and not letters) {
+                m_telephoneKeypad = true;
+                qCInfo(lcHwKeyboard) << "telephone keypad:" << device.name;
+            }
+        }
+
         for (const InputDevice &device : present)
             qCInfo(lcHwKeyboard) << "input device present:" << device.name;
         qCInfo(lcHwKeyboard) << present.size() << "input devices,"
@@ -416,6 +434,11 @@ bool HardwareKeyboard::isSymActive() const
 bool HardwareKeyboard::isSymLocked() const
 {
     return m_sym.state == LevelState::Locked;
+}
+
+bool HardwareKeyboard::hasTelephoneKeypad() const
+{
+    return m_telephoneKeypad;
 }
 
 bool HardwareKeyboard::shiftLatchActive() const

@@ -351,11 +351,14 @@ void InputMethod::processKeyEvent(QEvent::Type keyType, Qt::Key keyCode,
             int(hardwareResult), qPrintable(hardwareText), int(isShortcut),
             int(d->hardwareKeyboard.shiftLatchActive()));
 
-    // Hardware T9 numeric keypad -> letters (multi-tap) in text fields. Placed
-    // after the profile has had its say: a key a profile already resolved to an
-    // alternate character is a QWERTY level, not a keypad digit, and a modifier
-    // makes this a shortcut - neither belongs in the multi-tap machine.
+    // Hardware T9 numeric keypad -> letters (multi-tap) in text fields. Only
+    // where there is a keypad to multi-tap on: a keyboard with a number row
+    // wants 2 to be a 2, and without that test every digit on a QWERTY device
+    // came out as a letter. Placed after the profile has had its say too, since
+    // a key a profile already resolved to an alternate character is a QWERTY
+    // level rather than a keypad digit, and a modifier makes this a shortcut.
     if (hardwareResult != HardwareKeyboard::Text && !isShortcut
+        && d->hardwareKeyboard.hasTelephoneKeypad()
         && t9HandleKey(keyType, keyCode, autoRepeat))
         return;
 

@@ -161,6 +161,11 @@ public:
     //! keyboards, because in a stock keymap those scancodes are Alt and AltGr.
     //! While a profile owns them that bit says "alternate character", not
     //! "keyboard shortcut", and the caller has to discount it.
+    //! True when some input device looks like a telephone keypad: it reports
+    //! the digits and none of the letters. Multi-tap only makes sense there -
+    //! a keyboard with a number row wants 2 to be a 2.
+    bool hasTelephoneKeypad() const;
+
     bool ownsAltModifier() const;
 
     //! True while a tap or double tap of a Shift key is waiting to be spent.
@@ -233,6 +238,7 @@ private:
     LevelKeyState m_alt;
     LevelKeyState m_sym;
     LevelKeyState m_shift;
+    bool m_telephoneKeypad = false;
 
     //! Scancodes currently down that we resolved to text, so the release can
     //! be answered with the same string the press produced.
