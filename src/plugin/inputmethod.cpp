@@ -344,11 +344,12 @@ void InputMethod::processKeyEvent(QEvent::Type keyType, Qt::Key keyCode,
     const bool isShortcut = effectiveModifiers & (Qt::ControlModifier | Qt::AltModifier |
                                                   Qt::MetaModifier);
 
-    qCInfo(lcKeys, "key %s 0x%x text='%s' repeat=%d scancode=%u mods=0x%x hw=%d->'%s' shortcut=%d",
+    qCInfo(lcKeys, "key %s 0x%x text='%s' repeat=%d scancode=%u mods=0x%x hw=%d->'%s' shortcut=%d shiftlatch=%d",
             keyType == QEvent::KeyPress ? "press" : "release",
             int(keyCode), qPrintable(text), int(autoRepeat),
             unsigned(nativeScanCode), int(modifiers),
-            int(hardwareResult), qPrintable(hardwareText), int(isShortcut));
+            int(hardwareResult), qPrintable(hardwareText), int(isShortcut),
+            int(d->hardwareKeyboard.shiftLatchActive()));
 
     // Hardware T9 numeric keypad -> letters (multi-tap) in text fields. Placed
     // after the profile has had its say: a key a profile already resolved to an
