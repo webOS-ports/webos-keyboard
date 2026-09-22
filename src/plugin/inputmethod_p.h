@@ -2,6 +2,7 @@
 #include "inputmethod.h"
 
 #include "editor.h"
+#include "hardwarekeyboard.h"
 #include "keyboardgeometry.h"
 #include "keyboardsettings.h"
 
@@ -16,6 +17,7 @@
 
 #include <QtQuick>
 #include <QStringList>
+#include <QTimer>
 #include <qglobal.h>
 #include <QDebug>
 
@@ -66,12 +68,23 @@ public:
 
     KeyboardGeometry *m_geometry;
     KeyboardSettings m_settings;
+    //! Resolves the Alt and Sym levels of a physical keyboard, if this device
+    //! has one we have a profile for. Inert otherwise.
+    HardwareKeyboard hardwareKeyboard;
 
     WordRibbon* wordRibbon;
 
     //! Where the application's cursor sat when the preedit we are holding
     //! started, or -1 when we are not tracking one. See InputMethod::update().
     int preeditCursorAnchor;
+
+    //! Hardware T9 multi-tap. A physical numeric keypad sends KEY_0..KEY_9,
+    //! and in a text field those cycle through letters (2 -> a/b/c/2) in the
+    //! preedit until t9Timer fires. t9Key is the key being cycled (0 = none),
+    //! t9Index the position in its cycle.
+    Qt::Key t9Key;
+    int t9Index;
+    QTimer *t9Timer;
 
     explicit InputMethodPrivate(InputMethod * const _q,
                                 MAbstractInputMethodHost *host)
@@ -94,8 +107,12 @@ public:
         , appsCurrentOrientation(qGuiApp->primaryScreen()->orientation())
         , m_geometry(new KeyboardGeometry(q))
         , m_settings()
+        , hardwareKeyboard()
         , wordRibbon(new WordRibbon)
         , preeditCursorAnchor(-1)
+        , t9Key(Qt::Key(0))
+        , t9Index(0)
+        , t9Timer(nullptr)
     {
         applicationApiWrapper->setGeometryItem(m_geometry);
 
@@ -190,6 +207,7 @@ public:
         qml_context->setContextProperty("maliit_event_handler", &event_handler);
         qml_context->setContextProperty("maliit_wordribbon", wordRibbon);
         qml_context->setContextProperty("maliit_word_engine", editor.wordEngine());
+        qml_context->setContextProperty("maliit_hw_keyboard", &hardwareKeyboard);
     }
 
 
@@ -290,6 +308,22 @@ public:
     {
         editor.resetPreedit();
         preeditCursorAnchor = -1;
+        // The character T9 was cycling lived in that preedit. Forget it too,
+        // or the next tap of the same key would resume the cycle and put the
+        // *next* letter wherever the cursor has since gone. Deliberately does
+        // not commit: every caller is a point where the text we were holding
+        // is being abandoned, not accepted.
+        resetT9();
+    }
+
+    //! Abandons any half-cycled T9 character. Touches no editor state, so it
+    //! is safe to call from inside an editor operation.
+    void resetT9()
+    {
+        if (t9Timer)
+            t9Timer->stop();
+        t9Key = Qt::Key(0);
+        t9Index = 0;
     }
 
     void truncateEnabledLanguageLocales(const QStringList& locales)

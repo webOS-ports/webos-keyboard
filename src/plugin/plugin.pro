@@ -27,8 +27,10 @@ HEADERS += \
     inputmethod.h \
     inputmethod_p.h \
     editor.h \
+    hardwarekeyboard.h \
     keyboardgeometry.h \
     keyboardsettings.h \
+    keyboardlogging.h \
 #    updatenotifier.h \
     luneosapplicationapiwrapper.h \
 
@@ -36,8 +38,10 @@ SOURCES += \
     plugin.cpp \
     inputmethod.cpp \
     editor.cpp \
+    hardwarekeyboard.cpp \
     keyboardgeometry.cpp \
     keyboardsettings.cpp \
+    keyboardlogging.cpp \
 #    updatenotifier.cpp \
     luneosapplicationapiwrapper.cpp \
 
