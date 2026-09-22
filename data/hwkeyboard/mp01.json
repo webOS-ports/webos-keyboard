@@ -13,11 +13,7 @@
     "symKeys": [],
     "lockOnDoubleTap": true,
     "levels": {
-        "base": {
-            "62": " "
-        },
         "shift": {
-            "56": ">",
             "667": "."
         },
         "alt": {
