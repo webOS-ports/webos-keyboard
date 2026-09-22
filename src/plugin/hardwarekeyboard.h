@@ -175,6 +175,10 @@ private:
         Locked
     };
 
+    //! Names a LevelState for the log, so a tap, a hold and a double tap can
+    //! be told apart by what they did to the latch.
+    static const char *levelStateName(LevelState state);
+
     struct LevelKeyState {
         LevelState state = LevelState::Off;
         //! Set when a key was resolved at this level while it was held, so the

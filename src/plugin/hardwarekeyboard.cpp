@@ -443,6 +443,18 @@ void HardwareKeyboard::reset()
         Q_EMIT levelChanged();
 }
 
+
+const char *HardwareKeyboard::levelStateName(LevelState state)
+{
+    switch (state) {
+    case LevelState::Off:     return "off";
+    case LevelState::Held:    return "held";
+    case LevelState::Latched: return "latched";
+    case LevelState::Locked:  return "locked";
+    }
+    return "?";
+}
+
 void HardwareKeyboard::handleLevelKeyPress(LevelKeyState *level)
 {
     switch (level->state) {
@@ -466,8 +478,12 @@ void HardwareKeyboard::handleLevelKeyPress(LevelKeyState *level)
         break;
     }
 
+    const LevelState was = level->state;
     level->state = LevelState::Held;
     level->usedWhileHeld = false;
+
+    qCInfo(lcHwKeyboard, "level key down: %s -> held (pendingLock=%d pendingUnlock=%d)",
+           levelStateName(was), int(level->pendingLock), int(level->pendingUnlock));
 }
 
 void HardwareKeyboard::handleLevelKeyRelease(LevelKeyState *level)
@@ -484,6 +500,10 @@ void HardwareKeyboard::handleLevelKeyRelease(LevelKeyState *level)
         // A tap on its own: the level applies to the next key only.
         level->state = LevelState::Latched;
     }
+
+    qCInfo(lcHwKeyboard, "level key up: -> %s (usedWhileHeld=%d pendingLock=%d pendingUnlock=%d)",
+           levelStateName(level->state), int(level->usedWhileHeld),
+           int(level->pendingLock), int(level->pendingUnlock));
 
     level->pendingLock = false;
     level->pendingUnlock = false;
@@ -573,6 +593,10 @@ HardwareKeyboard::Result HardwareKeyboard::handleKey(QEvent::Type type,
 
     const HardwareKeyboardLevel level(activeLevel(modifiers));
     const QString mapped(profile.lookup(level, code));
+
+    qCInfo(lcHwKeyboard, "code %u at level %d -> '%s' (alt=%s sym=%s)",
+           code, int(level), qPrintable(mapped),
+           levelStateName(m_alt.state), levelStateName(m_sym.state));
 
     // An alternate level that has nothing on this key -- Backspace or Return,
     // typically -- still spends the latch, but the key itself carries on to
