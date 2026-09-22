@@ -384,7 +384,21 @@ void InputMethod::processKeyEvent(QEvent::Type keyType, Qt::Key keyCode,
     default:
         if (text.size() == 1 && text.at(0).isPrint()) {
             key.setAction(Key::ActionInsert);
-            key.setLabel(text);
+
+            // A tapped Shift is spent here rather than by the hardware layer.
+            // The key itself is passed through so that holding it still gives
+            // Qt's ShiftModifier, which means a tap leaves nothing behind for
+            // the character that follows and the capital has to be applied
+            // now. A profile that maps this key at its shift level has already
+            // answered Text and never reaches this branch.
+            QString label(text);
+            if (keyType == QEvent::KeyPress
+                && d->hardwareKeyboard.shiftLatchActive()) {
+                label = text.toUpper();
+                d->hardwareKeyboard.consumeShiftLatch();
+            }
+
+            key.setLabel(label);
         } else {
             key.setAction(Key::NumActions);
         }

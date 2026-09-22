@@ -11,6 +11,10 @@
         56
     ],
     "symKeys": [],
+    "shiftKeys": [
+        42,
+        54
+    ],
     "lockOnDoubleTap": true,
     "levels": {
         "shift": {

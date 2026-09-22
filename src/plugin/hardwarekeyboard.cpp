@@ -119,6 +119,7 @@ HardwareKeyboardProfile readProfile(const QJsonObject &object,
     profile.lockOnDoubleTap = object.value("lockOnDoubleTap").toBool(true);
     profile.altKeys = readScanCodes(object.value("altKeys").toArray());
     profile.symKeys = readScanCodes(object.value("symKeys").toArray());
+    profile.shiftKeys = readScanCodes(object.value("shiftKeys").toArray());
 
     const QJsonObject match(object.value("match").toObject());
     profile.requiredKeys = readScanCodes(match.value("requireKeys").toArray());
@@ -417,6 +418,25 @@ bool HardwareKeyboard::isSymLocked() const
     return m_sym.state == LevelState::Locked;
 }
 
+bool HardwareKeyboard::shiftLatchActive() const
+{
+    if (not isPresent())
+        return false;
+
+    if (m_profiles.at(m_activeProfile).shiftKeys.isEmpty())
+        return false;
+
+    // Held is Qt's business, not ours.
+    return m_shift.state == LevelState::Latched
+        or m_shift.state == LevelState::Locked;
+}
+
+void HardwareKeyboard::consumeShiftLatch()
+{
+    consumeLevel(&m_shift);
+    Q_EMIT levelChanged();
+}
+
 bool HardwareKeyboard::ownsAltModifier() const
 {
     if (not isPresent())
@@ -433,10 +453,12 @@ bool HardwareKeyboard::ownsAltModifier() const
 
 void HardwareKeyboard::reset()
 {
-    const bool was_active = m_alt.isActive() or m_sym.isActive();
+    const bool was_active = m_alt.isActive() or m_sym.isActive()
+        or m_shift.isActive();
 
     m_alt = LevelKeyState();
     m_sym = LevelKeyState();
+    m_shift = LevelKeyState();
     m_pressedKeys.clear();
 
     if (was_active)
@@ -535,7 +557,7 @@ HardwareKeyboardLevel HardwareKeyboard::activeLevel(Qt::KeyboardModifiers modifi
     if (m_alt.isActive())
         return HardwareKeyboardLevel::Alt;
 
-    if (modifiers & Qt::ShiftModifier)
+    if ((modifiers & Qt::ShiftModifier) or m_shift.isActive())
         return HardwareKeyboardLevel::Shift;
 
     return HardwareKeyboardLevel::Base;
@@ -562,6 +584,20 @@ HardwareKeyboard::Result HardwareKeyboard::handleKey(QEvent::Type type,
 
     const HardwareKeyboardProfile &profile = m_profiles.at(m_activeProfile);
     const quint32 code = nativeScanCode - g_evdev_offset;
+
+    if (profile.shiftKeys.contains(code)) {
+        // Deliberately NotHandled rather than Consumed: the application still
+        // needs the key, because holding Shift is Qt's ShiftModifier doing the
+        // work and swallowing it here would cost us capitals altogether. All
+        // this adds is the latch a tap leaves behind.
+        if (type == QEvent::KeyPress)
+            handleLevelKeyPress(&m_shift);
+        else if (type == QEvent::KeyRelease)
+            handleLevelKeyRelease(&m_shift);
+
+        Q_EMIT levelChanged();
+        return NotHandled;
+    }
 
     if (profile.altKeys.contains(code) or profile.symKeys.contains(code)) {
         LevelKeyState *const level = profile.altKeys.contains(code) ? &m_alt : &m_sym;

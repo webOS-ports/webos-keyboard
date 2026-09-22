@@ -70,6 +70,11 @@ struct HardwareKeyboardProfile
     QSet<quint32> altKeys;
     //! evdev scancodes that select the Sym level the same way.
     QSet<quint32> symKeys;
+
+    //! The Shift keys, when this keyboard wants them to latch on a tap and
+    //! lock on a double tap the way Alt does. They are still handed on to the
+    //! application, so holding one keeps working through Qt's own modifier.
+    QSet<quint32> shiftKeys;
     bool lockOnDoubleTap = true;
     //! level -> (evdev scancode -> the text that key produces at that level).
     QHash<int, QHash<quint32, QString> > levels;
@@ -158,6 +163,13 @@ public:
     //! "keyboard shortcut", and the caller has to discount it.
     bool ownsAltModifier() const;
 
+    //! True while a tap or double tap of a Shift key is waiting to be spent.
+    //! Holding one does not count: Qt's own ShiftModifier covers that, and the
+    //! character arrives already capitalised.
+    bool shiftLatchActive() const;
+    //! Spends a latched Shift. A lock survives it.
+    void consumeShiftLatch();
+
     //! \brief Forgets any latched level. Called when focus leaves a field.
     void reset();
 
@@ -220,6 +232,7 @@ private:
 
     LevelKeyState m_alt;
     LevelKeyState m_sym;
+    LevelKeyState m_shift;
 
     //! Scancodes currently down that we resolved to text, so the release can
     //! be answered with the same string the press produced.

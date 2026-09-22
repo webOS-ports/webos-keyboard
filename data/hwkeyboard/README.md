@@ -49,6 +49,7 @@ Set them in `/etc/maliit/maliit-env.conf` and restart `maliit-server`.
     "match": { "inputDeviceNames": ["stmpe_keypad"], "requireKeys": [] },
     "altKeys": [56],
     "symKeys": [100],
+    "shiftKeys": [42, 54],
     "lockOnDoubleTap": true,
     "levels": {
         "base":  { "5": "$" },
@@ -71,6 +72,7 @@ not change with whatever xkb keymap the compositor happens to have loaded.
 | `match.requireKeys` | Scancodes the device must advertise, for telling apart two keyboards that share a name. Empty matches anything |
 | `altKeys` | Scancodes that select the `alt` level |
 | `symKeys` | Scancodes that select the `sym` level |
+| `shiftKeys` | Scancodes that should latch on a tap and lock on a double tap, the way `altKeys` do. Optional: leave it out and Shift behaves as it always has, applying only while held. Unlike the other two the key is still passed to the application, because holding Shift is Qt's own modifier doing the work |
 | `lockOnDoubleTap` | Whether a second tap locks the level (default `true`) |
 | `levels.base` | Text for a key whose unmodified character the keymap gets wrong |
 | `levels.shift` | The same, with Shift held |
