@@ -243,9 +243,19 @@ bool HardwareKeyboard::InputDevice::advertises(quint32 scanCode) const
 //! /proc/bus/input/devices rather than the evdev nodes: it is world readable,
 //! and maliit-server has no business needing a seat on /dev/input.
 //!
-//! The kernel prints a bitmap most significant word first, padding every word
-//! but the first to the machine's word width -- which is therefore what the
-//! second word's length tells us, without having to assume 32 or 64 bit.
+//! The kernel prints a bitmap most significant word first. Whether it pads the
+//! words is not something to rely on: an MP01 gives
+//!
+//!   B: KEY=1000000000007 ff9f207ac14057ff febeffdfffefffff fffffffffffffffe
+//!
+//! where every word happens to fill its width, while a Mindset gives
+//!
+//!   B: KEY=800 0 0 0 0 0 0 0 0 8 0 0 0 1c0000 0 0 ffc
+//!
+//! with nothing padded at all. Take the width from the longest word instead -
+//! no word can need more digits than the machine's long has - and fall back to
+//! this process's own long, which belongs to the same kernel, when every value
+//! is small enough to be ambiguous.
 QList<HardwareKeyboard::InputDevice> HardwareKeyboard::readInputDevices()
 {
     QList<InputDevice> devices;
@@ -292,8 +302,13 @@ QList<HardwareKeyboard::InputDevice> HardwareKeyboard::readInputDevices()
             continue;
 
         InputDevice &device = devices.last();
-        device.wordBits = 4 * (words.size() > 1 ? words.at(1).size()
-                                                : words.at(0).size());
+
+        int widest = 0;
+        for (const QString &word : words)
+            widest = qMax(widest, word.size());
+
+        device.wordBits = widest > 8 ? 64
+                                     : int(sizeof(unsigned long) * 8);
 
         // Least significant word first, so a scancode indexes straight into
         // the list.
