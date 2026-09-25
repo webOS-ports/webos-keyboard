@@ -42,6 +42,22 @@ Item {
     property variant input_method: maliit_input_method
     property variant event_handler: maliit_event_handler
 
+    // A physical keyboard (the KEY2's, via a hwkeyboard profile) replaces the
+    // on-screen one: keep it collapsed, and report no area so the focused
+    // application is not resized under the user. The Sym key re-opens it on
+    // the symbols page. On athena, libathena-symkey.so (preloaded into
+    // MaliitServer) turns symActive into "Sym toggled the symbol panel";
+    // without it symActive is the plain Sym level latch.
+    property bool symbolPanel: maliit_hw_keyboard.present && maliit_hw_keyboard.symActive
+    property bool hwSuppress: maliit_hw_keyboard.present && !symbolPanel
+    onHwSuppressChanged: reportKeyboardVisibleRect();
+    onSymbolPanelChanged: UI.currentSymbolState = symbolPanel ? "SYMBOLS" : "CHARACTERS";
+    // Tell libathena-symkey.so whether the symbols are really on screen, so
+    // Sym toggles what the user sees even if the panel was closed some other
+    // way (the keyboard swiped away) while the field kept focus.
+    property bool symbolsVisible: symbolPanel && maliit_geometry.shown === true
+    onSymbolsVisibleChanged: maliit_hw_keyboard.objectName = symbolsVisible ? "athena-sym-visible" : ""
+
     Item {
         id: canvas
 
@@ -52,7 +68,7 @@ Item {
         height: keyboardSurface.height
         property int keypadHeight: height;
 
-        visible: true
+        visible: !fullScreenItem.hwSuppress
 
         property int contentOrientation: maliit_geometry.orientation
         onContentOrientationChanged: fullScreenItem.reportKeyboardVisibleRect();
@@ -212,6 +228,10 @@ Item {
     // calculates the size of the visible keyboard to report to the window system
     // FIXME get the correct size for enabled extended keys instead of that big area
     function reportKeyboardVisibleRect() {
+        if (hwSuppress) {
+            maliit_geometry.visibleRect = Qt.rect(0, 0, 0, 0);
+            return;
+        }
 
         var vx = 0;
         var vy = wordRibbon.y;
