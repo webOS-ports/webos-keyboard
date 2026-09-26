@@ -701,6 +701,20 @@ bool AbstractTextEditor::isAutoCapsEnabled() const
     return d->auto_caps_enabled;
 }
 
+bool AbstractTextEditor::atAutoCapsPosition() const
+{
+    Q_D(const AbstractTextEditor);
+
+    if (not d->auto_caps_enabled or not d->valid())
+        return false;
+
+    if (not d->word_engine or not d->word_engine->languageFeature())
+        return false;
+
+    return d->word_engine->languageFeature()->activateAutoCaps(
+        d->text->surroundingLeft() + d->text->preedit());
+}
+
 void AbstractTextEditor::setAutoCapsEnabled(bool enabled)
 {
     Q_D(AbstractTextEditor);
