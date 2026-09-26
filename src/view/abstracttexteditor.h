@@ -130,6 +130,15 @@ public:
 
     bool isAutoCapsEnabled() const;
     Q_SLOT void setAutoCapsEnabled(bool enabled);
+
+    //! \brief Whether what is typed next starts a sentence.
+    //!
+    //! The same question auto-capitalisation answers for the on-screen
+    //! keyboard, by the same language-specific rule, exposed so that letters
+    //! from a physical keyboard can be capitalised as well. Those never pass
+    //! through a Key the view shifted, so the view's auto-caps never reaches
+    //! them; see InputMethod::processKeyEvent().
+    bool atAutoCapsPosition() const;
     Q_SIGNAL void autoCapsEnabledChanged(bool enabled);
 
     Q_SLOT void showUserCandidate();

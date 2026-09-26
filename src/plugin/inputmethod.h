@@ -116,6 +116,10 @@ public:
     bool t9HandleKey(QEvent::Type keyType, Qt::Key keyCode, bool autoRepeat);
     Q_SLOT void finalizeT9();
 
+    //! Writes "a text field has focus" where a process outside the compositor
+    //! can read it; see the implementation for who wants it and why.
+    void publishTextFocus(bool focusIn);
+
     void update() override;
 
     const QStringList &enabledLanguages() const;

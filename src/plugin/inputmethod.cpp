@@ -49,6 +49,7 @@
 #include <maliit/plugins/updateevent.h>
 #include <maliit/namespace.h>
 
+#include <QFile>
 #include <QScreen>
 #include <QGuiApplication>
 #include <QApplication>
@@ -325,6 +326,9 @@ void InputMethod::processKeyEvent(QEvent::Type keyType, Qt::Key keyCode,
     // only the plain scancode for those, so resolve them before anything else
     // looks at the key.
     QString hardwareText;
+    // Before handleKey(), which spends a latched level on any key the profile
+    // does not map - Backspace among them.
+    const bool altLevelActive = d->hardwareKeyboard.isAltActive();
     const HardwareKeyboard::Result hardwareResult =
         d->hardwareKeyboard.handleKey(keyType, nativeScanCode, modifiers,
                                       &hardwareText);
@@ -373,7 +377,13 @@ void InputMethod::processKeyEvent(QEvent::Type keyType, Qt::Key keyCode,
         key.setAction(Key::NumActions);
     } else switch (keyCode) {
     case Qt::Key_Backspace:
-        key.setAction(Key::ActionBackspace);
+        // Alt+Backspace deletes the word before the cursor, as it does on the
+        // keyboards that print an Alt level on their key faces. The Alt bit
+        // itself was discounted above - a profile owns that key - so the level
+        // state is what says Alt was down, and the editor already knows how to
+        // delete a word and how to repeat it while the key is held.
+        key.setAction(altLevelActive ? Key::ActionBackspaceWord
+                                     : Key::ActionBackspace);
         break;
 
     case Qt::Key_Space:
@@ -402,10 +412,18 @@ void InputMethod::processKeyEvent(QEvent::Type keyType, Qt::Key keyCode,
             // press would leave the release - the event that actually inserts
             // the character - building a lowercase label from a latch that had
             // already gone.
+            //
+            // Auto-capitalisation is applied in the same place and for the same
+            // reason: a letter from a physical keyboard never passes through a
+            // Key the view shifted, so the view's auto-caps never sees it. The
+            // rule is the editor's own, i.e. the language's, not a second copy
+            // of it here. A latch still has to be spent; a capital that
+            // auto-caps asked for has nothing to spend.
             QString label(text);
-            if (d->hardwareKeyboard.shiftLatchActive()) {
+            const bool shiftLatched = d->hardwareKeyboard.shiftLatchActive();
+            if (shiftLatched or d->editor.atAutoCapsPosition()) {
                 label = text.toUpper();
-                if (keyType == QEvent::KeyRelease)
+                if (shiftLatched and keyType == QEvent::KeyRelease)
                     d->hardwareKeyboard.consumeShiftLatch();
             }
 
@@ -495,6 +513,32 @@ void InputMethod::handleFocusChange(bool focusIn)
 
     // this is for hardware keyboard
     inputMethodHost()->setRedirectKeys(focusIn);
+
+    publishTextFocus(focusIn);
+}
+
+//! \brief Publishes whether a text field has focus, for readers outside the
+//!        compositor.
+//!
+//! kbdscroll - which turns a slide over a capacitive keyboard or a trackpad into
+//! scrolling - deletes the word before the cursor on a right-to-left slide, but
+//! only in a text field; anywhere else that slide is a sideways drag. Nothing in
+//! the stack publishes "a field has focus" outside the compositor and its input
+//! method, and a file is the cheapest thing a C daemon can look at. Writing it
+//! is best effort: on a read-only /run, or with no such directory, there is
+//! simply no reader.
+void InputMethod::publishTextFocus(bool focusIn)
+{
+    static const QString path = qEnvironmentVariableIsSet("MALIIT_TEXT_FOCUS_FILE")
+        ? qEnvironmentVariable("MALIIT_TEXT_FOCUS_FILE")
+        : QStringLiteral("/run/maliit-text-focus");
+
+    if (path.isEmpty())
+        return;
+
+    QFile flag(path);
+    if (flag.open(QIODevice::WriteOnly | QIODevice::Truncate))
+        flag.write(focusIn ? "1\n" : "0\n");
 }
 
 void InputMethod::handleAppOrientationChanged(int angle)
@@ -538,7 +582,21 @@ void InputMethod::updateAutoCaps()
     bool enabled = d->m_settings.autoCapitalization();
     enabled &= d->contentType == FreeTextContentType;
     bool valid = true;
-    const bool autocap = d->host->autoCapitalizationEnabled(valid);
+    bool autocap = d->host->autoCapitalizationEnabled(valid);
+
+    // A text field inside a web page reaches maliit with no auto-capitalisation
+    // hint at all and the host then answers false, so taking that as a "no"
+    // means auto-caps never works in the browser or in any Enyo or Mojo
+    // application - which is most of what runs here. Where the host has no
+    // opinion, decide from the field itself: free text (tested above) and not a
+    // password. The user setting still gates all of it.
+    if (not autocap) {
+        bool hiddenValid = true;
+        const bool hidden = d->host->hiddenText(hiddenValid);
+        autocap = not hidden;
+        qCInfo(lcKeys, "autocaps: host gave no hint (valid=%d); hidden=%d -> %d",
+               int(valid), int(hidden), int(autocap));
+    }
     enabled &= autocap;
 
     if (enabled != d->autocapsEnabled) {
