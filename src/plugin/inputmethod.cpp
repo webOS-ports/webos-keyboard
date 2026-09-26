@@ -325,6 +325,9 @@ void InputMethod::processKeyEvent(QEvent::Type keyType, Qt::Key keyCode,
     // only the plain scancode for those, so resolve them before anything else
     // looks at the key.
     QString hardwareText;
+    // Before handleKey(), which spends a latched level on any key the profile
+    // does not map - Backspace among them.
+    const bool altLevelActive = d->hardwareKeyboard.isAltActive();
     const HardwareKeyboard::Result hardwareResult =
         d->hardwareKeyboard.handleKey(keyType, nativeScanCode, modifiers,
                                       &hardwareText);
@@ -373,7 +376,13 @@ void InputMethod::processKeyEvent(QEvent::Type keyType, Qt::Key keyCode,
         key.setAction(Key::NumActions);
     } else switch (keyCode) {
     case Qt::Key_Backspace:
-        key.setAction(Key::ActionBackspace);
+        // Alt+Backspace deletes the word before the cursor, as it does on the
+        // keyboards that print an Alt level on their key faces. The Alt bit
+        // itself was discounted above - a profile owns that key - so the level
+        // state is what says Alt was down, and the editor already knows how to
+        // delete a word and how to repeat it while the key is held.
+        key.setAction(altLevelActive ? Key::ActionBackspaceWord
+                                     : Key::ActionBackspace);
         break;
 
     case Qt::Key_Space:
