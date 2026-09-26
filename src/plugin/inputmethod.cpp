@@ -49,6 +49,7 @@
 #include <maliit/plugins/updateevent.h>
 #include <maliit/namespace.h>
 
+#include <QFile>
 #include <QScreen>
 #include <QGuiApplication>
 #include <QApplication>
@@ -512,6 +513,32 @@ void InputMethod::handleFocusChange(bool focusIn)
 
     // this is for hardware keyboard
     inputMethodHost()->setRedirectKeys(focusIn);
+
+    publishTextFocus(focusIn);
+}
+
+//! \brief Publishes whether a text field has focus, for readers outside the
+//!        compositor.
+//!
+//! kbdscroll - which turns a slide over a capacitive keyboard or a trackpad into
+//! scrolling - deletes the word before the cursor on a right-to-left slide, but
+//! only in a text field; anywhere else that slide is a sideways drag. Nothing in
+//! the stack publishes "a field has focus" outside the compositor and its input
+//! method, and a file is the cheapest thing a C daemon can look at. Writing it
+//! is best effort: on a read-only /run, or with no such directory, there is
+//! simply no reader.
+void InputMethod::publishTextFocus(bool focusIn)
+{
+    static const QString path = qEnvironmentVariableIsSet("MALIIT_TEXT_FOCUS_FILE")
+        ? qEnvironmentVariable("MALIIT_TEXT_FOCUS_FILE")
+        : QStringLiteral("/run/maliit-text-focus");
+
+    if (path.isEmpty())
+        return;
+
+    QFile flag(path);
+    if (flag.open(QIODevice::WriteOnly | QIODevice::Truncate))
+        flag.write(focusIn ? "1\n" : "0\n");
 }
 
 void InputMethod::handleAppOrientationChanged(int angle)
