@@ -157,40 +157,74 @@ InputMethod::InputMethod(MAbstractInputMethodHost *host)
 InputMethod::~InputMethod()
 {}
 
-//! \brief Puts the on-screen keyboard up - unless a physical keyboard is what
-//!        the user is typing on.
+//! \brief Told by the framework that a field wants the panel.
 //!
-//! Maliit calls this whenever a text field takes focus, and until now it did so
-//! unconditionally, which is why the on-screen keyboard appeared in front of a
-//! real keyboard on every device that has one.
-//!
-//! Refusing here rather than letting the framework deactivate the input method
-//! is deliberate, and it is the distinction LunaSysMgr drew too: with a hardware
-//! keyboard attached its IMEController::hideIME() hid the panel and left the
-//! field focused, where without one it removed input focus outright. This plugin
-//! has to stay active and keep its keyboard grab, because the grab is what
-//! routes physical keys through here - which is what resolves the Alt and Sym
-//! levels, runs T9 multi-tap on a keypad, and feeds word prediction.
-//! Deactivating the context would hand the keys straight to the application and
-//! lose all of it.
+//! Whether anything appears is applyPanelVisibility()'s decision, because with a
+//! physical keyboard attached this is no longer the same question.
 void InputMethod::show()
 {
     Q_D(InputMethod);
 
-    if (d->hardwareInputSource) {
-        qCInfo(lcHwKeyboard, "not showing the on-screen keyboard: the active input"
-                             " source is a hardware keyboard");
-        return;
-    }
-
-    d->view->setVisible(true);
-    d->m_geometry->setShown(true);
+    d->panelRequested = true;
+    applyPanelVisibility();
 }
 
 void InputMethod::hide()
 {
     Q_D(InputMethod);
-    d->closeOskWindow();
+
+    d->panelRequested = false;
+    applyPanelVisibility();
+}
+
+bool InputMethod::hardwareKeyboardActive() const
+{
+    Q_D(const InputMethod);
+
+    return d->hardwareInputSource;
+}
+
+//! \brief Puts the panel on screen, or takes it off, from what is wanted now.
+//!
+//! Three things decide it: whether a field has focus at all, whether a physical
+//! keyboard is the active input source, and whether the word engine has anything
+//! to offer.
+//!
+//! With a physical keyboard the keys are not drawn - the QML collapses them away
+//! on hardwareKeyboardActive - and what is left is the candidate bar. That is
+//! worth keeping: word completion and autocorrect are as useful typed on a Titan
+//! as tapped on glass, and on a keypad running T9 the candidate list is the only
+//! place the word being built is offered whole. It is also where LunaSysMgr put
+//! it - keyboard-efigs carried CandidateBar as a thing separate from the
+//! keyboard for exactly this reason.
+//!
+//! Refusing the panel here rather than letting the framework deactivate the
+//! input method is deliberate, and it is the distinction LunaSysMgr drew too:
+//! with a hardware keyboard attached its IMEController::hideIME() hid the panel
+//! and left the field focused, where without one it removed input focus outright.
+//! This plugin has to stay active and keep its keyboard grab, because the grab is
+//! what routes physical keys through here - which is what resolves the Alt and
+//! Sym levels, runs T9 multi-tap on a keypad, and feeds word prediction.
+//!
+//! When the word engine is off as well there is nothing left to show and the
+//! panel goes away entirely. Deliberately away rather than collapsed to nothing:
+//! the compositor falls back to its own default panel height when the keyboard
+//! surface reports none (KeyboardView.qml), so a zero-height panel would come out
+//! full height and blank.
+void InputMethod::applyPanelVisibility()
+{
+    Q_D(InputMethod);
+
+    const bool wanted = d->panelRequested
+        and (not d->hardwareInputSource or d->wordEngineEnabled);
+
+    if (not wanted) {
+        d->closeOskWindow();
+        return;
+    }
+
+    d->view->setVisible(true);
+    d->m_geometry->setShown(true);
 }
 
 //! \brief Called by the framework when the application resets its input
@@ -505,11 +539,14 @@ void InputMethod::setState(const QSet<Maliit::HandlerState> &state)
     qCInfo(lcHwKeyboard, "input source is now %s",
            hardware ? "a hardware keyboard" : "the on-screen keyboard");
 
-    // The panel standing there belongs to the source that was active a moment
-    // ago. Going the other way needs nothing from here: the framework calls
-    // show() itself while a field still has focus.
-    if (hardware)
-        hide();
+    // The QML collapses the keys away on this, leaving the candidate bar.
+    Q_EMIT hardwareKeyboardActiveChanged();
+
+    // Whatever is on screen belongs to the source that was active a moment ago.
+    // Both directions are handled here: going to a hardware keyboard drops the
+    // keys, and coming back brings them straight to a field that still has
+    // focus rather than waiting for the framework to call show() again.
+    applyPanelVisibility();
 }
 
 void InputMethod::switchContext(Maliit::SwitchDirection direction,
@@ -863,6 +900,10 @@ void InputMethod::updateWordEngine()
     d->resetT9();
     d->editor.clearPreedit();
     d->editor.wordEngine()->setEnabled( d->wordEngineEnabled );
+
+    // With a hardware keyboard the candidate bar is the whole panel, so the word
+    // engine being switched off is the difference between a strip and nothing.
+    applyPanelVisibility();
 }
 
 //! \brief InputMethod::contentType returns the type, of the input field, like free text, email, url

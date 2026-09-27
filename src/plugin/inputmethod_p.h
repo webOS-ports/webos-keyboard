@@ -81,6 +81,12 @@ public:
     //! and the debug build makes that an error.
     bool hardwareInputSource = false;
 
+    //! Whether the framework has asked for the panel and not yet withdrawn the
+    //! request, i.e. whether a field has focus. Kept apart from whether the
+    //! panel is actually on screen, because with a hardware keyboard those are
+    //! no longer the same thing; see InputMethod::applyPanelVisibility().
+    bool panelRequested = false;
+
     WordRibbon* wordRibbon;
 
     //! Where the application's cursor sat when the preedit we are holding

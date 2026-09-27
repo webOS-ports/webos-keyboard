@@ -61,6 +61,9 @@ class InputMethod
     //! "actionKey" override - the equivalent of the reference's
     //! PalmIME::EditorState::enterKeyLabel. Empty means plain "Enter".
     Q_PROPERTY(QString actionKeyLabel READ actionKeyLabel NOTIFY actionKeyLabelChanged)
+    //! True while a physical keyboard is the active input source. The QML
+    //! collapses the keys away when it is set, leaving the candidate bar.
+    Q_PROPERTY(bool hardwareKeyboardActive READ hardwareKeyboardActive NOTIFY hardwareKeyboardActiveChanged)
 
 public:
     /// Same as Maliit::TextContentType but usable in QML
@@ -91,6 +94,8 @@ public:
     void switchContext(Maliit::SwitchDirection direction,
                                bool animated) override;
     void setState(const QSet<Maliit::HandlerState> &state) override;
+
+    bool hardwareKeyboardActive() const;
     QList<MAbstractInputMethod::MInputMethodSubView>
     subViews(Maliit::HandlerState state = Maliit::OnScreen) const override;
     void setActiveSubView(const QString &id,
@@ -154,6 +159,7 @@ Q_SIGNALS:
     void windowGeometryRectChanged(QRect rect);
     void keyboardSizeChanged(QString size);
     void keyboardLayoutChanged(QString layout);
+    void hardwareKeyboardActiveChanged();
 
 private:
     Q_SLOT void onAutoCorrectSettingChanged();
@@ -168,6 +174,9 @@ private:
     Q_SLOT void onLayoutHeightChanged(int height);
 
     void checkInitialAutocaps();
+
+    //! \brief Puts the panel on screen, or takes it off, from what is wanted now.
+    void applyPanelVisibility();
 
     const QScopedPointer<InputMethodPrivate> d_ptr;
 };

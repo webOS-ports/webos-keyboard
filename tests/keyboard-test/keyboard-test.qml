@@ -257,6 +257,23 @@ Rectangle {
                         }
                     }
 
+                    // What a Titan, a Q25 or an MP01 shows: no keys, just the
+                    // candidate bar. On a device the plugin sets this itself from
+                    // the handler state Maliit puts it in.
+                    CheckBox {
+                        width: parent.width
+                        text: "Hardware keyboard (candidate bar only)"
+                        checked: maliit_input_method.hardwareKeyboardActive
+                        onClicked: maliit_input_method.hardwareKeyboardActive =
+                                       !maliit_input_method.hardwareKeyboardActive
+                        contentItem: Text {
+                            text: parent.text
+                            color: "#1a1d23"
+                            leftPadding: parent.indicator.width + parent.spacing
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                    }
+
                     Rectangle { width: parent.width; height: 1; color: "#d5dae1" }
 
                     Text {

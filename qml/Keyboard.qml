@@ -75,7 +75,8 @@ Item {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.top: parent.top
-            height: (parent.height - keypad.height) + wordRibbon.height
+            height: keyboardComp.visible ? (parent.height - keypad.height) + wordRibbon.height
+                                         : wordRibbon.height
 
             drag.target: keyboardSurface
             drag.axis: Drag.YAxis;
@@ -122,7 +123,13 @@ Item {
                     id: keyboardComp
                     objectName: "keyboardComp"
 
-                    height: keyboardCompColumn.height
+                    // Nothing to draw when the user is typing on a physical
+                    // keyboard: the panel is then just the candidate bar above,
+                    // and keyboardSurface collapses to its height, which is what
+                    // the application is told to leave room for.
+                    visible: !fullScreenItem.input_method.hardwareKeyboardActive
+
+                    height: visible ? keyboardCompColumn.height : 0
                     width: parent.width
                     anchors.bottom: parent.bottom
 
