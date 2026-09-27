@@ -52,10 +52,18 @@ Rectangle {
 
             Item {
                 anchors.fill: parent
-                anchors.margins: Units.gu(1);
+                // Horizontal only: the delegate's own width is
+                // wordItem.width + Units.gu(2), which is this margin either
+                // side. Vertically the text is centred instead, so the bar does
+                // not have to be tall enough to hold a margin above and below
+                // it as well - which is what made it twice the height of its
+                // own text.
+                anchors.leftMargin: Units.gu(1);
+                anchors.rightMargin: Units.gu(1);
 
                 Text {
                     id: wordItem
+                    anchors.verticalCenter: parent.verticalCenter
                     font.pixelSize: Units.gu(2);
                     font.family: "Prelude"
                     color: "#999999"
