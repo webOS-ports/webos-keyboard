@@ -70,7 +70,13 @@ Item {
 
             property int jumpBackThreshold: Units.gu(10)
 
+            // Not when the panel is only the candidate bar. The gesture is there
+            // to push a full keyboard out of the way; a 3.5gu strip does not
+            // need pushing anywhere, and dismissing it left no way to get it
+            // back - nothing asks for the panel again until focus moves to
+            // another field.
             enabled: UI.formFactor === "phone" && !UI.extendedKeysShown
+                     && !fullScreenItem.input_method.hardwareKeyboardActive
 
             anchors.left: parent.left
             anchors.right: parent.right
