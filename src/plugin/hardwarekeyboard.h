@@ -30,7 +30,6 @@
 #ifndef MALIIT_KEYBOARD_HARDWAREKEYBOARD_H
 #define MALIIT_KEYBOARD_HARDWAREKEYBOARD_H
 
-#include <QElapsedTimer>
 #include <QEvent>
 #include <QHash>
 #include <QObject>
@@ -178,6 +177,21 @@ public:
     //! \brief Forgets any latched level. Called when focus leaves a field.
     void reset();
 
+    /*! \brief Looks for a matching profile again.
+     *
+     * The input device can enumerate long after maliit-server starts, and a USB
+     * or Bluetooth keyboard arrives whenever it is plugged in. This used to be
+     * chased by re-reading /proc/bus/input/devices from handleKey() every two
+     * seconds of typing - which on a device with no matching profile, like the
+     * Q25 whose driver resolves its own levels, ran for the life of the process
+     * and never found anything.
+     *
+     * The framework now says when a physical keyboard appears: see
+     * InputMethod::setState(). One rescan there beats polling on the keystroke
+     * path.
+     */
+    void rescan();
+
 Q_SIGNALS:
     void profileChanged();
     void levelChanged();
@@ -244,11 +258,6 @@ private:
     //! be answered with the same string the press produced.
     QHash<quint32, QString> m_pressedKeys;
 
-    //! The input device may well enumerate after maliit-server starts, so a
-    //! first look that finds nothing is retried -- throttled, because it reads
-    //! a proc file on a key press.
-    QElapsedTimer m_lastScan;
-    bool m_scanned;
 };
 
 } // namespace MaliitKeyboard

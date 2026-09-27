@@ -50,10 +50,6 @@ namespace {
 //! MInputContextWestonIMProtocolConnectionPrivate::processKeyEvent().
 const quint32 g_evdev_offset = 8;
 
-//! A scan that found no keyboard is retried no more often than this. The
-//! input device can appear long after maliit-server does.
-const qint64 g_rescan_interval_ms = 2000;
-
 //! \brief Where profiles are looked for, most specific first.
 //!
 //! The environment variable exists so a profile can be tried on a running
@@ -178,7 +174,6 @@ HardwareKeyboard::HardwareKeyboard(QObject *parent)
     , m_activeProfile(-1)
     , m_alt()
     , m_sym()
-    , m_scanned(false)
 {
     loadProfiles();
     selectProfile();
@@ -319,9 +314,6 @@ QList<HardwareKeyboard::InputDevice> HardwareKeyboard::readInputDevices()
 
 void HardwareKeyboard::selectProfile()
 {
-    m_scanned = true;
-    m_lastScan.start();
-
     const int previous = m_activeProfile;
     m_activeProfile = -1;
 
@@ -487,6 +479,11 @@ bool HardwareKeyboard::ownsAltModifier() const
         or (not profile.symKeys.isEmpty() and m_sym.isActive());
 }
 
+void HardwareKeyboard::rescan()
+{
+    selectProfile();
+}
+
 void HardwareKeyboard::reset()
 {
     const bool was_active = m_alt.isActive() or m_sym.isActive()
@@ -604,16 +601,12 @@ HardwareKeyboard::Result HardwareKeyboard::handleKey(QEvent::Type type,
                                                      Qt::KeyboardModifiers modifiers,
                                                      QString *text)
 {
-    if (not isPresent()) {
-        // The keyboard may only have shown up after maliit-server started.
-        if (not m_scanned
-            or (m_lastScan.isValid() and m_lastScan.elapsed() > g_rescan_interval_ms)) {
-            selectProfile();
-        }
-
-        if (not isPresent())
-            return NotHandled;
-    }
+    // No rescan here any more: whether a keyboard is attached is the framework's
+    // to notice, and it tells us through InputMethod::setState(), which calls
+    // rescan(). Re-reading /proc from the keystroke path meant a device with no
+    // matching profile did it every two seconds forever.
+    if (not isPresent())
+        return NotHandled;
 
     if (nativeScanCode < g_evdev_offset)
         return NotHandled;

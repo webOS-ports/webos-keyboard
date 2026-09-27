@@ -218,6 +218,15 @@ void InputMethod::applyPanelVisibility()
     const bool wanted = d->panelRequested
         and (not d->hardwareInputSource or d->wordEngineEnabled);
 
+    // Said out loud because there is no other way to tell from outside what was
+    // decided or why: the panel simply is or is not there, and the three inputs
+    // that settle it are all invisible. Diagnosing this on a device otherwise
+    // means rebuilding with logging in it, which is exactly what it cost the
+    // first time.
+    qCInfo(lcHwKeyboard, "panel: %s (focus=%d hardware=%d wordEngine=%d)",
+           wanted ? "shown" : "hidden", int(d->panelRequested),
+           int(d->hardwareInputSource), int(d->wordEngineEnabled));
+
     if (not wanted) {
         d->closeOskWindow();
         return;
@@ -541,6 +550,13 @@ void InputMethod::setState(const QSet<Maliit::HandlerState> &state)
 
     // The QML collapses the keys away on this, leaving the candidate bar.
     Q_EMIT hardwareKeyboardActiveChanged();
+
+    // The framework has just found a physical keyboard, which is the moment to
+    // look for a profile for it: the device may have enumerated after
+    // maliit-server started, or been plugged in a second ago. This replaces
+    // HardwareKeyboard re-reading /proc from the keystroke path.
+    if (hardware)
+        d->hardwareKeyboard.rescan();
 
     // Whatever is on screen belongs to the source that was active a moment ago.
     // Both directions are handled here: going to a hardware keyboard drops the
