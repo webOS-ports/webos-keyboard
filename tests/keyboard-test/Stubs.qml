@@ -79,6 +79,10 @@ QtObject {
         //! collapse away and only the candidate bar is left; see
         //! InputMethod::applyPanelVisibility().
         property bool hardwareKeyboardActive: false
+        //! Keys hidden, candidate bar left: a physical keyboard, or the user
+        //! having dragged the keys away.
+        property bool keysCollapsed: false
+        function collapseKeys() { keysCollapsed = true; }
     }
 
     property QtObject maliit_geometry: QtObject {

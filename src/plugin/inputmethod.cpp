@@ -184,6 +184,30 @@ bool InputMethod::hardwareKeyboardActive() const
     return d->hardwareInputSource;
 }
 
+bool InputMethod::keysCollapsed() const
+{
+    Q_D(const InputMethod);
+
+    return d->hardwareInputSource or d->keysCollapsed;
+}
+
+void InputMethod::collapseKeys()
+{
+    Q_D(InputMethod);
+
+    if (d->wordEngineEnabled) {
+        // The suggestions are still wanted; only the keys go.
+        d->keysCollapsed = true;
+    } else {
+        // Nothing would be left, and a zero-height panel comes back full height
+        // and blank (KeyboardView.qml), so take it away properly.
+        d->panelDismissed = true;
+    }
+
+    Q_EMIT keysCollapsedChanged();
+    applyPanelVisibility();
+}
+
 //! \brief Puts the panel on screen, or takes it off, from what is wanted now.
 //!
 //! Three things decide it: whether a field has focus at all, whether a physical
@@ -215,17 +239,23 @@ void InputMethod::applyPanelVisibility()
 {
     Q_D(InputMethod);
 
-    const bool wanted = d->panelRequested
-        and (not d->hardwareInputSource or d->wordEngineEnabled);
+    // With the keys hidden the panel is just the candidate bar, which is only
+    // worth putting up if there is one.
+    const bool keys_hidden = d->hardwareInputSource or d->keysCollapsed;
+    const bool wanted = d->panelRequested and not d->panelDismissed
+        and (not keys_hidden or d->wordEngineEnabled);
 
     // Said out loud because there is no other way to tell from outside what was
     // decided or why: the panel simply is or is not there, and the three inputs
     // that settle it are all invisible. Diagnosing this on a device otherwise
     // means rebuilding with logging in it, which is exactly what it cost the
     // first time.
-    qCInfo(lcHwKeyboard, "panel: %s (focus=%d hardware=%d wordEngine=%d)",
+    qCInfo(lcHwKeyboard,
+           "panel: %s (focus=%d hardware=%d wordEngine=%d keysCollapsed=%d"
+           " dismissed=%d)",
            wanted ? "shown" : "hidden", int(d->panelRequested),
-           int(d->hardwareInputSource), int(d->wordEngineEnabled));
+           int(d->hardwareInputSource), int(d->wordEngineEnabled),
+           int(d->keysCollapsed), int(d->panelDismissed));
 
     if (not wanted) {
         d->closeOskWindow();
@@ -548,8 +578,16 @@ void InputMethod::setState(const QSet<Maliit::HandlerState> &state)
     qCInfo(lcHwKeyboard, "input source is now %s",
            hardware ? "a hardware keyboard" : "the on-screen keyboard");
 
+    // Asking for the other input source is a fresh intent, so an earlier
+    // dismissal does not survive it. Without this, dragging the keyboard away
+    // and then using the shell's toggle did nothing at all: the dismissal still
+    // said the panel was not wanted.
+    d->keysCollapsed = false;
+    d->panelDismissed = false;
+
     // The QML collapses the keys away on this, leaving the candidate bar.
     Q_EMIT hardwareKeyboardActiveChanged();
+    Q_EMIT keysCollapsedChanged();
 
     // The framework has just found a physical keyboard, which is the moment to
     // look for a profile for it: the device may have enumerated after
@@ -610,6 +648,12 @@ void InputMethod::handleFocusChange(bool focusIn)
     Q_D(InputMethod);
 
     if (focusIn) {
+        // A different field is a fresh start; what the user dismissed belonged
+        // to the one they left.
+        d->keysCollapsed = false;
+        d->panelDismissed = false;
+        Q_EMIT keysCollapsedChanged();
+
         checkInitialAutocaps();
     } else {
         // Whatever was in the preedit belongs to the field we just left.
@@ -821,7 +865,15 @@ QString InputMethod::actionKeyLabel() const
 
 void InputMethod::onKeyboardClosed()
 {
-    hide();
+    Q_D(InputMethod);
+
+    // The user's dismissal, not the framework withdrawing its request - so it
+    // is recorded as such rather than by clearing panelRequested, which would
+    // read as "no field wants input" and leave nothing able to put the panel
+    // back short of focusing another field.
+    d->panelDismissed = true;
+    applyPanelVisibility();
+
     inputMethodHost()->notifyImInitiatedHiding();
 }
 

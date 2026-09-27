@@ -87,6 +87,17 @@ public:
     //! no longer the same thing; see InputMethod::applyPanelVisibility().
     bool panelRequested = false;
 
+    //! The user dragged the keys away but the candidate bar stays. Separate from
+    //! panelDismissed because the panel is still on screen, just shorter.
+    bool keysCollapsed = false;
+
+    //! The user dismissed the panel outright - dragged it away when there was no
+    //! candidate bar to fall back to. Separate from panelRequested, which is the
+    //! framework's request: conflating them meant a dismissal looked like "no
+    //! field wants input", so nothing could put the panel back without the focus
+    //! moving to another field.
+    bool panelDismissed = false;
+
     WordRibbon* wordRibbon;
 
     //! Where the application's cursor sat when the preedit we are holding

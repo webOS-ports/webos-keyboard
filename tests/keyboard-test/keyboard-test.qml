@@ -264,8 +264,12 @@ Rectangle {
                         width: parent.width
                         text: "Hardware keyboard (candidate bar only)"
                         checked: maliit_input_method.hardwareKeyboardActive
-                        onClicked: maliit_input_method.hardwareKeyboardActive =
-                                       !maliit_input_method.hardwareKeyboardActive
+                        onClicked: {
+                            maliit_input_method.hardwareKeyboardActive =
+                                !maliit_input_method.hardwareKeyboardActive;
+                            maliit_input_method.keysCollapsed =
+                                maliit_input_method.hardwareKeyboardActive;
+                        }
                         contentItem: Text {
                             text: parent.text
                             color: "#1a1d23"

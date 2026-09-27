@@ -64,6 +64,10 @@ class InputMethod
     //! True while a physical keyboard is the active input source. The QML
     //! collapses the keys away when it is set, leaving the candidate bar.
     Q_PROPERTY(bool hardwareKeyboardActive READ hardwareKeyboardActive NOTIFY hardwareKeyboardActiveChanged)
+    //! True when the keys are not drawn and the panel is only the candidate bar,
+    //! whether because a physical keyboard is in use or because the user dragged
+    //! the keys away. The QML collapses them on this.
+    Q_PROPERTY(bool keysCollapsed READ keysCollapsed NOTIFY keysCollapsedChanged)
 
 public:
     /// Same as Maliit::TextContentType but usable in QML
@@ -96,6 +100,15 @@ public:
     void setState(const QSet<Maliit::HandlerState> &state) override;
 
     bool hardwareKeyboardActive() const;
+    bool keysCollapsed() const;
+
+    /*! \brief Drags the keys away, keeping the candidate bar.
+     *
+     * Called by the swipe-down gesture. Where there is no candidate bar to be
+     * left with - the word engine is off - the panel goes altogether, because a
+     * zero-height panel comes back full height and blank.
+     */
+    Q_INVOKABLE void collapseKeys();
     QList<MAbstractInputMethod::MInputMethodSubView>
     subViews(Maliit::HandlerState state = Maliit::OnScreen) const override;
     void setActiveSubView(const QString &id,
@@ -160,6 +173,7 @@ Q_SIGNALS:
     void keyboardSizeChanged(QString size);
     void keyboardLayoutChanged(QString layout);
     void hardwareKeyboardActiveChanged();
+    void keysCollapsedChanged();
 
 private:
     Q_SLOT void onAutoCorrectSettingChanged();

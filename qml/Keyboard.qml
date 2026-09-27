@@ -70,13 +70,10 @@ Item {
 
             property int jumpBackThreshold: Units.gu(10)
 
-            // Not when the panel is only the candidate bar. The gesture is there
-            // to push a full keyboard out of the way; a 3.5gu strip does not
-            // need pushing anywhere, and dismissing it left no way to get it
-            // back - nothing asks for the panel again until focus moves to
-            // another field.
+            // Only while there are keys to push out of the way. Once the panel
+            // is down to the candidate bar there is nothing left to dismiss.
             enabled: UI.formFactor === "phone" && !UI.extendedKeysShown
-                     && !fullScreenItem.input_method.hardwareKeyboardActive
+                     && keyboardComp.visible
 
             anchors.left: parent.left
             anchors.right: parent.right
@@ -92,11 +89,18 @@ Item {
 
             onReleased: {
                 if (keyboardSurface.y > jumpBackThreshold) {
-                    maliit_geometry.shown = false;
-                } else {
-                    bounceBackAnimation.from = keyboardSurface.y
-                    bounceBackAnimation.start();
+                    // Drags the keys away and leaves the candidate bar, rather
+                    // than taking the whole panel down: the suggestions are
+                    // still wanted. collapseKeys() decides - where the word
+                    // engine is off there is no bar to be left with, and it
+                    // dismisses the panel instead.
+                    fullScreenItem.input_method.collapseKeys();
                 }
+
+                // Always: the surface has been dragged down the screen and has
+                // to come back to where it belongs, whether it collapsed or not.
+                bounceBackAnimation.from = keyboardSurface.y
+                bounceBackAnimation.start();
             }
 
             Item {
@@ -133,7 +137,7 @@ Item {
                     // keyboard: the panel is then just the candidate bar above,
                     // and keyboardSurface collapses to its height, which is what
                     // the application is told to leave room for.
-                    visible: !fullScreenItem.input_method.hardwareKeyboardActive
+                    visible: !fullScreenItem.input_method.keysCollapsed
 
                     height: visible ? keyboardCompColumn.height : 0
                     width: parent.width
