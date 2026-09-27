@@ -36,6 +36,8 @@ object_script.*
 moc_*.cpp
 moc_*.h
 moc_predefs.h
+# A test that ends with #include "foo.moc" makes one of these next to itself.
+*.moc
 qrc_*.cpp
 ui_*.h
 *_plugin_import.cpp

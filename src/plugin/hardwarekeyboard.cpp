@@ -38,6 +38,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QJsonValue>
 #include <QRegularExpression>
 #include <QTextStream>
 
@@ -97,7 +98,7 @@ QSet<quint32> readScanCodes(const QJsonArray &array)
 {
     QSet<quint32> codes;
 
-    for (const QJsonValue &value : array) {
+    for (const QJsonValueConstRef &value : array) {
         const int code = value.toInt(-1);
         if (code >= 0)
             codes.insert(static_cast<quint32>(code));
@@ -127,7 +128,7 @@ HardwareKeyboardProfile readProfile(const QJsonObject &object,
     profile.requiredKeys = readScanCodes(match.value("requireKeys").toArray());
 
     const QJsonArray names(match.value("inputDeviceNames").toArray());
-    for (const QJsonValue &value : names) {
+    for (const QJsonValueConstRef &value : names) {
         const QString name(value.toString());
         if (not name.isEmpty())
             profile.inputDeviceNames.append(name);
@@ -174,12 +175,9 @@ QString HardwareKeyboardProfile::lookup(HardwareKeyboardLevel level,
 
 HardwareKeyboard::HardwareKeyboard(QObject *parent)
     : QObject(parent)
-    , m_profiles()
     , m_activeProfile(-1)
     , m_alt()
     , m_sym()
-    , m_pressedKeys()
-    , m_lastScan()
     , m_scanned(false)
 {
     loadProfiles();
