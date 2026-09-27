@@ -192,6 +192,10 @@ private:
     //! \brief Puts the panel on screen, or takes it off, from what is wanted now.
     void applyPanelVisibility();
 
+    //! \brief Hands a dismissal to the framework when the keys are only up
+    //!        because they were forced there, and says whether it did.
+    bool releaseForcedOnScreenKeyboard();
+
     const QScopedPointer<InputMethodPrivate> d_ptr;
 };
 

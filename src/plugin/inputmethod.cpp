@@ -195,6 +195,9 @@ void InputMethod::collapseKeys()
 {
     Q_D(InputMethod);
 
+    if (releaseForcedOnScreenKeyboard())
+        return;
+
     if (d->wordEngineEnabled) {
         // The suggestions are still wanted; only the keys go.
         d->keysCollapsed = true;
@@ -206,6 +209,48 @@ void InputMethod::collapseKeys()
 
     Q_EMIT keysCollapsedChanged();
     applyPanelVisibility();
+}
+
+//! \brief Hands a dismissal to the framework when the keys are only up because
+//!        something forced them there, and says whether it did.
+//!
+//! With a physical keyboard attached the keys are on screen for exactly one
+//! reason: the on-screen keyboard has been forced on, by the shell's system menu
+//! or by an earlier call to this. Putting them away is therefore not a state of
+//! this plugin's own - it is that force being released, and it has to be released
+//! where it lives. Recording it here instead left two switches for one thing: the
+//! menu's toggle went on reading "on" with nothing on screen, so bringing the
+//! keys back took two taps, off and on again, rather than one.
+//!
+//! Without a physical keyboard there is nothing to force and nothing to release,
+//! and a dismissal is this plugin's own business until the next field takes
+//! focus - so the caller carries on with its own flags.
+bool InputMethod::releaseForcedOnScreenKeyboard()
+{
+    Q_D(InputMethod);
+
+    if (not d->hardwareKeyboard.isPresent())
+        return false;
+
+    // Already the hardware keyboard's turn, so the keys are not on screen and
+    // there is nothing to put away. Handled rather than left to fall through,
+    // because falling through would dismiss the candidate bar along with keys
+    // that were never there.
+    if (d->hardwareInputSource)
+        return true;
+
+    // Comes straight back as setState(Hardware) - synchronously, through
+    // setActiveHandlers() - which clears the dismissal flags, drops the keys and
+    // leaves the candidate bar. So there is nothing to apply here, and whether
+    // the input source moved is also the answer to whether the force was what
+    // held the keys up.
+    inputMethodHost()->setOnScreenKeyboardForced(false);
+
+    // It was not: this device has a physical keyboard the framework has no
+    // handler for, or none it is willing to switch to, and the keys are on
+    // screen because they are the only input method there is. Putting them away
+    // is then this plugin's own business after all.
+    return d->hardwareInputSource;
 }
 
 //! \brief Puts the panel on screen, or takes it off, from what is wanted now.
@@ -870,9 +915,13 @@ void InputMethod::onKeyboardClosed()
     // The user's dismissal, not the framework withdrawing its request - so it
     // is recorded as such rather than by clearing panelRequested, which would
     // read as "no field wants input" and leave nothing able to put the panel
-    // back short of focusing another field.
-    d->panelDismissed = true;
-    applyPanelVisibility();
+    // back short of focusing another field. Unless a physical keyboard is what
+    // the field will be typed on, in which case the dismissal belongs to the
+    // framework's switch instead; see releaseForcedOnScreenKeyboard().
+    if (not releaseForcedOnScreenKeyboard()) {
+        d->panelDismissed = true;
+        applyPanelVisibility();
+    }
 
     inputMethodHost()->notifyImInitiatedHiding();
 }
