@@ -157,9 +157,31 @@ InputMethod::InputMethod(MAbstractInputMethodHost *host)
 InputMethod::~InputMethod()
 {}
 
+//! \brief Puts the on-screen keyboard up - unless a physical keyboard is what
+//!        the user is typing on.
+//!
+//! Maliit calls this whenever a text field takes focus, and until now it did so
+//! unconditionally, which is why the on-screen keyboard appeared in front of a
+//! real keyboard on every device that has one.
+//!
+//! Refusing here rather than letting the framework deactivate the input method
+//! is deliberate, and it is the distinction LunaSysMgr drew too: with a hardware
+//! keyboard attached its IMEController::hideIME() hid the panel and left the
+//! field focused, where without one it removed input focus outright. This plugin
+//! has to stay active and keep its keyboard grab, because the grab is what
+//! routes physical keys through here - which is what resolves the Alt and Sym
+//! levels, runs T9 multi-tap on a keypad, and feeds word prediction.
+//! Deactivating the context would hand the keys straight to the application and
+//! lose all of it.
 void InputMethod::show()
 {
     Q_D(InputMethod);
+
+    if (d->hardwareInputSource) {
+        qCInfo(lcHwKeyboard, "not showing the on-screen keyboard: the active input"
+                             " source is a hardware keyboard");
+        return;
+    }
 
     d->view->setVisible(true);
     d->m_geometry->setShown(true);
@@ -452,6 +474,42 @@ void InputMethod::processKeyEvent(QEvent::Type keyType, Qt::Key keyCode,
         d->editor.onKeyPressed(key);
     else if (keyType == QEvent::KeyRelease)
         d->editor.onKeyReleased(key);
+}
+
+//! \brief Told which input sources this plugin is now serving.
+//!
+//! Maliit::Hardware means the framework has found a usable physical keyboard -
+//! see MImHwKeyboardTracker - and Maliit::OnScreen means it has not. The two are
+//! mutually exclusive, and a keyboard being plugged in or pulled off moves
+//! between them while the session runs, so this is not a one-off at startup: a
+//! detachable keyboard taken off mid-sentence has to bring the on-screen
+//! keyboard back for the field that is focused right now.
+//!
+//! The framework calls this before it calls show(), so a switch to a hardware
+//! keyboard cannot flash the panel up on its way to being told to keep it down.
+void InputMethod::setState(const QSet<Maliit::HandlerState> &state)
+{
+    Q_D(InputMethod);
+
+    // Not simply contains(Hardware): the framework treats OnScreen as mutually
+    // exclusive with Hardware, and if both ever arrive together the on-screen
+    // keyboard is the one that was asked for.
+    const bool hardware = state.contains(Maliit::Hardware)
+        and not state.contains(Maliit::OnScreen);
+
+    if (d->hardwareInputSource == hardware)
+        return;
+
+    d->hardwareInputSource = hardware;
+
+    qCInfo(lcHwKeyboard, "input source is now %s",
+           hardware ? "a hardware keyboard" : "the on-screen keyboard");
+
+    // The panel standing there belongs to the source that was active a moment
+    // ago. Going the other way needs nothing from here: the framework calls
+    // show() itself while a field still has focus.
+    if (hardware)
+        hide();
 }
 
 void InputMethod::switchContext(Maliit::SwitchDirection direction,

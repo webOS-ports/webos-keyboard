@@ -72,6 +72,15 @@ public:
     //! has one we have a profile for. Inert otherwise.
     HardwareKeyboard hardwareKeyboard;
 
+    //! True while Maliit has this plugin serving Maliit::Hardware, i.e. while
+    //! the framework has found a usable physical keyboard. The on-screen
+    //! keyboard stays down for as long as it is set; see InputMethod::show().
+    //!
+    //! Initialised here rather than in the constructor's list, which is not in
+    //! declaration order: adding it there in the readable place earns -Wreorder,
+    //! and the debug build makes that an error.
+    bool hardwareInputSource = false;
+
     WordRibbon* wordRibbon;
 
     //! Where the application's cursor sat when the preedit we are holding

@@ -120,6 +120,15 @@ its exit status can be non-zero while clang-tidy's was not.
 
 ## Not part of the suite
 
+`InputMethod` is not covered here. It derives from `MAbstractInputMethod` and
+owns a `QQuickView` the framework registers, so a test of it needs Maliit
+installed and gives up the property that makes this suite worth running — that
+it needs nothing but Qt. Its two decisions that matter for a hardware keyboard,
+`setState()` recording the active input source and `show()` refusing while that
+source is physical, are a handful of lines each and are verified on a device. A
+Maliit-dependent second tier of tests would be the place for them, and does not
+exist yet.
+
 `tests/keyboard-test/` is a desktop preview of the on-screen layouts: a Qt
 Quick application for looking at the keyboard, not an automated test. It wants
 a display and is built by opening it in Qt Creator, so it is deliberately left

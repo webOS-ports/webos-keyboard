@@ -90,6 +90,7 @@ public:
                                  unsigned long time) override;
     void switchContext(Maliit::SwitchDirection direction,
                                bool animated) override;
+    void setState(const QSet<Maliit::HandlerState> &state) override;
     QList<MAbstractInputMethod::MInputMethodSubView>
     subViews(Maliit::HandlerState state = Maliit::OnScreen) const override;
     void setActiveSubView(const QString &id,
