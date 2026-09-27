@@ -109,6 +109,7 @@ public:
      * zero-height panel comes back full height and blank.
      */
     Q_INVOKABLE void collapseKeys();
+    Q_INVOKABLE void expandKeys();
     QList<MAbstractInputMethod::MInputMethodSubView>
     subViews(Maliit::HandlerState state = Maliit::OnScreen) const override;
     void setActiveSubView(const QString &id,

@@ -229,8 +229,12 @@ bool InputMethod::releaseForcedOnScreenKeyboard()
 {
     Q_D(InputMethod);
 
-    if (not d->hardwareKeyboard.isPresent())
-        return false;
+    // Deliberately not gated on HardwareKeyboard::isPresent(): that asks whether
+    // a layout profile matched, which is a different and much narrower question.
+    // Of the keyboards this runs on only the ones whose Alt and Sym levels have
+    // to be resolved here have a profile - the Q25's driver resolves its own, so
+    // it has none and never will, and gating on it left this doing nothing at all
+    // on the one device it was written for.
 
     // Already the hardware keyboard's turn, so the keys are not on screen and
     // there is nothing to put away. Handled rather than left to fall through,
@@ -246,11 +250,39 @@ bool InputMethod::releaseForcedOnScreenKeyboard()
     // held the keys up.
     inputMethodHost()->setOnScreenKeyboardForced(false);
 
-    // It was not: this device has a physical keyboard the framework has no
-    // handler for, or none it is willing to switch to, and the keys are on
-    // screen because they are the only input method there is. Putting them away
-    // is then this plugin's own business after all.
+    // It was not: there is no physical keyboard, or there is one the framework
+    // has no handler for, and either way the keys are on screen because they are
+    // the only input method there is. Putting them away is then this plugin's own
+    // business after all.
     return d->hardwareInputSource;
+}
+
+//! \brief Brings the keys back to a panel that is down to its candidate bar.
+//!
+//! The counterpart of collapseKeys(), and the reason the bar keeps a gesture of
+//! its own: reaching the shell's toggle means opening the system menu, which
+//! takes input focus off the field being typed in - and with no field wanting
+//! input there is nothing for the panel to come back for. The bar is already on
+//! screen and already has focus, so asking here costs nothing and cannot fail
+//! that way.
+void InputMethod::expandKeys()
+{
+    Q_D(InputMethod);
+
+    d->keysCollapsed = false;
+    d->panelDismissed = false;
+
+    // With a hardware keyboard as the input source the keys are only ever on
+    // screen because they were asked for, so this is the same request the system
+    // menu's toggle makes and it goes to the same switch. Comes back as
+    // setState(OnScreen), which applies it - nothing to do here.
+    if (d->hardwareInputSource) {
+        inputMethodHost()->setOnScreenKeyboardForced(true);
+        return;
+    }
+
+    Q_EMIT keysCollapsedChanged();
+    applyPanelVisibility();
 }
 
 //! \brief Puts the panel on screen, or takes it off, from what is wanted now.

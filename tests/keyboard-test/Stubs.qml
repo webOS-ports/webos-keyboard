@@ -83,6 +83,7 @@ QtObject {
         //! having dragged the keys away.
         property bool keysCollapsed: false
         function collapseKeys() { keysCollapsed = true; }
+        function expandKeys() { keysCollapsed = false; }
     }
 
     property QtObject maliit_geometry: QtObject {
