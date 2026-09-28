@@ -5,6 +5,7 @@
 #include "hardwarekeyboard.h"
 #include "keyboardgeometry.h"
 #include "keyboardsettings.h"
+#include "panelstate.h"
 
 #include "logic/layoutupdater.h"
 #include "logic/eventhandler.h"
@@ -55,7 +56,6 @@ public:
     LuneOSApplicationApiWrapper* applicationApiWrapper;
 
     bool autocapsEnabled;
-    bool wordEngineEnabled;
     InputMethod::TextContentType contentType;
     QString activeLanguage;
     //! Painted on the space bar, and the label the application asked for on Return.
@@ -76,27 +76,14 @@ public:
     //! the framework has found a usable physical keyboard. The on-screen
     //! keyboard stays down for as long as it is set; see InputMethod::show().
     //!
-    //! Initialised here rather than in the constructor's list, which is not in
-    //! declaration order: adding it there in the readable place earns -Wreorder,
-    //! and the debug build makes that an error.
-    bool hardwareInputSource = false;
-
-    //! Whether the framework has asked for the panel and not yet withdrawn the
-    //! request, i.e. whether a field has focus. Kept apart from whether the
-    //! panel is actually on screen, because with a hardware keyboard those are
-    //! no longer the same thing; see InputMethod::applyPanelVisibility().
-    bool panelRequested = false;
-
-    //! The user dragged the keys away but the candidate bar stays. Separate from
-    //! panelDismissed because the panel is still on screen, just shorter.
-    bool keysCollapsed = false;
-
-    //! The user dismissed the panel outright - dragged it away when there was no
-    //! candidate bar to fall back to. Separate from panelRequested, which is the
-    //! framework's request: conflating them meant a dismissal looked like "no
-    //! field wants input", so nothing could put the panel back without the focus
-    //! moving to another field.
-    bool panelDismissed = false;
+    //! Whether a field has focus, whether a physical keyboard is the input source,
+    //! whether the word engine has anything to offer, and what the user has
+    //! dragged away - and the rules relating them. All of it lives in PanelState
+    //! rather than as members here so that the transitions can be driven by a unit
+    //! test: every bug in this area has been a transition, and reproducing one
+    //! otherwise needs a plugin, a QQuickView and a compositor. See
+    //! tests/ut_panelstate.
+    PanelState panel;
 
     WordRibbon* wordRibbon;
 
@@ -122,7 +109,6 @@ public:
         , view(nullptr)
         , applicationApiWrapper(new LuneOSApplicationApiWrapper)
         , autocapsEnabled(false)
-        , wordEngineEnabled(false)
         , contentType(InputMethod::FreeTextContentType)
         , activeLanguage("en")
         , primaryCandidate()

@@ -31,6 +31,7 @@ HEADERS += \
     keyboardgeometry.h \
     keyboardsettings.h \
     keyboardlogging.h \
+    panelstate.h \
 #    updatenotifier.h \
     luneosapplicationapiwrapper.h \
 
@@ -42,6 +43,7 @@ SOURCES += \
     keyboardgeometry.cpp \
     keyboardsettings.cpp \
     keyboardlogging.cpp \
+    panelstate.cpp \
 #    updatenotifier.cpp \
     luneosapplicationapiwrapper.cpp \
 

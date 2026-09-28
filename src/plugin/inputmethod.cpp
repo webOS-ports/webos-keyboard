@@ -173,7 +173,7 @@ void InputMethod::show()
 {
     Q_D(InputMethod);
 
-    d->panelRequested = true;
+    d->panel.setFocused(true);
     applyPanelVisibility();
 }
 
@@ -181,7 +181,7 @@ void InputMethod::hide()
 {
     Q_D(InputMethod);
 
-    d->panelRequested = false;
+    d->panel.setFocused(false);
     applyPanelVisibility();
 }
 
@@ -189,14 +189,14 @@ bool InputMethod::hardwareKeyboardActive() const
 {
     Q_D(const InputMethod);
 
-    return d->hardwareInputSource;
+    return d->panel.hardware();
 }
 
 bool InputMethod::keysCollapsed() const
 {
     Q_D(const InputMethod);
 
-    return d->hardwareInputSource or d->keysCollapsed;
+    return d->panel.keysHidden();
 }
 
 void InputMethod::collapseKeys()
@@ -206,14 +206,7 @@ void InputMethod::collapseKeys()
     if (releaseForcedOnScreenKeyboard())
         return;
 
-    if (d->wordEngineEnabled) {
-        // The suggestions are still wanted; only the keys go.
-        d->keysCollapsed = true;
-    } else {
-        // Nothing would be left, and a zero-height panel comes back full height
-        // and blank (KeyboardView.qml), so take it away properly.
-        d->panelDismissed = true;
-    }
+    d->panel.collapseKeys();
 
     Q_EMIT keysCollapsedChanged();
     applyPanelVisibility();
@@ -248,7 +241,7 @@ bool InputMethod::releaseForcedOnScreenKeyboard()
     // there is nothing to put away. Handled rather than left to fall through,
     // because falling through would dismiss the candidate bar along with keys
     // that were never there.
-    if (d->hardwareInputSource)
+    if (d->panel.hardware())
         return true;
 
     // Comes straight back as setState(Hardware) - synchronously, through
@@ -262,7 +255,7 @@ bool InputMethod::releaseForcedOnScreenKeyboard()
     // has no handler for, and either way the keys are on screen because they are
     // the only input method there is. Putting them away is then this plugin's own
     // business after all.
-    return d->hardwareInputSource;
+    return d->panel.hardware();
 }
 
 //! \brief Brings the keys back to a panel that is down to its candidate bar.
@@ -277,14 +270,13 @@ void InputMethod::expandKeys()
 {
     Q_D(InputMethod);
 
-    d->keysCollapsed = false;
-    d->panelDismissed = false;
+    d->panel.expandKeys();
 
     // With a hardware keyboard as the input source the keys are only ever on
     // screen because they were asked for, so this is the same request the system
     // menu's toggle makes and it goes to the same switch. Comes back as
     // setState(OnScreen), which applies it - nothing to do here.
-    if (d->hardwareInputSource) {
+    if (d->panel.hardware()) {
         inputMethodHost()->setOnScreenKeyboardForced(true);
         return;
     }
@@ -326,9 +318,7 @@ void InputMethod::applyPanelVisibility()
 
     // With the keys hidden the panel is just the candidate bar, which is only
     // worth putting up if there is one.
-    const bool keys_hidden = d->hardwareInputSource or d->keysCollapsed;
-    const bool wanted = d->panelRequested and not d->panelDismissed
-        and (not keys_hidden or d->wordEngineEnabled);
+    const bool wanted = d->panel.panelWanted();
 
     // Said out loud because there is no other way to tell from outside what was
     // decided or why: the panel simply is or is not there, and the three inputs
@@ -338,9 +328,9 @@ void InputMethod::applyPanelVisibility()
     qCInfo(lcHwKeyboard,
            "panel: %s (focus=%d hardware=%d wordEngine=%d keysCollapsed=%d"
            " dismissed=%d)",
-           wanted ? "shown" : "hidden", int(d->panelRequested),
-           int(d->hardwareInputSource), int(d->wordEngineEnabled),
-           int(d->keysCollapsed), int(d->panelDismissed));
+           wanted ? "shown" : "hidden", int(d->panel.focused()),
+           int(d->panel.hardware()), int(d->panel.wordEngine()),
+           int(d->panel.keysCollapsed()), int(d->panel.dismissed()));
 
     if (not wanted) {
         d->closeOskWindow();
@@ -655,10 +645,10 @@ void InputMethod::setState(const QSet<Maliit::HandlerState> &state)
     const bool hardware = state.contains(Maliit::Hardware)
         and not state.contains(Maliit::OnScreen);
 
-    if (d->hardwareInputSource == hardware)
+    if (d->panel.hardware() == hardware)
         return;
 
-    d->hardwareInputSource = hardware;
+    d->panel.setHardware(hardware);
 
     qCInfo(lcHwKeyboard, "input source is now %s",
            hardware ? "a hardware keyboard" : "the on-screen keyboard");
@@ -667,9 +657,6 @@ void InputMethod::setState(const QSet<Maliit::HandlerState> &state)
     // dismissal does not survive it. Without this, dragging the keyboard away
     // and then using the shell's toggle did nothing at all: the dismissal still
     // said the panel was not wanted.
-    d->keysCollapsed = false;
-    d->panelDismissed = false;
-
     // The QML collapses the keys away on this, leaving the candidate bar.
     Q_EMIT hardwareKeyboardActiveChanged();
     Q_EMIT keysCollapsedChanged();
@@ -735,8 +722,7 @@ void InputMethod::handleFocusChange(bool focusIn)
     if (focusIn) {
         // A different field is a fresh start; what the user dismissed belonged
         // to the one they left.
-        d->keysCollapsed = false;
-        d->panelDismissed = false;
+        d->panel.setFocused(true);
         Q_EMIT keysCollapsedChanged();
 
         checkInitialAutocaps();
@@ -964,13 +950,13 @@ void InputMethod::onKeyboardClosed()
     Q_D(InputMethod);
 
     // The user's dismissal, not the framework withdrawing its request - so it
-    // is recorded as such rather than by clearing panelRequested, which would
+    // is recorded as such rather than by clearing the focus flag, which would
     // read as "no field wants input" and leave nothing able to put the panel
     // back short of focusing another field. Unless a physical keyboard is what
     // the field will be typed on, in which case the dismissal belongs to the
     // framework's switch instead; see releaseForcedOnScreenKeyboard().
     if (not releaseForcedOnScreenKeyboard()) {
-        d->panelDismissed = true;
+        d->panel.dismiss();
         applyPanelVisibility();
     }
 
@@ -1008,8 +994,8 @@ void InputMethod::update()
     if (!valid)
         newPredictionEnabled = true;
 
-    if (d->wordEngineEnabled != newPredictionEnabled) {
-        d->wordEngineEnabled = newPredictionEnabled;
+    if (d->panel.wordEngine() != newPredictionEnabled) {
+        d->panel.setWordEngine(newPredictionEnabled);
         emitPredictionEnabled = true;
     }
 
@@ -1059,7 +1045,7 @@ void InputMethod::updateWordEngine()
     Q_D(InputMethod);
 
     if (d->contentType != FreeTextContentType)
-        d->wordEngineEnabled = false;
+        d->panel.setWordEngine(false);
 
     // Clears the preedit directly rather than through dropPreedit(), so the
     // T9 cycle that lived in it has to be dropped here too. Reached on every
@@ -1067,7 +1053,7 @@ void InputMethod::updateWordEngine()
     // survive into the next field.
     d->resetT9();
     d->editor.clearPreedit();
-    d->editor.wordEngine()->setEnabled( d->wordEngineEnabled );
+    d->editor.wordEngine()->setEnabled( d->panel.wordEngine() );
 
     // With a hardware keyboard the candidate bar is the whole panel, so the word
     // engine being switched off is the difference between a strip and nothing.
