@@ -85,6 +85,12 @@ public:
     //! tests/ut_panelstate.
     PanelState panel;
 
+    //! The scancode currently held down, so a press for a key that is already
+    //! down can be recognised as the kernel repeating it. Maliit cannot say:
+    //! the connection passes autoRepeat as a hardcoded false, and the compositor
+    //! clears the flag before that to get the event delivered at all.
+    quint32 heldScanCode = 0;
+
     WordRibbon* wordRibbon;
 
     //! Where the application's cursor sat when the preedit we are holding

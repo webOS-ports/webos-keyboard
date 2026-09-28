@@ -618,10 +618,49 @@ void InputMethod::processKeyEvent(QEvent::Type keyType, Qt::Key keyCode,
         return;
     }
 
-    if (keyType == QEvent::KeyPress)
-        d->editor.onKeyPressed(key);
-    else if (keyType == QEvent::KeyRelease)
+    // Who owns hold-to-repeat.
+    //
+    // The editor has its own: a key held on screen sends one press and one
+    // release, so onKeyPressed() starts a timer and the timer does the repeating.
+    // A key held on a physical keyboard is nothing like that - the kernel repeats
+    // it, and what arrives is press, press, press, ..., release with no release in
+    // between. Every one of those presses restarted the editor's timer, so it
+    // never fired, and the single release at the end deleted one character. That
+    // is what "holding backspace deletes one character" was.
+    //
+    // The two cannot both run either: the editor repeats after 350ms and the
+    // Q25's kernel after 400ms, so letting the timer start as well would race it
+    // and delete at two speeds at once.
+    //
+    // So with a physical keyboard the kernel is the only source of repeat, and
+    // each event it sends becomes exactly one complete action - a press and a
+    // release together. The first press deliberately does nothing: the action
+    // happens on release, which is where a tap has always produced it, and
+    // starting the timer there is what has to be avoided.
+    //
+    // The cost is the editor's escalation from letters to whole words after
+    // 1850ms of holding backspace, which lives in that timer. Alt+Backspace
+    // deletes a word outright and is the way to ask for it on a keyboard that has
+    // an Alt level printed on its keys.
+    const bool repeat_is_the_kernels = d->panel.hardware();
+
+    if (keyType == QEvent::KeyPress) {
+        if (not repeat_is_the_kernels) {
+            d->editor.onKeyPressed(key);
+        } else if (nativeScanCode == d->heldScanCode) {
+            // A press for a key that is already down: the kernel repeating it.
+            d->editor.onKeyPressed(key);
+            d->editor.onKeyReleased(key);
+        }
+
+        d->heldScanCode = nativeScanCode;
+    } else if (keyType == QEvent::KeyRelease) {
+        if (repeat_is_the_kernels)
+            d->editor.onKeyPressed(key);
+
         d->editor.onKeyReleased(key);
+        d->heldScanCode = 0;
+    }
 }
 
 //! \brief Told which input sources this plugin is now serving.
@@ -1224,12 +1263,14 @@ void InputMethod::onVisibleRectChanged()
 
     const QRect visibleRect = d->m_geometry->visibleRect().toRect();
 
-    qDebug() << "keyboard is reporting <x y w h>: <"
-                << visibleRect.x()
-                << visibleRect.y()
-                << visibleRect.width()
-                << visibleRect.height()
-                << "> as a new visibleRect.";
+    // At info, not debug: this is the number the application is resized around,
+    // and when the panel and the application disagree about where the panel ends
+    // there is no other way to tell which of them is wrong.
+    qCInfo(lcHwKeyboard, "panel area: %dx%d+%d+%d (screen %dx%d)",
+           visibleRect.width(), visibleRect.height(),
+           visibleRect.x(), visibleRect.y(),
+           d->view ? d->view->width() : -1,
+           d->view ? d->view->height() : -1);
 
     inputMethodHost()->setScreenRegion(QRegion(visibleRect));
     inputMethodHost()->setInputMethodArea(visibleRect, d->view);
