@@ -33,6 +33,8 @@ OTHER_FILES += \
     OrientationHelper.qml \
     Popper.qml \
     WordRibbon.qml \
+    EmojiPanel.qml \
+    emoji.js \
     keys/key_constants.js \
     keys/ActionKey.qml \
     keys/CharKey.qml \

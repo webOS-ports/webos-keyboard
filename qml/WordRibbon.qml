@@ -30,10 +30,23 @@ Rectangle {
         color: "#f1f1f1"
     }
 
+    /*!
+     * \brief Whether the emoji panel is showing.
+     *
+     * Kept here rather than in the panel because the button that toggles it is
+     * here, and because the candidate bar is the one part of the keyboard that
+     * is on screen whatever else is - including on a device being typed on with
+     * physical keys, where there are no on-screen keys at all to put it among.
+     */
+    property alias emojiShown: emojiButton.checked
+
     ListView {
         id: listView
         objectName: "wordListView"
-        anchors.fill: parent;
+        anchors.left: parent.left
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
+        anchors.right: emojiButton.left
 
         model: maliit_wordribbon
 
@@ -102,4 +115,56 @@ Rectangle {
             }
         }
     ]
+
+    /*!
+     * \brief Opens the emoji panel.
+     *
+     * On the right, where it does not move as candidates come and go.
+     */
+    Item {
+        id: emojiButton
+
+        property bool checked: false
+
+        anchors.right: parent.right
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
+        width: height
+
+        Rectangle {
+            anchors.fill: parent
+            color: emojiButton.checked ? "#d4d4d4" : "transparent"
+        }
+
+        Rectangle {
+            // A hairline to part it from the candidates, so a long word does
+            // not appear to run into the button.
+            anchors.left: parent.left
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            width: 1
+            color: "#d0d0d0"
+        }
+
+        Text {
+            anchors.centerIn: parent
+            // The character is the icon: the font that makes the panel worth
+            // having is the same one that draws this.
+            text: "\ud83d\ude42"
+            font.pixelSize: parent.height * 0.6
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            onClicked: {
+                emojiButton.checked = !emojiButton.checked;
+
+                // With a physical keyboard the keys are not on screen, and the
+                // panel goes where they would be - so ask for them back first,
+                // or there is nowhere for it to appear.
+                if (emojiButton.checked)
+                    maliit_input_method.expandKeys();
+            }
+        }
+    }
 }

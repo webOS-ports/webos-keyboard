@@ -156,6 +156,19 @@ int main(int argc, char *argv[])
 
     view.setResizeMode(QQuickView::SizeRootObjectToView);
     view.setSource(QUrl::fromLocalFile(here + QStringLiteral("/keyboard-test.qml")));
+
+    // A preview for the record: set KEYBOARD_TEST_GRAB to a path and the window
+    // is written there and the program exits, so the layout can be looked at
+    // without a person driving it.
+    const QByteArray grabTo = qgetenv("KEYBOARD_TEST_GRAB");
+    if (!grabTo.isEmpty()) {
+        QTimer::singleShot(2500, [&view, grabTo]() {
+            const QImage img = view.grabWindow();
+            if (!img.isNull())
+                img.save(QString::fromLocal8Bit(grabTo));
+            qApp->quit();
+        });
+    }
     if (!view.rootObject()) {
         qCritical() << "keyboard-test.qml failed to load";
         return 1;
