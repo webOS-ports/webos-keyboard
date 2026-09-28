@@ -626,8 +626,12 @@ void InputMethod::processKeyEvent(QEvent::Type keyType, Qt::Key keyCode,
         if (keyType == QEvent::KeyPress)
             d->editor.commit();
 
-        MAbstractInputMethod::processKeyEvent(keyType, keyCode, modifiers, text,
-                                              autoRepeat, count, nativeScanCode,
+        // effectiveModifiers, not modifiers: on a device whose Alt key the
+        // profile owns, the Alt bit means "alternate character" and was spent
+        // here. Passing it on would have the framework hand the key to the
+        // application as an Alt shortcut it never was.
+        MAbstractInputMethod::processKeyEvent(keyType, keyCode, effectiveModifiers,
+                                              text, autoRepeat, count, nativeScanCode,
                                               nativeModifiers, time);
         return;
     }
