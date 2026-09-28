@@ -61,6 +61,13 @@ class InputMethod
     //! "actionKey" override - the equivalent of the reference's
     //! PalmIME::EditorState::enterKeyLabel. Empty means plain "Enter".
     Q_PROPERTY(QString actionKeyLabel READ actionKeyLabel NOTIFY actionKeyLabelChanged)
+    //! True while a physical keyboard is the active input source. The QML
+    //! collapses the keys away when it is set, leaving the candidate bar.
+    Q_PROPERTY(bool hardwareKeyboardActive READ hardwareKeyboardActive NOTIFY hardwareKeyboardActiveChanged)
+    //! True when the keys are not drawn and the panel is only the candidate bar,
+    //! whether because a physical keyboard is in use or because the user dragged
+    //! the keys away. The QML collapses them on this.
+    Q_PROPERTY(bool keysCollapsed READ keysCollapsed NOTIFY keysCollapsedChanged)
 
 public:
     /// Same as Maliit::TextContentType but usable in QML
@@ -90,6 +97,19 @@ public:
                                  unsigned long time) override;
     void switchContext(Maliit::SwitchDirection direction,
                                bool animated) override;
+    void setState(const QSet<Maliit::HandlerState> &state) override;
+
+    bool hardwareKeyboardActive() const;
+    bool keysCollapsed() const;
+
+    /*! \brief Drags the keys away, keeping the candidate bar.
+     *
+     * Called by the swipe-down gesture. Where there is no candidate bar to be
+     * left with - the word engine is off - the panel goes altogether, because a
+     * zero-height panel comes back full height and blank.
+     */
+    Q_INVOKABLE void collapseKeys();
+    Q_INVOKABLE void expandKeys();
     QList<MAbstractInputMethod::MInputMethodSubView>
     subViews(Maliit::HandlerState state = Maliit::OnScreen) const override;
     void setActiveSubView(const QString &id,
@@ -108,6 +128,15 @@ public:
 
     TextContentType contentType();
     Q_SLOT void setContentType(TextContentType contentType);
+
+    /*! \brief The characters a field of this kind will take off a physical
+     *         keyboard's Alt level without the user holding Alt.
+     *
+     * Empty for anything that can hold prose, which is most fields and all the
+     * ones where a letter has to stay a letter. See
+     * HardwareKeyboard::setDigitsPreferred().
+     */
+    static QString digitsForContentType(TextContentType contentType);
 
     //! Hardware T9 multi-tap. t9HandleKey runs a physical numeric keypad
     //! through the multi-tap state machine and returns true when it has
@@ -153,6 +182,8 @@ Q_SIGNALS:
     void windowGeometryRectChanged(QRect rect);
     void keyboardSizeChanged(QString size);
     void keyboardLayoutChanged(QString layout);
+    void hardwareKeyboardActiveChanged();
+    void keysCollapsedChanged();
 
 private:
     Q_SLOT void onAutoCorrectSettingChanged();
@@ -162,11 +193,30 @@ private:
     Q_SLOT void updateKey(const QString &key_id,
                           const MKeyOverride::KeyOverrideAttributes changed_attributes);
     Q_SLOT void onKeyboardClosed();
+    Q_SLOT void onHardwareProfileChanged();
 
     Q_SLOT void onLayoutWidthChanged(int width);
     Q_SLOT void onLayoutHeightChanged(int height);
 
     void checkInitialAutocaps();
+
+    //! \brief Puts the panel on screen, or takes it off, from what is wanted now.
+    void applyPanelVisibility();
+
+    //! \brief Hands a dismissal to the framework when the keys are only up
+    //!        because they were forced there, and says whether it did.
+    bool releaseForcedOnScreenKeyboard();
+
+    //! \brief Tells the application how much of the screen the panel is using,
+    //!        and follows the panel with the window mask.
+    void reportPanelArea();
+
+    //! \brief Tells the application the area, without touching the mask.
+    void announcePanelArea();
+
+    //! \brief Masks the window to the strip the panel occupies, anchored to the
+    //!        bottom of the view so it is right before the panel animates in.
+    void maskPanelStrip();
 
     const QScopedPointer<InputMethodPrivate> d_ptr;
 };

@@ -1,6 +1,7 @@
 {
     "name": "athena-azerty",
     "description": "BlackBerry KEY2 / KEY2 LE physical keyboard, AZERTY variant",
+    "layout": "AZERTY",
     "match": {
         "inputDeviceNames": [
             "stmpe_azerty_keypad"

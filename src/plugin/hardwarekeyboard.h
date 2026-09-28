@@ -30,13 +30,13 @@
 #ifndef MALIIT_KEYBOARD_HARDWAREKEYBOARD_H
 #define MALIIT_KEYBOARD_HARDWAREKEYBOARD_H
 
-#include <QElapsedTimer>
 #include <QEvent>
 #include <QHash>
 #include <QObject>
 #include <QSet>
 #include <QString>
 #include <QStringList>
+#include <QVariantMap>
 
 namespace MaliitKeyboard {
 
@@ -60,6 +60,19 @@ struct HardwareKeyboardProfile
 {
     QString name;
     QString description;
+    /*! \brief The layout printed on the key faces: QWERTY, QWERTZ, AZERTY.
+     *
+     * Declared here and not in the device's adaptation because it is a fact about
+     * the keyboard that is fitted, not about the phone: the BlackBerry KEY2 ships
+     * in all three, and the three are told apart by the name its driver gives the
+     * input device - stmpe_keypad, stmpe_qwertz_keypad, stmpe_azerty_keypad -
+     * which is what this profile already matches on. One adaptation covers every
+     * KEY2 and cannot know which keyboard is under it; this can.
+     *
+     * Reported onward as PalmSystem.deviceInfo.keyboardType. Empty is allowed and
+     * means "not stated", which falls back to the device's own declaration.
+     */
+    QString layout;
     QStringList inputDeviceNames;
     //! evdev scancodes the input device must advertise for this profile to
     //! apply. Two keyboards can share a device name -- the Unihertz Titan and
@@ -135,6 +148,22 @@ public:
     bool isPresent() const;
     QString profileName() const;
 
+    //! \brief The matched profile's key-face layout, or empty where none matched
+    //!        or the profile does not state one.
+    QString layout() const;
+
+    /*! \brief The digits printed on the key faces, by evdev scancode.
+     *
+     * For the things that take digits without going through an input method at
+     * all: the lock screen's PIN pad is the shell's own QML, running inside the
+     * compositor, so nothing here ever sees its keys. It can be told what the key
+     * faces say instead, and do the substitution itself.
+     *
+     * Keys are scancodes as strings, because this crosses a JSON boundary on its
+     * way to the shell.
+     */
+    QVariantMap keyFaceDigits() const;
+
     bool isAltActive() const;
     bool isAltLocked() const;
     bool isSymActive() const;
@@ -178,6 +207,43 @@ public:
     //! \brief Forgets any latched level. Called when focus leaves a field.
     void reset();
 
+    /*! \brief The characters a numeric field will take off the Alt level
+     *         without the user holding Alt.
+     *
+     * A phone QWERTY prints the digits on its letter keys and reaches them
+     * through Alt. That is the right bargain in prose, where the letters are
+     * what you are there for, and the wrong one in a field that can only hold
+     * a number: a dialer where every digit costs a chord is a dialer nobody
+     * wants to use.
+     *
+     * So while a numeric field has focus, a key whose Alt legend is one of
+     * these characters resolves to it at the base level. Anything else is left
+     * exactly as it was -- a letter is still a letter, so a field that turns
+     * out to accept one is not fighting us, and Alt still reaches the rest of
+     * the legend the way it always did. Empty switches the whole thing off,
+     * which is every other field.
+     *
+     * The caller decides what belongs in its field; see
+     * InputMethod::digitsForContentType().
+     */
+    void setDigitsPreferred(const QString &characters);
+    QString digitsPreferred() const;
+
+    /*! \brief Looks for a matching profile again.
+     *
+     * The input device can enumerate long after maliit-server starts, and a USB
+     * or Bluetooth keyboard arrives whenever it is plugged in. This used to be
+     * chased by re-reading /proc/bus/input/devices from handleKey() every two
+     * seconds of typing - which on a device with no matching profile, like the
+     * Q25 whose driver resolves its own levels, ran for the life of the process
+     * and never found anything.
+     *
+     * The framework now says when a physical keyboard appears: see
+     * InputMethod::setState(). One rescan there beats polling on the keystroke
+     * path.
+     */
+    void rescan();
+
 Q_SIGNALS:
     void profileChanged();
     void levelChanged();
@@ -218,6 +284,12 @@ private:
         bool advertises(quint32 scanCode) const;
     };
 
+    //! \brief The Alt legend for this key, when a numeric field wants it.
+    //!
+    //! Empty unless setDigitsPreferred() named the character the Alt level
+    //! puts on this key, so a key with no digit on its face is untouched.
+    QString preferredDigit(quint32 scanCode) const;
+
     void loadProfiles();
     void selectProfile();
     static QList<InputDevice> readInputDevices();
@@ -240,15 +312,14 @@ private:
     LevelKeyState m_shift;
     bool m_telephoneKeypad = false;
 
+    //! What setDigitsPreferred() was last given: the characters the focused
+    //! field will take off the Alt level unasked. Empty for an ordinary field.
+    QString m_digitsPreferred;
+
     //! Scancodes currently down that we resolved to text, so the release can
     //! be answered with the same string the press produced.
     QHash<quint32, QString> m_pressedKeys;
 
-    //! The input device may well enumerate after maliit-server starts, so a
-    //! first look that finds nothing is retried -- throttled, because it reads
-    //! a proc file on a key press.
-    QElapsedTimer m_lastScan;
-    bool m_scanned;
 };
 
 } // namespace MaliitKeyboard

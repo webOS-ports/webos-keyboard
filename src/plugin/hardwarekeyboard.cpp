@@ -38,7 +38,9 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QJsonValue>
 #include <QRegularExpression>
+#include <QStringList>
 #include <QTextStream>
 
 namespace MaliitKeyboard {
@@ -48,10 +50,6 @@ namespace {
 //! The framework hands plugins the evdev scancode raised by this much; see
 //! MInputContextWestonIMProtocolConnectionPrivate::processKeyEvent().
 const quint32 g_evdev_offset = 8;
-
-//! A scan that found no keyboard is retried no more often than this. The
-//! input device can appear long after maliit-server does.
-const qint64 g_rescan_interval_ms = 2000;
 
 //! \brief Where profiles are looked for, most specific first.
 //!
@@ -97,7 +95,7 @@ QSet<quint32> readScanCodes(const QJsonArray &array)
 {
     QSet<quint32> codes;
 
-    for (const QJsonValue &value : array) {
+    for (const QJsonValueConstRef &value : array) {
         const int code = value.toInt(-1);
         if (code >= 0)
             codes.insert(static_cast<quint32>(code));
@@ -118,6 +116,7 @@ HardwareKeyboardProfile readProfile(const QJsonObject &object,
     }
 
     profile.description = object.value("description").toString();
+    profile.layout = object.value("layout").toString().trimmed();
     profile.lockOnDoubleTap = object.value("lockOnDoubleTap").toBool(true);
     profile.altKeys = readScanCodes(object.value("altKeys").toArray());
     profile.symKeys = readScanCodes(object.value("symKeys").toArray());
@@ -127,7 +126,7 @@ HardwareKeyboardProfile readProfile(const QJsonObject &object,
     profile.requiredKeys = readScanCodes(match.value("requireKeys").toArray());
 
     const QJsonArray names(match.value("inputDeviceNames").toArray());
-    for (const QJsonValue &value : names) {
+    for (const QJsonValueConstRef &value : names) {
         const QString name(value.toString());
         if (not name.isEmpty())
             profile.inputDeviceNames.append(name);
@@ -174,13 +173,9 @@ QString HardwareKeyboardProfile::lookup(HardwareKeyboardLevel level,
 
 HardwareKeyboard::HardwareKeyboard(QObject *parent)
     : QObject(parent)
-    , m_profiles()
     , m_activeProfile(-1)
     , m_alt()
     , m_sym()
-    , m_pressedKeys()
-    , m_lastScan()
-    , m_scanned(false)
 {
     loadProfiles();
     selectProfile();
@@ -321,11 +316,11 @@ QList<HardwareKeyboard::InputDevice> HardwareKeyboard::readInputDevices()
 
 void HardwareKeyboard::selectProfile()
 {
-    m_scanned = true;
-    m_lastScan.start();
-
     const int previous = m_activeProfile;
     m_activeProfile = -1;
+
+    //! Names of the attached keyboards, for the log when none of them matched.
+    QStringList keyboards;
 
     const QByteArray requested(qgetenv("LUNEOS_KEYBOARD_HW_LAYOUT"));
     if (requested == "none") {
@@ -400,16 +395,48 @@ void HardwareKeyboard::selectProfile()
             }
         }
 
-        for (const InputDevice &device : present)
+        for (const InputDevice &device : present) {
             qCInfo(lcHwKeyboard) << "input device present:" << device.name;
+
+            // Which of them is a keyboard, for the log line below. The same rule
+            // the framework's own detection uses - letter keys, not a name - so
+            // the two layers cannot describe the hardware differently.
+            if (device.advertises(KEY_A) and device.advertises(KEY_Q)
+                and device.advertises(KEY_M)) {
+                keyboards.append(device.name);
+            }
+        }
         qCInfo(lcHwKeyboard) << present.size() << "input devices,"
                               << m_profiles.size() << "profiles loaded";
 
         m_activeProfile = best;
     }
 
-    if (m_activeProfile < 0)
-        qCInfo(lcHwKeyboard) << "no hardware keyboard profile matched";
+    if (m_activeProfile < 0) {
+        // Said at some length because the bare version of this line reads as a
+        // failure and is not one. A profile exists to resolve the Alt and Sym
+        // levels printed on a key face, and only for keyboards whose driver
+        // reports the plain scancode and leaves that resolution to userspace. The
+        // Q25's bbqX0kbd driver resolves its own, so it has no profile and never
+        // will - and everything here that a profile drives (the Alt and Sym
+        // latches, ownsAltModifier(), the shift latch, telephone-keypad multi-tap)
+        // is inert on it by design.
+        //
+        // Which also makes isPresent() a much narrower question than it sounds:
+        // it is "did a profile match", not "is a keyboard attached". Gating
+        // anything about keyboard presence on it is a mistake, and was one.
+        if (keyboards.isEmpty()) {
+            qCInfo(lcHwKeyboard) << "no hardware keyboard profile matched, and no"
+                                 << "keyboard is attached to want one";
+        } else {
+            qCInfo(lcHwKeyboard) << "no hardware keyboard profile matched"
+                                 << qPrintable(keyboards.join(QLatin1String(", ")))
+                                 << "- its driver resolves any Alt and Sym levels"
+                                 << "itself, so this plugin has none to resolve."
+                                 << "Typing works; the Alt and Sym latches here do"
+                                 << "not apply";
+        }
+    }
 
     if (m_activeProfile >= 0) {
         qInfo() << "using the hardware keyboard profile"
@@ -429,6 +456,38 @@ bool HardwareKeyboard::isPresent() const
 QString HardwareKeyboard::profileName() const
 {
     return isPresent() ? m_profiles.at(m_activeProfile).name : QString();
+}
+
+QString HardwareKeyboard::layout() const
+{
+    return isPresent() ? m_profiles.at(m_activeProfile).layout : QString();
+}
+
+QVariantMap HardwareKeyboard::keyFaceDigits() const
+{
+    QVariantMap digits;
+
+    if (not isPresent())
+        return digits;
+
+    // The Alt level is where the digits are printed on a keyboard of this shape:
+    // the number row is the top letter row's alternate. Only the entries that are
+    // a single digit are offered - the same level also carries brackets, slashes
+    // and punctuation, and none of that belongs in a PIN.
+    const QHash<quint32, QString> alt(
+        m_profiles.at(m_activeProfile).levels.value(levelKey(HardwareKeyboardLevel::Alt)));
+
+    for (auto it = alt.constBegin(); it != alt.constEnd(); ++it) {
+        if (it.value().size() != 1)
+            continue;
+
+        const QChar c(it.value().at(0));
+
+        if (c.isDigit())
+            digits.insert(QString::number(it.key()), it.value());
+    }
+
+    return digits;
 }
 
 bool HardwareKeyboard::isAltActive() const
@@ -487,6 +546,38 @@ bool HardwareKeyboard::ownsAltModifier() const
     // explains an Alt modifier we should not treat as a shortcut.
     return (not profile.altKeys.isEmpty() and m_alt.isActive())
         or (not profile.symKeys.isEmpty() and m_sym.isActive());
+}
+
+void HardwareKeyboard::rescan()
+{
+    selectProfile();
+}
+
+void HardwareKeyboard::setDigitsPreferred(const QString &characters)
+{
+    m_digitsPreferred = characters;
+}
+
+QString HardwareKeyboard::digitsPreferred() const
+{
+    return m_digitsPreferred;
+}
+
+QString HardwareKeyboard::preferredDigit(quint32 scanCode) const
+{
+    if (m_digitsPreferred.isEmpty() or not isPresent())
+        return QString();
+
+    const QString mapped(m_profiles.at(m_activeProfile)
+                             .lookup(HardwareKeyboardLevel::Alt, scanCode));
+
+    // One character, and one the field will have. The length test is what
+    // keeps a multi-character legend out: those are not digits, and half of
+    // one is worse than none.
+    if (mapped.size() != 1 or not m_digitsPreferred.contains(mapped))
+        return QString();
+
+    return mapped;
 }
 
 void HardwareKeyboard::reset()
@@ -606,16 +697,12 @@ HardwareKeyboard::Result HardwareKeyboard::handleKey(QEvent::Type type,
                                                      Qt::KeyboardModifiers modifiers,
                                                      QString *text)
 {
-    if (not isPresent()) {
-        // The keyboard may only have shown up after maliit-server started.
-        if (not m_scanned
-            or (m_lastScan.isValid() and m_lastScan.elapsed() > g_rescan_interval_ms)) {
-            selectProfile();
-        }
-
-        if (not isPresent())
-            return NotHandled;
-    }
+    // No rescan here any more: whether a keyboard is attached is the framework's
+    // to notice, and it tells us through InputMethod::setState(), which calls
+    // rescan(). Re-reading /proc from the keystroke path meant a device with no
+    // matching profile did it every two seconds forever.
+    if (not isPresent())
+        return NotHandled;
 
     if (nativeScanCode < g_evdev_offset)
         return NotHandled;
@@ -666,6 +753,26 @@ HardwareKeyboard::Result HardwareKeyboard::handleKey(QEvent::Type type,
         return NotHandled;
 
     const HardwareKeyboardLevel level(activeLevel(modifiers));
+
+    /*
+     * A numeric field takes the digit off the key face without the chord.
+     *
+     * Only at the base level: a user who is holding Shift or has latched Alt
+     * has said what they want, and this is for the user who has said nothing.
+     * Nothing is consumed and no latch is spent, because none was engaged --
+     * this is a plain key press answered with a different character.
+     */
+    if (level == HardwareKeyboardLevel::Base) {
+        const QString digit(preferredDigit(code));
+        if (not digit.isEmpty()) {
+            qCInfo(lcHwKeyboard, "code %u -> '%s' (numeric field)",
+                   code, qPrintable(digit));
+            m_pressedKeys.insert(code, digit);
+            *text = digit;
+            return Text;
+        }
+    }
+
     const QString mapped(profile.lookup(level, code));
 
     qCInfo(lcHwKeyboard, "code %u at level %d -> '%s' (alt=%s sym=%s)",

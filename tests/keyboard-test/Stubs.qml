@@ -75,6 +75,15 @@ QtObject {
         property string primaryCandidate: ""
         //! What the application asked the Return key to say; empty means "Enter".
         property string actionKeyLabel: ""
+        //! Set while a physical keyboard is the active input source. The keys
+        //! collapse away and only the candidate bar is left; see
+        //! InputMethod::applyPanelVisibility().
+        property bool hardwareKeyboardActive: false
+        //! Keys hidden, candidate bar left: a physical keyboard, or the user
+        //! having dragged the keys away.
+        property bool keysCollapsed: false
+        function collapseKeys() { keysCollapsed = true; }
+        function expandKeys() { keysCollapsed = false; }
     }
 
     property QtObject maliit_geometry: QtObject {

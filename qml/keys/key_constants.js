@@ -215,4 +215,12 @@ var imageShiftLockKeyPressed    = { "tablet" : "../images/tablet/key_bg_shift_ac
 var top_margin = 0.5;  // gu - golden keyboardTopPading is 4/5/5/6px for XS/S/M/L
 var bottom_margin = 0; // gu
 
-var wordribbonHeight = 5.5; //gu - golden candidate bar is a fixed 55px (key-gray-short.png / 2)
+var wordribbonHeight = 3.5; //gu - the reference candidate bar is a fixed 55px
+                            //(key-gray-short.png / 2), and this is what that comes to
+                            //where a gu is 16px. It was 5.5, which made it 88px there:
+                            //two and a half times the 2gu text inside it, and on a 720px
+                            //square screen an eighth of the display. It is also the whole
+                            //panel now on a device with a physical keyboard, where there
+                            //are no keys under it to make it look proportionate.
+                            //Sized to its content: 2gu of text with half a gu above and
+                            //below, centred by WordRibbon.qml.

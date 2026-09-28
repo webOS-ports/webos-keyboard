@@ -128,6 +128,14 @@ InputMethod::InputMethod(MAbstractInputMethodHost *host)
     d->t9Timer->setInterval(1500); // multi-tap commit window: academic (MacKenzie) 1.5s; Android uses 2s
     connect(d->t9Timer, SIGNAL(timeout()), this, SLOT(finalizeT9()));
 
+    // The keyboard the profile matched names its own layout, and the framework
+    // reports it onward as PalmSystem.deviceInfo.keyboardType. Connected rather
+    // than read once: a keyboard can arrive after this constructor has run, and
+    // on a detachable one it can also leave.
+    connect(&d->hardwareKeyboard, &HardwareKeyboard::profileChanged,
+            this, &InputMethod::onHardwareProfileChanged);
+    onHardwareProfileChanged();
+
     d->registerFeedbackSetting();
     d->registerAutoCorrectSetting();
     d->registerAutoCapsSetting();
@@ -157,18 +165,185 @@ InputMethod::InputMethod(MAbstractInputMethodHost *host)
 InputMethod::~InputMethod()
 {}
 
+//! \brief Told by the framework that a field wants the panel.
+//!
+//! Whether anything appears is applyPanelVisibility()'s decision, because with a
+//! physical keyboard attached this is no longer the same question.
 void InputMethod::show()
 {
     Q_D(InputMethod);
 
-    d->view->setVisible(true);
-    d->m_geometry->setShown(true);
+    d->panel.setFocused(true);
+    applyPanelVisibility();
 }
 
 void InputMethod::hide()
 {
     Q_D(InputMethod);
-    d->closeOskWindow();
+
+    d->panel.setFocused(false);
+    applyPanelVisibility();
+}
+
+bool InputMethod::hardwareKeyboardActive() const
+{
+    Q_D(const InputMethod);
+
+    return d->panel.hardware();
+}
+
+bool InputMethod::keysCollapsed() const
+{
+    Q_D(const InputMethod);
+
+    return d->panel.keysHidden();
+}
+
+void InputMethod::collapseKeys()
+{
+    Q_D(InputMethod);
+
+    if (releaseForcedOnScreenKeyboard())
+        return;
+
+    d->panel.collapseKeys();
+
+    Q_EMIT keysCollapsedChanged();
+    applyPanelVisibility();
+}
+
+//! \brief Hands a dismissal to the framework when the keys are only up because
+//!        something forced them there, and says whether it did.
+//!
+//! With a physical keyboard attached the keys are on screen for exactly one
+//! reason: the on-screen keyboard has been forced on, by the shell's system menu
+//! or by an earlier call to this. Putting them away is therefore not a state of
+//! this plugin's own - it is that force being released, and it has to be released
+//! where it lives. Recording it here instead left two switches for one thing: the
+//! menu's toggle went on reading "on" with nothing on screen, so bringing the
+//! keys back took two taps, off and on again, rather than one.
+//!
+//! Without a physical keyboard there is nothing to force and nothing to release,
+//! and a dismissal is this plugin's own business until the next field takes
+//! focus - so the caller carries on with its own flags.
+bool InputMethod::releaseForcedOnScreenKeyboard()
+{
+    Q_D(InputMethod);
+
+    // Deliberately not gated on HardwareKeyboard::isPresent(): that asks whether
+    // a layout profile matched, which is a different and much narrower question.
+    // Of the keyboards this runs on only the ones whose Alt and Sym levels have
+    // to be resolved here have a profile - the Q25's driver resolves its own, so
+    // it has none and never will, and gating on it left this doing nothing at all
+    // on the one device it was written for.
+
+    // Already the hardware keyboard's turn, so the keys are not on screen and
+    // there is nothing to put away. Handled rather than left to fall through,
+    // because falling through would dismiss the candidate bar along with keys
+    // that were never there.
+    if (d->panel.hardware())
+        return true;
+
+    // Comes straight back as setState(Hardware) - synchronously, through
+    // setActiveHandlers() - which clears the dismissal flags, drops the keys and
+    // leaves the candidate bar. So there is nothing to apply here, and whether
+    // the input source moved is also the answer to whether the force was what
+    // held the keys up.
+    inputMethodHost()->setOnScreenKeyboardForced(false);
+
+    // It was not: there is no physical keyboard, or there is one the framework
+    // has no handler for, and either way the keys are on screen because they are
+    // the only input method there is. Putting them away is then this plugin's own
+    // business after all.
+    return d->panel.hardware();
+}
+
+//! \brief Brings the keys back to a panel that is down to its candidate bar.
+//!
+//! The counterpart of collapseKeys(), and the reason the bar keeps a gesture of
+//! its own: reaching the shell's toggle means opening the system menu, which
+//! takes input focus off the field being typed in - and with no field wanting
+//! input there is nothing for the panel to come back for. The bar is already on
+//! screen and already has focus, so asking here costs nothing and cannot fail
+//! that way.
+void InputMethod::expandKeys()
+{
+    Q_D(InputMethod);
+
+    d->panel.expandKeys();
+
+    // With a hardware keyboard as the input source the keys are only ever on
+    // screen because they were asked for, so this is the same request the system
+    // menu's toggle makes and it goes to the same switch. Comes back as
+    // setState(OnScreen), which applies it - nothing to do here.
+    if (d->panel.hardware()) {
+        inputMethodHost()->setOnScreenKeyboardForced(true);
+        return;
+    }
+
+    Q_EMIT keysCollapsedChanged();
+    applyPanelVisibility();
+}
+
+//! \brief Puts the panel on screen, or takes it off, from what is wanted now.
+//!
+//! Three things decide it: whether a field has focus at all, whether a physical
+//! keyboard is the active input source, and whether the word engine has anything
+//! to offer.
+//!
+//! With a physical keyboard the keys are not drawn - the QML collapses them away
+//! on hardwareKeyboardActive - and what is left is the candidate bar. That is
+//! worth keeping: word completion and autocorrect are as useful typed on a Titan
+//! as tapped on glass, and on a keypad running T9 the candidate list is the only
+//! place the word being built is offered whole. It is also where LunaSysMgr put
+//! it - keyboard-efigs carried CandidateBar as a thing separate from the
+//! keyboard for exactly this reason.
+//!
+//! Refusing the panel here rather than letting the framework deactivate the
+//! input method is deliberate, and it is the distinction LunaSysMgr drew too:
+//! with a hardware keyboard attached its IMEController::hideIME() hid the panel
+//! and left the field focused, where without one it removed input focus outright.
+//! This plugin has to stay active and keep its keyboard grab, because the grab is
+//! what routes physical keys through here - which is what resolves the Alt and
+//! Sym levels, runs T9 multi-tap on a keypad, and feeds word prediction.
+//!
+//! When the word engine is off as well there is nothing left to show and the
+//! panel goes away entirely. Deliberately away rather than collapsed to nothing:
+//! the compositor falls back to its own default panel height when the keyboard
+//! surface reports none (KeyboardView.qml), so a zero-height panel would come out
+//! full height and blank.
+void InputMethod::applyPanelVisibility()
+{
+    Q_D(InputMethod);
+
+    // With the keys hidden the panel is just the candidate bar, which is only
+    // worth putting up if there is one.
+    const bool wanted = d->panel.panelWanted();
+
+    // Said out loud because there is no other way to tell from outside what was
+    // decided or why: the panel simply is or is not there, and the three inputs
+    // that settle it are all invisible. Diagnosing this on a device otherwise
+    // means rebuilding with logging in it, which is exactly what it cost the
+    // first time.
+    qCInfo(lcHwKeyboard,
+           "panel: %s (focus=%d hardware=%d wordEngine=%d keysCollapsed=%d"
+           " dismissed=%d oskAllowed=%d)",
+           wanted ? "shown" : "hidden", int(d->panel.focused()),
+           int(d->panel.hardware()), int(d->panel.wordEngine()),
+           int(d->panel.keysCollapsed()), int(d->panel.dismissed()),
+           int(d->panel.onScreenKeyboardAllowed()));
+
+    if (not wanted) {
+        d->closeOskWindow();
+        return;
+    }
+
+    d->view->setVisible(true);
+    d->m_geometry->setShown(true);
+
+    // The surface the compositor reads the mask from is made here, and with a
+    // physical keyboard nothing else will ever apply one to it.
+    maskPanelStrip();
 }
 
 //! \brief Called by the framework when the application resets its input
@@ -448,10 +623,100 @@ void InputMethod::processKeyEvent(QEvent::Type keyType, Qt::Key keyCode,
         return;
     }
 
-    if (keyType == QEvent::KeyPress)
-        d->editor.onKeyPressed(key);
-    else if (keyType == QEvent::KeyRelease)
+    // Who owns hold-to-repeat.
+    //
+    // The editor has its own: a key held on screen sends one press and one
+    // release, so onKeyPressed() starts a timer and the timer does the repeating.
+    // A key held on a physical keyboard is nothing like that - the kernel repeats
+    // it, and what arrives is press, press, press, ..., release with no release in
+    // between. Every one of those presses restarted the editor's timer, so it
+    // never fired, and the single release at the end deleted one character. That
+    // is what "holding backspace deletes one character" was.
+    //
+    // The two cannot both run either: the editor repeats after 350ms and the
+    // Q25's kernel after 400ms, so letting the timer start as well would race it
+    // and delete at two speeds at once.
+    //
+    // So with a physical keyboard the kernel is the only source of repeat, and
+    // each event it sends becomes exactly one complete action - a press and a
+    // release together. The first press deliberately does nothing: the action
+    // happens on release, which is where a tap has always produced it, and
+    // starting the timer there is what has to be avoided.
+    //
+    // The cost is the editor's escalation from letters to whole words after
+    // 1850ms of holding backspace, which lives in that timer. Alt+Backspace
+    // deletes a word outright and is the way to ask for it on a keyboard that has
+    // an Alt level printed on its keys.
+    const bool repeat_is_the_kernels = d->panel.hardware();
+
+    if (keyType == QEvent::KeyPress) {
+        if (not repeat_is_the_kernels) {
+            d->editor.onKeyPressed(key);
+        } else if (nativeScanCode == d->heldScanCode) {
+            // A press for a key that is already down: the kernel repeating it.
+            d->editor.onKeyPressed(key);
+            d->editor.onKeyReleased(key);
+        }
+
+        d->heldScanCode = nativeScanCode;
+    } else if (keyType == QEvent::KeyRelease) {
+        if (repeat_is_the_kernels)
+            d->editor.onKeyPressed(key);
+
         d->editor.onKeyReleased(key);
+        d->heldScanCode = 0;
+    }
+}
+
+//! \brief Told which input sources this plugin is now serving.
+//!
+//! Maliit::Hardware means the framework has found a usable physical keyboard -
+//! see MImHwKeyboardTracker - and Maliit::OnScreen means it has not. The two are
+//! mutually exclusive, and a keyboard being plugged in or pulled off moves
+//! between them while the session runs, so this is not a one-off at startup: a
+//! detachable keyboard taken off mid-sentence has to bring the on-screen
+//! keyboard back for the field that is focused right now.
+//!
+//! The framework calls this before it calls show(), so a switch to a hardware
+//! keyboard cannot flash the panel up on its way to being told to keep it down.
+void InputMethod::setState(const QSet<Maliit::HandlerState> &state)
+{
+    Q_D(InputMethod);
+
+    // Not simply contains(Hardware): the framework treats OnScreen as mutually
+    // exclusive with Hardware, and if both ever arrive together the on-screen
+    // keyboard is the one that was asked for.
+    const bool hardware = state.contains(Maliit::Hardware)
+        and not state.contains(Maliit::OnScreen);
+
+    if (d->panel.hardware() == hardware)
+        return;
+
+    d->panel.setHardware(hardware);
+
+    qCInfo(lcHwKeyboard, "input source is now %s",
+           hardware ? "a hardware keyboard" : "the on-screen keyboard");
+
+    // Asking for the other input source is a fresh intent, so an earlier
+    // dismissal does not survive it. Without this, dragging the keyboard away
+    // and then using the shell's toggle did nothing at all: the dismissal still
+    // said the panel was not wanted.
+    // The QML collapses the keys away on this, leaving the candidate bar.
+    Q_EMIT hardwareKeyboardActiveChanged();
+    Q_EMIT keysCollapsedChanged();
+
+    // The framework has just found a physical keyboard, which is the moment to
+    // look for a profile for it: the device may have enumerated after
+    // maliit-server started, or been plugged in a second ago. This replaces
+    // HardwareKeyboard re-reading /proc from the keystroke path.
+    if (hardware)
+        d->hardwareKeyboard.rescan();
+
+    // Whatever is on screen belongs to the source that was active a moment ago.
+    // Both directions are handled here: going to a hardware keyboard drops the
+    // keys, and coming back brings them straight to a field that still has
+    // focus rather than waiting for the framework to call show() again.
+    applyPanelVisibility();
 }
 
 void InputMethod::switchContext(Maliit::SwitchDirection direction,
@@ -499,6 +764,11 @@ void InputMethod::handleFocusChange(bool focusIn)
     Q_D(InputMethod);
 
     if (focusIn) {
+        // A different field is a fresh start; what the user dismissed belonged
+        // to the one they left.
+        d->panel.setFocused(true);
+        Q_EMIT keysCollapsedChanged();
+
         checkInitialAutocaps();
     } else {
         // Whatever was in the preedit belongs to the field we just left.
@@ -708,9 +978,36 @@ QString InputMethod::actionKeyLabel() const
     return d->actionKeyLabel;
 }
 
+//! \brief Tells the framework what layout the attached keyboard has.
+void InputMethod::onHardwareProfileChanged()
+{
+    Q_D(InputMethod);
+
+    // Empty where no profile matched, which is not a failure - see
+    // HardwareKeyboard::selectProfile(). The framework then falls back to what
+    // the device declares for itself.
+    inputMethodHost()->setHardwareKeyboardLayout(d->hardwareKeyboard.layout());
+
+    // And what the key faces say, for the things that never reach a plugin: the
+    // lock screen's PIN pad is the shell's own QML inside the compositor.
+    inputMethodHost()->setHardwareKeyFaceDigits(d->hardwareKeyboard.keyFaceDigits());
+}
+
 void InputMethod::onKeyboardClosed()
 {
-    hide();
+    Q_D(InputMethod);
+
+    // The user's dismissal, not the framework withdrawing its request - so it
+    // is recorded as such rather than by clearing the focus flag, which would
+    // read as "no field wants input" and leave nothing able to put the panel
+    // back short of focusing another field. Unless a physical keyboard is what
+    // the field will be typed on, in which case the dismissal belongs to the
+    // framework's switch instead; see releaseForcedOnScreenKeyboard().
+    if (not releaseForcedOnScreenKeyboard()) {
+        d->panel.dismiss();
+        applyPanelVisibility();
+    }
+
     inputMethodHost()->notifyImInitiatedHiding();
 }
 
@@ -745,8 +1042,8 @@ void InputMethod::update()
     if (!valid)
         newPredictionEnabled = true;
 
-    if (d->wordEngineEnabled != newPredictionEnabled) {
-        d->wordEngineEnabled = newPredictionEnabled;
+    if (d->panel.wordEngine() != newPredictionEnabled) {
+        d->panel.setWordEngine(newPredictionEnabled);
         emitPredictionEnabled = true;
     }
 
@@ -755,6 +1052,28 @@ void InputMethod::update()
         newContentType = FreeTextContentType;
     }
     setContentType(newContentType);
+
+    // Set here and not in setContentType(), which returns early when the type
+    // has not changed: a field can be focused with the same content type the
+    // last one had, and it would then be the only one on the device that still
+    // wanted a chord for its digits.
+    d->hardwareKeyboard.setDigitsPreferred(digitsForContentType(newContentType));
+
+    /*
+     * A field with a keypad of its own gets everything but the keys.
+     *
+     * Asked for by the field and carried here on the content hint. It cannot be
+     * decided where such things usually are -- the platform input context puts
+     * the panel up by activating the text model, and not activating would leave
+     * this plugin knowing nothing about the field at all, neither its content
+     * type nor the physical keys it should be redirecting. So the field is
+     * activated like any other and the panel is declined here instead, which is
+     * where the panel actually is.
+     */
+    bool panelValid = false;
+    const bool onScreenKeyboardAllowed = inputMethodHost()->onScreenKeyboardAllowed(panelValid);
+    d->panel.setOnScreenKeyboardAllowed(!panelValid or onScreenKeyboardAllowed);
+    applyPanelVisibility();
 
     if (emitPredictionEnabled) {
         updateWordEngine();
@@ -796,7 +1115,7 @@ void InputMethod::updateWordEngine()
     Q_D(InputMethod);
 
     if (d->contentType != FreeTextContentType)
-        d->wordEngineEnabled = false;
+        d->panel.setWordEngine(false);
 
     // Clears the preedit directly rather than through dropPreedit(), so the
     // T9 cycle that lived in it has to be dropped here too. Reached on every
@@ -804,7 +1123,11 @@ void InputMethod::updateWordEngine()
     // survive into the next field.
     d->resetT9();
     d->editor.clearPreedit();
-    d->editor.wordEngine()->setEnabled( d->wordEngineEnabled );
+    d->editor.wordEngine()->setEnabled( d->panel.wordEngine() );
+
+    // With a hardware keyboard the candidate bar is the whole panel, so the word
+    // engine being switched off is the difference between a strip and nothing.
+    applyPanelVisibility();
 }
 
 //! \brief InputMethod::contentType returns the type, of the input field, like free text, email, url
@@ -817,6 +1140,34 @@ InputMethod::TextContentType InputMethod::contentType()
 
 //! \brief InputMethod::setContentType sets the type, of the input field, like free text, email, url
 //! \param contentType
+QString InputMethod::digitsForContentType(TextContentType contentType)
+{
+    switch (contentType) {
+    case PhoneNumberContentType:
+        // The dial characters, which are more than the digits: GSM keeps * and
+        // # for supplementary service codes -- *#31# and the like -- and a
+        // number typed in international form starts with a +. A dialer that
+        // could not reach those without a chord would have solved half the
+        // problem.
+        return QStringLiteral("0123456789*#+");
+    case NumberContentType:
+        // A plain number field: the digits, a sign and the two separators, so
+        // a decimal or a negative is still typeable. Which of . and , is the
+        // decimal point is the locale's business and not worth guessing at
+        // here; both are on the key faces and neither is a letter.
+        return QStringLiteral("0123456789+-.,");
+    case FreeTextContentType:
+    case EmailContentType:
+    case UrlContentType:
+    case CustomContentType:
+        break;
+    }
+
+    // Everything else can hold prose, and prose is made of the letters these
+    // keys are labelled with.
+    return QString();
+}
+
 void InputMethod::setContentType(TextContentType contentType)
 {
     Q_D(InputMethod);
@@ -965,24 +1316,84 @@ void InputMethod::updateWindowMask()
     d->view->setMask(vkbMask);
 }
 
+//! \brief Masks the window to the strip the panel occupies at the bottom.
+//!
+//! The mask is not only what the panel is drawn through. The compositor reads it
+//! off the surface and takes the largest rectangle in it as the area to resize
+//! the application around - WaylandInputPanel::updateInputPanelRect() - and it
+//! reports nothing to the application until it has one.
+//!
+//! updateWindowMask() alone only ever runs when the rectangle changes, and with a
+//! physical keyboard attached it never does: the panel is the candidate bar, the
+//! same size every time. So after the first surface the mask was never applied to
+//! any later one, the compositor's rect stayed invalid, and the application was
+//! never told to make room - the bar drew over whatever was at the bottom of it.
+//! With the on-screen keyboard the height swings between the bar and the full
+//! keyboard, the rectangle changes, and the mask is applied as a side effect,
+//! which is why only this case was wrong.
+//!
+//! Anchored to the bottom of the view rather than taken from the panel's mapped
+//! rectangle, because this runs before the panel has animated into place and that
+//! rectangle is still where the panel was parked off the bottom of the screen.
+//! Masking to there is a window that is visible and draws nothing.
+void InputMethod::maskPanelStrip()
+{
+    Q_D(InputMethod);
+
+    const int height = d->m_geometry->visibleRect().toRect().height();
+
+    if (height <= 0 or not d->view)
+        return;
+
+    const QRect strip(0, qMax(0, int(d->view->height()) - height),
+                      d->view->width(), height);
+
+    d->view->setMask(QRegion(strip) + d->m_geometry->popoverRect().toRect());
+}
+
 void InputMethod::onVisibleRectChanged()
+{
+    reportPanelArea();
+}
+
+//! \brief Tells the application how much of the screen the panel is using.
+//!
+//! Called both when the rectangle moves and when the panel is put on screen,
+//! because those are not the same event and only the first of them used to
+//! report anything. The panel hiding always said so - closeOskWindow() calls
+//! reportOSKInvisible() every time - but the panel appearing only said so if its
+//! rectangle happened to have changed since last time, and once the geometry has
+//! settled it never does. So an application was told to take its space back on
+//! every hide and never told to give it up again, and the candidate bar drew over
+//! whatever was at the bottom of it.
+void InputMethod::reportPanelArea()
+{
+    announcePanelArea();
+
+    // Only here: the rectangle has just moved, so it is the one the panel is
+    // really at, and the mask can safely follow it.
+    updateWindowMask();
+}
+
+//! \brief Tells the application how much of the screen the panel is using,
+//!        without touching the window mask.
+void InputMethod::announcePanelArea()
 {
     Q_D(InputMethod);
 
     const QRect visibleRect = d->m_geometry->visibleRect().toRect();
 
-    qDebug() << "keyboard is reporting <x y w h>: <"
-                << visibleRect.x()
-                << visibleRect.y()
-                << visibleRect.width()
-                << visibleRect.height()
-                << "> as a new visibleRect.";
+    // At info, not debug: this is the number the application is resized around,
+    // and when the panel and the application disagree about where the panel ends
+    // there is no other way to tell which of them is wrong.
+    qCInfo(lcHwKeyboard, "panel area: %dx%d+%d+%d (screen %dx%d)",
+           visibleRect.width(), visibleRect.height(),
+           visibleRect.x(), visibleRect.y(),
+           d->view ? d->view->width() : -1,
+           d->view ? d->view->height() : -1);
 
     inputMethodHost()->setScreenRegion(QRegion(visibleRect));
     inputMethodHost()->setInputMethodArea(visibleRect, d->view);
-
-    // update window mask
-    updateWindowMask();
 
     d->applicationApiWrapper->reportOSKVisible(
                 visibleRect.x(),

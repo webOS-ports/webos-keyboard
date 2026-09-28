@@ -70,26 +70,51 @@ Item {
 
             property int jumpBackThreshold: Units.gu(10)
 
+            // Stays enabled once the keys are gone, because the drag then works
+            // the other way: up over the candidate bar to bring them back. The
+            // bar is the only affordance for that which does not cost the field
+            // its focus - the shell's toggle is behind the system menu, and
+            // opening the menu takes input focus off the field, leaving nothing
+            // for the panel to come back for.
             enabled: UI.formFactor === "phone" && !UI.extendedKeysShown
 
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.top: parent.top
-            height: (parent.height - keypad.height) + wordRibbon.height
+            height: keyboardComp.visible ? (parent.height - keypad.height) + wordRibbon.height
+                                         : wordRibbon.height
 
             drag.target: keyboardSurface
             drag.axis: Drag.YAxis;
-            drag.minimumY: 0
-            drag.maximumY: parent.height
+            // Down to dismiss while the keys are up, up to bring them back while
+            // they are not. One direction at a time, so neither gesture can be
+            // started in the direction that has nothing to do.
+            // The floor rather than keypad.height alone: the keys have to be
+            // draggable further than jumpBackThreshold for the gesture to count,
+            // and a keypad that has not been laid out yet reports no height.
+            drag.minimumY: keyboardComp.visible ? 0
+                                               : -Math.max(keypad.height, Units.gu(20))
+            drag.maximumY: keyboardComp.visible ? parent.height : 0
             drag.filterChildren: true
 
             onReleased: {
-                if (keyboardSurface.y > jumpBackThreshold) {
-                    maliit_geometry.shown = false;
-                } else {
-                    bounceBackAnimation.from = keyboardSurface.y
-                    bounceBackAnimation.start();
+                if (keyboardComp.visible) {
+                    if (keyboardSurface.y > jumpBackThreshold) {
+                        // Drags the keys away and leaves the candidate bar, rather
+                        // than taking the whole panel down: the suggestions are
+                        // still wanted. collapseKeys() decides - where the word
+                        // engine is off there is no bar to be left with, and it
+                        // dismisses the panel instead.
+                        fullScreenItem.input_method.collapseKeys();
+                    }
+                } else if (keyboardSurface.y < -jumpBackThreshold) {
+                    fullScreenItem.input_method.expandKeys();
                 }
+
+                // Always: the surface has been dragged off where it belongs and
+                // has to come back, whether the drag decided anything or not.
+                bounceBackAnimation.from = keyboardSurface.y
+                bounceBackAnimation.start();
             }
 
             Item {
@@ -122,7 +147,13 @@ Item {
                     id: keyboardComp
                     objectName: "keyboardComp"
 
-                    height: keyboardCompColumn.height
+                    // Nothing to draw when the user is typing on a physical
+                    // keyboard: the panel is then just the candidate bar above,
+                    // and keyboardSurface collapses to its height, which is what
+                    // the application is told to leave room for.
+                    visible: !fullScreenItem.input_method.keysCollapsed
+
+                    height: visible ? keyboardCompColumn.height : 0
                     width: parent.width
                     anchors.bottom: parent.bottom
 

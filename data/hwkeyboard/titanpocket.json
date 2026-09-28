@@ -1,6 +1,7 @@
 {
     "name": "titanpocket",
     "description": "Unihertz Titan Pocket / Titan Slim physical keyboard (aw9523 matrix), US layout",
+    "layout": "QWERTY",
     "match": {
         "inputDeviceNames": [
             "aw9523-key"

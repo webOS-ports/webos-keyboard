@@ -5,6 +5,7 @@
 #include "hardwarekeyboard.h"
 #include "keyboardgeometry.h"
 #include "keyboardsettings.h"
+#include "panelstate.h"
 
 #include "logic/layoutupdater.h"
 #include "logic/eventhandler.h"
@@ -55,7 +56,6 @@ public:
     LuneOSApplicationApiWrapper* applicationApiWrapper;
 
     bool autocapsEnabled;
-    bool wordEngineEnabled;
     InputMethod::TextContentType contentType;
     QString activeLanguage;
     //! Painted on the space bar, and the label the application asked for on Return.
@@ -71,6 +71,25 @@ public:
     //! Resolves the Alt and Sym levels of a physical keyboard, if this device
     //! has one we have a profile for. Inert otherwise.
     HardwareKeyboard hardwareKeyboard;
+
+    //! True while Maliit has this plugin serving Maliit::Hardware, i.e. while
+    //! the framework has found a usable physical keyboard. The on-screen
+    //! keyboard stays down for as long as it is set; see InputMethod::show().
+    //!
+    //! Whether a field has focus, whether a physical keyboard is the input source,
+    //! whether the word engine has anything to offer, and what the user has
+    //! dragged away - and the rules relating them. All of it lives in PanelState
+    //! rather than as members here so that the transitions can be driven by a unit
+    //! test: every bug in this area has been a transition, and reproducing one
+    //! otherwise needs a plugin, a QQuickView and a compositor. See
+    //! tests/ut_panelstate.
+    PanelState panel;
+
+    //! The scancode currently held down, so a press for a key that is already
+    //! down can be recognised as the kernel repeating it. Maliit cannot say:
+    //! the connection passes autoRepeat as a hardcoded false, and the compositor
+    //! clears the flag before that to get the event delivered at all.
+    quint32 heldScanCode = 0;
 
     WordRibbon* wordRibbon;
 
@@ -96,7 +115,6 @@ public:
         , view(nullptr)
         , applicationApiWrapper(new LuneOSApplicationApiWrapper)
         , autocapsEnabled(false)
-        , wordEngineEnabled(false)
         , contentType(InputMethod::FreeTextContentType)
         , activeLanguage("en")
         , primaryCandidate()

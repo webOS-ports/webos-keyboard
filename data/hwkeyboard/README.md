@@ -87,6 +87,26 @@ nothing but an `alt` level.
 keymap calls them. The KEY2's `$` key is the example — its driver reports
 `KEY_4`, which would otherwise type a `4`.
 
+### Legend-only profiles
+
+A profile with no `altKeys` and no `symKeys` claims no keys at all: it never
+consumes a level key, never latches anything, and leaves `ownsAltModifier()`
+false. Every key travels the path it always did.
+
+What it still does is *state what the key faces say*, and two things read that
+without the plugin ever resolving a level itself:
+
+- **Numeric fields.** A field that can only hold a number takes the digit off
+  the key face without the user holding Alt -- see
+  `InputMethod::digitsForContentType()`. The plugin has to know which keys
+  carry digits to do that, and the `alt` level is where that is written down.
+- **`keyboardType`**, from `layout`, which the framework passes on to
+  applications.
+
+This is how a keyboard whose driver resolves its own levels is described. The
+driver keeps doing the resolving; the profile only supplies the legend the
+driver's work is invisible to.
+
 ## What the Alt and Sym keys do
 
 The state machine is the familiar BlackBerry one, and is the same for both keys:
@@ -160,7 +180,7 @@ evtest /dev/input/eventN                     # the scancode each key reports
 | Unihertz Titan | `titan` | The xkb symbols file the Ubuntu Touch `unihertz-titan` port ships (`unihertz_vndr/titan`) |
 | Unihertz Titan Pocket, Titan Slim | `titanpocket` | The xkb symbols file the Ubuntu Touch `unihertz-titanslim-pocket` port ships (`unihertz_vndr/titanpocket`) |
 | Minimal Phone MP01 | `mp01` | The stock `aw9523b-key.{kl,kcm}` out of the device's own `system.img`, diffed against the `Generic.{kl,kcm}` beside them |
-| Zinwa Q25 | none, and none wanted | Its `bbqX0kbd` driver resolves both levels in the kernel and reports the resulting keycode, so there is nothing left here to do. Confirm with `evtest`: Alt+Q should report `KEY_3` with Shift, not `KEY_Q` |
+| Zinwa Q25 | `q25`, legend only | Its `bbqX0kbd` driver resolves both levels in the kernel and reports the resulting keycode, so the profile claims no level keys -- it is there for the key faces alone, which is what lets a dialer have its digits without Alt. Legends cross-checked against the driver's own `q20_alt_layer[]` and the stock ROM's `Q25_keyboard.kcm`, which agree entry for entry. Confirm with `evtest`: Alt+Q should report `KEY_3` with Shift, not `KEY_Q` |
 
 The KEY2 driver renames its input device by keyboard variant
 (`stmpe_keypad`, `stmpe_azerty_keypad`, `stmpe_qwertz_keypad`), so the right one

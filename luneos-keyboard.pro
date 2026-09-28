@@ -94,3 +94,11 @@ SUBDIRS = \
     qml \
     plugins \
 
+# The unit tests, unless asked not to. The OE recipe passes CONFIG+=notests for
+# target images, so nothing here reaches a device unless it is asked for; see
+# tests/README.md. Last in the list because CONFIG+=ordered is set above and the
+# tests are the only thing that wants everything else to exist first.
+!notests {
+    SUBDIRS += tests
+}
+
