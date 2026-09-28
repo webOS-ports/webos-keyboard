@@ -53,18 +53,22 @@ Item {
     readonly property real cellSize: width / columns
 
     /*!
-     * The ground legacy's own picker sat on.
+     * A plain light grey field, in the grey webOS drew key faces with
+     * (popup_key_inactive.png is #d3d3d3).
      *
-     * webOS put its extended characters in a popover of light grey keys on a
-     * mid grey ground - keyboard_popover.png is #8f9192 and popup_key_inactive
-     * is #d3d3d3 - and a grid of emoji is the same kind of thing, so it is
-     * dressed the same way. The keyboard's tiled background was tried first and
-     * is nearly black: emoji are colourful artwork rather than glyphs in the
-     * text colour, and on black they read as a scattering of bright specks.
+     * Flat, deliberately. The extended-character popover put every character on
+     * its own key, and that was right for characters the keyboard types - they
+     * are keys. An emoji is a picture being picked from a sheet of them, and
+     * boxing each one lays a grid of chrome over artwork that already has its
+     * own shape.
+     *
+     * Light, because the keyboard's own background is nearly black and emoji are
+     * colourful artwork rather than glyphs in the text colour: on black they
+     * read as a scattering of bright specks.
      */
     Rectangle {
         anchors.fill: parent
-        color: "#8f9192"
+        color: "#d3d3d3"
     }
 
     Column {
@@ -139,14 +143,13 @@ Item {
                 width: grid.cellWidth
                 height: grid.cellHeight
 
-                //! One popover key per emoji, the art the extended-character
-                //! popover uses, so a press answers the way one there does.
-                Image {
+                //! Only while it is held - the grey webOS pressed a key face to
+                //! (popup_key_active.png). Nothing is drawn otherwise, so the
+                //! sheet stays a sheet of emoji rather than a grid of boxes.
+                Rectangle {
                     anchors.fill: parent
-                    anchors.margins: Units.gu(0.15)
-                    source: "images/" + UI.formFactor
-                            + (emojiArea.pressed ? "/popup_key_active.png"
-                                                 : "/popup_key_inactive.png")
+                    visible: emojiArea.pressed
+                    color: "#aeaeae"
                 }
 
                 Text {
