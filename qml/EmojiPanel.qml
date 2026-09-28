@@ -23,66 +23,84 @@ import LunaNext.Common 0.1
 import "emoji.js" as EmojiData
 
 /*!
- * \brief A grid of emoji, in place of the keys.
+ * \brief A grid of emoji, in the keys' place.
  *
- * An emoji is inserted the same way a character key inserts one, through
- * event_handler, because that is all it is: text. Legacy's seven emoticons were
- * ASCII with pictures drawn over them, which meant every consumer had to be in
- * on the trick and the set could never grow. These are ordinary characters, so
- * nothing downstream needs to know anything - as long as something can draw
- * them, which is what ttf-noto-emoji-color in the image is for.
+ * Dressed in the keyboard's own materials - the same tiled background, the same
+ * key art for the tabs, the same border above - so it reads as a face of the
+ * keyboard rather than a window that happened to open over it.
  *
- * Reached from the candidate bar rather than a Sym key: the bar is on screen
- * whenever a field has focus, including on a device typing on physical keys,
- * whereas a Sym key is not something every keyboard lets out. The Zinwa Q25's
- * driver resolves Alt and Sym itself and emits only the resolved character, so
- * there is no Sym keypress there to hang this on - measured by reading its event
- * node while the key was pressed: nothing at all came out.
+ * An emoji is inserted through event_handler exactly as a character key inserts
+ * one, because that is all it is: text. Legacy's seven emoticons were ASCII with
+ * pictures drawn over them, so every consumer had to be in on the trick and the
+ * set could never grow. These are characters, and the only thing they need is a
+ * font that covers them.
  */
 Item {
     id: emojiPanel
 
-    //! Roughly a key's worth, so the grid reads like the keyboard it replaces.
-    readonly property real cellSize: Units.gu(5)
+    //! Which of EmojiData.groups is showing.
+    property int currentGroup: 0
 
-    Rectangle {
+    //! Sized from the keys so the grid reads at the same rhythm as the keyboard
+    //! it replaces, rather than at a size of its own choosing.
+    readonly property real cellSize: Units.gu(5.5)
+
+    Image {
         anchors.fill: parent
-        color: UI.backgroundColor !== undefined ? UI.backgroundColor : "#111111"
+        source: "images/" + UI.formFactor + "/keyboard-bg.png"
+        fillMode: Image.TileHorizontally
     }
 
     Column {
         anchors.fill: parent
 
-        //! The categories, as a strip of one representative emoji each.
-        Row {
-            id: categoryRow
+        Image {
+            source: "images/" + UI.formFactor + "/border_top.png"
             width: parent.width
-            height: Units.gu(4)
+        }
+
+        //! The tabs, one per group, drawn as keys.
+        Row {
+            id: tabRow
+            width: parent.width
+            height: Units.gu(4.5)
 
             Repeater {
-                model: EmojiData.categories.length
+                model: EmojiData.groups.length
 
                 Item {
-                    width: categoryRow.width / EmojiData.categories.length
-                    height: categoryRow.height
+                    width: tabRow.width / EmojiData.groups.length
+                    height: tabRow.height
 
-                    Rectangle {
+                    BorderImage {
                         anchors.fill: parent
-                        color: index === emojiPanel.currentCategory ? "#3a3a3a" : "transparent"
+                        anchors.margins: Units.gu(0.1)
+                        // The path is built here rather than taken from
+                        // UI.imageGreyKey, which is written relative to
+                        // qml/keys/ and would climb one directory too far from
+                        // this file.
+                        source: "images/" + UI.formFactor + "/key_bg_grey"
+                                + (index === emojiPanel.currentGroup ? "_active" : "")
+                                + ".png"
+                        border {
+                            left:   UI.formFactor === "tablet" ? 11 : 23
+                            top:    UI.formFactor === "tablet" ? 11 : 23
+                            right:  UI.formFactor === "tablet" ? 11 : 23
+                            bottom: UI.formFactor === "tablet" ? 11 : 23
+                        }
                     }
 
                     Text {
                         anchors.centerIn: parent
-                        // The first emoji of the category stands for it, so the
-                        // strip needs no icons of its own and grows with the data.
-                        text: EmojiData.categories[index].emoji.charAt(0)
-                              + EmojiData.categories[index].emoji.charAt(1)
-                        font.pixelSize: Units.gu(2.5)
+                        //! The group's own representative emoji is the icon, so
+                        //! the tabs need no artwork and follow the data.
+                        text: EmojiData.groups[index].tab
+                        font.pixelSize: parent.height * 0.55
                     }
 
                     MouseArea {
                         anchors.fill: parent
-                        onClicked: emojiPanel.currentCategory = index
+                        onClicked: emojiPanel.currentGroup = index
                     }
                 }
             }
@@ -91,43 +109,50 @@ Item {
         GridView {
             id: grid
             width: parent.width
-            height: parent.height - categoryRow.height
+            height: parent.height - tabRow.height
             clip: true
+            cacheBuffer: height
 
             cellWidth: emojiPanel.cellSize
             cellHeight: emojiPanel.cellSize
 
-            // Surrogate pairs: every one of these is above U+FFFF, so a QML
-            // string holds each as two code units and the model has to step in
-            // twos rather than ones.
-            model: EmojiData.categories[emojiPanel.currentCategory].emoji.length / 2
+            model: EmojiData.groups[emojiPanel.currentGroup].emoji
+
+            //! Back to the top when the group changes; carrying one group's
+            //! scroll position into the next lands the user in the middle of
+            //! something they did not choose.
+            onModelChanged: positionViewAtBeginning()
 
             delegate: Item {
                 width: grid.cellWidth
                 height: grid.cellHeight
 
-                property string emoji:
-                    EmojiData.categories[emojiPanel.currentCategory].emoji
-                        .substr(index * 2, 2)
+                Rectangle {
+                    anchors.fill: parent
+                    anchors.margins: Units.gu(0.2)
+                    radius: Units.gu(0.4)
+                    color: "#ffffff"
+                    opacity: emojiArea.pressed ? 0.25 : 0
+                }
 
                 Text {
                     anchors.centerIn: parent
-                    text: parent.emoji
-                    font.pixelSize: Units.gu(3)
+                    text: modelData
+                    font.pixelSize: parent.height * 0.62
                 }
 
                 MouseArea {
+                    id: emojiArea
                     anchors.fill: parent
+
                     onClicked: {
-                        // The same road a character key takes. No action, so it
-                        // is inserted as plain text.
-                        event_handler.onKeyPressed(parent.emoji, "");
-                        event_handler.onKeyReleased(parent.emoji, "");
+                        //! The road a character key takes. No action, so it goes
+                        //! in as plain text.
+                        event_handler.onKeyPressed(modelData, "");
+                        event_handler.onKeyReleased(modelData, "");
                     }
                 }
             }
         }
     }
-
-    property int currentCategory: 0
 }
