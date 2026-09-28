@@ -198,6 +198,9 @@ private:
     //!        because they were forced there, and says whether it did.
     bool releaseForcedOnScreenKeyboard();
 
+    //! \brief Tells the application how much of the screen the panel is using.
+    void reportPanelArea();
+
     const QScopedPointer<InputMethodPrivate> d_ptr;
 };
 

@@ -339,6 +339,11 @@ void InputMethod::applyPanelVisibility()
 
     d->view->setVisible(true);
     d->m_geometry->setShown(true);
+
+    // Say so even when the rectangle has not moved: the application was told the
+    // panel was gone the last time it went, and nothing else will tell it that
+    // the panel is back.
+    reportPanelArea();
 }
 
 //! \brief Called by the framework when the application resets its input
@@ -1258,6 +1263,21 @@ void InputMethod::updateWindowMask()
 }
 
 void InputMethod::onVisibleRectChanged()
+{
+    reportPanelArea();
+}
+
+//! \brief Tells the application how much of the screen the panel is using.
+//!
+//! Called both when the rectangle moves and when the panel is put on screen,
+//! because those are not the same event and only the first of them used to
+//! report anything. The panel hiding always said so - closeOskWindow() calls
+//! reportOSKInvisible() every time - but the panel appearing only said so if its
+//! rectangle happened to have changed since last time, and once the geometry has
+//! settled it never does. So an application was told to take its space back on
+//! every hide and never told to give it up again, and the candidate bar drew over
+//! whatever was at the bottom of it.
+void InputMethod::reportPanelArea()
 {
     Q_D(InputMethod);
 
