@@ -214,6 +214,10 @@ private:
     //! \brief Tells the application the area, without touching the mask.
     void announcePanelArea();
 
+    //! \brief Masks the window to the strip the panel occupies, anchored to the
+    //!        bottom of the view so it is right before the panel animates in.
+    void maskPanelStrip();
+
     const QScopedPointer<InputMethodPrivate> d_ptr;
 };
 

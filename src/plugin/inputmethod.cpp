@@ -339,6 +339,10 @@ void InputMethod::applyPanelVisibility()
 
     d->view->setVisible(true);
     d->m_geometry->setShown(true);
+
+    // The surface the compositor reads the mask from is made here, and with a
+    // physical keyboard nothing else will ever apply one to it.
+    maskPanelStrip();
 }
 
 //! \brief Called by the framework when the application resets its input
@@ -1289,6 +1293,41 @@ void InputMethod::updateWindowMask()
     vkbMask += d->m_geometry->popoverRect().toRect();
 
     d->view->setMask(vkbMask);
+}
+
+//! \brief Masks the window to the strip the panel occupies at the bottom.
+//!
+//! The mask is not only what the panel is drawn through. The compositor reads it
+//! off the surface and takes the largest rectangle in it as the area to resize
+//! the application around - WaylandInputPanel::updateInputPanelRect() - and it
+//! reports nothing to the application until it has one.
+//!
+//! updateWindowMask() alone only ever runs when the rectangle changes, and with a
+//! physical keyboard attached it never does: the panel is the candidate bar, the
+//! same size every time. So after the first surface the mask was never applied to
+//! any later one, the compositor's rect stayed invalid, and the application was
+//! never told to make room - the bar drew over whatever was at the bottom of it.
+//! With the on-screen keyboard the height swings between the bar and the full
+//! keyboard, the rectangle changes, and the mask is applied as a side effect,
+//! which is why only this case was wrong.
+//!
+//! Anchored to the bottom of the view rather than taken from the panel's mapped
+//! rectangle, because this runs before the panel has animated into place and that
+//! rectangle is still where the panel was parked off the bottom of the screen.
+//! Masking to there is a window that is visible and draws nothing.
+void InputMethod::maskPanelStrip()
+{
+    Q_D(InputMethod);
+
+    const int height = d->m_geometry->visibleRect().toRect().height();
+
+    if (height <= 0 or not d->view)
+        return;
+
+    const QRect strip(0, qMax(0, int(d->view->height()) - height),
+                      d->view->width(), height);
+
+    d->view->setMask(QRegion(strip) + d->m_geometry->popoverRect().toRect());
 }
 
 void InputMethod::onVisibleRectChanged()
