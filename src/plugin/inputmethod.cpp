@@ -513,6 +513,15 @@ void InputMethod::processKeyEvent(QEvent::Type keyType, Qt::Key keyCode,
         return;
     }
 
+    if (hardwareResult == HardwareKeyboard::EmojiPanel) {
+        // On the press, so it opens under the finger rather than when the key
+        // comes back up, and once rather than twice.
+        if (keyType == QEvent::KeyPress)
+            Q_EMIT emojiPanelRequested();
+
+        return;
+    }
+
     // Those same keys sit on the scancodes a stock keymap calls Alt and AltGr,
     // so while a profile owns them the Alt bit means "alternate character",
     // not "keyboard shortcut".

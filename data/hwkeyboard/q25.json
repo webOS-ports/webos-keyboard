@@ -1,6 +1,6 @@
 {
     "name": "q25",
-    "description": "Zinwa Q25 physical keyboard (bbqX0kbd, BBQ20 PMOD), US layout. Legend only: the driver owns Alt and Sym, so this profile claims no level keys and exists to say what the key faces are labelled with.",
+    "description": "Zinwa Q25 physical keyboard (bbqX0kbd, BBQ20 PMOD), US layout. Legend only: the driver owns Alt and Sym, so this profile claims no level keys and exists to say what the key faces are labelled with - and to name the key the driver sends when Sym is tapped on its own.",
     "layout": "QWERTY",
     "match": {
         "inputDeviceNames": [
@@ -10,6 +10,9 @@
     "altKeys": [],
     "symKeys": [],
     "shiftKeys": [],
+    "emojiKeys": [
+        585
+    ],
     "lockOnDoubleTap": false,
     "levels": {
         "alt": {

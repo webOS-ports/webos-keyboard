@@ -251,6 +251,16 @@ Item {
 
         Connections {
             target: input_method
+
+            //! A key on the physical keyboard asked for the panel - the Q25's
+            //! Sym, tapped on its own. The keys have to come back first: with a
+            //! physical keyboard they are not on screen, and the panel goes
+            //! where they would be.
+            function onEmojiPanelRequested() {
+                fullScreenItem.input_method.expandKeys();
+                wordRibbon.emojiShown = true;
+            }
+
             function onActivateAutocaps() {
                 keypad.state = "CHARACTERS";
                 UI.currentShiftState = "SHIFTED";
