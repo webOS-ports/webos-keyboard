@@ -139,6 +139,47 @@ Item {
             //! something they did not choose.
             onModelChanged: positionViewAtBeginning()
 
+            //! Stop at the ends rather than rubber-banding past them: the panel
+            //! is the height of the keyboard, and a bounce exposes the
+            //! application behind it.
+            boundsBehavior: Flickable.StopAtBounds
+
+            /*!
+             * Says there is more below.
+             *
+             * The settings pages flick without one of these, but they are a
+             * column of labelled rows where the last one is visibly cut off. A
+             * field of emoji has no such edge - one row of pictures looks like
+             * any other - so nothing would say the sheet continues.
+             *
+             * Drawn here rather than taken from QtQuick.Controls, which the
+             * keyboard does not otherwise use and would be a dependency for a
+             * rectangle.
+             */
+            Rectangle {
+                id: scrollIndicator
+
+                readonly property real trackHeight: grid.height - Units.gu(0.6)
+
+                anchors.right: parent.right
+                anchors.rightMargin: Units.gu(0.15)
+                width: Units.gu(0.3)
+                radius: width / 2
+                color: "#6a6a6a"
+
+                visible: grid.contentHeight > grid.height
+                height: Math.max(Units.gu(2),
+                                 trackHeight * (grid.height / grid.contentHeight))
+                y: Units.gu(0.3) + (trackHeight - height)
+                   * (grid.contentHeight > grid.height
+                      ? grid.contentY / (grid.contentHeight - grid.height) : 0)
+
+                //! Fades out when the sheet is still, so it is a hint rather
+                //! than furniture.
+                opacity: grid.moving ? 0.7 : 0.25
+                Behavior on opacity { NumberAnimation { duration: 200 } }
+            }
+
             delegate: Item {
                 width: grid.cellWidth
                 height: grid.cellHeight
