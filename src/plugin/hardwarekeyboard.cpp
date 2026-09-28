@@ -121,6 +121,7 @@ HardwareKeyboardProfile readProfile(const QJsonObject &object,
     profile.altKeys = readScanCodes(object.value("altKeys").toArray());
     profile.symKeys = readScanCodes(object.value("symKeys").toArray());
     profile.shiftKeys = readScanCodes(object.value("shiftKeys").toArray());
+    profile.emojiKeys = readScanCodes(object.value("emojiKeys").toArray());
 
     const QJsonObject match(object.value("match").toObject());
     profile.requiredKeys = readScanCodes(match.value("requireKeys").toArray());
@@ -722,6 +723,18 @@ HardwareKeyboard::Result HardwareKeyboard::handleKey(QEvent::Type type,
 
         Q_EMIT levelChanged();
         return NotHandled;
+    }
+
+    /*
+     * Not a character at any level, so it is taken here - press and release
+     * together. Letting the release through on its own would hand the
+     * application half an event for a key it has no idea about.
+     */
+    if (profile.emojiKeys.contains(code)) {
+        if (type == QEvent::KeyPress)
+            qCInfo(lcHwKeyboard, "code %u asks for the emoji panel", code);
+
+        return type == QEvent::KeyPress ? EmojiPanel : Consumed;
     }
 
     if (profile.altKeys.contains(code) or profile.symKeys.contains(code)) {

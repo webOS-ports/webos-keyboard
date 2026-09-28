@@ -183,6 +183,14 @@ Q_SIGNALS:
     void keyboardSizeChanged(QString size);
     void keyboardLayoutChanged(QString layout);
     void hardwareKeyboardActiveChanged();
+
+    /*! \brief A key asked for the emoji panel.
+     *
+     * The QML opens it, because that is where the panel lives. Emitted rather
+     * than a property set, because asking twice means asking twice - the key is
+     * a request, not a state.
+     */
+    void emojiPanelRequested();
     void keysCollapsedChanged();
 
 private:

@@ -23,7 +23,7 @@ import "StorageStub.js" as Storage
 QtObject {
     property bool isTestEnvironment: true;
 
-    property int currentTestEnv: 4
+    property int currentTestEnv: 5
     property ListModel testEnvs: ListModel {
         ListElement {
             name: "mako"
@@ -59,6 +59,17 @@ QtObject {
             tabletUi:true
         }
         ListElement {
+            // The Zinwa Q25: square, and the only shipping LuneOS device with a
+            // physical keyboard, so the one where the panel has least room and
+            // the candidate bar is the whole on-screen keyboard.
+            name: "q25"
+            displayWidth:720
+            displayHeight:720
+            gridUnit:16
+            dpi:291
+            tabletUi:false
+        }
+        ListElement {
             name: "tenderloin"
             displayWidth:1024
             displayHeight:768
@@ -78,6 +89,12 @@ QtObject {
 
     // keep these properties in sync, to that the Units and FontUtils stubs return correct values
     onGridUnitChanged: Storage.gridUnit = gridUnit;
+
+    // And once at startup. The handler above only fires on a change, so a
+    // profile whose grid unit happens to equal the value StorageStub.js starts
+    // with leaves every gu() in the preview at that starting value instead -
+    // which is how the Q25 profile, at 16, was being drawn at 10.
+    Component.onCompleted: Storage.gridUnit = gridUnit;
     onLayoutScaleChanged: Storage.layoutScale = layoutScale;
 
     property bool displayFps: true;

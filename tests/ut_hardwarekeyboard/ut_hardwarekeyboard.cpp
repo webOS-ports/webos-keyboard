@@ -151,6 +151,7 @@ private Q_SLOTS:
     void testShippedProfilesAreWellFormed_data();
     void testShippedProfilesAreWellFormed();
     void testShippedProfilesLoad();
+    void testEmojiKeyIsTakenWholeAndInsertsNothing();
 
 private:
     void writeProfile(const QString &fileName, const QByteArray &contents);
@@ -1127,6 +1128,44 @@ void Ut_HardwareKeyboard::testShippedProfilesAreWellFormed()
     QVERIFY2((alt & sym).isEmpty(), "a key cannot be both Alt and Sym");
     QVERIFY2((alt & shift).isEmpty(), "a key cannot be both Alt and Shift");
     QVERIFY2((sym & shift).isEmpty(), "a key cannot be both Sym and Shift");
+}
+
+//! A key the profile names for the emoji panel is answered with EmojiPanel and
+//! never becomes text - and its release is swallowed too, because handing the
+//! application half an event for a key it knows nothing about is how a stray
+//! keypress reaches a text field.
+void Ut_HardwareKeyboard::testEmojiKeyIsTakenWholeAndInsertsNothing()
+{
+    writeProfile(QStringLiteral("emoji.json"), QStringLiteral(R"({
+        "name": "emoji-test",
+        "match": { "inputDeviceNames": ["test-kbd"] },
+        "altKeys": [], "symKeys": [], "shiftKeys": [],
+        "emojiKeys": [585],
+        "levels": { "alt": { "17": "1" } }
+    })").toUtf8());
+    writeDevices(deviceBlock(QStringLiteral("test-kbd"), QwertyKeys));
+
+    HardwareKeyboard keyboard;
+    keyboard.rescan();
+    QVERIFY2(keyboard.isPresent(), "the test profile should have matched");
+
+    // handleKey() takes the scancode as it arrives from the input method -
+    // evdev's, offset by 8 - and the profile names evdev's. KEY_EMOJI_PICKER is
+    // 585, so 593 is what comes in.
+    const quint32 emojiScanCode = 585 + 8;
+
+    QString text("unchanged");
+    QCOMPARE(keyboard.handleKey(QEvent::KeyPress, emojiScanCode, Qt::NoModifier, &text),
+             HardwareKeyboard::EmojiPanel);
+    QCOMPARE(text, QStringLiteral("unchanged"));
+
+    QCOMPARE(keyboard.handleKey(QEvent::KeyRelease, emojiScanCode, Qt::NoModifier, &text),
+             HardwareKeyboard::Consumed);
+    QCOMPARE(text, QStringLiteral("unchanged"));
+
+    // A key it does not name is untouched.
+    QCOMPARE(keyboard.handleKey(QEvent::KeyPress, 30 + 8, Qt::NoModifier, &text),
+             HardwareKeyboard::NotHandled);
 }
 
 void Ut_HardwareKeyboard::testShippedProfilesLoad()

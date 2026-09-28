@@ -83,6 +83,14 @@ struct HardwareKeyboardProfile
     QSet<quint32> altKeys;
     //! evdev scancodes that select the Sym level the same way.
     QSet<quint32> symKeys;
+    /*! \brief evdev scancodes that open the on-screen emoji panel.
+     *
+     * For a keyboard that has a key to spare for it. The Q25's Sym tapped on
+     * its own is the case this exists for: held with another key it picks the
+     * symbol printed there, and alone it meant nothing, so its driver reports
+     * KEY_EMOJI_PICKER for the tap.
+     */
+    QSet<quint32> emojiKeys;
 
     //! The Shift keys, when this keyboard wants them to latch on a tap and
     //! lock on a double tap the way Alt does. They are still handed on to the
@@ -138,7 +146,9 @@ public:
         Consumed,
         //! The key produces text other than what it reported. Insert the
         //! string handleKey() wrote out instead.
-        Text
+        Text,
+        //! The key asks for the emoji panel. Nothing is inserted.
+        EmojiPanel
     };
 
     explicit HardwareKeyboard(QObject *parent = nullptr);
