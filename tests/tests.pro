@@ -11,4 +11,4 @@ QMAKE_EXTRA_TARGETS += check
 check.target = check
 check.CONFIG = recursive
 
-OTHER_FILES += tests.pri README.md
+OTHER_FILES += tests.pri README.md tools/vkbd.py

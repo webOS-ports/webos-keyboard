@@ -153,3 +153,30 @@ alphabetical.
 End the test source with `QTEST_GUILESS_MAIN` unless it needs `QWindow`, in
 which case use `QTEST_MAIN`; the `check` target already forces the offscreen
 platform plugin.
+
+## Driving a device by hand
+
+`tools/vkbd.py` is a uinput keyboard, to be run on the device. It advertises
+EV_REP, so holding a key produces the input core's own auto-repeat - the same
+events a real keyboard's driver produces - and Qt's evdevkeyboard plugin finds it
+by discovery, so the compositor picks it up with no configuration.
+
+It is here because the questions that matter in this area are not answerable by
+reading the code: whether a held key repeats, whether a modifier survives the
+input method's keyboard grab, whether a shortcut reaches the application. Each is
+settled by injecting and counting what comes out the other end - maliit's own
+`key press` lines are usually the most direct place to count.
+
+    adb push tests/tools/vkbd.py /tmp/
+    adb shell 'cd /tmp && python3 -c "
+    import vkbd
+    fd = vkbd.open_device()
+    vkbd.hold(fd, \"c\", 1.5)
+    vkbd.close_device(fd)"'
+    adb shell 'journalctl -u maliit-server@0 --since "-20s" | grep -c "key press 0x43"'
+
+The virtual device lands under `/devices/virtual/input`, which
+`MImHwKeyboardTracker` deliberately ignores, so it is not mistaken for a real
+keyboard and does not take the on-screen keyboard away while you test.
+
+Not part of `make check`: it needs `/dev/uinput`, root, and a running compositor.
