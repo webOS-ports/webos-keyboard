@@ -339,19 +339,6 @@ void InputMethod::applyPanelVisibility()
 
     d->view->setVisible(true);
     d->m_geometry->setShown(true);
-
-    // Say so even when the rectangle has not moved: the application was told the
-    // panel was gone the last time it went, and nothing else will tell it that
-    // the panel is back.
-    //
-    // Only the area, deliberately. The rectangle held here at this moment is the
-    // one the panel had while it was hidden - the QML parks it off the bottom of
-    // the screen - and the window mask is computed from that same rectangle.
-    // Masking the window to where the panel was parked is a panel that is visible
-    // and draws nothing, which is exactly what happened: no keyboard and no
-    // suggestions. The mask belongs to onVisibleRectChanged(), which runs once the
-    // panel has actually moved into place.
-    announcePanelArea();
 }
 
 //! \brief Called by the framework when the application resets its input

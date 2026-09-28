@@ -96,11 +96,8 @@ void LuneOSApplicationApiWrapper::reportOSKVisible(const int x, const int y, con
     Q_UNUSED(height)
 #endif
 
-    // Unique: this runs on every report, and the panel is reported many times
-    // over while it animates into place. Without it each one added another
-    // connection and the slot ran once per panel appearance ever made.
     QObject::connect(m_geometry, SIGNAL(visibleRectChanged()),
-                     this, SLOT(delayedGeometryUpdate()), Qt::UniqueConnection);
+                     this, SLOT(delayedGeometryUpdate()));
     updateSharedInfo();
 }
 
