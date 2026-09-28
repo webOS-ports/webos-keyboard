@@ -40,6 +40,7 @@
 #include <QJsonObject>
 #include <QJsonValue>
 #include <QRegularExpression>
+#include <QStringList>
 #include <QTextStream>
 
 namespace MaliitKeyboard {
@@ -115,6 +116,7 @@ HardwareKeyboardProfile readProfile(const QJsonObject &object,
     }
 
     profile.description = object.value("description").toString();
+    profile.layout = object.value("layout").toString().trimmed();
     profile.lockOnDoubleTap = object.value("lockOnDoubleTap").toBool(true);
     profile.altKeys = readScanCodes(object.value("altKeys").toArray());
     profile.symKeys = readScanCodes(object.value("symKeys").toArray());
@@ -317,6 +319,9 @@ void HardwareKeyboard::selectProfile()
     const int previous = m_activeProfile;
     m_activeProfile = -1;
 
+    //! Names of the attached keyboards, for the log when none of them matched.
+    QStringList keyboards;
+
     const QByteArray requested(qgetenv("LUNEOS_KEYBOARD_HW_LAYOUT"));
     if (requested == "none") {
         // An explicit opt-out, for a device whose driver resolves the levels
@@ -390,16 +395,48 @@ void HardwareKeyboard::selectProfile()
             }
         }
 
-        for (const InputDevice &device : present)
+        for (const InputDevice &device : present) {
             qCInfo(lcHwKeyboard) << "input device present:" << device.name;
+
+            // Which of them is a keyboard, for the log line below. The same rule
+            // the framework's own detection uses - letter keys, not a name - so
+            // the two layers cannot describe the hardware differently.
+            if (device.advertises(KEY_A) and device.advertises(KEY_Q)
+                and device.advertises(KEY_M)) {
+                keyboards.append(device.name);
+            }
+        }
         qCInfo(lcHwKeyboard) << present.size() << "input devices,"
                               << m_profiles.size() << "profiles loaded";
 
         m_activeProfile = best;
     }
 
-    if (m_activeProfile < 0)
-        qCInfo(lcHwKeyboard) << "no hardware keyboard profile matched";
+    if (m_activeProfile < 0) {
+        // Said at some length because the bare version of this line reads as a
+        // failure and is not one. A profile exists to resolve the Alt and Sym
+        // levels printed on a key face, and only for keyboards whose driver
+        // reports the plain scancode and leaves that resolution to userspace. The
+        // Q25's bbqX0kbd driver resolves its own, so it has no profile and never
+        // will - and everything here that a profile drives (the Alt and Sym
+        // latches, ownsAltModifier(), the shift latch, telephone-keypad multi-tap)
+        // is inert on it by design.
+        //
+        // Which also makes isPresent() a much narrower question than it sounds:
+        // it is "did a profile match", not "is a keyboard attached". Gating
+        // anything about keyboard presence on it is a mistake, and was one.
+        if (keyboards.isEmpty()) {
+            qCInfo(lcHwKeyboard) << "no hardware keyboard profile matched, and no"
+                                 << "keyboard is attached to want one";
+        } else {
+            qCInfo(lcHwKeyboard) << "no hardware keyboard profile matched"
+                                 << qPrintable(keyboards.join(QLatin1String(", ")))
+                                 << "- its driver resolves any Alt and Sym levels"
+                                 << "itself, so this plugin has none to resolve."
+                                 << "Typing works; the Alt and Sym latches here do"
+                                 << "not apply";
+        }
+    }
 
     if (m_activeProfile >= 0) {
         qInfo() << "using the hardware keyboard profile"
@@ -419,6 +456,11 @@ bool HardwareKeyboard::isPresent() const
 QString HardwareKeyboard::profileName() const
 {
     return isPresent() ? m_profiles.at(m_activeProfile).name : QString();
+}
+
+QString HardwareKeyboard::layout() const
+{
+    return isPresent() ? m_profiles.at(m_activeProfile).layout : QString();
 }
 
 bool HardwareKeyboard::isAltActive() const

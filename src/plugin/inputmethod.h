@@ -184,6 +184,7 @@ private:
     Q_SLOT void updateKey(const QString &key_id,
                           const MKeyOverride::KeyOverrideAttributes changed_attributes);
     Q_SLOT void onKeyboardClosed();
+    Q_SLOT void onHardwareProfileChanged();
 
     Q_SLOT void onLayoutWidthChanged(int width);
     Q_SLOT void onLayoutHeightChanged(int height);

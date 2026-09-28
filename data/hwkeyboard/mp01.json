@@ -1,6 +1,7 @@
 {
     "name": "mp01",
     "description": "Minimal Phone MP01 physical keyboard (AW9523B matrix)",
+    "layout": "QWERTY",
     "match": {
         "inputDeviceNames": [
             "aw9523b-key"

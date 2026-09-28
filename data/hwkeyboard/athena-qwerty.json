@@ -1,6 +1,7 @@
 {
     "name": "athena-qwerty",
     "description": "BlackBerry KEY2 / KEY2 LE physical keyboard, QWERTY variant",
+    "layout": "QWERTY",
     "match": {
         "inputDeviceNames": [
             "stmpe_keypad"

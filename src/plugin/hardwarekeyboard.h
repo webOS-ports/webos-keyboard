@@ -59,6 +59,19 @@ struct HardwareKeyboardProfile
 {
     QString name;
     QString description;
+    /*! \brief The layout printed on the key faces: QWERTY, QWERTZ, AZERTY.
+     *
+     * Declared here and not in the device's adaptation because it is a fact about
+     * the keyboard that is fitted, not about the phone: the BlackBerry KEY2 ships
+     * in all three, and the three are told apart by the name its driver gives the
+     * input device - stmpe_keypad, stmpe_qwertz_keypad, stmpe_azerty_keypad -
+     * which is what this profile already matches on. One adaptation covers every
+     * KEY2 and cannot know which keyboard is under it; this can.
+     *
+     * Reported onward as PalmSystem.deviceInfo.keyboardType. Empty is allowed and
+     * means "not stated", which falls back to the device's own declaration.
+     */
+    QString layout;
     QStringList inputDeviceNames;
     //! evdev scancodes the input device must advertise for this profile to
     //! apply. Two keyboards can share a device name -- the Unihertz Titan and
@@ -133,6 +146,10 @@ public:
     //! \brief Whether a profile matched this device's keyboard.
     bool isPresent() const;
     QString profileName() const;
+
+    //! \brief The matched profile's key-face layout, or empty where none matched
+    //!        or the profile does not state one.
+    QString layout() const;
 
     bool isAltActive() const;
     bool isAltLocked() const;

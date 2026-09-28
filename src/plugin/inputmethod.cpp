@@ -128,6 +128,14 @@ InputMethod::InputMethod(MAbstractInputMethodHost *host)
     d->t9Timer->setInterval(1500); // multi-tap commit window: academic (MacKenzie) 1.5s; Android uses 2s
     connect(d->t9Timer, SIGNAL(timeout()), this, SLOT(finalizeT9()));
 
+    // The keyboard the profile matched names its own layout, and the framework
+    // reports it onward as PalmSystem.deviceInfo.keyboardType. Connected rather
+    // than read once: a keyboard can arrive after this constructor has run, and
+    // on a detachable one it can also leave.
+    connect(&d->hardwareKeyboard, &HardwareKeyboard::profileChanged,
+            this, &InputMethod::onHardwareProfileChanged);
+    onHardwareProfileChanged();
+
     d->registerFeedbackSetting();
     d->registerAutoCorrectSetting();
     d->registerAutoCapsSetting();
@@ -938,6 +946,17 @@ QString InputMethod::actionKeyLabel() const
 {
     Q_D(const InputMethod);
     return d->actionKeyLabel;
+}
+
+//! \brief Tells the framework what layout the attached keyboard has.
+void InputMethod::onHardwareProfileChanged()
+{
+    Q_D(InputMethod);
+
+    // Empty where no profile matched, which is not a failure - see
+    // HardwareKeyboard::selectProfile(). The framework then falls back to what
+    // the device declares for itself.
+    inputMethodHost()->setHardwareKeyboardLayout(d->hardwareKeyboard.layout());
 }
 
 void InputMethod::onKeyboardClosed()
