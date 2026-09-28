@@ -64,6 +64,11 @@ void PanelState::dismiss()
     m_dismissed = true;
 }
 
+void PanelState::setOnScreenKeyboardAllowed(bool allowed)
+{
+    m_onScreenKeyboardAllowed = allowed;
+}
+
 bool PanelState::panelWanted() const
 {
     return m_focused and not m_dismissed and (not keysHidden() or m_wordEngine);

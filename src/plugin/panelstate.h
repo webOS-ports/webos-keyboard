@@ -56,6 +56,19 @@ public:
     //! \brief Whether the word engine has anything to offer.
     void setWordEngine(bool enabled);
 
+    /*! \brief Whether the focused field will accept an on-screen keyboard.
+     *
+     * From Qt::ImhNoOnScreenKeyboard, by way of the content hint. A field with
+     * a keypad of its own -- a dialer, a PIN pad -- wants everything else the
+     * input method does, the content type and the key redirection that gives a
+     * phone QWERTY its digits, and nothing drawn over the keypad it already
+     * has.
+     *
+     * Not a fresh intent, unlike focus and the input source: it is a fact about
+     * the field rather than something the user did, so it clears no flags.
+     */
+    void setOnScreenKeyboardAllowed(bool allowed);
+
     //! \brief The user dragged the keys away.
     //!
     //! Keeps the candidate bar where there is one to keep, and takes the whole
@@ -73,13 +86,17 @@ public:
     bool wordEngine() const { return m_wordEngine; }
     bool keysCollapsed() const { return m_keysCollapsed; }
     bool dismissed() const { return m_dismissed; }
+    bool onScreenKeyboardAllowed() const { return m_onScreenKeyboardAllowed; }
 
     /*! \brief Whether the keys are off screen.
      *
      * True with a physical keyboard whether or not anything was dragged: the keys
      * are not drawn for a keyboard that already has keys.
      */
-    bool keysHidden() const { return m_hardware or m_keysCollapsed; }
+    bool keysHidden() const
+    {
+        return m_hardware or m_keysCollapsed or not m_onScreenKeyboardAllowed;
+    }
 
     /*! \brief Whether any panel at all should be on screen.
      *
@@ -96,6 +113,9 @@ private:
     bool m_keysCollapsed = false;
     //! The user took the whole panel away.
     bool m_dismissed = false;
+    //! True until a field says otherwise, so a field that says nothing behaves
+    //! exactly as every field always has.
+    bool m_onScreenKeyboardAllowed = true;
 };
 
 } // namespace MaliitKeyboard

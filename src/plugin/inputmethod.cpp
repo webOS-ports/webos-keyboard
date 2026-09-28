@@ -327,10 +327,11 @@ void InputMethod::applyPanelVisibility()
     // first time.
     qCInfo(lcHwKeyboard,
            "panel: %s (focus=%d hardware=%d wordEngine=%d keysCollapsed=%d"
-           " dismissed=%d)",
+           " dismissed=%d oskAllowed=%d)",
            wanted ? "shown" : "hidden", int(d->panel.focused()),
            int(d->panel.hardware()), int(d->panel.wordEngine()),
-           int(d->panel.keysCollapsed()), int(d->panel.dismissed()));
+           int(d->panel.keysCollapsed()), int(d->panel.dismissed()),
+           int(d->panel.onScreenKeyboardAllowed()));
 
     if (not wanted) {
         d->closeOskWindow();
@@ -1053,6 +1054,22 @@ void InputMethod::update()
     // last one had, and it would then be the only one on the device that still
     // wanted a chord for its digits.
     d->hardwareKeyboard.setDigitsPreferred(digitsForContentType(newContentType));
+
+    /*
+     * A field with a keypad of its own gets everything but the keys.
+     *
+     * Qt::ImhNoOnScreenKeyboard, carried here on the content hint. It cannot be
+     * honoured where it is usually checked -- the platform input context puts
+     * the panel up by activating the text model, and not activating would leave
+     * this plugin knowing nothing about the field at all, neither its content
+     * type nor the physical keys it should be redirecting. So the field is
+     * activated like any other and the panel is declined here instead, which is
+     * where the panel actually is.
+     */
+    bool panelValid = false;
+    const bool onScreenKeyboardAllowed = inputMethodHost()->onScreenKeyboardAllowed(panelValid);
+    d->panel.setOnScreenKeyboardAllowed(!panelValid or onScreenKeyboardAllowed);
+    applyPanelVisibility();
 
     if (emitPredictionEnabled) {
         updateWordEngine();

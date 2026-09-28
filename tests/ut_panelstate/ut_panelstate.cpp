@@ -56,6 +56,10 @@ private Q_SLOTS:
     void testSameInputSourceIsNotAFreshIntent();
     void testDismissalSurvivesLosingFocus();
     void testWordEngineArrivingRevealsTheBar();
+
+    void testAFieldWithItsOwnKeypadGetsNoKeys();
+    void testAFieldWithItsOwnKeypadKeepsTheCandidateBar();
+    void testSayingNothingLeavesTheKeyboardAlone();
 };
 
 void ut_panelstate::testNothingWantedWithoutFocus()
@@ -212,6 +216,59 @@ void ut_panelstate::testWordEngineArrivingRevealsTheBar()
 
     s.setWordEngine(true);
 
+    QVERIFY(s.panelWanted());
+}
+
+/*
+ * A field that has a keypad of its own -- a dialer, a PIN pad -- wants the
+ * input method to know all about it and to draw none of it. Qt says so with
+ * ImhNoOnScreenKeyboard, which reaches here on the content hint because the
+ * one place it could otherwise be honoured, the platform input context, cannot
+ * activate the field without also putting the panel up.
+ */
+
+void ut_panelstate::testAFieldWithItsOwnKeypadGetsNoKeys()
+{
+    PanelState s;
+    s.setFocused(true);
+    QVERIFY(s.panelWanted());
+    QVERIFY(!s.keysHidden());
+
+    s.setOnScreenKeyboardAllowed(false);
+
+    QVERIFY(s.keysHidden());
+    QVERIFY(!s.panelWanted());
+}
+
+void ut_panelstate::testAFieldWithItsOwnKeypadKeepsTheCandidateBar()
+{
+    // Refusing keys is not refusing suggestions: a field can have a pad of its
+    // own and still want words offered, exactly as a physical keyboard does.
+    PanelState s;
+    s.setFocused(true);
+    s.setWordEngine(true);
+    s.setOnScreenKeyboardAllowed(false);
+
+    QVERIFY(s.keysHidden());
+    QVERIFY(s.panelWanted());
+}
+
+void ut_panelstate::testSayingNothingLeavesTheKeyboardAlone()
+{
+    // The default, and the whole of the compatibility promise: a field that
+    // never mentions this behaves as every field always has.
+    PanelState s;
+    QVERIFY(s.onScreenKeyboardAllowed());
+
+    s.setFocused(true);
+    QVERIFY(!s.keysHidden());
+    QVERIFY(s.panelWanted());
+
+    // Refused, then allowed again: it is a fact about the field, so it follows
+    // the field rather than latching.
+    s.setOnScreenKeyboardAllowed(false);
+    QVERIFY(!s.panelWanted());
+    s.setOnScreenKeyboardAllowed(true);
     QVERIFY(s.panelWanted());
 }
 
