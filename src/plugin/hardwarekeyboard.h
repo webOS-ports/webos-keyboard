@@ -194,6 +194,28 @@ public:
     //! \brief Forgets any latched level. Called when focus leaves a field.
     void reset();
 
+    /*! \brief The characters a numeric field will take off the Alt level
+     *         without the user holding Alt.
+     *
+     * A phone QWERTY prints the digits on its letter keys and reaches them
+     * through Alt. That is the right bargain in prose, where the letters are
+     * what you are there for, and the wrong one in a field that can only hold
+     * a number: a dialer where every digit costs a chord is a dialer nobody
+     * wants to use.
+     *
+     * So while a numeric field has focus, a key whose Alt legend is one of
+     * these characters resolves to it at the base level. Anything else is left
+     * exactly as it was -- a letter is still a letter, so a field that turns
+     * out to accept one is not fighting us, and Alt still reaches the rest of
+     * the legend the way it always did. Empty switches the whole thing off,
+     * which is every other field.
+     *
+     * The caller decides what belongs in its field; see
+     * InputMethod::digitsForContentType().
+     */
+    void setDigitsPreferred(const QString &characters);
+    QString digitsPreferred() const;
+
     /*! \brief Looks for a matching profile again.
      *
      * The input device can enumerate long after maliit-server starts, and a USB
@@ -249,6 +271,12 @@ private:
         bool advertises(quint32 scanCode) const;
     };
 
+    //! \brief The Alt legend for this key, when a numeric field wants it.
+    //!
+    //! Empty unless setDigitsPreferred() named the character the Alt level
+    //! puts on this key, so a key with no digit on its face is untouched.
+    QString preferredDigit(quint32 scanCode) const;
+
     void loadProfiles();
     void selectProfile();
     static QList<InputDevice> readInputDevices();
@@ -270,6 +298,10 @@ private:
     LevelKeyState m_sym;
     LevelKeyState m_shift;
     bool m_telephoneKeypad = false;
+
+    //! What setDigitsPreferred() was last given: the characters the focused
+    //! field will take off the Alt level unasked. Empty for an ordinary field.
+    QString m_digitsPreferred;
 
     //! Scancodes currently down that we resolved to text, so the release can
     //! be answered with the same string the press produced.

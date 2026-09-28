@@ -129,6 +129,15 @@ public:
     TextContentType contentType();
     Q_SLOT void setContentType(TextContentType contentType);
 
+    /*! \brief The characters a field of this kind will take off a physical
+     *         keyboard's Alt level without the user holding Alt.
+     *
+     * Empty for anything that can hold prose, which is most fields and all the
+     * ones where a letter has to stay a letter. See
+     * HardwareKeyboard::setDigitsPreferred().
+     */
+    static QString digitsForContentType(TextContentType contentType);
+
     //! Hardware T9 multi-tap. t9HandleKey runs a physical numeric keypad
     //! through the multi-tap state machine and returns true when it has
     //! consumed the event; finalizeT9 (also the inactivity-timer target)
@@ -198,8 +207,12 @@ private:
     //!        because they were forced there, and says whether it did.
     bool releaseForcedOnScreenKeyboard();
 
-    //! \brief Tells the application how much of the screen the panel is using.
+    //! \brief Tells the application how much of the screen the panel is using,
+    //!        and follows the panel with the window mask.
     void reportPanelArea();
+
+    //! \brief Tells the application the area, without touching the mask.
+    void announcePanelArea();
 
     const QScopedPointer<InputMethodPrivate> d_ptr;
 };

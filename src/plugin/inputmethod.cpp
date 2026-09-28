@@ -343,7 +343,15 @@ void InputMethod::applyPanelVisibility()
     // Say so even when the rectangle has not moved: the application was told the
     // panel was gone the last time it went, and nothing else will tell it that
     // the panel is back.
-    reportPanelArea();
+    //
+    // Only the area, deliberately. The rectangle held here at this moment is the
+    // one the panel had while it was hidden - the QML parks it off the bottom of
+    // the screen - and the window mask is computed from that same rectangle.
+    // Masking the window to where the panel was parked is a panel that is visible
+    // and draws nothing, which is exactly what happened: no keyboard and no
+    // suggestions. The mask belongs to onVisibleRectChanged(), which runs once the
+    // panel has actually moved into place.
+    announcePanelArea();
 }
 
 //! \brief Called by the framework when the application resets its input
@@ -1049,6 +1057,12 @@ void InputMethod::update()
     }
     setContentType(newContentType);
 
+    // Set here and not in setContentType(), which returns early when the type
+    // has not changed: a field can be focused with the same content type the
+    // last one had, and it would then be the only one on the device that still
+    // wanted a chord for its digits.
+    d->hardwareKeyboard.setDigitsPreferred(digitsForContentType(newContentType));
+
     if (emitPredictionEnabled) {
         updateWordEngine();
     }
@@ -1114,6 +1128,34 @@ InputMethod::TextContentType InputMethod::contentType()
 
 //! \brief InputMethod::setContentType sets the type, of the input field, like free text, email, url
 //! \param contentType
+QString InputMethod::digitsForContentType(TextContentType contentType)
+{
+    switch (contentType) {
+    case PhoneNumberContentType:
+        // The dial characters, which are more than the digits: GSM keeps * and
+        // # for supplementary service codes -- *#31# and the like -- and a
+        // number typed in international form starts with a +. A dialer that
+        // could not reach those without a chord would have solved half the
+        // problem.
+        return QStringLiteral("0123456789*#+");
+    case NumberContentType:
+        // A plain number field: the digits, a sign and the two separators, so
+        // a decimal or a negative is still typeable. Which of . and , is the
+        // decimal point is the locale's business and not worth guessing at
+        // here; both are on the key faces and neither is a letter.
+        return QStringLiteral("0123456789+-.,");
+    case FreeTextContentType:
+    case EmailContentType:
+    case UrlContentType:
+    case CustomContentType:
+        break;
+    }
+
+    // Everything else can hold prose, and prose is made of the letters these
+    // keys are labelled with.
+    return QString();
+}
+
 void InputMethod::setContentType(TextContentType contentType)
 {
     Q_D(InputMethod);
@@ -1279,6 +1321,17 @@ void InputMethod::onVisibleRectChanged()
 //! whatever was at the bottom of it.
 void InputMethod::reportPanelArea()
 {
+    announcePanelArea();
+
+    // Only here: the rectangle has just moved, so it is the one the panel is
+    // really at, and the mask can safely follow it.
+    updateWindowMask();
+}
+
+//! \brief Tells the application how much of the screen the panel is using,
+//!        without touching the window mask.
+void InputMethod::announcePanelArea()
+{
     Q_D(InputMethod);
 
     const QRect visibleRect = d->m_geometry->visibleRect().toRect();
@@ -1294,9 +1347,6 @@ void InputMethod::reportPanelArea()
 
     inputMethodHost()->setScreenRegion(QRegion(visibleRect));
     inputMethodHost()->setInputMethodArea(visibleRect, d->view);
-
-    // update window mask
-    updateWindowMask();
 
     d->applicationApiWrapper->reportOSKVisible(
                 visibleRect.x(),

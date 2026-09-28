@@ -314,11 +314,6 @@ public:
 
         view->setVisible(false);
 
-        // The framework's own notion of the area, cleared alongside the LuneOS
-        // one below. Leaving it set describes a panel that is no longer there.
-        host->setInputMethodArea(QRect(), view);
-        host->setScreenRegion(QRegion(), view);
-
         applicationApiWrapper->reportOSKInvisible();
 
         m_settings.savePreferences(q);

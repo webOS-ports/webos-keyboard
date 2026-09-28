@@ -526,6 +526,33 @@ void HardwareKeyboard::rescan()
     selectProfile();
 }
 
+void HardwareKeyboard::setDigitsPreferred(const QString &characters)
+{
+    m_digitsPreferred = characters;
+}
+
+QString HardwareKeyboard::digitsPreferred() const
+{
+    return m_digitsPreferred;
+}
+
+QString HardwareKeyboard::preferredDigit(quint32 scanCode) const
+{
+    if (m_digitsPreferred.isEmpty() or not isPresent())
+        return QString();
+
+    const QString mapped(m_profiles.at(m_activeProfile)
+                             .lookup(HardwareKeyboardLevel::Alt, scanCode));
+
+    // One character, and one the field will have. The length test is what
+    // keeps a multi-character legend out: those are not digits, and half of
+    // one is worse than none.
+    if (mapped.size() != 1 or not m_digitsPreferred.contains(mapped))
+        return QString();
+
+    return mapped;
+}
+
 void HardwareKeyboard::reset()
 {
     const bool was_active = m_alt.isActive() or m_sym.isActive()
@@ -699,6 +726,26 @@ HardwareKeyboard::Result HardwareKeyboard::handleKey(QEvent::Type type,
         return NotHandled;
 
     const HardwareKeyboardLevel level(activeLevel(modifiers));
+
+    /*
+     * A numeric field takes the digit off the key face without the chord.
+     *
+     * Only at the base level: a user who is holding Shift or has latched Alt
+     * has said what they want, and this is for the user who has said nothing.
+     * Nothing is consumed and no latch is spent, because none was engaged --
+     * this is a plain key press answered with a different character.
+     */
+    if (level == HardwareKeyboardLevel::Base) {
+        const QString digit(preferredDigit(code));
+        if (not digit.isEmpty()) {
+            qCInfo(lcHwKeyboard, "code %u -> '%s' (numeric field)",
+                   code, qPrintable(digit));
+            m_pressedKeys.insert(code, digit);
+            *text = digit;
+            return Text;
+        }
+    }
+
     const QString mapped(profile.lookup(level, code));
 
     qCInfo(lcHwKeyboard, "code %u at level %d -> '%s' (alt=%s sym=%s)",
