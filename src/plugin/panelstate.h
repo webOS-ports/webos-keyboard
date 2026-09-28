@@ -58,7 +58,7 @@ public:
 
     /*! \brief Whether the focused field will accept an on-screen keyboard.
      *
-     * From Qt::ImhNoOnScreenKeyboard, by way of the content hint. A field with
+     * Asked for by the field, by way of the content hint. A field with
      * a keypad of its own -- a dialer, a PIN pad -- wants everything else the
      * input method does, the content type and the key redirection that gives a
      * phone QWERTY its digits, and nothing drawn over the keypad it already

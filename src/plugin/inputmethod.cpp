@@ -1058,8 +1058,8 @@ void InputMethod::update()
     /*
      * A field with a keypad of its own gets everything but the keys.
      *
-     * Qt::ImhNoOnScreenKeyboard, carried here on the content hint. It cannot be
-     * honoured where it is usually checked -- the platform input context puts
+     * Asked for by the field and carried here on the content hint. It cannot be
+     * decided where such things usually are -- the platform input context puts
      * the panel up by activating the text model, and not activating would leave
      * this plugin knowing nothing about the field at all, neither its content
      * type nor the physical keys it should be redirecting. So the field is
