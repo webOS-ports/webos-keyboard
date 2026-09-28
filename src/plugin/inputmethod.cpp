@@ -987,6 +987,10 @@ void InputMethod::onHardwareProfileChanged()
     // HardwareKeyboard::selectProfile(). The framework then falls back to what
     // the device declares for itself.
     inputMethodHost()->setHardwareKeyboardLayout(d->hardwareKeyboard.layout());
+
+    // And what the key faces say, for the things that never reach a plugin: the
+    // lock screen's PIN pad is the shell's own QML inside the compositor.
+    inputMethodHost()->setHardwareKeyFaceDigits(d->hardwareKeyboard.keyFaceDigits());
 }
 
 void InputMethod::onKeyboardClosed()

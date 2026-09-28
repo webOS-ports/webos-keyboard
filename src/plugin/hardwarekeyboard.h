@@ -36,6 +36,7 @@
 #include <QSet>
 #include <QString>
 #include <QStringList>
+#include <QVariantMap>
 
 namespace MaliitKeyboard {
 
@@ -150,6 +151,18 @@ public:
     //! \brief The matched profile's key-face layout, or empty where none matched
     //!        or the profile does not state one.
     QString layout() const;
+
+    /*! \brief The digits printed on the key faces, by evdev scancode.
+     *
+     * For the things that take digits without going through an input method at
+     * all: the lock screen's PIN pad is the shell's own QML, running inside the
+     * compositor, so nothing here ever sees its keys. It can be told what the key
+     * faces say instead, and do the substitution itself.
+     *
+     * Keys are scancodes as strings, because this crosses a JSON boundary on its
+     * way to the shell.
+     */
+    QVariantMap keyFaceDigits() const;
 
     bool isAltActive() const;
     bool isAltLocked() const;

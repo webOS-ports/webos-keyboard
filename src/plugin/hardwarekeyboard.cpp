@@ -463,6 +463,33 @@ QString HardwareKeyboard::layout() const
     return isPresent() ? m_profiles.at(m_activeProfile).layout : QString();
 }
 
+QVariantMap HardwareKeyboard::keyFaceDigits() const
+{
+    QVariantMap digits;
+
+    if (not isPresent())
+        return digits;
+
+    // The Alt level is where the digits are printed on a keyboard of this shape:
+    // the number row is the top letter row's alternate. Only the entries that are
+    // a single digit are offered - the same level also carries brackets, slashes
+    // and punctuation, and none of that belongs in a PIN.
+    const QHash<quint32, QString> alt(
+        m_profiles.at(m_activeProfile).levels.value(levelKey(HardwareKeyboardLevel::Alt)));
+
+    for (auto it = alt.constBegin(); it != alt.constEnd(); ++it) {
+        if (it.value().size() != 1)
+            continue;
+
+        const QChar c(it.value().at(0));
+
+        if (c.isDigit())
+            digits.insert(QString::number(it.key()), it.value());
+    }
+
+    return digits;
+}
+
 bool HardwareKeyboard::isAltActive() const
 {
     return m_alt.isActive();
