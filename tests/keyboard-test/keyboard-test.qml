@@ -147,7 +147,7 @@ Rectangle {
                               + "  \u00b7  " + maliit_input_method.keyboardLayout
                               + "  \u00b7  " + UI.formFactor
                               + "  \u00b7  " + Settings.displayWidth + "x" + Settings.displayHeight
-                              + " @ gu " + Settings.gridUnit
+                              + " @ gu " + Settings.gridUnit + "/" + Units.gu(1)
                     }
 
                     Rectangle { width: parent.width; height: 1; color: "#d5dae1" }

@@ -41,9 +41,16 @@ Item {
     //! Which of EmojiData.groups is showing.
     property int currentGroup: 0
 
-    //! Sized from the keys so the grid reads at the same rhythm as the keyboard
-    //! it replaces, rather than at a size of its own choosing.
-    readonly property real cellSize: Units.gu(5.5)
+    /*!
+     * How many emoji fit across, and therefore how big each is.
+     *
+     * Derived from the width rather than fixed, so the grid is flush on both
+     * edges instead of leaving a ragged column, and so a 720-wide phone and a
+     * 1024-wide tablet each get a sensible number rather than the phone getting
+     * eight enormous ones.
+     */
+    readonly property int columns: Math.max(6, Math.floor(width / Units.gu(4.2)))
+    readonly property real cellSize: width / columns
 
     Image {
         anchors.fill: parent
@@ -59,48 +66,42 @@ Item {
             width: parent.width
         }
 
-        //! The tabs, one per group, drawn as keys.
-        Row {
+        /*!
+         * The tabs, in the shape LuneOS gives a TabBar rather than in the
+         * keyboard's key art: a #343434 strip with the selected tab in #4585b8,
+         * the same blue a Switch carries when it is on. The key art was tried
+         * first and read as nine black lozenges with a blue halo, which belongs
+         * to no other screen on the device.
+         */
+        Rectangle {
             id: tabRow
             width: parent.width
-            height: Units.gu(4.5)
+            height: Units.gu(3.6)
+            color: "#343434"
 
-            Repeater {
-                model: EmojiData.groups.length
+            Row {
+                anchors.fill: parent
 
-                Item {
-                    width: tabRow.width / EmojiData.groups.length
-                    height: tabRow.height
+                Repeater {
+                    model: EmojiData.groups.length
 
-                    BorderImage {
-                        anchors.fill: parent
-                        anchors.margins: Units.gu(0.1)
-                        // The path is built here rather than taken from
-                        // UI.imageGreyKey, which is written relative to
-                        // qml/keys/ and would climb one directory too far from
-                        // this file.
-                        source: "images/" + UI.formFactor + "/key_bg_grey"
-                                + (index === emojiPanel.currentGroup ? "_active" : "")
-                                + ".png"
-                        border {
-                            left:   UI.formFactor === "tablet" ? 11 : 23
-                            top:    UI.formFactor === "tablet" ? 11 : 23
-                            right:  UI.formFactor === "tablet" ? 11 : 23
-                            bottom: UI.formFactor === "tablet" ? 11 : 23
+                    Rectangle {
+                        width: Math.round(tabRow.width / EmojiData.groups.length)
+                        height: tabRow.height
+                        color: index === emojiPanel.currentGroup ? "#4585b8" : "#343434"
+
+                        Text {
+                            anchors.centerIn: parent
+                            //! The group's own first emoji is its icon, so the
+                            //! tabs need no artwork and follow the data.
+                            text: EmojiData.groups[index].tab
+                            font.pixelSize: Math.round(parent.height * 0.62)
                         }
-                    }
 
-                    Text {
-                        anchors.centerIn: parent
-                        //! The group's own representative emoji is the icon, so
-                        //! the tabs need no artwork and follow the data.
-                        text: EmojiData.groups[index].tab
-                        font.pixelSize: parent.height * 0.55
-                    }
-
-                    MouseArea {
-                        anchors.fill: parent
-                        onClicked: emojiPanel.currentGroup = index
+                        MouseArea {
+                            anchors.fill: parent
+                            onClicked: emojiPanel.currentGroup = index
+                        }
                     }
                 }
             }
@@ -138,7 +139,7 @@ Item {
                 Text {
                     anchors.centerIn: parent
                     text: modelData
-                    font.pixelSize: parent.height * 0.62
+                    font.pixelSize: Math.round(parent.height * 0.6)
                 }
 
                 MouseArea {

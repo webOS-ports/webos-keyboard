@@ -69,8 +69,8 @@ int main(int argc, char *argv[])
     const QCommandLineOption envOption(
         QStringLiteral("env"),
         QStringLiteral("Device profile index from SettingsStub.testEnvs: 0 mako, "
-                       "1 a500, 2 gnexus, 3 grouper, 4 tenderloin (the TouchPad, and "
-                       "the default)."),
+                       "1 a500, 2 gnexus, 3 grouper, 4 q25, 5 tenderloin (the "
+                       "TouchPad, and the default)."),
         QStringLiteral("index"));
     parser.addOption(envOption);
     const QCommandLineOption sizeOption(
