@@ -136,6 +136,17 @@ private Q_SLOTS:
     void testResetClearsEveryLatch();
     void testLevelChangedIsEmitted();
 
+    // A numeric field taking the digits off the key faces, and a legend-only
+    // profile, which is the shape that makes it work on a keyboard whose
+    // driver resolves its own levels.
+    void testNumericFieldIsOffByDefault();
+    void testNumericFieldTakesTheDigitOffTheKeyFace();
+    void testNumericFieldLeavesAKeyWithNoDigitAlone();
+    void testNumericFieldLeavesAHeldLevelAlone();
+    void testNumericFieldReleaseReplaysTheDigit();
+    void testNumericFieldNeedsAProfile();
+    void testLegendOnlyProfileClaimsNoLevelKeys();
+
     // The profiles this package ships.
     void testShippedProfilesAreWellFormed_data();
     void testShippedProfilesAreWellFormed();
@@ -149,6 +160,14 @@ private:
     //! mapping KEY_Q at each level.
     static QByteArray titanProfile(bool lockOnDoubleTap = true,
                                    bool withShiftKeys = false);
+
+    //! A profile in the shape a keyboard needs when its driver already
+    //! resolves Alt and Sym: no level keys at all, and an `alt` level that is
+    //! there to say what the key faces are labelled with. KEY_W carries a 1
+    //! and KEY_T a character no numeric field wants, as they do on a Q25.
+    //! (An "@" rather than the Q25's own "(": moc counts parentheses through
+    //! raw strings and an unbalanced one here stops the build.)
+    static QByteArray legendOnlyProfile();
 
     QTemporaryDir *m_profileDir = nullptr;
     QTemporaryFile *m_devices = nullptr;
@@ -221,6 +240,23 @@ QByteArray Ut_HardwareKeyboard::titanProfile(bool lockOnDoubleTap,
         .arg(KEY_RIGHTALT)
         .arg(withShiftKeys ? QString::number(KEY_LEFTSHIFT) : QString())
         .arg(KEY_Q)
+        .toUtf8();
+}
+
+QByteArray Ut_HardwareKeyboard::legendOnlyProfile()
+{
+    return QStringLiteral(R"({
+    "name": "legendonly",
+    "description": "a keyboard whose driver owns the levels",
+    "match": { "inputDeviceNames": ["aw9523-key"] },
+    "altKeys": [],
+    "symKeys": [],
+    "levels": {
+        "alt": { "%1": "1", "%2": "@" }
+    }
+})")
+        .arg(KEY_W)
+        .arg(KEY_T)
         .toUtf8();
 }
 
@@ -860,6 +896,152 @@ void Ut_HardwareKeyboard::testLevelChangedIsEmitted()
     // level that changes without saying so leaves a stale badge on screen.
     keyboard.handleKey(QEvent::KeyPress, sc(KEY_Q), Qt::NoModifier, &text);
     QCOMPARE(changed.count(), 3);
+}
+
+/*
+ * A field that can only hold a number wants the digit printed on the key, not
+ * the letter the key is called. These cover the bargain and its limits: it is
+ * the focused field that asks for it, it applies only where there is a digit
+ * to give, and it never overrides a level the user selected by hand.
+ */
+
+void Ut_HardwareKeyboard::testNumericFieldIsOffByDefault()
+{
+    writeProfile(QStringLiteral("legendonly.json"), legendOnlyProfile());
+    writeDevices(deviceBlock(QStringLiteral("aw9523-key"), QwertyKeys));
+
+    HardwareKeyboard keyboard;
+    QVERIFY(keyboard.isPresent());
+    QVERIFY(keyboard.digitsPreferred().isEmpty());
+
+    // An ordinary field: W is a W, and this profile resolves nothing at all.
+    QString text;
+    QCOMPARE(keyboard.handleKey(QEvent::KeyPress, sc(KEY_W), Qt::NoModifier, &text),
+             HardwareKeyboard::NotHandled);
+}
+
+void Ut_HardwareKeyboard::testNumericFieldTakesTheDigitOffTheKeyFace()
+{
+    writeProfile(QStringLiteral("legendonly.json"), legendOnlyProfile());
+    writeDevices(deviceBlock(QStringLiteral("aw9523-key"), QwertyKeys));
+
+    HardwareKeyboard keyboard;
+    keyboard.setDigitsPreferred(QStringLiteral("0123456789*#+"));
+
+    QString text;
+    QCOMPARE(keyboard.handleKey(QEvent::KeyPress, sc(KEY_W), Qt::NoModifier, &text),
+             HardwareKeyboard::Text);
+    QCOMPARE(text, QStringLiteral("1"));
+}
+
+void Ut_HardwareKeyboard::testNumericFieldLeavesAKeyWithNoDigitAlone()
+{
+    writeProfile(QStringLiteral("legendonly.json"), legendOnlyProfile());
+    writeDevices(deviceBlock(QStringLiteral("aw9523-key"), QwertyKeys));
+
+    HardwareKeyboard keyboard;
+    keyboard.setDigitsPreferred(QStringLiteral("0123456789*#+"));
+
+    // KEY_T's Alt legend is "@", which is not a dial character. The key is left
+    // to travel the path it always did rather than being silently rewritten:
+    // a field that turns out to accept a letter is not being fought.
+    QString text;
+    QCOMPARE(keyboard.handleKey(QEvent::KeyPress, sc(KEY_T), Qt::NoModifier, &text),
+             HardwareKeyboard::NotHandled);
+
+    // And a key with no legend at all is equally untouched.
+    QCOMPARE(keyboard.handleKey(QEvent::KeyPress, sc(KEY_G), Qt::NoModifier, &text),
+             HardwareKeyboard::NotHandled);
+}
+
+void Ut_HardwareKeyboard::testNumericFieldLeavesAHeldLevelAlone()
+{
+    // On a keyboard whose levels this plugin does own, a user holding Shift or
+    // Alt has said what they want. The numeric field is for the user who has
+    // said nothing.
+    writeProfile(QStringLiteral("titan.json"), titanProfile());
+    writeDevices(deviceBlock(QStringLiteral("aw9523-key"), QwertyKeys));
+
+    HardwareKeyboard keyboard;
+    keyboard.setDigitsPreferred(QStringLiteral("0123456789*#+"));
+
+    QString text;
+
+    // Shift: the shift level, not the alt legend.
+    QCOMPARE(keyboard.handleKey(QEvent::KeyPress, sc(KEY_Q), Qt::ShiftModifier, &text),
+             HardwareKeyboard::Text);
+    QCOMPARE(text, QStringLiteral("Q"));
+    keyboard.handleKey(QEvent::KeyRelease, sc(KEY_Q), Qt::ShiftModifier, &text);
+
+    // Sym held: the sym level, even though alt would have given a "#" the
+    // field would have taken.
+    keyboard.handleKey(QEvent::KeyPress, sc(KEY_RIGHTALT), Qt::NoModifier, &text);
+    QCOMPARE(keyboard.handleKey(QEvent::KeyPress, sc(KEY_Q), Qt::NoModifier, &text),
+             HardwareKeyboard::Text);
+    QCOMPARE(text, QString::fromUtf8("\xc2\xa7"));
+}
+
+void Ut_HardwareKeyboard::testNumericFieldReleaseReplaysTheDigit()
+{
+    // The release is answered out of the same table as any other resolved key,
+    // so a field that stops being numeric mid-keystroke cannot turn one press
+    // into two different characters.
+    writeProfile(QStringLiteral("legendonly.json"), legendOnlyProfile());
+    writeDevices(deviceBlock(QStringLiteral("aw9523-key"), QwertyKeys));
+
+    HardwareKeyboard keyboard;
+    keyboard.setDigitsPreferred(QStringLiteral("0123456789"));
+
+    QString text;
+    QCOMPARE(keyboard.handleKey(QEvent::KeyPress, sc(KEY_W), Qt::NoModifier, &text),
+             HardwareKeyboard::Text);
+
+    keyboard.setDigitsPreferred(QString());
+
+    text.clear();
+    QCOMPARE(keyboard.handleKey(QEvent::KeyRelease, sc(KEY_W), Qt::NoModifier, &text),
+             HardwareKeyboard::Text);
+    QCOMPARE(text, QStringLiteral("1"));
+}
+
+void Ut_HardwareKeyboard::testNumericFieldNeedsAProfile()
+{
+    // Nothing installed: there is no legend to read a digit off, and asking for
+    // one must not make the class start answering for keys it knows nothing
+    // about.
+    writeDevices(deviceBlock(QStringLiteral("aw9523-key"), QwertyKeys));
+
+    HardwareKeyboard keyboard;
+    QVERIFY(!keyboard.isPresent());
+
+    keyboard.setDigitsPreferred(QStringLiteral("0123456789"));
+
+    QString text;
+    QCOMPARE(keyboard.handleKey(QEvent::KeyPress, sc(KEY_W), Qt::NoModifier, &text),
+             HardwareKeyboard::NotHandled);
+}
+
+void Ut_HardwareKeyboard::testLegendOnlyProfileClaimsNoLevelKeys()
+{
+    // The whole point of the shape: the driver keeps resolving Alt and Sym, so
+    // the profile must not consume those keys, must not latch anything, and
+    // must leave the Alt modifier meaning what it always meant.
+    writeProfile(QStringLiteral("legendonly.json"), legendOnlyProfile());
+    writeDevices(deviceBlock(QStringLiteral("aw9523-key"), QwertyKeys));
+
+    HardwareKeyboard keyboard;
+    QVERIFY(keyboard.isPresent());
+
+    QString text;
+    QCOMPARE(keyboard.handleKey(QEvent::KeyPress, sc(KEY_LEFTALT), Qt::NoModifier, &text),
+             HardwareKeyboard::NotHandled);
+    QVERIFY(!keyboard.isAltActive());
+    QVERIFY(!keyboard.ownsAltModifier());
+
+    QCOMPARE(keyboard.handleKey(QEvent::KeyPress, sc(KEY_RIGHTALT), Qt::NoModifier, &text),
+             HardwareKeyboard::NotHandled);
+    QVERIFY(!keyboard.isSymActive());
+    QVERIFY(!keyboard.ownsAltModifier());
 }
 
 void Ut_HardwareKeyboard::testShippedProfilesAreWellFormed_data()
