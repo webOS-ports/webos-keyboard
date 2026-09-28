@@ -147,37 +147,56 @@ Item {
             /*!
              * Says there is more below.
              *
-             * The settings pages flick without one of these, but they are a
-             * column of labelled rows where the last one is visibly cut off. A
-             * field of emoji has no such edge - one row of pictures looks like
-             * any other - so nothing would say the sheet continues.
+             * The settings pages flick without one, but they are a column of
+             * labelled rows where the last is visibly cut off. A field of emoji
+             * has no such edge - one row of pictures looks like any other - so
+             * nothing would say the sheet continues.
              *
-             * Drawn here rather than taken from QtQuick.Controls, which the
-             * keyboard does not otherwise use and would be a dependency for a
-             * rectangle.
+             * Shaped like QtQuick.Controls.LuneOS's own ScrollBar, down to its
+             * 6px handle, its #bdbebf, and the way it shows itself only while
+             * the view moves and then fades after a pause. Copied rather than
+             * imported: the keyboard's QML uses no QtQuick.Controls at all, and
+             * this would pull the module and its style into the input method's
+             * process for one rectangle.
              */
             Rectangle {
-                id: scrollIndicator
+                id: scrollHandle
 
-                readonly property real trackHeight: grid.height - Units.gu(0.6)
+                readonly property real trackHeight: grid.height - Units.gu(0.5)
 
                 anchors.right: parent.right
                 anchors.rightMargin: Units.gu(0.15)
-                width: Units.gu(0.3)
+                width: Units.gu(0.4)
                 radius: width / 2
-                color: "#6a6a6a"
+                color: "#bdbebf"
 
                 visible: grid.contentHeight > grid.height
                 height: Math.max(Units.gu(2),
                                  trackHeight * (grid.height / grid.contentHeight))
-                y: Units.gu(0.3) + (trackHeight - height)
+                y: Units.gu(0.25) + (trackHeight - height)
                    * (grid.contentHeight > grid.height
                       ? grid.contentY / (grid.contentHeight - grid.height) : 0)
 
-                //! Fades out when the sheet is still, so it is a hint rather
-                //! than furniture.
-                opacity: grid.moving ? 0.7 : 0.25
-                Behavior on opacity { NumberAnimation { duration: 200 } }
+                opacity: 0.0
+
+                states: State {
+                    name: "active"
+                    when: grid.moving
+                    PropertyChanges { target: scrollHandle; opacity: 0.75 }
+                }
+
+                //! The pause belongs to the way out only, so the handle appears
+                //! the instant the sheet moves and lingers after it stops.
+                transitions: Transition {
+                    from: "active"
+                    SequentialAnimation {
+                        PauseAnimation { duration: 450 }
+                        NumberAnimation {
+                            target: scrollHandle; property: "opacity"
+                            to: 0.0; duration: 200
+                        }
+                    }
+                }
             }
 
             delegate: Item {
