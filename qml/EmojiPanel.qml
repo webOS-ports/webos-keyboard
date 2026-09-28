@@ -52,18 +52,29 @@ Item {
     readonly property int columns: Math.max(6, Math.floor(width / Units.gu(4.2)))
     readonly property real cellSize: width / columns
 
-    Image {
+    /*!
+     * The ground legacy's own picker sat on.
+     *
+     * webOS put its extended characters in a popover of light grey keys on a
+     * mid grey ground - keyboard_popover.png is #8f9192 and popup_key_inactive
+     * is #d3d3d3 - and a grid of emoji is the same kind of thing, so it is
+     * dressed the same way. The keyboard's tiled background was tried first and
+     * is nearly black: emoji are colourful artwork rather than glyphs in the
+     * text colour, and on black they read as a scattering of bright specks.
+     */
+    Rectangle {
         anchors.fill: parent
-        source: "images/" + UI.formFactor + "/keyboard-bg.png"
-        fillMode: Image.TileHorizontally
+        color: "#8f9192"
     }
 
     Column {
         anchors.fill: parent
 
-        Image {
-            source: "images/" + UI.formFactor + "/border_top.png"
+        Rectangle {
+            //! Parts the panel from the candidate bar, which is the same colour.
             width: parent.width
+            height: 1
+            color: "#d0d0d0"
         }
 
         /*!
@@ -128,12 +139,14 @@ Item {
                 width: grid.cellWidth
                 height: grid.cellHeight
 
-                Rectangle {
+                //! One popover key per emoji, the art the extended-character
+                //! popover uses, so a press answers the way one there does.
+                Image {
                     anchors.fill: parent
-                    anchors.margins: Units.gu(0.2)
-                    radius: Units.gu(0.4)
-                    color: "#ffffff"
-                    opacity: emojiArea.pressed ? 0.25 : 0
+                    anchors.margins: Units.gu(0.15)
+                    source: "images/" + UI.formFactor
+                            + (emojiArea.pressed ? "/popup_key_active.png"
+                                                 : "/popup_key_inactive.png")
                 }
 
                 Text {
