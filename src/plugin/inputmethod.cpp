@@ -33,6 +33,8 @@
 #include "inputmethod_p.h"
 
 #include "coreutils.h"
+
+#include <QQuickItem>
 #include "models/key.h"
 #include "models/text.h"
 #include "models/keyarea.h"
@@ -338,7 +340,36 @@ void InputMethod::applyPanelVisibility()
         return;
     }
 
+    /*
+     * A window that believes it is up while it is not on screen has to be put
+     * down before it can be put up again.
+     *
+     * The framework force-hides this window from inside setVisible(), so Qt's
+     * own record of the window and the platform window below it can be left
+     * disagreeing. While they disagree every setVisible(true) is a no-op -- Qt
+     * sees nothing to change -- the window never maps, the view is never
+     * resized, and with a root item of no width the whole panel measures 0x0 and
+     * is never drawn again.
+     *
+     * Exposure is the honest answer, since a window that is really on screen is
+     * exposed. When the two disagree the window is taken down properly, which
+     * makes the show below a transition that the platform cannot ignore.
+     */
+    if (d->view->isVisible() and not d->view->isExposed()) {
+        qCInfo(lcHwKeyboard, "panel window: visible but not exposed; taking it down first");
+        d->view->setVisible(false);
+    }
+
     d->view->setVisible(true);
+
+    // Said out loud for the same reason the decision above is: when the panel is
+    // not on screen, this is what says whether the window, the view or the QML
+    // is the one that is wrong.
+    const QQuickItem *root = d->view->rootObject();
+    qCInfo(lcHwKeyboard, "panel window: visible=%d exposed=%d view=%dx%d root=%dx%d",
+           int(d->view->isVisible()), int(d->view->isExposed()),
+           d->view->width(), d->view->height(),
+           root ? int(root->width()) : -1, root ? int(root->height()) : -1);
 
     // A window that is not really up must not be announced as up.
     //
