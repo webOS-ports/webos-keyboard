@@ -339,6 +339,22 @@ void InputMethod::applyPanelVisibility()
     }
 
     d->view->setVisible(true);
+
+    // A window that is not really up must not be announced as up.
+    //
+    // The framework force-hides the window of a plugin whose group it has not
+    // activated yet, and it does so from inside setVisible() itself, so the
+    // window can be gone again by the time that call returns. Saying "shown"
+    // regardless would leave the geometry describing a panel that is not there,
+    // and since shown is change-gated the next attempt would be a no-op:
+    // Keyboard.qml would never re-run its transition, the panel would stay
+    // parked at no height, and nothing would be drawn again for the rest of the
+    // session. Leaving it alone costs nothing - the framework's show() follows
+    // as soon as it has activated the group, and finds a geometry that agrees.
+    if (not d->view->isVisible()) {
+        return;
+    }
+
     d->m_geometry->setShown(true);
 
     // The surface the compositor reads the mask from is made here, and with a
