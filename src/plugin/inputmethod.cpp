@@ -33,6 +33,8 @@
 #include "inputmethod_p.h"
 
 #include "coreutils.h"
+
+#include <QQuickItem>
 #include "models/key.h"
 #include "models/text.h"
 #include "models/keyarea.h"
@@ -199,6 +201,19 @@ bool InputMethod::keysCollapsed() const
     return d->panel.keysHidden();
 }
 
+void InputMethod::commitEmoji(const QString &emoji)
+{
+    Q_D(InputMethod);
+
+    // Whatever word was being typed is finished first, so the emoji does not
+    // join it and get carried off by the next correction.
+    d->editor.commit();
+
+    // Straight to the application, through the host: the editor's own commit
+    // path is private to it, and there is nothing here to correct or predict.
+    inputMethodHost()->sendCommitString(emoji);
+}
+
 void InputMethod::collapseKeys()
 {
     Q_D(InputMethod);
@@ -338,7 +353,48 @@ void InputMethod::applyPanelVisibility()
         return;
     }
 
+    /*
+     * Show the window, and notice if it is taken away again while we do.
+     *
+     * The framework force-hides the window of a plugin whose group it has not
+     * activated yet, and it does that from inside setVisible() -- its
+     * WindowGroup is connected to this window's own visibleChanged. What it
+     * leaves behind is a window Qt believes is visible and a platform window
+     * that is not on screen, and while those two disagree every setVisible(true)
+     * is a no-op, so the panel can never come back.
+     *
+     * Taking the window down and putting it up again is what settles that, and
+     * it has to be done only then. Exposure looks like the obvious test and is
+     * not: a window that has just been shown is not exposed yet either, and on a
+     * loaded device it stays that way long enough for the next call to tear down
+     * a window that was about to appear - measured on a Motorola radon, where
+     * the panel was taken down and restarted three times in the same second and
+     * never mapped.
+     */
+    d->showingPanel = true;
     d->view->setVisible(true);
+    d->showingPanel = false;
+
+    if (d->panelForcedHidden) {
+        d->panelForcedHidden = false;
+        qCInfo(lcHwKeyboard, "panel window: hidden from under us; taking it down and up");
+        d->view->setVisible(false);
+        d->view->setVisible(true);
+    }
+
+    const QQuickItem *root = d->view->rootObject();
+    qCInfo(lcHwKeyboard, "panel window: visible=%d exposed=%d view=%dx%d root=%dx%d",
+           int(d->view->isVisible()), int(d->view->isExposed()),
+           d->view->width(), d->view->height(),
+           root ? int(root->width()) : -1, root ? int(root->height()) : -1);
+
+    // A window that is not really up must not be announced as up: shown is
+    // change-gated, so claiming it now would make every later attempt a no-op
+    // and Keyboard.qml would never re-run its transition.
+    if (not d->view->isVisible()) {
+        return;
+    }
+
     d->m_geometry->setShown(true);
 
     // The surface the compositor reads the mask from is made here, and with a
@@ -1086,7 +1142,25 @@ void InputMethod::update()
     bool panelValid = false;
     const bool onScreenKeyboardAllowed = inputMethodHost()->onScreenKeyboardAllowed(panelValid);
     d->panel.setOnScreenKeyboardAllowed(!panelValid or onScreenKeyboardAllowed);
-    applyPanelVisibility();
+
+    // Declining the panel is this method's business; putting it up is not.
+    //
+    // update() is called from the framework's updateWidgetInformation(), which
+    // runs on every focus change and runs *before* the client's show request
+    // reaches showActivePlugins() - so before the framework has activated this
+    // plugin's window group. A window shown in that gap is force-hidden again by
+    // WindowGroup::onVisibleChanged ("An inactive plugin is misbehaving - tried
+    // to show a window!"), and the panel is then wedged for the rest of the
+    // session; see the window's visibleChanged connection, which is what stops
+    // the wedge, and maliit-framework-webos, where the gap itself belongs.
+    //
+    // Nothing is lost by waiting: a field that will accept the panel gets one
+    // from the show() the framework is about to call anyway. A panel already on
+    // screen is another matter - there is no gap to fall into, and whatever
+    // changed about the field still has to reach it.
+    if (not d->panel.panelWanted() or d->view->isVisible()) {
+        applyPanelVisibility();
+    }
 
     if (emitPredictionEnabled) {
         updateWordEngine();
@@ -1353,13 +1427,32 @@ void InputMethod::maskPanelStrip()
 {
     Q_D(InputMethod);
 
-    const int height = d->m_geometry->visibleRect().toRect().height();
-
-    if (height <= 0 or not d->view)
+    if (not d->view)
         return;
 
-    const QRect strip(0, qMax(0, int(d->view->height()) - height),
-                      d->view->width(), height);
+    const int height = d->m_geometry->visibleRect().toRect().height();
+
+    /*
+     * The whole window until the panel has a size of its own.
+     *
+     * Leaving it unmasked instead is a deadlock, because the mask is where the
+     * compositor gets the panel's rectangle: it takes the largest rectangle in
+     * the mask, reports nothing to the application until it has one, and leaves
+     * the panel hidden -- so the QML never lays out, the rectangle stays empty,
+     * and the panel is never shown to give it one. Measured on a Motorola
+     * radon, which has no hardware keyboard: "mask QRegion(null) -> rect
+     * QRect(0,0 0x0) state InputPanelHidden", over and over, with nothing on
+     * screen. A device with a physical keyboard never sees it - there the panel
+     * is the candidate bar, whose height QML knows before it has drawn
+     * anything.
+     *
+     * Masking the window whole is only ever a moment: onVisibleRectChanged
+     * narrows it to the strip the panel really occupies as soon as there is
+     * one, and until then the panel draws where it draws regardless.
+     */
+    const QRect strip = height > 0
+        ? QRect(0, qMax(0, int(d->view->height()) - height), d->view->width(), height)
+        : QRect(0, 0, d->view->width(), d->view->height());
 
     d->view->setMask(QRegion(strip) + d->m_geometry->popoverRect().toRect());
 }
