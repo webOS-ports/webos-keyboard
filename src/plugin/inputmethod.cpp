@@ -341,47 +341,43 @@ void InputMethod::applyPanelVisibility()
     }
 
     /*
-     * A window that believes it is up while it is not on screen has to be put
-     * down before it can be put up again.
+     * Show the window, and notice if it is taken away again while we do.
      *
-     * The framework force-hides this window from inside setVisible(), so Qt's
-     * own record of the window and the platform window below it can be left
-     * disagreeing. While they disagree every setVisible(true) is a no-op -- Qt
-     * sees nothing to change -- the window never maps, the view is never
-     * resized, and with a root item of no width the whole panel measures 0x0 and
-     * is never drawn again.
+     * The framework force-hides the window of a plugin whose group it has not
+     * activated yet, and it does that from inside setVisible() -- its
+     * WindowGroup is connected to this window's own visibleChanged. What it
+     * leaves behind is a window Qt believes is visible and a platform window
+     * that is not on screen, and while those two disagree every setVisible(true)
+     * is a no-op, so the panel can never come back.
      *
-     * Exposure is the honest answer, since a window that is really on screen is
-     * exposed. When the two disagree the window is taken down properly, which
-     * makes the show below a transition that the platform cannot ignore.
+     * Taking the window down and putting it up again is what settles that, and
+     * it has to be done only then. Exposure looks like the obvious test and is
+     * not: a window that has just been shown is not exposed yet either, and on a
+     * loaded device it stays that way long enough for the next call to tear down
+     * a window that was about to appear - measured on a Motorola radon, where
+     * the panel was taken down and restarted three times in the same second and
+     * never mapped.
      */
-    if (d->view->isVisible() and not d->view->isExposed()) {
-        qCInfo(lcHwKeyboard, "panel window: visible but not exposed; taking it down first");
+    d->showingPanel = true;
+    d->view->setVisible(true);
+    d->showingPanel = false;
+
+    if (d->panelForcedHidden) {
+        d->panelForcedHidden = false;
+        qCInfo(lcHwKeyboard, "panel window: hidden from under us; taking it down and up");
         d->view->setVisible(false);
+        d->view->setVisible(true);
     }
 
-    d->view->setVisible(true);
-
-    // Said out loud for the same reason the decision above is: when the panel is
-    // not on screen, this is what says whether the window, the view or the QML
-    // is the one that is wrong.
     const QQuickItem *root = d->view->rootObject();
     qCInfo(lcHwKeyboard, "panel window: visible=%d exposed=%d view=%dx%d root=%dx%d",
            int(d->view->isVisible()), int(d->view->isExposed()),
            d->view->width(), d->view->height(),
            root ? int(root->width()) : -1, root ? int(root->height()) : -1);
 
-    // A window that is not really up must not be announced as up.
-    //
-    // The framework force-hides the window of a plugin whose group it has not
-    // activated yet, and it does so from inside setVisible() itself, so the
-    // window can be gone again by the time that call returns. Saying "shown"
-    // regardless would leave the geometry describing a panel that is not there,
-    // and since shown is change-gated the next attempt would be a no-op:
-    // Keyboard.qml would never re-run its transition, the panel would stay
-    // parked at no height, and nothing would be drawn again for the rest of the
-    // session. Leaving it alone costs nothing - the framework's show() follows
-    // as soon as it has activated the group, and finds a geometry that agrees.
+    // A window that is not really up must not be announced as up: shown is
+    // change-gated, so claiming it now would make every later attempt a no-op
+    // and Keyboard.qml would never re-run its transition.
     if (not d->view->isVisible()) {
         return;
     }

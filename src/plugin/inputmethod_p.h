@@ -67,6 +67,11 @@ public:
     Qt::ScreenOrientation appsCurrentOrientation;
 
     KeyboardGeometry *m_geometry;
+    //! True while applyPanelVisibility() is inside setVisible(true).
+    bool showingPanel = false;
+    //! Set when the window was hidden from under that call; see the connection
+    //! to visibleChanged in the constructor.
+    bool panelForcedHidden = false;
     KeyboardSettings m_settings;
     //! Resolves the Alt and Sym levels of a physical keyboard, if this device
     //! has one we have a profile for. Inert otherwise.
@@ -156,8 +161,23 @@ public:
          */
         QObject::connect(view, &QWindow::visibleChanged,
                          m_geometry, [this](bool visible) {
-                             if (not visible) {
-                                 m_geometry->setShown(false);
+                             if (visible) {
+                                 return;
+                             }
+
+                             m_geometry->setShown(false);
+
+                             // Hidden while we were in the middle of showing it
+                             // is not something the plugin did: it is the
+                             // framework's force-hide, arriving from inside our
+                             // own setVisible(). Worth remembering, because it
+                             // is the one case that needs the window taken down
+                             // and put up again, and it is the only way to tell
+                             // it apart from a window that is simply not exposed
+                             // yet - which is every window, for a moment, and on
+                             // a loaded device for longer.
+                             if (showingPanel) {
+                                 panelForcedHidden = true;
                              }
                          });
 
