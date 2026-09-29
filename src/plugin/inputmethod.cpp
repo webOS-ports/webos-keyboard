@@ -1414,13 +1414,32 @@ void InputMethod::maskPanelStrip()
 {
     Q_D(InputMethod);
 
-    const int height = d->m_geometry->visibleRect().toRect().height();
-
-    if (height <= 0 or not d->view)
+    if (not d->view)
         return;
 
-    const QRect strip(0, qMax(0, int(d->view->height()) - height),
-                      d->view->width(), height);
+    const int height = d->m_geometry->visibleRect().toRect().height();
+
+    /*
+     * The whole window until the panel has a size of its own.
+     *
+     * Leaving it unmasked instead is a deadlock, because the mask is where the
+     * compositor gets the panel's rectangle: it takes the largest rectangle in
+     * the mask, reports nothing to the application until it has one, and leaves
+     * the panel hidden -- so the QML never lays out, the rectangle stays empty,
+     * and the panel is never shown to give it one. Measured on a Motorola
+     * radon, which has no hardware keyboard: "mask QRegion(null) -> rect
+     * QRect(0,0 0x0) state InputPanelHidden", over and over, with nothing on
+     * screen. A device with a physical keyboard never sees it - there the panel
+     * is the candidate bar, whose height QML knows before it has drawn
+     * anything.
+     *
+     * Masking the window whole is only ever a moment: onVisibleRectChanged
+     * narrows it to the strip the panel really occupies as soon as there is
+     * one, and until then the panel draws where it draws regardless.
+     */
+    const QRect strip = height > 0
+        ? QRect(0, qMax(0, int(d->view->height()) - height), d->view->width(), height)
+        : QRect(0, 0, d->view->width(), d->view->height());
 
     d->view->setMask(QRegion(strip) + d->m_geometry->popoverRect().toRect());
 }
