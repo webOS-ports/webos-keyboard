@@ -38,6 +38,9 @@ import "emoji.js" as EmojiData
 Item {
     id: emojiPanel
 
+    //! Asked to go back to the keys.
+    signal dismissed()
+
     //! Which of EmojiData.groups is showing.
     property int currentGroup: 0
 
@@ -97,11 +100,42 @@ Item {
             Row {
                 anchors.fill: parent
 
+                /*!
+                 * The way back to the keys, and the first thing in the row.
+                 *
+                 * The panel took the keyboard's place, so without this the only
+                 * way out is the smiley on the candidate bar - and that bar is
+                 * not always there: it is hidden when the word engine is off,
+                 * while the physical keyboard's Sym key opens this panel
+                 * whether it is or not. That left the keys unreachable.
+                 */
+                Rectangle {
+                    id: backToKeys
+                    objectName: "emojiBackToKeys"
+
+                    width: Math.round(tabRow.width / (EmojiData.groups.length + 1))
+                    height: tabRow.height
+                    color: "#343434"
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: "ABC"
+                        color: "#e5e5e5"
+                        font.family: "Prelude"
+                        font.pixelSize: Math.round(parent.height * 0.42)
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        onClicked: emojiPanel.dismissed()
+                    }
+                }
+
                 Repeater {
                     model: EmojiData.groups.length
 
                     Rectangle {
-                        width: Math.round(tabRow.width / EmojiData.groups.length)
+                        width: Math.round(tabRow.width / (EmojiData.groups.length + 1))
                         height: tabRow.height
                         color: index === emojiPanel.currentGroup ? "#4585b8" : "#343434"
 

@@ -135,7 +135,10 @@ Item {
                     id: wordRibbon
                     objectName: "wordRibbon"
 
-                    visible: maliit_word_engine.enabled
+                    //! And while the emoji panel is up, whether or not the
+                    //! word engine is on: the bar carries the button that puts
+                    //! the panel away again.
+                    visible: maliit_word_engine.enabled || wordRibbon.emojiShown
 
                     anchors.bottom: keyboardComp.top
                     width: parent.width;
@@ -200,6 +203,8 @@ Item {
                             width: parent.width
                             height: visible ? keypad.height : 0
                             visible: wordRibbon.emojiShown
+
+                            onDismissed: wordRibbon.emojiShown = false
                         }
                         Item {
                             width: parent.width
