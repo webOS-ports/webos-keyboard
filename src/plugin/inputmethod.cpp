@@ -201,6 +201,19 @@ bool InputMethod::keysCollapsed() const
     return d->panel.keysHidden();
 }
 
+void InputMethod::commitEmoji(const QString &emoji)
+{
+    Q_D(InputMethod);
+
+    // Whatever word was being typed is finished first, so the emoji does not
+    // join it and get carried off by the next correction.
+    d->editor.commit();
+
+    // Straight to the application, through the host: the editor's own commit
+    // path is private to it, and there is nothing here to correct or predict.
+    inputMethodHost()->sendCommitString(emoji);
+}
+
 void InputMethod::collapseKeys()
 {
     Q_D(InputMethod);

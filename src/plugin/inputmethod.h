@@ -108,6 +108,17 @@ public:
      * left with - the word engine is off - the panel goes altogether, because a
      * zero-height panel comes back full height and blank.
      */
+    /*!
+     * \brief Puts an emoji in as text that is already finished.
+     *
+     * Not through the character path the keys use: that builds a preedit, which
+     * is how a word being typed can still be corrected, and an emoji is not a
+     * word being typed. Left in the preedit it drew with the composition
+     * highlight under it - a lilac band behind every emoji inserted - and stayed
+     * uncommitted until something else happened to commit it.
+     */
+    Q_INVOKABLE void commitEmoji(const QString &emoji);
+
     Q_INVOKABLE void collapseKeys();
     Q_INVOKABLE void expandKeys();
     QList<MAbstractInputMethod::MInputMethodSubView>

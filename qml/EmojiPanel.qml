@@ -257,10 +257,12 @@ Item {
                     anchors.fill: parent
 
                     onClicked: {
-                        //! The road a character key takes. No action, so it goes
-                        //! in as plain text.
-                        event_handler.onKeyPressed(modelData, "");
-                        event_handler.onKeyReleased(modelData, "");
+                        //! Committed, not composed. The character path the keys
+                        //! take builds a preedit - right for a word being typed,
+                        //! wrong for an emoji, which arrived finished and drew
+                        //! with the composition highlight behind it until
+                        //! something else committed it.
+                        maliit_input_method.commitEmoji(modelData);
                     }
                 }
             }
