@@ -1086,7 +1086,25 @@ void InputMethod::update()
     bool panelValid = false;
     const bool onScreenKeyboardAllowed = inputMethodHost()->onScreenKeyboardAllowed(panelValid);
     d->panel.setOnScreenKeyboardAllowed(!panelValid or onScreenKeyboardAllowed);
-    applyPanelVisibility();
+
+    // Declining the panel is this method's business; putting it up is not.
+    //
+    // update() is called from the framework's updateWidgetInformation(), which
+    // runs on every focus change and runs *before* the client's show request
+    // reaches showActivePlugins() - so before the framework has activated this
+    // plugin's window group. A window shown in that gap is force-hidden again by
+    // WindowGroup::onVisibleChanged ("An inactive plugin is misbehaving - tried
+    // to show a window!"), and the panel is then wedged for the rest of the
+    // session; see the window's visibleChanged connection, which is what stops
+    // the wedge, and maliit-framework-webos, where the gap itself belongs.
+    //
+    // Nothing is lost by waiting: a field that will accept the panel gets one
+    // from the show() the framework is about to call anyway. A panel already on
+    // screen is another matter - there is no gap to fall into, and whatever
+    // changed about the field still has to reach it.
+    if (not d->panel.panelWanted() or d->view->isVisible()) {
+        applyPanelVisibility();
+    }
 
     if (emitPredictionEnabled) {
         updateWordEngine();

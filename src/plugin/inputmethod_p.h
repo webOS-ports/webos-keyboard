@@ -136,6 +136,31 @@ public:
 
         view = createWindow(host);
 
+        /*
+         * The geometry follows the window, including when the window was hidden
+         * by someone else.
+         *
+         * maliit's WindowGroup force-hides the window of a plugin whose group it
+         * has not activated yet, and it does so behind this plugin's back. What
+         * that used to leave behind was a keyboard that never came back: shown
+         * is change-gated, so a geometry still saying "shown" while the window
+         * is hidden can never be set to shown again, Keyboard.qml's
+         * "maliit_geometry.shown === true" transition never re-runs, the panel
+         * stays parked at no height, no buffer is ever drawn, and the compositor
+         * is left holding a keyboard surface that was created and never mapped.
+         * closeOskWindow() could not undo it either - it returns early on a
+         * window that is already hidden.
+         *
+         * Mirroring the real state here means the next applyPanelVisibility()
+         * is a fresh false -> true transition and the panel draws.
+         */
+        QObject::connect(view, &QWindow::visibleChanged,
+                         m_geometry, [this](bool visible) {
+                             if (not visible) {
+                                 m_geometry->setShown(false);
+                             }
+                         });
+
         editor.setHost(host);
 
         //! connect wordRibbon
