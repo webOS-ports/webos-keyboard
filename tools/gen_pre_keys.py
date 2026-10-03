@@ -50,14 +50,14 @@ def key(pressed=False):
     out = Image.new("RGBA", (S, S), (0, 0, 0, 0))
 
     # The recess the cap sits in: a dark rounded well a little larger than it.
-    well_pad, well_r = 3 * SS, 13 * SS
+    well_pad, well_r = 3 * SS, 18 * SS
     well = rrect_mask((S, S), (well_pad, well_pad, S - well_pad - 1, S - well_pad - 1), well_r)
     well = well.filter(ImageFilter.GaussianBlur(SS * 0.6))
     out.paste((8, 9, 10, 255), (0, 0), well)
 
     # The cap: near-black, a soft glow under the top edge, darkest through the
     # middle and lifting a little towards the bottom rim.
-    cap_pad, cap_r = 5 * SS, 11 * SS
+    cap_pad, cap_r = 5 * SS, 16 * SS
     box = (cap_pad, cap_pad, S - cap_pad - 1, S - cap_pad - 1)
     lift = 26 if pressed else 0
     def c(r, g, b):
@@ -78,7 +78,7 @@ def key(pressed=False):
     hl = Image.new("L", (S, S), 0)
     d = ImageDraw.Draw(hl)
     y = cap_pad + int(1.4 * SS)
-    d.rounded_rectangle((cap_pad + 3 * SS, y, S - cap_pad - 3 * SS, y + int(1.1 * SS)),
+    d.rounded_rectangle((cap_pad + 8 * SS, y, S - cap_pad - 8 * SS, y + int(1.1 * SS)),
                         radius=SS, fill=235 if not pressed else 150)
     hl = hl.filter(ImageFilter.GaussianBlur(SS * 0.5))
     hl = Image.composite(hl, Image.new("L", (S, S), 0), capm)

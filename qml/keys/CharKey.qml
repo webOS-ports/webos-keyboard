@@ -54,6 +54,11 @@ Item {
     /// Where it is printed: "left" or "right" of the letter, raised, or
     /// "inline" beside it at nearly full size (the Pre's "@0" key).
     property string altPosition: "right"
+    /// The colour the Pre prints its digits in, shared with the orange key's
+    /// printed alternates and the Sym page's number row.
+    readonly property color preDigitColor: "#F2402E"
+    /// Label colour; a layout sets it to preDigitColor for digits.
+    property color labelColor: UI.fontColor
     readonly property bool __altActive: alt !== "" && UI.currentAltState !== "NORMAL"
     readonly property string __submitValue: __altActive ? alt : valueToSubmit
     property bool skipAutoCaps: false
@@ -156,8 +161,8 @@ Item {
         // Letters are shown as capitals, as printed on the Pre's keys; what is
         // typed still follows the shift state (text is unchanged).
         font.capitalization: UI.formFactor === "phone" && !thumbKeyboard ? Font.AllUppercase : Font.MixedCase
-        color: UI.fontColor
-        style: UI.glyphStyle(UI.fontColor, UI.fontStyleColor)
+        color: labelColor
+        style: Qt.colorEqual(labelColor, UI.fontColor) ? UI.glyphStyle(UI.fontColor, UI.fontStyleColor) : Text.Normal
         styleColor: UI.fontStyleColor
         smooth: true
         visible: action === "" || action === "url"
@@ -173,7 +178,7 @@ Item {
         font.family: UI.fontFamily
         font.bold: true
         font.pixelSize: keyLabel.font.pixelSize * (altPosition === "inline" ? 0.9 : 0.72)
-        color: /^[0-9]$/.test(alt) ? "#F2402E" : UI.fontColor
+        color: /^[0-9]$/.test(alt) ? preDigitColor : UI.fontColor
         style: Text.Normal
         smooth: true
 
