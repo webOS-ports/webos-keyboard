@@ -47,6 +47,15 @@ Item {
     property alias valueToSubmit: keyLabel.text
 
     property string action
+
+    /// The character the Pre prints on the key beside its letter, typed while
+    /// the orange key (AltKey) is active. Digits are printed red, as on the Pre.
+    property string alt: ""
+    /// Where it is printed: "left" or "right" of the letter, raised, or
+    /// "inline" beside it at nearly full size (the Pre's "@0" key).
+    property string altPosition: "right"
+    readonly property bool __altActive: alt !== "" && UI.currentAltState !== "NORMAL"
+    readonly property string __submitValue: __altActive ? alt : valueToSubmit
     property bool skipAutoCaps: false
     property bool alignTextRight: false
 
@@ -134,8 +143,12 @@ Item {
         id: keyLabel
         text: (UI.currentShiftState === "NORMAL") ? label : shifted;
         anchors.horizontalCenter: buttonImage.horizontalCenter
+        anchors.horizontalCenterOffset: alt === "" ? 0
+                                       : altPosition === "inline" ? -buttonImage.width * 0.12
+                                       : altPosition === "left" ? buttonImage.width * 0.07
+                                       : -buttonImage.width * 0.07
         anchors.verticalCenter: buttonImage.verticalCenter 
-        anchors.verticalCenterOffset: UI.singleGlyphOffset
+        anchors.verticalCenterOffset: UI.singleGlyphOffset + (alt !== "" && altPosition !== "inline" ? buttonImage.height * 0.06 : 0)
         font.family: UI.fontFamily
         font.pixelSize: thumbKeyboard ? FontUtils.sizeToPixels(fontSize)
                                       : UI.glyphFontPx(text, false)
@@ -148,6 +161,29 @@ Item {
         styleColor: UI.fontStyleColor
         smooth: true
         visible: action === "" || action === "url"
+        // With the orange key active the printed alternates are what will be
+        // typed, so the letters step back.
+        opacity: UI.currentAltState !== "NORMAL" && alt !== "" ? 0.35 : 1
+    }
+
+    Text {
+        id: altLabel
+        visible: alt !== "" && keyLabel.visible
+        text: alt
+        font.family: UI.fontFamily
+        font.bold: true
+        font.pixelSize: keyLabel.font.pixelSize * (altPosition === "inline" ? 0.9 : 0.72)
+        color: /^[0-9]$/.test(alt) ? "#F2402E" : UI.fontColor
+        style: Text.Normal
+        smooth: true
+
+        anchors.left: altPosition === "left" ? undefined : keyLabel.right
+        anchors.leftMargin: altPosition === "inline" ? keyLabel.font.pixelSize * 0.08 : -keyLabel.font.pixelSize * 0.04
+        anchors.right: altPosition === "left" ? keyLabel.left : undefined
+        anchors.rightMargin: -keyLabel.font.pixelSize * 0.04
+        anchors.verticalCenter: altPosition === "inline" ? keyLabel.verticalCenter : undefined
+        anchors.bottom: altPosition === "inline" ? undefined : keyLabel.verticalCenter
+        anchors.bottomMargin: -keyLabel.font.pixelSize * 0.08
     }
 
     /// shows an annotation
@@ -172,7 +208,9 @@ Item {
         styleColor: UI.annotationStyleColor
         color: UI.annotationFontColor
         smooth: true
-        visible: (UI.formFactor === "tablet" || !noMagnifier)
+        // The Pre prints no hint for the long-press accents; only the tablet
+        // keeps its "..." marker.
+        visible: UI.formFactor === "tablet"
                  && activeExtendedModel !== undefined
     }
 
@@ -193,10 +231,14 @@ Item {
                 if (maliit_input_method.useAudioFeedback)
                     audioFeedback.play();
 
-                event_handler.onKeyReleased(valueToSubmit, action);
-                if (!skipAutoCaps)
+                var usedAlt = __altActive;
+                event_handler.onKeyReleased(__submitValue, action);
+                if (!skipAutoCaps && !usedAlt)
                     if (UI.currentShiftState === "SHIFTED" && UI.currentSymbolState === "CHARACTERS")
                         UI.shiftedKeySent();
+                // A single tap of the orange key covers the next key only.
+                if (UI.currentAltState === "ALT")
+                    UI.currentAltState = "NORMAL";
             }
             else if (activeExtendedModel != undefined) {
                 UI.showExtendedKeys(activeExtendedModel, key);
@@ -207,7 +249,7 @@ Item {
 
         }
         onKeyPressed: {
-            event_handler.onKeyPressed(valueToSubmit, action);
+            event_handler.onKeyPressed(__submitValue, action);
         }
     }
 
@@ -224,7 +266,7 @@ Item {
         anchors.bottom: buttonImage.top
         width: key.width + Units.gu(UI.magnifierHorizontalPadding)
         height: key.height + Units.gu(UI.magnifierVerticalPadding)
-        text: keyLabel.text
+        text: __altActive ? alt : keyLabel.text
         shown: key.pressed && !noMagnifier && !extendedKeysShown
     }
 }

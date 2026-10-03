@@ -94,6 +94,31 @@ def key(pressed=False):
     return out.resize((SIZE, SIZE), Image.LANCZOS)
 
 
+def _poly_icon(polys, colour=(255, 255, 255, 255), bar=False):
+    """Filled polygons on a 64x64 grid, drawn at SS x and scaled down."""
+    S = 64 * SS
+    im = Image.new("RGBA", (S, S), (0, 0, 0, 0))
+    d = ImageDraw.Draw(im)
+    for p in polys:
+        d.polygon([(x * SS, y * SS) for x, y in p], fill=colour)
+    if bar:
+        d.rectangle((18 * SS, 54 * SS, 46 * SS, 59 * SS), fill=colour)
+    return im.resize((64, 64), Image.LANCZOS)
+
+
+def icons():
+    up = [[(32, 6), (56, 32), (42, 32), (42, 50), (22, 50), (22, 32), (8, 32)]]
+    left = [[(4, 32), (28, 10), (28, 24), (60, 24), (60, 40), (28, 40), (28, 54)]]
+    ret = [[(46, 6), (60, 6), (60, 44), (28, 44), (28, 58), (4, 37), (28, 16), (28, 30), (46, 30)]]
+    return {
+        "shift": _poly_icon(up),
+        "shift-on": _poly_icon(up, colour=(120, 196, 255, 255)),
+        "shift-lock": _poly_icon(up, colour=(120, 196, 255, 255), bar=True),
+        "backspace": _poly_icon(left),
+        "return": _poly_icon(ret),
+    }
+
+
 def deck():
     # 3px wide, tiled horizontally and stretched to the panel's height.
     return vgrad((3, 200), [(0, (74, 81, 86, 255)), (1, (58, 64, 68, 255))])
@@ -124,11 +149,6 @@ if __name__ == "__main__":
     deck().save(f"{d}/keyboard-bg.png")
     border_top().save(f"{d}/border_top.png")
     border_bottom().save(f"{d}/border_bottom.png")
-    # The function-key icons are white but drawn at ~80% alpha, which reads as
-    # grey on a black cap; the Pre's printed arrows are solid white.
-    for name in ("shift", "backspace"):
-        im = Image.open(f"{d}/{name}.png").convert("RGBA")
-        a = im.split()[3]
-        peak = max(a.getdata()) or 255
-        im.putalpha(a.point(lambda v: min(255, v * 255 // peak)))
+    # The Pre's printed function-key arrows, solid white.
+    for name, im in icons().items():
         im.save(f"{d}/{name}.png")

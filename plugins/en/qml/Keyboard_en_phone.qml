@@ -17,11 +17,15 @@
  */
 
 /*
- * Weights follow PhoneKeymap.cpp, sQwerty + cCustom_QWERT_*. Every row sums to 10.
+ * The Palm Pre's own keyboard, key for key: four rows of ten keys in matching
+ * columns, the orange key and Sym, and each key's alternate character printed
+ * where the Pre prints it (see CharKey.alt). The orange key (AltKey) types
+ * those alternates; long-press still offers the accented letters.
  *
- * There is no language key and no hide key on this keyboard: the shift key's
- * symbol-layer identity is cKey_ToggleLanguage, so language switching lives on the
- * 123 page (see languages/Keyboard_symbols_phone.qml).
+ * The bottom row is the Pre's: shift, @/0, space, period and Sym, inset by
+ * about a key at each end. Weights are measured off the Pre and sum to 10.
+ * There is no language key and no hide key: language switching lives on the
+ * Sym page (see languages/Keyboard_symbols_phone.qml).
  */
 
 import QtQuick 2.0
@@ -39,115 +43,65 @@ KeyPad {
         anchors.left: parent.left
         spacing: 0
 
-        // QWERTY_TOP_10(1)
         KeyRow {
             height: keyHeight
 
             CharKey { label: "q"; shifted: "Q"; }
             CharKey { label: "w"; shifted: "W"; }
-            CharKey { label: "e"; shifted: "E"; extended: ["e", "è", "é", "ê", "ë", "ę", "ē", "€", "ě"]; extendedShifted: ["E", "È", "É", "Ê", "Ë", "Ę", "Ē", "€", "Ě"]; }
-            CharKey { label: "r"; shifted: "R"; extended: ["r", "®", "ř", "ŕ"]; extendedShifted: ["R","®", "Ř", "Ŕ"]; }
-            CharKey { label: "t"; shifted: "T"; extended: ["t", "™", "þ", "ť", "ţ"]; extendedShifted: ["T", "™", "Þ", "Ť", "Ţ"]; }
+            CharKey { label: "e"; shifted: "E"; alt: "1"; altPosition: "left"; extended: ["e", "è", "é", "ê", "ë", "ę", "ē", "€", "ě"]; extendedShifted: ["E", "È", "É", "Ê", "Ë", "Ę", "Ē", "€", "Ě"]; }
+            CharKey { label: "r"; shifted: "R"; alt: "2"; altPosition: "left"; extended: ["r", "®", "ř", "ŕ"]; extendedShifted: ["R","®", "Ř", "Ŕ"]; }
+            CharKey { label: "t"; shifted: "T"; alt: "3"; altPosition: "left"; extended: ["t", "™", "þ", "ť", "ţ"]; extendedShifted: ["T", "™", "Þ", "Ť", "Ţ"]; }
             CharKey { label: "y"; shifted: "Y"; extended: ["y", "ý", "ÿ", "¥"]; extendedShifted: ["Y", "Ý", "Ÿ", "¥"]; }
             CharKey { label: "u"; shifted: "U"; extended: ["u", "ù", "ú", "û", "ü", "ű"]; extendedShifted: ["U", "Ù","Ú","Û", "Ü", "Ű"]; }
-            CharKey { label: "i"; shifted: "I"; extended: ["i", "ì","í", "î", "ï", "İ", "ı"]; extendedShifted: ["I", "Ì", "Í", "Î", "Ï", "İ", "ı"]; }
+            CharKey { label: "i"; shifted: "I"; alt: "%"; extended: ["i", "ì","í", "î", "ï", "İ", "ı"]; extendedShifted: ["I", "Ì", "Í", "Î", "Ï", "İ", "ı"]; }
             CharKey { label: "o"; shifted: "O"; extended: ["o", "ò", "ó", "ô", "õ", "ö", "ø", "ő", "œ", "º", "ω"]; extendedShifted: ["O", "Ò", "Ó", "Ô", "Õ", "Ö", "Ø", "Ő", "Œ", "º", "Ω"]; }
             CharKey { label: "p"; shifted: "P"; extended: ["p", "¶", "§", "π"]; extendedShifted: ["P", "§", "Π"]; }
         }
 
-        // KEY_4(-0.5, A) + QWERTY_MID_9(1) + KEY_4(-0.5, L): the home row is inset by
-        // half a key at each end, and those halves stay touchable.
         KeyRow {
             height: keyHeight
 
-            SpacerKey { weight: 0.5; forwardTo: aKey }
-            CharKey { id: aKey; label: "a"; shifted: "A"; extended: ["a", "à", "á", "â", "ã" , "ä", "å", "æ", "ª"]; extendedShifted: ["A", "À", "Á", "Â", "Ã", "Ä", "Å", "Æ", "ª"]; }
+            CharKey { label: "a"; shifted: "A"; alt: "&"; altPosition: "left"; extended: ["a", "à", "á", "â", "ã" , "ä", "å", "æ", "ª"]; extendedShifted: ["A", "À", "Á", "Â", "Ã", "Ä", "Å", "Æ", "ª"]; }
             CharKey { label: "s"; shifted: "S"; extended: ["s", "š", "ş", "ß", "σ", "$", "ś"]; extendedShifted: ["S", "Š", "Ş", "ß", "Σ", "$", "Ś"]; }
-            CharKey { label: "d"; shifted: "D"; extended: ["d", "ð", "†", "‡", "ď", "đ"]; extendedShifted: ["D", "Ð", "†", "‡", "Ď", "Đ"]; }
-            CharKey { label: "f"; shifted: "F"; }
-            CharKey { label: "g"; shifted: "G"; extended: ["g", "ğ"]; extendedShifted: ["G", "Ğ"]; }
-            CharKey { label: "h"; shifted: "H"; }
-            CharKey { label: "j"; shifted: "J"; }
-            CharKey { label: "k"; shifted: "K"; }
-            CharKey { id: lKey; label: "l"; shifted: "L"; extended: ["l", "ł", "ĺ"]; extendedShifted: ["L", "Ł", "Ĺ"]; }
-            SpacerKey { weight: 0.5; forwardTo: lKey }
+            CharKey { label: "d"; shifted: "D"; alt: "4"; altPosition: "left"; extended: ["d", "ð", "†", "‡", "ď", "đ"]; extendedShifted: ["D", "Ð", "†", "‡", "Ď", "Đ"]; }
+            CharKey { label: "f"; shifted: "F"; alt: "5"; altPosition: "left"; }
+            CharKey { label: "g"; shifted: "G"; alt: "6"; altPosition: "left"; extended: ["g", "ğ"]; extendedShifted: ["G", "Ğ"]; }
+            CharKey { label: "h"; shifted: "H"; alt: "$"; }
+            CharKey { label: "j"; shifted: "J"; alt: "!"; }
+            CharKey { label: "k"; shifted: "K"; alt: ":"; }
+            CharKey { label: "l"; shifted: "L"; alt: "'"; extended: ["l", "ł", "ĺ"]; extendedShifted: ["L", "Ł", "Ĺ"]; }
+            BackspaceKey { }
         }
 
-        // KEY_4(1.25, Shift) + KEY_4(-0.25, Z) + QWERTY_LOW_7(1) + KEY_1(-0.25, Backspace)
-        // + KEY_1(1.25, Backspace). The letters stay one unit wide so they line up
-        // with the row above; the quarter-key pads beside shift and backspace make
-        // those two comfortable to hit without being drawn.
         KeyRow {
             height: keyHeight
 
-            ShiftKey { id: shiftKey; weight: 1.25 }
-            SpacerKey { weight: 0.25; forwardTo: zKey }
-            CharKey { id: zKey; label: "z"; shifted: "Z"; extended: ["z", "ž", "ź", "ż"]; extendedShifted: ["Z", "Ž", "Ź", "Ż"]; }
-            CharKey { label: "x"; shifted: "X"; extended: ["x", "Rec", "Mute"]; extendedShifted: ["X", "Rec", "Mute"]; }
-            CharKey { label: "c"; shifted: "C"; extended: ["c", "ç", "ć", "©", "¢", "č"]; extendedShifted: ["C", "Ç", "Ć", "©", "¢", "Č"]; }
-            CharKey { label: "v"; shifted: "V"; }
-            CharKey { label: "b"; shifted: "B"; }
-            CharKey { label: "n"; shifted: "N"; extended: ["n", "ñ", "ń", "ň"]; extendedShifted: ["N", "Ñ", "Ń", "Ň"]; }
-            CharKey { label: "m"; shifted: "M"; extended: ["m", "µ"]; extendedShifted: ["M", "Μ"]; }
-            SpacerKey { weight: 0.25; forwardTo: backspaceKey }
-            BackspaceKey { id: backspaceKey; weight: 1.25 }
-        }
-
-        // QWERT_BOTTOM_ROW with cCustom_QWERT_plain
-        Component {
-            id: contentTypeNormal
-
-            KeyRow {
-                height: keyHeight
-
-                SymbolShiftKey { label: "123"; shifted: "123"; weight: 1.5 }
-                AnnotatedKey   { label: ","; shifted: "/"; weight: 1.5; extended: [",", "/", "\\"]; extendedShifted: [",", "/", "\\"]; }
-                SpaceKey       { weight: 4 }
-                AnnotatedKey   { label: "."; shifted: "?"; weight: 1.5; extended: [".", "?", "•", "…", "¿"]; extendedShifted: [".", "?", "•", "…", "¿"]; }
-                ReturnKey      { weight: 1.5 }
+            AltKey { }
+            CharKey { label: "z"; shifted: "Z"; alt: "*"; altPosition: "left"; extended: ["z", "ž", "ź", "ż"]; extendedShifted: ["Z", "Ž", "Ź", "Ż"]; }
+            CharKey { label: "x"; shifted: "X"; alt: "7"; altPosition: "left"; }
+            CharKey { label: "c"; shifted: "C"; alt: "8"; altPosition: "left"; extended: ["c", "ç", "ć", "©", "¢", "č"]; extendedShifted: ["C", "Ç", "Ć", "©", "¢", "Č"]; }
+            CharKey { label: "v"; shifted: "V"; alt: "9"; altPosition: "left"; }
+            CharKey { label: "b"; shifted: "B"; alt: "#"; }
+            CharKey { label: "n"; shifted: "N"; alt: "?"; extended: ["n", "ñ", "ń", "ň"]; extendedShifted: ["N", "Ñ", "Ń", "Ň"]; }
+            CharKey { label: "m"; shifted: "M"; alt: ";"; extended: ["m", "µ"]; extendedShifted: ["M", "Μ"]; }
+            CharKey { label: ","; shifted: ","; alt: "-"; }
+            ReturnKey {
+                weight: 1
+                label: maliit_input_method.actionKeyLabel.length > 0 ? maliit_input_method.actionKeyLabel : ""
+                iconNormal: "return"; iconShifted: "return"; iconCapsLock: "return"
             }
         }
 
-        // cCustom_QWERT_email: @ and .com flank the space key, which drops to
-        // SPACE_KEY_WEIGHT - 1 - 1.
-        Component {
-            id: contentTypeEmail
+        KeyRow {
+            height: keyHeight
 
-            KeyRow {
-                height: keyHeight
-
-                SymbolShiftKey { label: "123"; shifted: "123"; weight: 1.5 }
-                AnnotatedKey   { label: ","; shifted: "/"; weight: 1.5; extended: [",", "/", "\\"]; extendedShifted: [",", "/", "\\"]; }
-                UrlKey         { label: "@"; shifted: "@"; }
-                SpaceKey       { weight: 2 }
-                UrlKey         { label: ".com"; shifted: ".com"; extended: [".com", ".net", ".edu", ".org", ".co.uk"]; }
-                AnnotatedKey   { label: "."; shifted: "?"; weight: 1.5; extended: [".", "?", "•", "…", "¿"]; extendedShifted: [".", "?", "•", "…", "¿"]; }
-                ReturnKey      { weight: 1.5 }
-            }
-        }
-
-        // cCustom_QWERT_url: a plain slash, then a colon whose popup carries the
-        // scheme prefixes (sURL_extended).
-        Component {
-            id: contentTypeUrl
-
-            KeyRow {
-                height: keyHeight
-
-                SymbolShiftKey { label: "123"; shifted: "123"; weight: 1.5 }
-                UrlKey         { label: "/"; shifted: "/"; }
-                UrlKey         { label: ":"; shifted: ":"; extended: ["://", "http://", "https://"]; }
-                SpaceKey       { weight: 2 }
-                UrlKey         { label: ".com"; shifted: ".com"; extended: [".com", ".net", ".edu", ".org", ".co.uk"]; }
-                AnnotatedKey   { label: "."; shifted: "?"; weight: 1.5; extended: [".", "?", "•", "…", "¿"]; extendedShifted: [".", "?", "•", "…", "¿"]; }
-                ReturnKey      { weight: 1.5 }
-            }
-        }
-
-        Loader {
-            width: parent.width
-            sourceComponent: currentContentType === 0 ? contentTypeNormal :
-                             currentContentType === 3 ? contentTypeEmail : contentTypeUrl
+            SpacerKey { weight: 0.97; forwardTo: shiftKey }
+            ShiftKey { id: shiftKey; weight: 1.43 }
+            CharKey { label: "@"; shifted: "@"; alt: "0"; altPosition: "inline"; weight: 1.18 }
+            SpaceKey { weight: 2.75 }
+            CharKey { label: "."; shifted: "."; weight: 1.17; extended: [".", "?", "•", "…", "¿"]; extendedShifted: [".", "?", "•", "…", "¿"]; }
+            SymbolShiftKey { id: symKey; label: "Sym"; shifted: "Sym"; weight: 1.48 }
+            SpacerKey { weight: 1.02; forwardTo: symKey }
         }
     } // column
 }
