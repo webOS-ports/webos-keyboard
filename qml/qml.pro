@@ -37,6 +37,7 @@ OTHER_FILES += \
     emoji.js \
     keys/key_constants.js \
     keys/ActionKey.qml \
+    keys/AltKey.qml \
     keys/CharKey.qml \
     keys/BackspaceKey.qml \
     keys/ExtendedListSelector.qml \

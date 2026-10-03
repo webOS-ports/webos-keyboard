@@ -27,7 +27,7 @@ Rectangle {
 
     Rectangle {
         anchors.fill: parent
-        color: "#f1f1f1"
+        color: "#2b3034"
     }
 
     /*!
@@ -79,7 +79,7 @@ Rectangle {
                     anchors.verticalCenter: parent.verticalCenter
                     font.pixelSize: Units.gu(2);
                     font.family: "Prelude"
-                    color: "#999999"
+                    color: "#d8dde0"
                     font.bold: false
                     text: word;
                 }
@@ -111,7 +111,7 @@ Rectangle {
             name: "SELECTED"
             PropertyChanges {
                 target: wordRibbonCanvas
-                color: "#e4e4e4"
+                color: "#3a4146"
             }
         }
     ]
@@ -133,7 +133,7 @@ Rectangle {
 
         Rectangle {
             anchors.fill: parent
-            color: emojiButton.checked ? "#d4d4d4" : "transparent"
+            color: emojiButton.checked ? "#3a4146" : "transparent"
         }
 
         Rectangle {
@@ -143,7 +143,7 @@ Rectangle {
             anchors.top: parent.top
             anchors.bottom: parent.bottom
             width: 1
-            color: "#d0d0d0"
+            color: "#454c51"
         }
 
         Text {
