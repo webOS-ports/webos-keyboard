@@ -140,6 +140,9 @@ Item {
         font.pixelSize: thumbKeyboard ? FontUtils.sizeToPixels(fontSize)
                                       : UI.glyphFontPx(text, false)
         font.bold: UI.fontBold
+        // Letters are shown as capitals, as printed on the Pre's keys; what is
+        // typed still follows the shift state (text is unchanged).
+        font.capitalization: UI.formFactor === "phone" && !thumbKeyboard ? Font.AllUppercase : Font.MixedCase
         color: UI.fontColor
         style: UI.glyphStyle(UI.fontColor, UI.fontStyleColor)
         styleColor: UI.fontStyleColor

@@ -68,8 +68,8 @@ var tabletLabelFontCap   =   2.2;   // gu
 var tabletElipsisFontCap =   1.4;   // gu
 
 var phoneRefKeyHeight    =   90.25; // px, PhoneKeymap portrait row height
-var phoneCharFontPx      =   24;
-var phoneDualFontPx      =   24;
+var phoneCharFontPx      =   38;   // Pre-style caps: a big, bold capital
+var phoneDualFontPx      =   28;
 var phoneLabelFontPx     =   22;
 var phoneElipsisFontPx   =   14;
 var phonePreviewFontPx   =   32;    // the magnified key preview, drawn bold
@@ -83,11 +83,11 @@ var dimmedGlyphPercent =   75;
    one. Where the two are equal - which is the whole phone keyboard - nothing extra
    is drawn, so no emboss at all. */
 var fontStyleColor       = {"tablet" : "#E2E2E2",   /* cActiveColor_back   */
-                            "phone"  : "#D2D2D2"};
+                            "phone"  : "#FFFFFF"};
 var annotationStyleColor = {"tablet" : "#C8C8C8",   /* cDisabledColor_back */
-                            "phone"  : "#808080"};
+                            "phone"  : "#B9C0C4"};
 var actionStyleColor     = {"tablet" : "#000000",   /* cFunctionColor_back */
-                            "phone"  : "#D2D2D2"};
+                            "phone"  : "#FFFFFF"};
 
 /* boostSize(): the reference adds 2px to '. , ; : \' "' so they do not look lost
    next to a letter. */
@@ -110,12 +110,12 @@ var thumbAnnotationFontSize   =   "10pt";
 var fontFamily      =   "Prelude";
 
 var fontColor       =   {"tablet" : "#141414",   /* cActiveColor, tablet */
-                         "phone"  : "#D2D2D2"};  /* cActiveColor, phone  */
+                         "phone"  : "#FFFFFF"};  /* white on the black Pre-style caps */
 
 /* drawKeyCap only sets bold for multi-character function-key labels and for the
    magnified preview, never for a plain letter. */
 var fontBold        =   {"tablet" : false,
-                         "phone"  : false};
+                         "phone"  : true};      /* printed bold, as on the Pre's keys */
 
 var fontBoldAction  =   true
 
@@ -125,7 +125,7 @@ var annotationFontSize = {"tablet" : "14pt",
 var annotationMargins = 0.7; // gu
 
 var annotationFontColor = {"tablet" : "#646464",   /* cDisabledColor, tablet */
-                           "phone"  : "#808080"};  /* cDisabledColor, phone  */
+                           "phone"  : "#B9C0C4"};
 
 var magnifierFontColor = {"tablet" : "#141414",
                            "phone"  : "#141414"};
@@ -137,7 +137,7 @@ var extendedFontColor = {"tablet" : "#141414",
                          "phone"  : "#141414"};
 
 var greyColor    =    {"tablet" : "#D2D2D2",
-                     "phone"  : "#D2D2D2"};
+                     "phone"  : "#FFFFFF"};
 
 /* magnifier */
 var magnifierHorizontalPadding = 0; // gu, stretch the magnifier a little bit in x-axis
