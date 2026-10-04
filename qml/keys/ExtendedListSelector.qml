@@ -27,7 +27,10 @@ Item {
     visible: enabled
 
     y: anchorPoint.y - (popoverBackground.height - 8)
-    x: isOnLeftSideOfScreen ? (anchorPoint.x) : (anchorPoint.x+currentlyAssignedKeyWidth-popoverBackground.width)
+    // Kept on screen: a wide popup (the language list) anchored to a key near
+    // the edge would otherwise run off it.
+    x: Math.max(0, Math.min((keyPad ? keyPad.width : width) - popoverBackground.width,
+                            isOnLeftSideOfScreen ? (anchorPoint.x) : (anchorPoint.x+currentlyAssignedKeyWidth-popoverBackground.width)))
 
     width: popoverBackground.width
     height: popoverBackground.height
@@ -50,8 +53,15 @@ Item {
     /* cPopupSingleLineMax: up to five entries stay on one line, more break into two.
        We were wrapping at four, so a five-entry popup came out two rows deep. */
     readonly property int maxKeysOnOneLine: 5
-    property int numberOfLines: keyRepeater.count > maxKeysOnOneLine ? 2 : 1
-    property int keysPerLine: Math.ceil(keyRepeater.count / numberOfLines)
+    /* Never more per line than fit across the keyboard inside the popup's own
+       borders. Two lines were the most there ever were, so a long list - the
+       languages, seventeen of them - ran off the side of the screen; it now
+       takes as many lines as it needs. */
+    readonly property int maxKeysPerLine: Math.max(1, Math.floor(((keyPad ? keyPad.width : 0) - 2 * 21) / keyWidth))
+    property int keysPerLine: Math.max(1, Math.min(maxKeysPerLine,
+                                                   keyRepeater.count > maxKeysOnOneLine ? Math.ceil(keyRepeater.count / 2)
+                                                                                        : keyRepeater.count))
+    property int numberOfLines: Math.max(1, Math.ceil(keyRepeater.count / keysPerLine))
 
     onCurrentlyAssignedKeyXChanged: if(currentlyAssignedKey) __repositionPopoverTo(currentlyAssignedKey);
     onCurrentlyAssignedKeyYChanged: if(currentlyAssignedKey) __repositionPopoverTo(currentlyAssignedKey)
