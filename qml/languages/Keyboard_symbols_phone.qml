@@ -46,16 +46,16 @@ KeyPad {
         KeyRow {
             height: keyHeight
 
-            CharKey { label: "1"; shifted: "1"; }
-            CharKey { label: "2"; shifted: "2"; }
-            CharKey { label: "3"; shifted: "3"; }
-            CharKey { label: "4"; shifted: "4"; }
-            CharKey { label: "5"; shifted: "5"; }
-            CharKey { label: "6"; shifted: "6"; }
-            CharKey { label: "7"; shifted: "7"; }
-            CharKey { label: "8"; shifted: "8"; }
-            CharKey { label: "9"; shifted: "9"; }
-            CharKey { label: "0"; shifted: "0"; }
+            CharKey { label: "1"; shifted: "1"; labelColor: UI.preStyle ? UI.preAccentColor : UI.fontColor }
+            CharKey { label: "2"; shifted: "2"; labelColor: UI.preStyle ? UI.preAccentColor : UI.fontColor }
+            CharKey { label: "3"; shifted: "3"; labelColor: UI.preStyle ? UI.preAccentColor : UI.fontColor }
+            CharKey { label: "4"; shifted: "4"; labelColor: UI.preStyle ? UI.preAccentColor : UI.fontColor }
+            CharKey { label: "5"; shifted: "5"; labelColor: UI.preStyle ? UI.preAccentColor : UI.fontColor }
+            CharKey { label: "6"; shifted: "6"; labelColor: UI.preStyle ? UI.preAccentColor : UI.fontColor }
+            CharKey { label: "7"; shifted: "7"; labelColor: UI.preStyle ? UI.preAccentColor : UI.fontColor }
+            CharKey { label: "8"; shifted: "8"; labelColor: UI.preStyle ? UI.preAccentColor : UI.fontColor }
+            CharKey { label: "9"; shifted: "9"; labelColor: UI.preStyle ? UI.preAccentColor : UI.fontColor }
+            CharKey { label: "0"; shifted: "0"; labelColor: UI.preStyle ? UI.preAccentColor : UI.fontColor }
         }
 
         // alt of QWERTY_MID_9: a..l -> ! @ # $ % & * ( )

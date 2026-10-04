@@ -47,6 +47,27 @@ Item {
     property alias valueToSubmit: keyLabel.text
 
     property string action
+
+    /// The character the Pre prints on the key beside its letter, typed while
+    /// the orange key (AltKey) is active. Digits are printed red, as on the Pre.
+    property string alt: ""
+    /// Which top corner it is printed in, "left" or "right"; the letter then
+    /// sits in the bottom corner opposite, as on the Pre's keys. "inline" is
+    /// the Pre's "@0": "@" bottom left, a "0" nearly its size top right.
+    property string altPosition: "right"
+    readonly property bool __altLeft: altPosition === "left"
+    //! A letter with an alternate sits in a corner rather than the middle.
+    readonly property bool __cornered: alt !== ""
+    /* Distance from the key's edge to the glyphs: the 5px the cap is inset in
+       its nine-patch (drawn 1:1), plus a margin that grows with the key. */
+    readonly property real __cornerInset: 5 + key.width * 0.08
+    /* Prelude's cap height, as a fraction of the font size: glyphs are placed
+       by their baselines so that a capital, not its line box, meets the inset. */
+    readonly property real __capHeight: 0.72
+    /// Label colour; the Pre layouts' symbol page sets UI.preAccentColor for digits.
+    property color labelColor: UI.fontColor
+    readonly property bool __altActive: alt !== "" && UI.currentAltState !== "NORMAL"
+    readonly property string __submitValue: __altActive ? alt : valueToSubmit
     property bool skipAutoCaps: false
     property bool alignTextRight: false
 
@@ -133,18 +154,52 @@ Item {
     Text {
         id: keyLabel
         text: (UI.currentShiftState === "NORMAL") ? label : shifted;
-        anchors.horizontalCenter: buttonImage.horizontalCenter
-        anchors.verticalCenter: buttonImage.verticalCenter 
+        anchors.horizontalCenter: __cornered ? undefined : buttonImage.horizontalCenter
+        anchors.verticalCenter: __cornered ? undefined : buttonImage.verticalCenter
         anchors.verticalCenterOffset: UI.singleGlyphOffset
+        // Cornered: bottom right when the alternate is top left, bottom left
+        // when it is top right.
+        anchors.right: __cornered && __altLeft ? buttonImage.right : undefined
+        anchors.rightMargin: __cornerInset
+        anchors.left: __cornered && !__altLeft ? buttonImage.left : undefined
+        anchors.leftMargin: __cornerInset
+        anchors.baseline: __cornered ? buttonImage.bottom : undefined
+        anchors.baselineOffset: -__cornerInset
         font.family: UI.fontFamily
         font.pixelSize: thumbKeyboard ? FontUtils.sizeToPixels(fontSize)
                                       : UI.glyphFontPx(text, false)
         font.bold: UI.fontBold
-        color: UI.fontColor
-        style: UI.glyphStyle(UI.fontColor, UI.fontStyleColor)
+        // The Pre layouts show letters as capitals, as printed on the Pre's
+        // keys; what is typed still follows the shift state (text is unchanged).
+        font.capitalization: UI.preStyle && !thumbKeyboard ? Font.AllUppercase : Font.MixedCase
+        color: labelColor
+        style: Qt.colorEqual(labelColor, UI.fontColor) ? UI.glyphStyle(UI.fontColor, UI.fontStyleColor) : Text.Normal
         styleColor: UI.fontStyleColor
         smooth: true
         visible: action === "" || action === "url"
+        // With the orange key active the printed alternates are what will be
+        // typed, so the letters step back.
+        opacity: UI.currentAltState !== "NORMAL" && alt !== "" ? 0.35 : 1
+    }
+
+    Text {
+        id: altLabel
+        visible: alt !== "" && keyLabel.visible
+        text: alt
+        font.family: UI.fontFamily
+        font.bold: true
+        font.pixelSize: keyLabel.font.pixelSize * (altPosition === "inline" ? 0.85 : 0.7)
+        color: /^[0-9]$/.test(alt) ? UI.preAccentColor : UI.fontColor
+        style: Text.Normal
+        smooth: true
+
+        // In the top corner opposite the letter.
+        anchors.left: __altLeft ? buttonImage.left : undefined
+        anchors.leftMargin: __cornerInset
+        anchors.right: __altLeft ? undefined : buttonImage.right
+        anchors.rightMargin: __cornerInset
+        anchors.baseline: buttonImage.top
+        anchors.baselineOffset: __cornerInset + font.pixelSize * __capHeight
     }
 
     /// shows an annotation
@@ -169,7 +224,9 @@ Item {
         styleColor: UI.annotationStyleColor
         color: UI.annotationFontColor
         smooth: true
-        visible: (UI.formFactor === "tablet" || !noMagnifier)
+        // The Pre printed no hint for the long-press accents, so its layouts
+        // show none either.
+        visible: (UI.formFactor === "tablet" || !noMagnifier) && !UI.preStyle
                  && activeExtendedModel !== undefined
     }
 
@@ -190,10 +247,14 @@ Item {
                 if (maliit_input_method.useAudioFeedback)
                     audioFeedback.play();
 
-                event_handler.onKeyReleased(valueToSubmit, action);
-                if (!skipAutoCaps)
+                var usedAlt = __altActive;
+                event_handler.onKeyReleased(__submitValue, action);
+                if (!skipAutoCaps && !usedAlt)
                     if (UI.currentShiftState === "SHIFTED" && UI.currentSymbolState === "CHARACTERS")
                         UI.shiftedKeySent();
+                // A single tap of the orange key covers the next key only.
+                if (UI.currentAltState === "ALT")
+                    UI.currentAltState = "NORMAL";
             }
             else if (activeExtendedModel != undefined) {
                 UI.showExtendedKeys(activeExtendedModel, key);
@@ -204,7 +265,7 @@ Item {
 
         }
         onKeyPressed: {
-            event_handler.onKeyPressed(valueToSubmit, action);
+            event_handler.onKeyPressed(__submitValue, action);
         }
     }
 
@@ -221,7 +282,7 @@ Item {
         anchors.bottom: buttonImage.top
         width: key.width + Units.gu(UI.magnifierHorizontalPadding)
         height: key.height + Units.gu(UI.magnifierVerticalPadding)
-        text: keyLabel.text
+        text: __altActive ? alt : keyLabel.text
         shown: key.pressed && !noMagnifier && !extendedKeysShown
     }
 }

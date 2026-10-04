@@ -74,6 +74,20 @@ var phoneLabelFontPx     =   22;
 var phoneElipsisFontPx   =   14;
 var phonePreviewFontPx   =   32;    // the magnified key preview, drawn bold
 
+/* The Pre layouts (UI.preStyle): a big, bold capital on each key, as printed on
+   the Palm Pre's keyboard. Same reference key height as the phone values. */
+var preCharFontPx        =   46;
+var preDualFontPx        =   28;
+// ...but never more than this fraction of a one-unit key's width, so a letter
+// fits its corner, with its alternate in the other, at every keyboard size.
+var preGlyphWidthRatio   =   0.56;
+
+/* The colour the Pre layouts print a key's alternate in, and the orange key
+   and the symbol page's digits with it: "Pre (Orange)" prints them as the Pre
+   did, "Pre (White)" all in white. */
+var preAccentColor       = {"orange" : "#F2402E",
+                            "white"  : "#FFFFFF"};
+
 /* font_size(text, color, base, 75): the glyph that is *not* currently active on a
    dual-label key - the grey one - is drawn at 75% of the base size, not the same
    size. Which of the two that is swaps when shift is held. */
@@ -83,11 +97,14 @@ var dimmedGlyphPercent =   75;
    one. Where the two are equal - which is the whole phone keyboard - nothing extra
    is drawn, so no emboss at all. */
 var fontStyleColor       = {"tablet" : "#E2E2E2",   /* cActiveColor_back   */
-                            "phone"  : "#D2D2D2"};
+                            "phone"  : "#D2D2D2",
+                            "pre"    : "#FFFFFF"};
 var annotationStyleColor = {"tablet" : "#C8C8C8",   /* cDisabledColor_back */
-                            "phone"  : "#808080"};
+                            "phone"  : "#808080",
+                            "pre"    : "#B9C0C4"};
 var actionStyleColor     = {"tablet" : "#000000",   /* cFunctionColor_back */
-                            "phone"  : "#D2D2D2"};
+                            "phone"  : "#D2D2D2",
+                            "pre"    : "#FFFFFF"};
 
 /* boostSize(): the reference adds 2px to '. , ; : \' "' so they do not look lost
    next to a letter. */
@@ -110,12 +127,14 @@ var thumbAnnotationFontSize   =   "10pt";
 var fontFamily      =   "Prelude";
 
 var fontColor       =   {"tablet" : "#141414",   /* cActiveColor, tablet */
-                         "phone"  : "#D2D2D2"};  /* cActiveColor, phone  */
+                         "phone"  : "#D2D2D2",   /* cActiveColor, phone  */
+                         "pre"    : "#FFFFFF"};  /* white on the Pre layouts' black caps */
 
 /* drawKeyCap only sets bold for multi-character function-key labels and for the
    magnified preview, never for a plain letter. */
 var fontBold        =   {"tablet" : false,
-                         "phone"  : false};
+                         "phone"  : false,
+                         "pre"    : true};      /* printed bold, as on the Pre's keys */
 
 var fontBoldAction  =   true
 
@@ -125,7 +144,8 @@ var annotationFontSize = {"tablet" : "14pt",
 var annotationMargins = 0.7; // gu
 
 var annotationFontColor = {"tablet" : "#646464",   /* cDisabledColor, tablet */
-                           "phone"  : "#808080"};  /* cDisabledColor, phone  */
+                           "phone"  : "#808080",   /* cDisabledColor, phone  */
+                           "pre"    : "#B9C0C4"};
 
 var magnifierFontColor = {"tablet" : "#141414",
                            "phone"  : "#141414"};
@@ -137,7 +157,8 @@ var extendedFontColor = {"tablet" : "#141414",
                          "phone"  : "#141414"};
 
 var greyColor    =    {"tablet" : "#D2D2D2",
-                     "phone"  : "#D2D2D2"};
+                     "phone"  : "#D2D2D2",
+                     "pre"    : "#FFFFFF"};
 
 /* magnifier */
 var magnifierHorizontalPadding = 0; // gu, stretch the magnifier a little bit in x-axis
@@ -162,22 +183,28 @@ var popoverFontSizeLong   = {"tablet" : "32pt",
                              "phone"  : "24pt"};    // gu
 
 var imageWhiteKey        = { "tablet" : "../images/tablet/key_bg_white.png",
-                             "phone"  : "../images/phone/key_bg_white.png"  };
+                             "phone"  : "../images/phone/key_bg_white.png",
+                             "pre"    : "../images/phone-pre/key_bg_white.png"  };
 
 var imageWhiteKeyPressed = { "tablet" : "../images/tablet/key_bg_white_active.png",
-                             "phone"  : "../images/phone/key_bg_white_active.png"  };
+                             "phone"  : "../images/phone/key_bg_white_active.png",
+                                    "pre"    : "../images/phone-pre/key_bg_white_active.png"  };
 
 var imageBlackKey        = { "tablet" : "../images/tablet/key_bg_black.png",
-                             "phone"  : "../images/phone/key_bg_black.png"  };
+                             "phone"  : "../images/phone/key_bg_black.png",
+                             "pre"    : "../images/phone-pre/key_bg_black.png"  };
 
 var imageBlackKeyPressed = { "tablet" : "../images/tablet/key_bg_black_active.png",
-                             "phone"  : "../images/phone/key_bg_black_active.png"  };
+                             "phone"  : "../images/phone/key_bg_black_active.png",
+                                    "pre"    : "../images/phone-pre/key_bg_black_active.png"  };
 
 var imageGreyKey         = { "tablet" : "../images/tablet/key_bg_grey.png",
-                             "phone"  : "../images/phone/key_bg_grey.png"  };
+                             "phone"  : "../images/phone/key_bg_grey.png",
+                            "pre"    : "../images/phone-pre/key_bg_grey.png"  };
 
 var imageGreyKeyPressed  = { "tablet" : "../images/tablet/key_bg_grey_active.png",
-                             "phone"  : "../images/phone/key_bg_grey_active.png"  };
+                             "phone"  : "../images/phone/key_bg_grey_active.png",
+                                   "pre"    : "../images/phone-pre/key_bg_grey_active.png"  };
 
 var imagePopover          = { "tablet" : "../images/tablet/keyboard_popover.png",
                              "phone"  : "../images/phone/keyboard_popover.png"  };
@@ -201,16 +228,20 @@ var imagePopupBgRight    = { "tablet" : "../images/tablet/popup-bg-right.png",
                              "phone"  : "../images/phone/popup-bg-right.png"  };
 
 var imageShiftKey        = { "tablet" : "../images/tablet/key_bg_shift_on.png",
-                             "phone"  : "../images/phone/key_bg_shift_on.png"  };
+                             "phone"  : "../images/phone/key_bg_shift_on.png",
+                             "pre"    : "../images/phone-pre/key_bg_shift_on.png"  };
 
 var imageShiftKeyPressed = { "tablet" : "../images/tablet/key_bg_shift_on_active.png",
-                             "phone"  : "../images/phone/key_bg_shift_on_active.png"  };
+                             "phone"  : "../images/phone/key_bg_shift_on_active.png",
+                                    "pre"    : "../images/phone-pre/key_bg_shift_on_active.png"  };
 
 var imageShiftLockKey    = { "tablet" : "../images/tablet/key_bg_shift.png",
-                             "phone"  : "../images/phone/key_bg_shift.png"  };
+                             "phone"  : "../images/phone/key_bg_shift.png",
+                                 "pre"    : "../images/phone-pre/key_bg_shift.png"  };
 
 var imageShiftLockKeyPressed    = { "tablet" : "../images/tablet/key_bg_shift_active.png",
-                                    "phone"  : "../images/phone/key_bg_shift_active.png"  };
+                                    "phone"  : "../images/phone/key_bg_shift_active.png",
+                                        "pre"    : "../images/phone-pre/key_bg_shift_active.png"  };
 
 var top_margin = 0.5;  // gu - golden keyboardTopPading is 4/5/5/6px for XS/S/M/L
 var bottom_margin = 0; // gu

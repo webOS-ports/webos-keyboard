@@ -18,6 +18,7 @@
 
 import QtQuick 2.0
 import LunaNext.Common 0.1
+import keys 1.0
 
 Rectangle {
 
@@ -27,7 +28,8 @@ Rectangle {
 
     Rectangle {
         anchors.fill: parent
-        color: "#f1f1f1"
+        // Dark under the Pre layouts, to sit with their charcoal deck.
+        color: UI.preStyle ? "#2b3034" : "#f1f1f1"
     }
 
     /*!
@@ -79,7 +81,7 @@ Rectangle {
                     anchors.verticalCenter: parent.verticalCenter
                     font.pixelSize: Units.gu(2);
                     font.family: "Prelude"
-                    color: "#999999"
+                    color: UI.preStyle ? "#d8dde0" : "#999999"
                     font.bold: false
                     text: word;
                 }
@@ -111,7 +113,7 @@ Rectangle {
             name: "SELECTED"
             PropertyChanges {
                 target: wordRibbonCanvas
-                color: "#e4e4e4"
+                color: UI.preStyle ? "#3a4146" : "#e4e4e4"
             }
         }
     ]
@@ -133,7 +135,7 @@ Rectangle {
 
         Rectangle {
             anchors.fill: parent
-            color: emojiButton.checked ? "#d4d4d4" : "transparent"
+            color: emojiButton.checked ? (UI.preStyle ? "#3a4146" : "#d4d4d4") : "transparent"
         }
 
         Rectangle {
@@ -143,7 +145,7 @@ Rectangle {
             anchors.top: parent.top
             anchors.bottom: parent.bottom
             width: 1
-            color: "#d0d0d0"
+            color: UI.preStyle ? "#454c51" : "#d0d0d0"
         }
 
         Text {

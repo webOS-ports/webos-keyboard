@@ -29,6 +29,7 @@ QtObject {
     property bool extendedKeysShown: false
     property bool isShiftKeyPressed: false
     property string currentShiftState: "NORMAL"  // can be "NORMAL", "SHIFTED" or "CAPSLOCK"
+    property string currentAltState: "NORMAL"    // the orange key: "NORMAL", "ALT" (next key) or "ALTLOCK"
     property string currentSymbolState: "CHARACTER" // can be "CHARACTER" or "SYMBOL"
     property string currentAlternativeLayout: maliit_input_method.keyboardLayout === "LuneOS" ? "" : maliit_input_method.keyboardLayout
 
@@ -43,6 +44,22 @@ QtObject {
 
     // internal helper
     property string formFactor: Settings.tabletUi ? "tablet" : "phone";
+
+    /*!
+     * Which Pre layout is showing: "orange", "white", or "" for none.
+     * KeyboardContainer sets it from the layout file it actually loaded, so a
+     * Pre layout picked for a language or form factor that has none - which
+     * falls back to that language's stock layout - does not get the Pre look.
+     */
+    property string preVariant: ""
+    //! The Palm Pre look: glossy black caps, bold white capitals, a dark candidate bar.
+    readonly property bool preStyle: preVariant !== "" && formFactor === "phone"
+    //! Key into key_constants.js's per-style tables.
+    readonly property string styleKey: preStyle ? "pre" : formFactor
+    //! Directory under images/ the keyboard's own artwork comes from.
+    readonly property string imageDir: preStyle ? "phone-pre" : formFactor
+    //! Colour of a key's printed alternate, the orange key and the Sym page's digits.
+    readonly property color preAccentColor: DesignConstants.preAccentColor[preVariant === "white" ? "white" : "orange"]
 
     // UI design values (taken from key_constants.js)
     property real keyMargins: DesignConstants.keyMargins;
@@ -69,10 +86,20 @@ QtObject {
     }
     readonly property bool __tablet: formFactor === "tablet"
 
+    /* The Pre layouts print a big capital with its alternate beside it, so
+       their glyph is capped by the key's width as well: the keyboard sizes
+       only make keys taller, and scaled by height alone the larger sizes ran
+       the pair off the sides of the key. */
+    function __preFitted(px) {
+        return Math.min(__scaled(px), keyWidth * DesignConstants.preGlyphWidthRatio);
+    }
+
     property real charFontPx: __tablet ? __capped(DesignConstants.tabletCharFontCap)
-                                       : __scaled(DesignConstants.phoneCharFontPx);
+                                       : preStyle ? __preFitted(DesignConstants.preCharFontPx)
+                                                  : __scaled(DesignConstants.phoneCharFontPx);
     property real dualFontPx: __tablet ? __capped(DesignConstants.tabletDualFontCap)
-                                       : __scaled(DesignConstants.phoneDualFontPx);
+                                       : preStyle ? __preFitted(DesignConstants.preDualFontPx)
+                                                  : __scaled(DesignConstants.phoneDualFontPx);
     property real labelFontPx: __tablet ? Math.min(dualFontPx, Units.gu(DesignConstants.tabletLabelFontCap))
                                         : __scaled(DesignConstants.phoneLabelFontPx);
     property real elipsisFontPx: __tablet ? Units.gu(DesignConstants.tabletElipsisFontCap)
@@ -127,9 +154,9 @@ QtObject {
         return glyphFontPx(text, true);
     }
 
-    property color fontStyleColor: DesignConstants.fontStyleColor[formFactor];
-    property color annotationStyleColor: DesignConstants.annotationStyleColor[formFactor];
-    property color actionStyleColor: DesignConstants.actionStyleColor[formFactor];
+    property color fontStyleColor: DesignConstants.fontStyleColor[styleKey];
+    property color annotationStyleColor: DesignConstants.annotationStyleColor[styleKey];
+    property color actionStyleColor: DesignConstants.actionStyleColor[styleKey];
 
     /*! The second draw is skipped when the two colours are the same. */
     function glyphStyle(front, back) {
@@ -140,18 +167,18 @@ QtObject {
     property string thumbFontSize: DesignConstants.thumbFontSize;
     property string thumbAnnotationFontSize: DesignConstants.thumbAnnotationFontSize;
     property string fontFamily: DesignConstants.fontFamily;
-    property color fontColor: DesignConstants.fontColor[formFactor];
-    property bool fontBold: DesignConstants.fontBold[formFactor];
+    property color fontColor: DesignConstants.fontColor[styleKey];
+    property bool fontBold: DesignConstants.fontBold[styleKey];
     property bool fontBoldAction: DesignConstants.fontBoldAction;
 
     property string annotationFontSize: DesignConstants.annotationFontSize[formFactor];
     property real annotationMargins: DesignConstants.annotationMargins;
-    property color annotationFontColor: DesignConstants.annotationFontColor[formFactor];
+    property color annotationFontColor: DesignConstants.annotationFontColor[styleKey];
 
     property color magnifierFontColor: DesignConstants.magnifierFontColor[formFactor];
     property color extendedHighLightColor: DesignConstants.extendedHighLightColor[formFactor];
     property color extendedFontColor: DesignConstants.extendedFontColor[formFactor];
-    property color greyColor: DesignConstants.greyColor[formFactor];
+    property color greyColor: DesignConstants.greyColor[styleKey];
 
     /* magnifier */
     property real magnifierHorizontalPadding: DesignConstants.magnifierHorizontalPadding;
@@ -167,12 +194,12 @@ QtObject {
     property string popoverFontSize: DesignConstants.popoverFontSize[formFactor];
     property string popoverFontSizeLong: DesignConstants.popoverFontSizeLong[formFactor];
 
-    property string imageWhiteKey: DesignConstants.imageWhiteKey[formFactor];
-    property string imageWhiteKeyPressed: DesignConstants.imageWhiteKeyPressed[formFactor];
-    property string imageBlackKey: DesignConstants.imageBlackKey[formFactor];
-    property string imageBlackKeyPressed: DesignConstants.imageBlackKeyPressed[formFactor];
-    property string imageGreyKey: DesignConstants.imageGreyKey[formFactor];
-    property string imageGreyKeyPressed: DesignConstants.imageGreyKeyPressed[formFactor];
+    property string imageWhiteKey: DesignConstants.imageWhiteKey[styleKey];
+    property string imageWhiteKeyPressed: DesignConstants.imageWhiteKeyPressed[styleKey];
+    property string imageBlackKey: DesignConstants.imageBlackKey[styleKey];
+    property string imageBlackKeyPressed: DesignConstants.imageBlackKeyPressed[styleKey];
+    property string imageGreyKey: DesignConstants.imageGreyKey[styleKey];
+    property string imageGreyKeyPressed: DesignConstants.imageGreyKeyPressed[styleKey];
     property string imagePopover: DesignConstants.imagePopover[formFactor];
     property string imagePopupKey: DesignConstants.imagePopupKey[formFactor];
     property string imagePopupKeyPressed: DesignConstants.imagePopupKeyPressed[formFactor];
@@ -182,10 +209,10 @@ QtObject {
     property string imagePopupBgCaret: DesignConstants.imagePopupBgCaret[formFactor];
     property string imagePopupBgRight: DesignConstants.imagePopupBgRight[formFactor];
 
-    property string imageShiftKey: DesignConstants.imageShiftKey[formFactor];
-    property string imageShiftKeyPressed: DesignConstants.imageShiftKeyPressed[formFactor];
-    property string imageShiftLockKey: DesignConstants.imageShiftLockKey[formFactor];
-    property string imageShiftLockKeyPressed: DesignConstants.imageShiftLockKeyPressed[formFactor];
+    property string imageShiftKey: DesignConstants.imageShiftKey[styleKey];
+    property string imageShiftKeyPressed: DesignConstants.imageShiftKeyPressed[styleKey];
+    property string imageShiftLockKey: DesignConstants.imageShiftLockKey[styleKey];
+    property string imageShiftLockKeyPressed: DesignConstants.imageShiftLockKeyPressed[styleKey];
     property string imageSpaceKey: formFactor === "tablet" ? imageWhiteKey : imageBlackKey;
     property string imageSpaceKeyPressed: formFactor === "tablet" ? imageWhiteKeyPressed : imageBlackKeyPressed;
 
