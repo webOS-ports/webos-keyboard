@@ -205,6 +205,11 @@ Q_SIGNALS:
     void keysCollapsedChanged();
 
 private:
+    //! How many suggestions the shell is given for a misspelled word.
+    static constexpr int kMaxSpellingSuggestions = 4;
+
+    void updateSpellingSuggestions(const QString &text, int position);
+
     Q_SLOT void onAutoCorrectSettingChanged();
     Q_SLOT void onEnabledLanguageSettingsChanged();
     Q_SLOT void updateAutoCaps();

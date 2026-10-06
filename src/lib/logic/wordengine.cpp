@@ -217,6 +217,25 @@ void WordEngine::setSpellcheckerEnabled(bool enabled)
         Q_EMIT enabledChanged(isEnabled());
 }
 
+bool WordEngine::isMisspelled(const QString &word)
+{
+    Q_D(WordEngine);
+
+    // The spell checker being off is the setting saying nothing is to be marked
+    // wrong, not a reason to mark everything.
+    return d->use_spell_checker && d->languagePlugin && !d->languagePlugin->spell(word);
+}
+
+QStringList WordEngine::spellingSuggestions(const QString &word, int limit)
+{
+    Q_D(WordEngine);
+
+    if (!d->use_spell_checker || !d->languagePlugin)
+        return QStringList();
+
+    return d->languagePlugin->spellCheckerSuggest(word, limit);
+}
+
 void WordEngine::onWordCandidateSelected(QString word)
 {
     Q_D(WordEngine);

@@ -43,6 +43,7 @@
 #include "keyboardlogging.h"
 
 #include <QTimer>
+#include <algorithm>
 
 
 #include "view/setup.h"
@@ -1206,7 +1207,72 @@ void InputMethod::update()
         d->editor.text()->setSurroundingOffset(position);
     }
 
+    updateSpellingSuggestions(ok ? text : QString(), ok ? position : -1);
+
     updateAutoCaps();
+}
+
+namespace {
+
+// What counts as part of a word when finding the one at the caret. The input
+// method service finds the same word with the same rule, to apply a suggestion
+// to it, and checks that it agrees before it does.
+bool isWordCharacter(const QString &text, int index)
+{
+    const QChar c = text.at(index);
+
+    if (c.isLetter())
+        return true;
+
+    // An apostrophe inside a word - don't, it's - and not one that quotes it.
+    return (c == QLatin1Char('\'') || c == QChar(0x2019))
+            && index > 0 && index + 1 < text.length()
+            && text.at(index - 1).isLetter() && text.at(index + 1).isLetter();
+}
+
+} // namespace
+
+//! \brief Tells the host which word the caret is in, if it is misspelled.
+//!
+//! Where the user taps a word, the shell offers what could replace it, as
+//! legacy's spelling widget did. Nothing is said while a word is being typed -
+//! the candidate bar is for that - nor in a field with no word engine, which is
+//! also what hidden text and a field that opts out of suggestions are.
+void InputMethod::updateSpellingSuggestions(const QString &text, int position)
+{
+    Q_D(InputMethod);
+
+    QString misspelled;
+    QStringList suggestions;
+
+    const bool wanted = position >= 0 && position <= text.length()
+        && d->panel.wordEngine()
+        && d->contentType == FreeTextContentType
+        && d->editor.text()->preedit().isEmpty();
+
+    if (wanted) {
+        int start = position;
+        int end = position;
+
+        while (start > 0 && isWordCharacter(text, start - 1))
+            --start;
+        while (end < text.length() && isWordCharacter(text, end))
+            ++end;
+
+        const QString word = text.mid(start, end - start);
+
+        // Not a number, a code or a single letter: nothing to look up.
+        const bool lookup = word.length() >= 2
+            && std::none_of(word.constBegin(), word.constEnd(),
+                            [](const QChar &c) { return c.isDigit(); });
+
+        if (lookup && d->editor.wordEngine()->isMisspelled(word)) {
+            misspelled = word;
+            suggestions = d->editor.wordEngine()->spellingSuggestions(word, kMaxSpellingSuggestions);
+        }
+    }
+
+    inputMethodHost()->setSpellingSuggestions(misspelled, suggestions);
 }
 
 void InputMethod::updateWordEngine()

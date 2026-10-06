@@ -60,6 +60,8 @@ public:
 
     void addToUserDictionary(const QString &word) override;
     void setSpellcheckerEnabled(bool enabled) override;
+    bool isMisspelled(const QString &word) override;
+    QStringList spellingSuggestions(const QString &word, int limit) override;
     //! \reimp_end
 
     Q_SLOT void onWordCandidateSelected(QString word);

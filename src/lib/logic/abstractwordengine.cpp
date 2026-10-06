@@ -159,6 +159,19 @@ void AbstractWordEngine::addToUserDictionary(const QString &word)
     Q_UNUSED(word);
 }
 
+bool AbstractWordEngine::isMisspelled(const QString &word)
+{
+    Q_UNUSED(word);
+    return false;
+}
+
+QStringList AbstractWordEngine::spellingSuggestions(const QString &word, int limit)
+{
+    Q_UNUSED(word);
+    Q_UNUSED(limit);
+    return QStringList();
+}
+
 //!
 void AbstractWordEngine::setWordPredictionEnabled(bool on)
 {

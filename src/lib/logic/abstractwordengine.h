@@ -71,6 +71,12 @@ public:
 
     virtual void addToUserDictionary(const QString &word);
 
+    //! \brief Whether \a word is spelled wrongly. False when nothing can say.
+    virtual bool isMisspelled(const QString &word);
+
+    //! \brief What could replace \a word, best first, at most \a limit of them.
+    virtual QStringList spellingSuggestions(const QString &word, int limit);
+
     virtual AbstractLanguageFeatures* languageFeature() = 0;
 
 private:
