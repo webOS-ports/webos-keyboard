@@ -716,8 +716,35 @@ bool AbstractTextEditor::atAutoCapsPosition() const
     if (not d->word_engine or not d->word_engine->languageFeature())
         return false;
 
-    return d->word_engine->languageFeature()->activateAutoCaps(
-        d->text->surroundingLeft() + d->text->preedit());
+    /*
+     * Asked when a letter arrives from a physical keyboard, about the text it
+     * will follow - unlike the language feature's own activateAutoCaps(), which
+     * the on-screen space key asks *before* the space is added. Handed the text
+     * as it stands here, that rule never fired: an empty field is "no", and
+     * "Hello. " ends in a space, not a full stop. Legacy capitalised both.
+     *
+     * So: the start of the field, or a new line, is the start of a sentence; a
+     * sentence break followed by whitespace is one by the language's own rule
+     * on the text up to the break; and a letter typed straight after a full stop
+     * with no space - "e.g.", an address - is not.
+     */
+    const QString left(d->text->surroundingLeft() + d->text->preedit());
+
+    int end = left.length();
+    bool newLine = false;
+    while (end > 0 and left.at(end - 1).isSpace()) {
+        if (left.at(end - 1) == QLatin1Char('\n') or left.at(end - 1) == QChar::ParagraphSeparator)
+            newLine = true;
+        --end;
+    }
+
+    if (end == 0 or newLine)
+        return true;
+
+    if (end == left.length())
+        return false;
+
+    return d->word_engine->languageFeature()->activateAutoCaps(left.left(end));
 }
 
 void AbstractTextEditor::setAutoCapsEnabled(bool enabled)
