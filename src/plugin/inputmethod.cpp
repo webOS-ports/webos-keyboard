@@ -423,6 +423,7 @@ void InputMethod::reset()
     Q_D(InputMethod);
 
     d->dropPreedit();
+    d->autocapUndoLetter.clear();
 }
 
 void InputMethod::setPreedit(const QString &preedit,
@@ -559,6 +560,8 @@ void InputMethod::processKeyEvent(QEvent::Type keyType, Qt::Key keyCode,
 {
     Q_D(InputMethod);
 
+    // Set on the release of a letter auto-caps capitalised; see autocapUndoLetter.
+    QString autocapLetter;
     Key key;
 
     // Devices with a physical QWERTY print a second and sometimes a third
@@ -670,13 +673,20 @@ void InputMethod::processKeyEvent(QEvent::Type keyType, Qt::Key keyCode,
             // auto-caps asked for has nothing to spend.
             QString label(text);
             const bool shiftLatched = d->hardwareKeyboard.shiftLatchActive();
-            if (shiftLatched or d->editor.atAutoCapsPosition()) {
+            const bool atAutoCaps = d->editor.atAutoCapsPosition();
+            if (shiftLatched or atAutoCaps) {
                 label = text.toUpper();
                 if (shiftLatched and keyType == QEvent::KeyRelease)
                     d->hardwareKeyboard.consumeShiftLatch();
             }
 
             key.setLabel(label);
+
+            // A capital nobody asked for - not Shift, not a latch, only auto-caps -
+            // can be taken back by the backspace that follows it; see below.
+            if (keyType == QEvent::KeyRelease)
+                autocapLetter = (atAutoCaps and not shiftLatched and label != text)
+                                ? text : QString();
         } else {
             key.setAction(Key::NumActions);
         }
@@ -688,8 +698,10 @@ void InputMethod::processKeyEvent(QEvent::Type keyType, Qt::Key keyCode,
         // Commit first -- otherwise the application moves its cursor away from
         // a preedit the editor still holds, and every later keystroke is
         // applied against a stale position.
-        if (keyType == QEvent::KeyPress)
+        if (keyType == QEvent::KeyPress) {
             d->editor.commit();
+            d->autocapUndoLetter.clear();
+        }
 
         // effectiveModifiers, not modifiers: on a device whose Alt key the
         // profile owns, the Alt bit means "alternate character" and was spent
@@ -727,7 +739,14 @@ void InputMethod::processKeyEvent(QEvent::Type keyType, Qt::Key keyCode,
     // an Alt level printed on its keys.
     const bool repeat_is_the_kernels = d->panel.hardware();
 
+    const bool plainBackspace = key.action() == Key::ActionBackspace;
+
     if (keyType == QEvent::KeyPress) {
+        // Anything but a backspace, or a backspace held down until it repeats,
+        // and the capital stays: the chance to take it back has passed.
+        if (not plainBackspace or nativeScanCode == d->heldScanCode)
+            d->autocapUndoLetter.clear();
+
         if (not repeat_is_the_kernels) {
             d->editor.onKeyPressed(key);
         } else if (nativeScanCode == d->heldScanCode) {
@@ -743,6 +762,20 @@ void InputMethod::processKeyEvent(QEvent::Type keyType, Qt::Key keyCode,
 
         d->editor.onKeyReleased(key);
         d->heldScanCode = 0;
+
+        if (plainBackspace and not d->autocapUndoLetter.isEmpty()) {
+            // The backspace has just removed the capital; put the letter back as
+            // it was typed. Straight into the editor, so auto-caps - which still
+            // holds at this position - does not capitalise it a second time.
+            Key letter;
+            letter.setAction(Key::ActionInsert);
+            letter.setLabel(d->autocapUndoLetter);
+            d->autocapUndoLetter.clear();
+            d->editor.onKeyPressed(letter);
+            d->editor.onKeyReleased(letter);
+        } else {
+            d->autocapUndoLetter = autocapLetter;
+        }
     }
 }
 
@@ -847,6 +880,7 @@ void InputMethod::handleFocusChange(bool focusIn)
         d->autoCorrectedWord.clear();
         d->autoCorrectedOriginal.clear();
         d->autoCorrectedLeft.clear();
+        d->autocapUndoLetter.clear();
         d->panel.setFocused(true);
         Q_EMIT keysCollapsedChanged();
 
