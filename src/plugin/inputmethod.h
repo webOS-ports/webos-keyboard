@@ -208,6 +208,10 @@ private:
     //! How many suggestions the shell is given for a misspelled word.
     static constexpr int kMaxSpellingSuggestions = 4;
 
+    //! How much of the text before an autocorrected word is kept to recognise it
+    //! by when it is tapped later.
+    static constexpr int kAutoCorrectedContext = 40;
+
     void updateSpellingSuggestions(const QString &text, int position);
 
     Q_SLOT void onAutoCorrectSettingChanged();

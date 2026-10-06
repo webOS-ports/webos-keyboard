@@ -147,6 +147,12 @@ public:
     Q_SIGNAL void keyboardClosed();
     Q_SIGNAL void wordCandidatesChanged(const WordCandidateList &word_candidates);
     Q_SIGNAL void autoCapsActivated();
+
+    //! Emitted when the space key replaced the word being typed with the one the
+    //! word engine thought was meant. \a left is the text before the word.
+    Q_SIGNAL void autoCorrected(const QString &original,
+                                const QString &corrected,
+                                const QString &left);
     Q_SIGNAL void leftLayoutSelected();
     Q_SIGNAL void rightLayoutSelected();
 

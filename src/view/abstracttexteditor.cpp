@@ -475,6 +475,11 @@ void AbstractTextEditor::onKeyReleased(const Key &key)
         const bool replace_preedit = d->auto_correct_enabled && not d->text->primaryCandidate().isEmpty();
 
         if (replace_preedit) {
+            if (d->text->preedit() != d->text->primaryCandidate()) {
+                Q_EMIT autoCorrected(d->text->preedit(), d->text->primaryCandidate(),
+                                     d->text->surroundingLeft());
+            }
+
             const QString &appendix = d->word_engine->languageFeature()->appendixForReplacedPreedit(d->text->preedit());
             d->text->setPreedit(d->text->primaryCandidate());
             d->text->appendToPreedit(appendix);

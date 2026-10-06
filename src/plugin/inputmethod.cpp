@@ -116,6 +116,14 @@ InputMethod::InputMethod(MAbstractInputMethodHost *host)
     // FIXME: Reconnect feedback instance.
     Setup::connectAll(&d->event_handler, &d->editor);
     connect(&d->editor,  SIGNAL(autoCapsActivated()), this, SIGNAL(activateAutocaps()));
+    connect(&d->editor, &AbstractTextEditor::autoCorrected, this,
+            [this](const QString &original, const QString &corrected, const QString &left) {
+        Q_D(InputMethod);
+
+        d->autoCorrectedOriginal = original;
+        d->autoCorrectedWord = corrected;
+        d->autoCorrectedLeft = left.right(kAutoCorrectedContext);
+    });
 
     connect(this, SIGNAL(contentTypeChanged(TextContentType)), this, SLOT(setContentType(TextContentType)));
 	connect(this, SIGNAL(keyboardSizeChanged(QString)), this, SLOT(setKeyboardSize(QString)));
@@ -835,7 +843,10 @@ void InputMethod::handleFocusChange(bool focusIn)
 
     if (focusIn) {
         // A different field is a fresh start; what the user dismissed belonged
-        // to the one they left.
+        // to the one they left, and so did the last word it autocorrected.
+        d->autoCorrectedWord.clear();
+        d->autoCorrectedOriginal.clear();
+        d->autoCorrectedLeft.clear();
         d->panel.setFocused(true);
         Q_EMIT keysCollapsedChanged();
 
@@ -1266,7 +1277,16 @@ void InputMethod::updateSpellingSuggestions(const QString &text, int position)
             && std::none_of(word.constBegin(), word.constEnd(),
                             [](const QChar &c) { return c.isDigit(); });
 
-        if (lookup && d->editor.wordEngine()->isMisspelled(word)) {
+        // The word the space key put in place of another, still where it was
+        // put: what a tap on it offers is the word that was typed.
+        const bool autoCorrected = !d->autoCorrectedWord.isEmpty()
+            && word == d->autoCorrectedWord
+            && text.left(start).endsWith(d->autoCorrectedLeft);
+
+        if (autoCorrected) {
+            misspelled = word;
+            suggestions = QStringList(d->autoCorrectedOriginal);
+        } else if (lookup && d->editor.wordEngine()->isMisspelled(word)) {
             misspelled = word;
             suggestions = d->editor.wordEngine()->spellingSuggestions(word, kMaxSpellingSuggestions);
         }
