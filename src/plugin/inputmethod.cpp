@@ -1310,6 +1310,29 @@ void InputMethod::updateSpellingSuggestions(const QString &text, int position)
         }
     }
 
+    // Said once per word, so the journal shows why a tapped word did or did not
+    // get suggestions without a line for every update.
+    {
+        int start = position;
+        int end = position;
+        while (position >= 0 && start > 0 && start <= text.length()
+               && isWordCharacter(text, start - 1))
+            --start;
+        while (position >= 0 && end < text.length() && isWordCharacter(text, end))
+            ++end;
+        const QString word = position >= 0 ? text.mid(start, end - start) : QString();
+
+        if (word != d->lastLoggedSpellingWord) {
+            d->lastLoggedSpellingWord = word;
+            qCInfo(lcKeys, "spelling: word='%s' wanted=%d (pos=%d len=%d wordEngine=%d "
+                           "freeText=%d preedit=%d) misspelled='%s' suggestions=%d learn=%d",
+                   qPrintable(word), int(wanted), position, int(text.length()),
+                   int(d->panel.wordEngine()), int(d->contentType == FreeTextContentType),
+                   int(d->editor.text()->preedit().length()), qPrintable(misspelled),
+                   int(suggestions.size()), int(canLearn));
+        }
+    }
+
     inputMethodHost()->setSpellingSuggestions(misspelled, suggestions, canLearn);
 }
 

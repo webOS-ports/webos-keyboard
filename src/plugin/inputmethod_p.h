@@ -107,6 +107,8 @@ public:
     QString autoCorrectedOriginal;
     QString autoCorrectedWord;
     QString autoCorrectedLeft;
+    //! The last word updateSpellingSuggestions() logged, to log each word once.
+    QString lastLoggedSpellingWord;
 
     //! Hardware T9 multi-tap. A physical numeric keypad sends KEY_0..KEY_9,
     //! and in a text field those cycle through letters (2 -> a/b/c/2) in the
