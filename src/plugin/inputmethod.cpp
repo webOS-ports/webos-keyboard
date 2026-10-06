@@ -1111,6 +1111,18 @@ void InputMethod::update()
     if (!valid)
         newPredictionEnabled = true;
 
+    // A field that hides what is typed in it - a password, the key of a network,
+    // anything flagged sensitive - gets no suggestions, whatever else it says.
+    // The content type is not enough to go by: it is the purpose that decides it,
+    // and a hidden field can arrive with the purpose of an ordinary one and the
+    // hint alone to say otherwise. Letting the word engine see what is typed there
+    // would also be putting it on the candidate bar, in plain sight.
+    bool hiddenValid = false;
+    const bool hiddenText = inputMethodHost()->hiddenText(hiddenValid) && hiddenValid;
+
+    if (hiddenText)
+        newPredictionEnabled = false;
+
     if (d->panel.wordEngine() != newPredictionEnabled) {
         d->panel.setWordEngine(newPredictionEnabled);
         emitPredictionEnabled = true;
