@@ -900,6 +900,20 @@ void InputMethod::handleAppOrientationChanged(int angle)
     d->setLayoutOrientation(d->appsCurrentOrientation);
 }
 
+//! \brief Adds \a word to the user dictionary, from the shell's "+" beside it.
+void InputMethod::learnWord(const QString &word)
+{
+    Q_D(InputMethod);
+
+    if (word.isEmpty())
+        return;
+
+    d->editor.wordEngine()->addToUserDictionary(word);
+
+    // It is spelled correctly now, so what was reported for it no longer holds.
+    update();
+}
+
 void InputMethod::handleClientChange()
 {
     // Clients connect to Maliit on startup and disconnect at quit. This method is called
@@ -1255,6 +1269,7 @@ void InputMethod::updateSpellingSuggestions(const QString &text, int position)
 
     QString misspelled;
     QStringList suggestions;
+    bool canLearn = false;
 
     const bool wanted = position >= 0 && position <= text.length()
         && d->panel.wordEngine()
@@ -1289,10 +1304,13 @@ void InputMethod::updateSpellingSuggestions(const QString &text, int position)
         } else if (lookup && d->editor.wordEngine()->isMisspelled(word)) {
             misspelled = word;
             suggestions = d->editor.wordEngine()->spellingSuggestions(word, kMaxSpellingSuggestions);
+            // A misspelling can be taught to the dictionary; a word the keyboard
+            // itself put there above is not one the user mistyped.
+            canLearn = true;
         }
     }
 
-    inputMethodHost()->setSpellingSuggestions(misspelled, suggestions);
+    inputMethodHost()->setSpellingSuggestions(misspelled, suggestions, canLearn);
 }
 
 void InputMethod::updateWordEngine()

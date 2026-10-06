@@ -129,6 +129,7 @@ public:
     void handleFocusChange(bool focusIn) override;
     void handleAppOrientationChanged(int angle) override;
     void handleClientChange() override;
+    void learnWord(const QString &word) override;
     bool imExtensionEvent(MImExtensionEvent *event) override;
     void setKeyOverrides(const QMap<QString, QSharedPointer<MKeyOverride> > &overrides) override;
     //! \reimp_end
