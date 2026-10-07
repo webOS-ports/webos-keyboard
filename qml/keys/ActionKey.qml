@@ -58,7 +58,7 @@ CharKey {
         property color color;
 
         id: iconImage
-        source: Qt.resolvedUrl("../images/" + UI.formFactor + "/" + __icon + ".png")
+        source: Qt.resolvedUrl("../images/" + UI.imageDir + "/" + __icon + ".png")
         anchors.verticalCenter: parent.verticalCenter
         anchors.horizontalCenter: parent.horizontalCenter
         visible: (label == "")

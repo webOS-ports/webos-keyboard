@@ -44,6 +44,37 @@ Item {
         asynchronous: false
         source: UI.currentSymbolState === "CHARACTERS" ? internal.characterKeypadSource : internal.symbolKeypadSource
         onLoaded: UI.currentShiftState = "NORMAL"
+
+        // A layout picked in Text Assist need not exist for this language and
+        // form factor - Dvorak and Thumb are tablet layouts, the Pre ones phone
+        // layouts. Rather than leave no keyboard at all, fall back to the
+        // stock layout.
+        onStatusChanged: {
+            if (status === Loader.Error && UI.currentSymbolState === "CHARACTERS"
+                    && panel.currentAlternativeLayout !== "" && !internal.alternativeLayoutMissing) {
+                console.warn("No '" + panel.currentAlternativeLayout + "' layout here, using the stock one");
+                // Not from here: the error is reported while the source is
+                // still being assigned, and changing characterKeypadSource
+                // inside that is a binding loop that leaves no layout at all.
+                Qt.callLater(function() { internal.alternativeLayoutMissing = true; });
+            }
+        }
+    }
+
+    // A different layout or language is worth trying again.
+    onCurrentAlternativeLayoutChanged: internal.alternativeLayoutMissing = false
+    Connections {
+        target: maliit_input_method
+        function onActiveLanguageChanged() { internal.alternativeLayoutMissing = false; }
+    }
+
+    // The Pre look goes with the Pre layout files themselves, so a fallback
+    // from one does not keep it.
+    Binding {
+        target: UI
+        property: "preVariant"
+        value: internal.characterKeypadSource.indexOf("_preorange.qml") >= 0 ? "orange"
+             : internal.characterKeypadSource.indexOf("_prewhite.qml") >= 0 ? "white" : ""
     }
 
     MediaPlayer {
@@ -56,9 +87,10 @@ Item {
         id: internal
 
         property Item activeKeypad: characterKeypadLoader.item
+        property bool alternativeLayoutMissing: false
         property string characterKeypadSource: loadLayout(maliit_input_method.contentType,
                                                           maliit_input_method.activeLanguage,
-                                                          panel.currentAlternativeLayout)
+                                                          alternativeLayoutMissing ? "" : panel.currentAlternativeLayout)
         property string symbolKeypadSource: ""
 
         onCharacterKeypadSourceChanged: {
@@ -100,7 +132,9 @@ Item {
         /// Returns the relative path to the keyboard QML file for a given language for free text
         function freeTextLanguageKeyboard(language, alternativeLayout) {
             language = language .slice(0,2).toLowerCase();
-            alternativeLayout = alternativeLayout.toLowerCase()
+            // Layout names are what Text Assist shows - "Dvorak", "Pre (Orange)" -
+            // and file names take only their letters and digits: "_preorange".
+            alternativeLayout = alternativeLayout.toLowerCase().replace(/[^a-z0-9]/g, "")
 
             if (!languageIsSupported(language)) {
                 console.log("Language '"+language+"' not supported - using 'en' instead");

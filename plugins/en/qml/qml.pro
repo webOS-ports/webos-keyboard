@@ -16,5 +16,7 @@ OTHER_FILES += \
     Keyboard_en_tablet.qml \
 	Keyboard_en_tablet_thumb.qml \
 	Keyboard_en_tablet_dvorak.qml \
-    Keyboard_en_phone.qml
+    Keyboard_en_phone.qml \
+    Keyboard_en_phone_preorange.qml \
+    Keyboard_en_phone_prewhite.qml
 

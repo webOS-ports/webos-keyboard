@@ -166,7 +166,7 @@ Item {
                         id: background
 
                         anchors.fill: parent
-                        source: "images/"+UI.formFactor+"/keyboard-bg.png"
+                        source: "images/"+UI.imageDir+"/keyboard-bg.png"
                         fillMode: Image.TileHorizontally
                     }
 
@@ -175,7 +175,7 @@ Item {
                         width: parent.width
 
                         Image {
-                            source: "images/"+UI.formFactor+"/border_top.png"
+                            source: "images/"+UI.imageDir+"/border_top.png"
                             width: parent.width
                         }
                         Item {
@@ -211,7 +211,7 @@ Item {
                             height: Units.gu( UI.bottom_margin )
                         }
                         Image {
-                            source: "images/"+UI.formFactor+"/border_bottom.png"
+                            source: "images/"+UI.imageDir+"/border_bottom.png"
                             width: parent.width
                         }
                     }

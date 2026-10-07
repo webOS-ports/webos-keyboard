@@ -17,11 +17,13 @@ images.files = images/*.png
 
 images_phone.path = "$$LUNEOS_KEYBOARD_DATA_DIR/images/phone"
 images_phone.files = images/phone/*.png
+images_phone_pre.path = "$$LUNEOS_KEYBOARD_DATA_DIR/images/phone-pre"
+images_phone_pre.files = images/phone-pre/*.png
 
 images_tablet.path = "$$LUNEOS_KEYBOARD_DATA_DIR/images/tablet"
 images_tablet.files = images/tablet/*.png
 
-INSTALLS += qml qml_keys qml_languages images images_phone images_tablet
+INSTALLS += qml qml_keys qml_languages images images_phone images_phone_pre images_tablet
 
 # for QtCreator
 OTHER_FILES += \
@@ -37,6 +39,7 @@ OTHER_FILES += \
     emoji.js \
     keys/key_constants.js \
     keys/ActionKey.qml \
+    keys/AltKey.qml \
     keys/CharKey.qml \
     keys/BackspaceKey.qml \
     keys/ExtendedListSelector.qml \
