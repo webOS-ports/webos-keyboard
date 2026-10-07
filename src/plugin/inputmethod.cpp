@@ -43,6 +43,7 @@
 #include "keyboardlogging.h"
 
 #include <QTimer>
+#include <algorithm>
 
 
 #include "view/setup.h"
@@ -115,6 +116,14 @@ InputMethod::InputMethod(MAbstractInputMethodHost *host)
     // FIXME: Reconnect feedback instance.
     Setup::connectAll(&d->event_handler, &d->editor);
     connect(&d->editor,  SIGNAL(autoCapsActivated()), this, SIGNAL(activateAutocaps()));
+    connect(&d->editor, &AbstractTextEditor::autoCorrected, this,
+            [this](const QString &original, const QString &corrected, const QString &left) {
+        Q_D(InputMethod);
+
+        d->autoCorrectedOriginal = original;
+        d->autoCorrectedWord = corrected;
+        d->autoCorrectedLeft = left.right(kAutoCorrectedContext);
+    });
 
     connect(this, SIGNAL(contentTypeChanged(TextContentType)), this, SLOT(setContentType(TextContentType)));
 	connect(this, SIGNAL(keyboardSizeChanged(QString)), this, SLOT(setKeyboardSize(QString)));
@@ -414,6 +423,7 @@ void InputMethod::reset()
     Q_D(InputMethod);
 
     d->dropPreedit();
+    d->autocapUndoLetter.clear();
 }
 
 void InputMethod::setPreedit(const QString &preedit,
@@ -550,6 +560,8 @@ void InputMethod::processKeyEvent(QEvent::Type keyType, Qt::Key keyCode,
 {
     Q_D(InputMethod);
 
+    // Set on the release of a letter auto-caps capitalised; see autocapUndoLetter.
+    QString autocapLetter;
     Key key;
 
     // Devices with a physical QWERTY print a second and sometimes a third
@@ -661,13 +673,20 @@ void InputMethod::processKeyEvent(QEvent::Type keyType, Qt::Key keyCode,
             // auto-caps asked for has nothing to spend.
             QString label(text);
             const bool shiftLatched = d->hardwareKeyboard.shiftLatchActive();
-            if (shiftLatched or d->editor.atAutoCapsPosition()) {
+            const bool atAutoCaps = d->editor.atAutoCapsPosition();
+            if (shiftLatched or atAutoCaps) {
                 label = text.toUpper();
                 if (shiftLatched and keyType == QEvent::KeyRelease)
                     d->hardwareKeyboard.consumeShiftLatch();
             }
 
             key.setLabel(label);
+
+            // A capital nobody asked for - not Shift, not a latch, only auto-caps -
+            // can be taken back by the backspace that follows it; see below.
+            if (keyType == QEvent::KeyRelease)
+                autocapLetter = (atAutoCaps and not shiftLatched and label != text)
+                                ? text : QString();
         } else {
             key.setAction(Key::NumActions);
         }
@@ -679,8 +698,10 @@ void InputMethod::processKeyEvent(QEvent::Type keyType, Qt::Key keyCode,
         // Commit first -- otherwise the application moves its cursor away from
         // a preedit the editor still holds, and every later keystroke is
         // applied against a stale position.
-        if (keyType == QEvent::KeyPress)
+        if (keyType == QEvent::KeyPress) {
             d->editor.commit();
+            d->autocapUndoLetter.clear();
+        }
 
         // effectiveModifiers, not modifiers: on a device whose Alt key the
         // profile owns, the Alt bit means "alternate character" and was spent
@@ -718,7 +739,14 @@ void InputMethod::processKeyEvent(QEvent::Type keyType, Qt::Key keyCode,
     // an Alt level printed on its keys.
     const bool repeat_is_the_kernels = d->panel.hardware();
 
+    const bool plainBackspace = key.action() == Key::ActionBackspace;
+
     if (keyType == QEvent::KeyPress) {
+        // Anything but a backspace, or a backspace held down until it repeats,
+        // and the capital stays: the chance to take it back has passed.
+        if (not plainBackspace or nativeScanCode == d->heldScanCode)
+            d->autocapUndoLetter.clear();
+
         if (not repeat_is_the_kernels) {
             d->editor.onKeyPressed(key);
         } else if (nativeScanCode == d->heldScanCode) {
@@ -734,6 +762,20 @@ void InputMethod::processKeyEvent(QEvent::Type keyType, Qt::Key keyCode,
 
         d->editor.onKeyReleased(key);
         d->heldScanCode = 0;
+
+        if (plainBackspace and not d->autocapUndoLetter.isEmpty()) {
+            // The backspace has just removed the capital; put the letter back as
+            // it was typed. Straight into the editor, so auto-caps - which still
+            // holds at this position - does not capitalise it a second time.
+            Key letter;
+            letter.setAction(Key::ActionInsert);
+            letter.setLabel(d->autocapUndoLetter);
+            d->autocapUndoLetter.clear();
+            d->editor.onKeyPressed(letter);
+            d->editor.onKeyReleased(letter);
+        } else {
+            d->autocapUndoLetter = autocapLetter;
+        }
     }
 }
 
@@ -834,7 +876,11 @@ void InputMethod::handleFocusChange(bool focusIn)
 
     if (focusIn) {
         // A different field is a fresh start; what the user dismissed belonged
-        // to the one they left.
+        // to the one they left, and so did the last word it autocorrected.
+        d->autoCorrectedWord.clear();
+        d->autoCorrectedOriginal.clear();
+        d->autoCorrectedLeft.clear();
+        d->autocapUndoLetter.clear();
         d->panel.setFocused(true);
         Q_EMIT keysCollapsedChanged();
 
@@ -886,6 +932,20 @@ void InputMethod::handleAppOrientationChanged(int angle)
 
     d->appsCurrentOrientation = rotationAngleToScreenOrientation(angle);
     d->setLayoutOrientation(d->appsCurrentOrientation);
+}
+
+//! \brief Adds \a word to the user dictionary, from the shell's "+" beside it.
+void InputMethod::learnWord(const QString &word)
+{
+    Q_D(InputMethod);
+
+    if (word.isEmpty())
+        return;
+
+    d->editor.wordEngine()->addToUserDictionary(word);
+
+    // It is spelled correctly now, so what was reported for it no longer holds.
+    update();
 }
 
 void InputMethod::handleClientChange()
@@ -1111,6 +1171,18 @@ void InputMethod::update()
     if (!valid)
         newPredictionEnabled = true;
 
+    // A field that hides what is typed in it - a password, the key of a network,
+    // anything flagged sensitive - gets no suggestions, whatever else it says.
+    // The content type is not enough to go by: it is the purpose that decides it,
+    // and a hidden field can arrive with the purpose of an ordinary one and the
+    // hint alone to say otherwise. Letting the word engine see what is typed there
+    // would also be putting it on the candidate bar, in plain sight.
+    bool hiddenValid = false;
+    const bool hiddenText = inputMethodHost()->hiddenText(hiddenValid) && hiddenValid;
+
+    if (hiddenText)
+        newPredictionEnabled = false;
+
     if (d->panel.wordEngine() != newPredictionEnabled) {
         d->panel.setWordEngine(newPredictionEnabled);
         emitPredictionEnabled = true;
@@ -1194,7 +1266,108 @@ void InputMethod::update()
         d->editor.text()->setSurroundingOffset(position);
     }
 
+    updateSpellingSuggestions(ok ? text : QString(), ok ? position : -1);
+
     updateAutoCaps();
+}
+
+namespace {
+
+// What counts as part of a word when finding the one at the caret. The input
+// method service finds the same word with the same rule, to apply a suggestion
+// to it, and checks that it agrees before it does.
+bool isWordCharacter(const QString &text, int index)
+{
+    const QChar c = text.at(index);
+
+    if (c.isLetter())
+        return true;
+
+    // An apostrophe inside a word - don't, it's - and not one that quotes it.
+    return (c == QLatin1Char('\'') || c == QChar(0x2019))
+            && index > 0 && index + 1 < text.length()
+            && text.at(index - 1).isLetter() && text.at(index + 1).isLetter();
+}
+
+} // namespace
+
+//! \brief Tells the host which word the caret is in, if it is misspelled.
+//!
+//! Where the user taps a word, the shell offers what could replace it, as
+//! legacy's spelling widget did. Nothing is said while a word is being typed -
+//! the candidate bar is for that - nor in a field with no word engine, which is
+//! also what hidden text and a field that opts out of suggestions are.
+void InputMethod::updateSpellingSuggestions(const QString &text, int position)
+{
+    Q_D(InputMethod);
+
+    QString misspelled;
+    QStringList suggestions;
+    bool canLearn = false;
+
+    const bool wanted = position >= 0 && position <= text.length()
+        && d->panel.wordEngine()
+        && d->contentType == FreeTextContentType
+        && d->editor.text()->preedit().isEmpty();
+
+    if (wanted) {
+        int start = position;
+        int end = position;
+
+        while (start > 0 && isWordCharacter(text, start - 1))
+            --start;
+        while (end < text.length() && isWordCharacter(text, end))
+            ++end;
+
+        const QString word = text.mid(start, end - start);
+
+        // Not a number, a code or a single letter: nothing to look up.
+        const bool lookup = word.length() >= 2
+            && std::none_of(word.constBegin(), word.constEnd(),
+                            [](const QChar &c) { return c.isDigit(); });
+
+        // The word the space key put in place of another, still where it was
+        // put: what a tap on it offers is the word that was typed.
+        const bool autoCorrected = !d->autoCorrectedWord.isEmpty()
+            && word == d->autoCorrectedWord
+            && text.left(start).endsWith(d->autoCorrectedLeft);
+
+        if (autoCorrected) {
+            misspelled = word;
+            suggestions = QStringList(d->autoCorrectedOriginal);
+        } else if (lookup && d->editor.wordEngine()->isMisspelled(word)) {
+            misspelled = word;
+            suggestions = d->editor.wordEngine()->spellingSuggestions(word, kMaxSpellingSuggestions);
+            // A misspelling can be taught to the dictionary; a word the keyboard
+            // itself put there above is not one the user mistyped.
+            canLearn = true;
+        }
+    }
+
+    // Said once per word, so the journal shows why a tapped word did or did not
+    // get suggestions without a line for every update.
+    {
+        int start = position;
+        int end = position;
+        while (position >= 0 && start > 0 && start <= text.length()
+               && isWordCharacter(text, start - 1))
+            --start;
+        while (position >= 0 && end < text.length() && isWordCharacter(text, end))
+            ++end;
+        const QString word = position >= 0 ? text.mid(start, end - start) : QString();
+
+        if (word != d->lastLoggedSpellingWord) {
+            d->lastLoggedSpellingWord = word;
+            qCInfo(lcKeys, "spelling: word='%s' wanted=%d (pos=%d len=%d wordEngine=%d "
+                           "freeText=%d preedit=%d) misspelled='%s' suggestions=%d learn=%d",
+                   qPrintable(word), int(wanted), position, int(text.length()),
+                   int(d->panel.wordEngine()), int(d->contentType == FreeTextContentType),
+                   int(d->editor.text()->preedit().length()), qPrintable(misspelled),
+                   int(suggestions.size()), int(canLearn));
+        }
+    }
+
+    inputMethodHost()->setSpellingSuggestions(misspelled, suggestions, canLearn);
 }
 
 void InputMethod::updateWordEngine()

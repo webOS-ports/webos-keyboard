@@ -129,6 +129,7 @@ public:
     void handleFocusChange(bool focusIn) override;
     void handleAppOrientationChanged(int angle) override;
     void handleClientChange() override;
+    void learnWord(const QString &word) override;
     bool imExtensionEvent(MImExtensionEvent *event) override;
     void setKeyOverrides(const QMap<QString, QSharedPointer<MKeyOverride> > &overrides) override;
     //! \reimp_end
@@ -205,6 +206,15 @@ Q_SIGNALS:
     void keysCollapsedChanged();
 
 private:
+    //! How many suggestions the shell is given for a misspelled word.
+    static constexpr int kMaxSpellingSuggestions = 4;
+
+    //! How much of the text before an autocorrected word is kept to recognise it
+    //! by when it is tapped later.
+    static constexpr int kAutoCorrectedContext = 40;
+
+    void updateSpellingSuggestions(const QString &text, int position);
+
     Q_SLOT void onAutoCorrectSettingChanged();
     Q_SLOT void onEnabledLanguageSettingsChanged();
     Q_SLOT void updateAutoCaps();

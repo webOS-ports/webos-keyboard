@@ -95,12 +95,25 @@ public:
     //! the connection passes autoRepeat as a hardcoded false, and the compositor
     //! clears the flag before that to get the event delivered at all.
     quint32 heldScanCode = 0;
+    //! The letter as typed, when the last one inserted from a physical keyboard
+    //! was capitalised by auto-caps alone. A backspace straight after takes the
+    //! capital back and puts this in its place, as legacy webOS did
+    //! (EditorClient::handleKeyboardEvent, undidPreviousAutocap). Empty otherwise.
+    QString autocapUndoLetter;
 
     WordRibbon* wordRibbon;
 
     //! Where the application's cursor sat when the preedit we are holding
     //! started, or -1 when we are not tracking one. See InputMethod::update().
     int preeditCursorAnchor;
+    //! The last word the space key autocorrected: what was typed, what replaced it,
+    //! and the end of the text before it. A tap on that word offers the typed one
+    //! back, as legacy's spelling widget did for a word it had replaced.
+    QString autoCorrectedOriginal;
+    QString autoCorrectedWord;
+    QString autoCorrectedLeft;
+    //! The last word updateSpellingSuggestions() logged, to log each word once.
+    QString lastLoggedSpellingWord;
 
     //! Hardware T9 multi-tap. A physical numeric keypad sends KEY_0..KEY_9,
     //! and in a text field those cycle through letters (2 -> a/b/c/2) in the
