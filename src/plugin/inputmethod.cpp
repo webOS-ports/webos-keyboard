@@ -1577,12 +1577,33 @@ void InputMethod::setKeyboardLayout(const QString &newKeyboardLayout)
     Q_EMIT keyboardLayoutChanged(d->keyboardLayout);
 }
 
+/*!
+ * \brief A mask that tells the compositor nothing is on screen.
+ *
+ * setMask() with an empty region does not mean "nothing": it removes the mask,
+ * and an unmasked window is all of it. The compositor takes the largest
+ * rectangle in the mask for the keyboard, so with the keys hidden behind a
+ * physical keyboard and no candidate bar (a field with predictions off, a
+ * terminal) the whole 720x608 panel window was reported to the application as
+ * a keyboard covering it, and the application gave up its whole height.
+ *
+ * One pixel at the bottom edge instead: a rectangle no application will take
+ * for a keyboard over its content.
+ */
+static QRegion nothingOnScreenMask(const QWindow *view)
+{
+    return QRegion(0, qMax(0, int(view->height()) - 1), 1, 1);
+}
+
 void InputMethod::updateWindowMask()
 {
     Q_D(InputMethod);
 
     QRegion vkbMask(d->m_geometry->visibleRect().toRect());
     vkbMask += d->m_geometry->popoverRect().toRect();
+
+    if (vkbMask.isEmpty() and d->panel.keysHidden())
+        vkbMask = nothingOnScreenMask(d->view);
 
     d->view->setMask(vkbMask);
 }
@@ -1637,6 +1658,17 @@ void InputMethod::maskPanelStrip()
     const QRect strip = height > 0
         ? QRect(0, qMax(0, int(d->view->height()) - height), d->view->width(), height)
         : QRect(0, 0, d->view->width(), d->view->height());
+
+    /*
+     * Except where there is nothing to lay out: the keys are hidden behind a
+     * physical keyboard and the field wants no candidate bar either (a terminal
+     * turns predictions off). Then the height stays 0 for good, and the whole
+     * window would be reported as a keyboard covering the application.
+     */
+    if (height == 0 and d->panel.keysHidden() and d->m_geometry->popoverRect().isEmpty()) {
+        d->view->setMask(nothingOnScreenMask(d->view));
+        return;
+    }
 
     d->view->setMask(QRegion(strip) + d->m_geometry->popoverRect().toRect());
 }
