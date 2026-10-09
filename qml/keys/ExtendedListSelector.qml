@@ -75,7 +75,15 @@ Item {
         __repositionPopoverTo(currentlyAssignedKey);
     }
 
+    /* Only an open popover is part of the panel's mask. A closed one still has
+       a geometry - its default place at the top left, at its smallest - and
+       there are four of these in KeyPad, all writing the same rectangle: a
+       closed one masked a 148x8 strip at the top of the panel, which the
+       compositor then reported to the application as the keyboard when
+       nothing else was on screen. */
     function __updatePopoverRect() {
+        if (!visible)
+            return;
         var newPopoverRect = keyPad.mapToItem(fullScreenItem, x, y, width, height);
         maliit_geometry.popoverRect = Qt.rect(newPopoverRect.x, newPopoverRect.y, newPopoverRect.width, newPopoverRect.height);
     }
@@ -83,6 +91,12 @@ Item {
     onYChanged: __updatePopoverRect();
     onWidthChanged: __updatePopoverRect();
     onHeightChanged: __updatePopoverRect();
+    onVisibleChanged: {
+        if (visible)
+            __updatePopoverRect();
+        else
+            maliit_geometry.popoverRect = Qt.rect(0, 0, 0, 0);
+    }
 
     signal itemSelected(string modelData);
     signal extendedListDismissed();
