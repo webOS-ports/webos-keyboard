@@ -983,13 +983,24 @@ void InputMethod::updateAutoCaps()
     bool valid = true;
     bool autocap = d->host->autoCapitalizationEnabled(valid);
 
+    // That "no" is ambiguous: auto-capitalisation is opt-in on the wire, so a
+    // field that turned it off (Qt::ImhNoAutoUppercase) and a field that never
+    // mentioned it send the same hint. A field that wants no capitals at all,
+    // a terminal for one, says so positively with Qt::ImhPreferLowercase, and
+    // that settles it before the fallback below gets a say.
+    bool lowercaseValid = true;
+    const bool lowercase = d->host->lowercasePreferred(lowercaseValid);
+    if (lowercaseValid and lowercase) {
+        qCInfo(lcKeys, "autocaps: field prefers lowercase -> off");
+        autocap = false;
+    }
     // A text field inside a web page reaches maliit with no auto-capitalisation
     // hint at all and the host then answers false, so taking that as a "no"
     // means auto-caps never works in the browser or in any Enyo or Mojo
     // application - which is most of what runs here. Where the host has no
     // opinion, decide from the field itself: free text (tested above) and not a
     // password. The user setting still gates all of it.
-    if (not autocap) {
+    else if (not autocap) {
         bool hiddenValid = true;
         const bool hidden = d->host->hiddenText(hiddenValid);
         autocap = not hidden;
