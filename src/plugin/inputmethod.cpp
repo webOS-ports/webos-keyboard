@@ -983,13 +983,24 @@ void InputMethod::updateAutoCaps()
     bool valid = true;
     bool autocap = d->host->autoCapitalizationEnabled(valid);
 
+    // That "no" is ambiguous: auto-capitalisation is opt-in on the wire, so a
+    // field that turned it off (Qt::ImhNoAutoUppercase) and a field that never
+    // mentioned it send the same hint. A field that wants no capitals at all,
+    // a terminal for one, says so positively with Qt::ImhPreferLowercase, and
+    // that settles it before the fallback below gets a say.
+    bool lowercaseValid = true;
+    const bool lowercase = d->host->lowercasePreferred(lowercaseValid);
+    if (lowercaseValid and lowercase) {
+        qCInfo(lcKeys, "autocaps: field prefers lowercase -> off");
+        autocap = false;
+    }
     // A text field inside a web page reaches maliit with no auto-capitalisation
     // hint at all and the host then answers false, so taking that as a "no"
     // means auto-caps never works in the browser or in any Enyo or Mojo
     // application - which is most of what runs here. Where the host has no
     // opinion, decide from the field itself: free text (tested above) and not a
     // password. The user setting still gates all of it.
-    if (not autocap) {
+    else if (not autocap) {
         bool hiddenValid = true;
         const bool hidden = d->host->hiddenText(hiddenValid);
         autocap = not hidden;
@@ -1566,12 +1577,61 @@ void InputMethod::setKeyboardLayout(const QString &newKeyboardLayout)
     Q_EMIT keyboardLayoutChanged(d->keyboardLayout);
 }
 
+/*!
+ * \brief A mask that tells the compositor nothing is on screen.
+ *
+ * setMask() with an empty region does not mean "nothing": it removes the mask,
+ * and an unmasked window is all of it. The compositor takes the largest
+ * rectangle in the mask for the keyboard, so with the keys hidden behind a
+ * physical keyboard and no candidate bar (a field with predictions off, a
+ * terminal) the whole 720x608 panel window was reported to the application as
+ * a keyboard covering it, and the application gave up its whole height.
+ *
+ * One pixel at the bottom edge instead: a rectangle no application will take
+ * for a keyboard over its content.
+ */
+static QRegion nothingOnScreenMask(const QWindow *view)
+{
+    return QRegion(0, qMax(0, int(view->height()) - 1), 1, 1);
+}
+
 void InputMethod::updateWindowMask()
 {
     Q_D(InputMethod);
 
     QRegion vkbMask(d->m_geometry->visibleRect().toRect());
     vkbMask += d->m_geometry->popoverRect().toRect();
+
+    /*
+     * Never an empty one, whatever is or is not on screen.
+     *
+     * setMask(QRegion()) removes the mask rather than meaning "nothing", and
+     * the compositor then reads a null window mask off the surface, takes 0x0
+     * as the panel rectangle, stops treating the surface as the active input
+     * panel and hides it - see WaylandInputPanel::updateInputPanelRect(). The
+     * panel never comes back from that: the window stays one Qt believes is
+     * visible and the compositor has no mapped surface for, so every later
+     * show is a no-op.
+     *
+     * The guard used to be "empty and the keys are hidden", which only ever
+     * fires on a device with a physical keyboard. On a touch-only one -
+     * measured on a sargo, where this is the whole of "the keyboard randomly
+     * does not appear" - keysHidden() is false, so an empty rectangle went
+     * straight to setMask() every time the panel's visible rect passed through
+     * nothing on its way open or closed.
+     *
+     * So with the keys hidden it is still the one pixel that no application
+     * will mistake for a keyboard, and otherwise the whole window - the same
+     * choice maskPanelStrip() makes when the panel has no height yet, and for
+     * the same reason: the compositor needs a rectangle before it will show
+     * the panel, and the panel has to be shown before QML lays out and gives
+     * it one.
+     */
+    if (vkbMask.isEmpty()) {
+        vkbMask = d->panel.keysHidden()
+            ? nothingOnScreenMask(d->view)
+            : QRegion(0, 0, d->view->width(), d->view->height());
+    }
 
     d->view->setMask(vkbMask);
 }
@@ -1626,6 +1686,17 @@ void InputMethod::maskPanelStrip()
     const QRect strip = height > 0
         ? QRect(0, qMax(0, int(d->view->height()) - height), d->view->width(), height)
         : QRect(0, 0, d->view->width(), d->view->height());
+
+    /*
+     * Except where there is nothing to lay out: the keys are hidden behind a
+     * physical keyboard and the field wants no candidate bar either (a terminal
+     * turns predictions off). Then the height stays 0 for good, and the whole
+     * window would be reported as a keyboard covering the application.
+     */
+    if (height == 0 and d->panel.keysHidden() and d->m_geometry->popoverRect().isEmpty()) {
+        d->view->setMask(nothingOnScreenMask(d->view));
+        return;
+    }
 
     d->view->setMask(QRegion(strip) + d->m_geometry->popoverRect().toRect());
 }
