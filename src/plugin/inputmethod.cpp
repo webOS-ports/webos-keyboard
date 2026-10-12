@@ -170,11 +170,59 @@ InputMethod::InputMethod(MAbstractInputMethodHost *host)
     d->setLayoutOrientation(d->appsCurrentOrientation);
 
     d->view->setSource(QUrl::fromLocalFile(g_maliit_keyboard_qml));
-    d->view->setGeometry(qGuiApp->primaryScreen()->geometry());
+    syncPanelWindowToScreen();
+
+    // The panel window has to keep following the screen, not just start on it.
+    // See syncPanelWindowToScreen() for what goes wrong when it does not.
+    if (QScreen *screen = qGuiApp->primaryScreen()) {
+        connect(screen, &QScreen::geometryChanged,
+                this, [this](const QRect &) { syncPanelWindowToScreen(); });
+    }
 }
 
 InputMethod::~InputMethod()
 {}
+
+/*! \brief Put the panel window back on the whole screen if it has drifted off.
+ *
+ * The window is deliberately screen-sized: the keyboard is drawn into a strip
+ * of it and the rest is masked away (maskPanelStrip()), so the size the
+ * compositor is given has to be the screen's and not the keyboard's.
+ *
+ * It was set once, at construction, and then left alone - which is wrong,
+ * because it is not ours alone to decide. The webos shell integration resizes
+ * a client window when the compositor configures it, and on a device whose
+ * usable height changes - a status bar appearing, a notch inset being applied,
+ * an output mode settling after startup - the panel window is resized with it
+ * and nothing ever puts it back. Measured on a sargo: the height walked 2220
+ * to 2145 to 2045 and stayed there, and of 219 attempts to show the panel the
+ * 162 made at 2045 never became exposed while every one made at 2145 or 2220
+ * did. On a phone with no hardware keyboard that is the keyboard simply not
+ * appearing, with nothing in the state machine to explain it - panelWanted()
+ * says yes, the window is told to show, and nothing arrives.
+ *
+ * So it is re-asserted before every show rather than trusted to have survived.
+ * Cheap, and it cannot be got wrong by a configure we did not expect.
+ */
+void InputMethod::syncPanelWindowToScreen()
+{
+    Q_D(InputMethod);
+
+    const QScreen *screen = qGuiApp->primaryScreen();
+
+    if (not screen)
+        return;
+
+    const QRect want = screen->geometry();
+
+    if (d->view->geometry() == want)
+        return;
+
+    qCInfo(lcHwKeyboard, "panel window: geometry %dx%d -> %dx%d (screen)",
+           d->view->width(), d->view->height(), want.width(), want.height());
+
+    d->view->setGeometry(want);
+}
 
 //! \brief Told by the framework that a field wants the panel.
 //!
@@ -380,6 +428,10 @@ void InputMethod::applyPanelVisibility()
      * the panel was taken down and restarted three times in the same second and
      * never mapped.
      */
+    // Before the window is shown, because a window at a stale size is not shown
+    // at all - see syncPanelWindowToScreen().
+    syncPanelWindowToScreen();
+
     d->showingPanel = true;
     d->view->setVisible(true);
     d->showingPanel = false;
