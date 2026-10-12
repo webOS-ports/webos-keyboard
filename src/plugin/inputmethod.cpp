@@ -1602,8 +1602,36 @@ void InputMethod::updateWindowMask()
     QRegion vkbMask(d->m_geometry->visibleRect().toRect());
     vkbMask += d->m_geometry->popoverRect().toRect();
 
-    if (vkbMask.isEmpty() and d->panel.keysHidden())
-        vkbMask = nothingOnScreenMask(d->view);
+    /*
+     * Never an empty one, whatever is or is not on screen.
+     *
+     * setMask(QRegion()) removes the mask rather than meaning "nothing", and
+     * the compositor then reads a null window mask off the surface, takes 0x0
+     * as the panel rectangle, stops treating the surface as the active input
+     * panel and hides it - see WaylandInputPanel::updateInputPanelRect(). The
+     * panel never comes back from that: the window stays one Qt believes is
+     * visible and the compositor has no mapped surface for, so every later
+     * show is a no-op.
+     *
+     * The guard used to be "empty and the keys are hidden", which only ever
+     * fires on a device with a physical keyboard. On a touch-only one -
+     * measured on a sargo, where this is the whole of "the keyboard randomly
+     * does not appear" - keysHidden() is false, so an empty rectangle went
+     * straight to setMask() every time the panel's visible rect passed through
+     * nothing on its way open or closed.
+     *
+     * So with the keys hidden it is still the one pixel that no application
+     * will mistake for a keyboard, and otherwise the whole window - the same
+     * choice maskPanelStrip() makes when the panel has no height yet, and for
+     * the same reason: the compositor needs a rectangle before it will show
+     * the panel, and the panel has to be shown before QML lays out and gives
+     * it one.
+     */
+    if (vkbMask.isEmpty()) {
+        vkbMask = d->panel.keysHidden()
+            ? nothingOnScreenMask(d->view)
+            : QRegion(0, 0, d->view->width(), d->view->height());
+    }
 
     d->view->setMask(vkbMask);
 }
