@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import QtQuick 2.0
+import QtQuick 2.4
 import QtMultimedia 5.0
 
 import keys 1.0
@@ -159,12 +159,14 @@ Item {
         anchors.verticalCenterOffset: UI.singleGlyphOffset
         // Cornered: bottom right when the alternate is top left, bottom left
         // when it is top right.
+        // Measured by the glyph's ink, so a comma's tail ends level with the
+        // letters rather than below them.
         anchors.right: __cornered && __altLeft ? buttonImage.right : undefined
-        anchors.rightMargin: __cornerInset
+        anchors.rightMargin: __cornerInset - (width - __labelInk.x - __labelInk.width)
         anchors.left: __cornered && !__altLeft ? buttonImage.left : undefined
-        anchors.leftMargin: __cornerInset
+        anchors.leftMargin: __cornerInset - __labelInk.x
         anchors.baseline: __cornered ? buttonImage.bottom : undefined
-        anchors.baselineOffset: -__cornerInset
+        anchors.baselineOffset: -__cornerInset - (__labelInk.y + __labelInk.height)
         font.family: UI.fontFamily
         font.pixelSize: thumbKeyboard ? FontUtils.sizeToPixels(fontSize)
                                       : UI.glyphFontPx(text, false)
@@ -182,6 +184,22 @@ Item {
         opacity: UI.currentAltState !== "NORMAL" && alt !== "" ? 0.35 : 1
     }
 
+    //! Ink bounds of the printed glyphs, relative to their origin on the baseline.
+    readonly property rect __labelInk: labelMetrics.tightBoundingRect
+    readonly property rect __altInk: altMetrics.tightBoundingRect
+
+    TextMetrics {
+        id: labelMetrics
+        font: keyLabel.font
+        text: keyLabel.font.capitalization === Font.AllUppercase ? keyLabel.text.toUpperCase() : keyLabel.text
+    }
+
+    TextMetrics {
+        id: altMetrics
+        font: altLabel.font
+        text: alt
+    }
+
     Text {
         id: altLabel
         visible: alt !== "" && keyLabel.visible
@@ -193,13 +211,16 @@ Item {
         style: Text.Normal
         smooth: true
 
-        // In the top corner opposite the letter.
+        // In the top corner opposite the letter. Placed by its ink: its edge
+        // meets the inset, and it is centred on a capital's height there, so
+        // short marks such as "-", "_" and "'" line up with the digits.
         anchors.left: __altLeft ? buttonImage.left : undefined
-        anchors.leftMargin: __cornerInset
+        anchors.leftMargin: __cornerInset - __altInk.x
         anchors.right: __altLeft ? undefined : buttonImage.right
-        anchors.rightMargin: __cornerInset
+        anchors.rightMargin: __cornerInset - (width - __altInk.x - __altInk.width)
         anchors.baseline: buttonImage.top
-        anchors.baselineOffset: __cornerInset + font.pixelSize * __capHeight
+        anchors.baselineOffset: __cornerInset + font.pixelSize * __capHeight / 2
+                                - (__altInk.y + __altInk.height / 2)
     }
 
     /// shows an annotation
