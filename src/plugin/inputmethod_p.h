@@ -6,6 +6,7 @@
 #include "keyboardgeometry.h"
 #include "keyboardsettings.h"
 #include "panelstate.h"
+#include "t9multitap.h"
 
 #include "logic/layoutupdater.h"
 #include "logic/eventhandler.h"
@@ -116,12 +117,16 @@ public:
     QString lastLoggedSpellingWord;
 
     //! Hardware T9 multi-tap. A physical numeric keypad sends KEY_0..KEY_9,
-    //! and in a text field those cycle through letters (2 -> a/b/c/2) in the
-    //! preedit until t9Timer fires. t9Key is the key being cycled (0 = none),
-    //! t9Index the position in its cycle.
-    Qt::Key t9Key;
-    int t9Index;
+    //! and in a text field those cycle through letters (2 -> a/b/c/2) until
+    //! t9Timer fires. t9 is the cycle; t9Commits says where its character
+    //! lives: committed straight away and replaced in place, in a field that
+    //! hides what is typed, or in the preedit until it is done, elsewhere.
+    T9Multitap t9;
+    bool t9Commits;
     QTimer *t9Timer;
+    //! The focused field hides what is typed in it (a password), from the
+    //! last update().
+    bool hiddenText;
 
     explicit InputMethodPrivate(InputMethod * const _q,
                                 MAbstractInputMethodHost *host)
@@ -146,9 +151,10 @@ public:
         , hardwareKeyboard()
         , wordRibbon(new WordRibbon)
         , preeditCursorAnchor(-1)
-        , t9Key(Qt::Key(0))
-        , t9Index(0)
+        , t9()
+        , t9Commits(false)
         , t9Timer(nullptr)
+        , hiddenText(false)
     {
         applicationApiWrapper->setGeometryItem(m_geometry);
 
@@ -398,8 +404,8 @@ public:
     {
         if (t9Timer)
             t9Timer->stop();
-        t9Key = Qt::Key(0);
-        t9Index = 0;
+        t9.end();
+        t9Commits = false;
     }
 
     void truncateEnabledLanguageLocales(const QStringList& locales)
