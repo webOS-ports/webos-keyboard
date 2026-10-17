@@ -32,6 +32,7 @@ HEADERS += \
     keyboardsettings.h \
     keyboardlogging.h \
     panelstate.h \
+    t9multitap.h \
 #    updatenotifier.h \
     luneosapplicationapiwrapper.h \
 
@@ -44,6 +45,7 @@ SOURCES += \
     keyboardsettings.cpp \
     keyboardlogging.cpp \
     panelstate.cpp \
+    t9multitap.cpp \
 #    updatenotifier.cpp \
     luneosapplicationapiwrapper.cpp \
 

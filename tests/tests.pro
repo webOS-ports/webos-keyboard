@@ -5,6 +5,7 @@ CONFIG += ordered
 SUBDIRS = \
     ut_hardwarekeyboard \
     ut_panelstate \
+    ut_t9multitap \
 
 # "make check" recurses into every subdirectory.
 QMAKE_EXTRA_TARGETS += check

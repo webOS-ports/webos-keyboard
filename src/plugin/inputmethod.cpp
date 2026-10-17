@@ -447,30 +447,11 @@ void InputMethod::setPreedit(const QString &preedit,
 //! On a device whose physical keyboard carries Alt and Sym levels, those are
 //! resolved first by HardwareKeyboard, which needs the scancode -- by the time
 //! a key has a Qt::Key and a text the legend printed on the key face is gone.
-// The multi-tap cycle for each numeric key, ending in the digit itself. Empty
-// for keys that are not part of the T9 pad.
-static QString t9CycleFor(Qt::Key keyCode)
-{
-    switch (keyCode) {
-    case Qt::Key_1: return QStringLiteral(".,?!1");
-    case Qt::Key_2: return QStringLiteral("abc2");
-    case Qt::Key_3: return QStringLiteral("def3");
-    case Qt::Key_4: return QStringLiteral("ghi4");
-    case Qt::Key_5: return QStringLiteral("jkl5");
-    case Qt::Key_6: return QStringLiteral("mno6");
-    case Qt::Key_7: return QStringLiteral("pqrs7");
-    case Qt::Key_8: return QStringLiteral("tuv8");
-    case Qt::Key_9: return QStringLiteral("wxyz9");
-    case Qt::Key_0: return QStringLiteral(" 0");
-    default:        return QString();
-    }
-}
-
 bool InputMethod::t9HandleKey(QEvent::Type keyType, Qt::Key keyCode, bool autoRepeat)
 {
     Q_D(InputMethod);
 
-    const QString cycle = t9CycleFor(keyCode);
+    const QString cycle = T9Multitap::cycleFor(keyCode);
 
     // Auto-repeat is held-key repetition, not a deliberate tap, so it must not
     // advance the cycle. There is deliberately no burst de-bounce beyond that:
@@ -481,17 +462,26 @@ bool InputMethod::t9HandleKey(QEvent::Type keyType, Qt::Key keyCode, bool autoRe
     if (keyType == QEvent::KeyPress && autoRepeat && !cycle.isEmpty())
         return true;
 
-    // Only in text fields. Number/PhoneNumber fields (the dialer) must receive
+    // Only in text fields, a web page's password among them (see
+    // multitapWanted()). Number/PhoneNumber fields (the dialer) must receive
     // raw digits, so leave those to the normal path.
-    if (d->contentType != FreeTextContentType && d->contentType != EmailContentType) {
-        qCInfo(lcKeys, "t9: declined, contentType %d takes raw digits",
-                int(d->contentType));
+    if (!multitapWanted(d->contentType == FreeTextContentType || d->contentType == EmailContentType,
+                        d->contentType == CustomContentType, d->hiddenText)) {
+        qCInfo(lcKeys, "t9: declined, contentType %d hidden %d takes raw digits",
+                int(d->contentType), int(d->hiddenText));
         return false;
     }
 
     // Backspace while a character is being cycled cancels it outright rather
-    // than committing then deleting.
-    if (keyCode == Qt::Key_Backspace && d->t9Key != 0) {
+    // than committing then deleting. One that was committed as it was typed
+    // (a hidden field) is in the text already, and the backspace itself, let
+    // through, takes it out.
+    if (keyCode == Qt::Key_Backspace && d->t9.cycling()) {
+        if (d->t9Commits) {
+            if (keyType == QEvent::KeyPress)
+                d->resetT9();
+            return false;
+        }
         if (keyType == QEvent::KeyPress) {
             d->resetT9();
             d->editor.clearPreedit();
@@ -502,7 +492,7 @@ bool InputMethod::t9HandleKey(QEvent::Type keyType, Qt::Key keyCode, bool autoRe
     if (cycle.isEmpty()) {
         // A non-keypad key ends the character being cycled, so it is committed
         // before the application sees the new key.
-        if (d->t9Key != 0 && keyType == QEvent::KeyPress)
+        if (d->t9.cycling() && keyType == QEvent::KeyPress)
             finalizeT9();
         return false;
     }
@@ -511,18 +501,34 @@ bool InputMethod::t9HandleKey(QEvent::Type keyType, Qt::Key keyCode, bool autoRe
     if (keyType != QEvent::KeyPress)
         return true;
 
-    if (keyCode == d->t9Key && d->t9Timer->isActive()) {
-        // Same key within the window: advance the multi-tap cycle in place.
-        d->t9Index = (d->t9Index + 1) % cycle.length();
-    } else {
-        // New character: fix the previous one (if any) and start fresh.
+    // The same key within the window advances the character in place; any
+    // other press fixes the one before it (if any) and starts anew. Fixed
+    // before the new one is begun: committing can come straight back here as
+    // update() or reset(), which end the cycle.
+    const bool sameCharacter = d->t9.cycling() && d->t9.key() == keyCode && d->t9Timer->isActive();
+    if (!sameCharacter) {
         finalizeT9();
-        d->t9Key = keyCode;
-        d->t9Index = 0;
+        d->t9Commits = d->hiddenText;
     }
-    qCInfo(lcKeys, "t9: '%s' (index %d of \"%s\")",
-            qPrintable(QString(cycle.at(d->t9Index))), d->t9Index, qPrintable(cycle));
-    d->editor.replacePreedit(QString(cycle.at(d->t9Index)));
+    const T9Multitap::Step step = d->t9.press(keyCode, sameCharacter);
+    const QString character(step.character);
+    qCInfo(lcKeys, "t9: '%s' (index %d of \"%s\")%s",
+            d->hiddenText ? "*" : qPrintable(character), d->t9.index(), d->hiddenText ? "*" : qPrintable(cycle),
+            d->t9Commits ? " committed" : "");
+
+    if (d->t9Commits) {
+        // A field that hides what is typed: never anything in the preedit.
+        // The application draws a preedit as it is, so the letter being chosen
+        // showed in the clear after the dots; and a letter left there is lost
+        // when the field goes before the window closes (Open tapped straight
+        // after the last one). Committed as it is typed, and the next press of
+        // the key takes it back out and puts the next one in, so the field
+        // masks it as it masks the rest.
+        inputMethodHost()->sendCommitString(character, step.replacesPrevious ? -1 : 0,
+                                            step.replacesPrevious ? 1 : 0);
+    } else {
+        d->editor.replacePreedit(character);
+    }
     d->t9Timer->start();
     return true;
 }
@@ -532,14 +538,22 @@ void InputMethod::finalizeT9()
 {
     Q_D(InputMethod);
 
-    if (d->t9Key == 0)
+    if (!d->t9.cycling())
         return;
+
+    const bool committed = d->t9Commits;
 
     // Drop the cycle state before touching the editor. Committing goes out
     // through the input-method host and can come straight back as update() or
     // reset(), and those call dropPreedit() -> resetT9(); clearing first keeps
     // that re-entrancy from finalising the same character twice.
     d->resetT9();
+
+    // Committed when it was typed (a hidden field): it only stops changing.
+    if (committed) {
+        qCInfo(lcKeys, "t9: character done");
+        return;
+    }
 
     qCInfo(lcKeys, "t9: committing '%s'", qPrintable(d->editor.text()->preedit()));
 
@@ -600,11 +614,13 @@ void InputMethod::processKeyEvent(QEvent::Type keyType, Qt::Key keyCode,
     const bool isShortcut = effectiveModifiers & (Qt::ControlModifier | Qt::AltModifier |
                                                   Qt::MetaModifier);
 
+    // Not what was typed in a field that hides it: the journal is no place
+    // for a password.
     qCInfo(lcKeys, "key %s 0x%x text='%s' repeat=%d scancode=%u mods=0x%x hw=%d->'%s' shortcut=%d shiftlatch=%d",
             keyType == QEvent::KeyPress ? "press" : "release",
-            int(keyCode), qPrintable(text), int(autoRepeat),
-            unsigned(nativeScanCode), int(modifiers),
-            int(hardwareResult), qPrintable(hardwareText), int(isShortcut),
+            d->hiddenText ? 0 : int(keyCode), d->hiddenText ? "*" : qPrintable(text), int(autoRepeat),
+            d->hiddenText ? 0u : unsigned(nativeScanCode), int(modifiers),
+            int(hardwareResult), d->hiddenText ? "*" : qPrintable(hardwareText), int(isShortcut),
             int(d->hardwareKeyboard.shiftLatchActive()));
 
     // Hardware T9 numeric keypad -> letters (multi-tap) in text fields. Only
@@ -1177,10 +1193,13 @@ void InputMethod::update()
 
     bool emitPredictionEnabled = false;
 
-    bool newPredictionEnabled = inputMethodHost()->predictionEnabled(valid);
+    TextContentType newContentType = static_cast<TextContentType>( inputMethodHost()->contentType(valid) );
+    if (!valid) {
+        newContentType = FreeTextContentType;
+    }
 
-    if (!valid)
-        newPredictionEnabled = true;
+    bool predictionValid = false;
+    const bool predictionAsked = inputMethodHost()->predictionEnabled(predictionValid);
 
     // A field that hides what is typed in it - a password, the key of a network,
     // anything flagged sensitive - gets no suggestions, whatever else it says.
@@ -1190,19 +1209,19 @@ void InputMethod::update()
     // would also be putting it on the candidate bar, in plain sight.
     bool hiddenValid = false;
     const bool hiddenText = inputMethodHost()->hiddenText(hiddenValid) && hiddenValid;
+    d->hiddenText = hiddenText;
 
-    if (hiddenText)
-        newPredictionEnabled = false;
+    // The content type counts here as it does in updateWordEngine(): this said
+    // yes to a number field and that no, so every update of one switched the
+    // word engine on and off again, and with it the panel and any preedit.
+    const bool newPredictionEnabled = predictionWanted(predictionAsked, predictionValid, hiddenText,
+                                                       newContentType == FreeTextContentType);
 
     if (d->panel.wordEngine() != newPredictionEnabled) {
         d->panel.setWordEngine(newPredictionEnabled);
         emitPredictionEnabled = true;
     }
 
-    TextContentType newContentType = static_cast<TextContentType>( inputMethodHost()->contentType(valid) );
-    if (!valid) {
-        newContentType = FreeTextContentType;
-    }
     setContentType(newContentType);
 
     // Set here and not in setContentType(), which returns early when the type
@@ -1371,7 +1390,7 @@ void InputMethod::updateSpellingSuggestions(const QString &text, int position)
             d->lastLoggedSpellingWord = word;
             qCInfo(lcKeys, "spelling: word='%s' wanted=%d (pos=%d len=%d wordEngine=%d "
                            "freeText=%d preedit=%d) misspelled='%s' suggestions=%d learn=%d",
-                   qPrintable(word), int(wanted), position, int(text.length()),
+                   d->hiddenText ? "*" : qPrintable(word), int(wanted), position, int(text.length()),
                    int(d->panel.wordEngine()), int(d->contentType == FreeTextContentType),
                    int(d->editor.text()->preedit().length()), qPrintable(misspelled),
                    int(suggestions.size()), int(canLearn));
