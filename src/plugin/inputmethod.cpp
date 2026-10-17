@@ -462,11 +462,13 @@ bool InputMethod::t9HandleKey(QEvent::Type keyType, Qt::Key keyCode, bool autoRe
     if (keyType == QEvent::KeyPress && autoRepeat && !cycle.isEmpty())
         return true;
 
-    // Only in text fields. Number/PhoneNumber fields (the dialer) must receive
+    // Only in text fields, a web page's password among them (see
+    // multitapWanted()). Number/PhoneNumber fields (the dialer) must receive
     // raw digits, so leave those to the normal path.
-    if (d->contentType != FreeTextContentType && d->contentType != EmailContentType) {
-        qCInfo(lcKeys, "t9: declined, contentType %d takes raw digits",
-                int(d->contentType));
+    if (!multitapWanted(d->contentType == FreeTextContentType || d->contentType == EmailContentType,
+                        d->contentType == CustomContentType, d->hiddenText)) {
+        qCInfo(lcKeys, "t9: declined, contentType %d hidden %d takes raw digits",
+                int(d->contentType), int(d->hiddenText));
         return false;
     }
 

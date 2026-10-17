@@ -21,6 +21,7 @@
 #include <QtTest>
 
 using MaliitKeyboard::T9Multitap;
+using MaliitKeyboard::multitapWanted;
 using MaliitKeyboard::predictionWanted;
 
 class TestT9Multitap : public QObject
@@ -156,6 +157,30 @@ private Q_SLOTS:
         QFETCH(bool, freeText);
         QFETCH(bool, wanted);
         QCOMPARE(predictionWanted(asked, askedValid, hidden, freeText), wanted);
+    }
+
+    void multitap_data()
+    {
+        QTest::addColumn<bool>("letters");
+        QTest::addColumn<bool>("custom");
+        QTest::addColumn<bool>("hidden");
+        QTest::addColumn<bool>("wanted");
+        QTest::newRow("free text or email") << true << false << false << true;
+        QTest::newRow("password in an app") << true << false << true << true;
+        // Chromium's password field: purpose "password", custom to Maliit.
+        QTest::newRow("password on a web page") << false << true << true << true;
+        QTest::newRow("date, time, terminal") << false << true << false << false;
+        QTest::newRow("number or phone") << false << false << false << false;
+        QTest::newRow("PIN") << false << false << true << false;
+    }
+
+    void multitap()
+    {
+        QFETCH(bool, letters);
+        QFETCH(bool, custom);
+        QFETCH(bool, hidden);
+        QFETCH(bool, wanted);
+        QCOMPARE(multitapWanted(letters, custom, hidden), wanted);
     }
 };
 

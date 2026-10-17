@@ -82,6 +82,22 @@ inline bool predictionWanted(bool asked, bool askedValid, bool hiddenText, bool 
     return (askedValid ? asked : true) && !hiddenText && freeText;
 }
 
+/*! \brief Whether a keypad's keys type letters (multi-tap) in a field, or
+ * their digits.
+ *
+ * Letters in free text and email addresses. Letters too in a field of no
+ * type Maliit knows that hides what is typed: a web page's password field
+ * arrives that way - Chromium gives it the purpose "password", which Maliit
+ * has no content type for and calls custom - and a password is letters as
+ * often as not. The other custom fields (a date, a time, a terminal) and the
+ * number and phone number fields keep their digits, hidden or not: a PIN is
+ * typed with the digits printed on the keys.
+ */
+inline bool multitapWanted(bool lettersField, bool customField, bool hiddenText)
+{
+    return lettersField || (customField && hiddenText);
+}
+
 } // namespace MaliitKeyboard
 
 #endif // MALIIT_KEYBOARD_T9MULTITAP_H
