@@ -232,6 +232,9 @@ private:
     //! \brief Puts the panel on screen, or takes it off, from what is wanted now.
     void applyPanelVisibility();
 
+    //! \brief Put the panel window back on the whole screen if it has drifted.
+    void syncPanelWindowToScreen();
+
     //! \brief Hands a dismissal to the framework when the keys are only up
     //!        because they were forced there, and says whether it did.
     bool releaseForcedOnScreenKeyboard();
