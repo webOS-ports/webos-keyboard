@@ -57,6 +57,10 @@ Item {
 
     /// Cancels the current pressed state of the mouse are
     function cancelPress() {
+        // The editor repeats a held key on its own timer, and only a release
+        // stops it. A press cancelled here never gets one, so say so.
+        if (isPressed)
+            event_handler.onKeyCanceled();
         isPressed = false;
         holdTimer.stop();
     }

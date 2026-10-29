@@ -113,6 +113,10 @@ public:
     Q_SLOT void onKeyReleased(const Key &key);
     Q_SLOT void onKeyEntered(const Key &key);
     Q_SLOT void onKeyExited(const Key &key);
+    //! Stops a held key's repeat without acting on the key. For a press that
+    //! will never see its release: the panel went away under the finger, the
+    //! field lost focus, or the touch was cancelled.
+    Q_SLOT void cancelRepeat();
     Q_SLOT void onCursorPositionChanged(int cursor_position,
                                         const QString &surrounding_text);
     Q_SLOT void replacePreedit(const QString &replacement);

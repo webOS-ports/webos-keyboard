@@ -240,6 +240,9 @@ void InputMethod::hide()
 {
     Q_D(InputMethod);
 
+    // Here as well as in closeOskWindow(), which does nothing when the window
+    // is already down.
+    d->editor.cancelRepeat();
     d->panel.setFocused(false);
     applyPanelVisibility();
 }
@@ -941,6 +944,10 @@ QString InputMethod::activeSubView(Maliit::HandlerState state) const
 void InputMethod::handleFocusChange(bool focusIn)
 {
     Q_D(InputMethod);
+
+    // Whichever way focus went, a key still repeating was pressed for the
+    // field that had it before.
+    d->editor.cancelRepeat();
 
     if (focusIn) {
         // A different field is a fresh start; what the user dismissed belonged

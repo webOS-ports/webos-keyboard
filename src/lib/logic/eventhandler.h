@@ -61,10 +61,14 @@ public:
     Q_INVOKABLE void onWordCandidateReleased(const QString& word);
     Q_INVOKABLE void onKeyPressed(const QString& label, const QString& action = QString());
     Q_INVOKABLE void onKeyReleased(const QString& label, const QString& action = QString());
+    //! A press that ends without a release: the touch was cancelled, or the
+    //! press was taken over by a swipe.
+    Q_INVOKABLE void onKeyCanceled();
 
     // Key signals:
     Q_SIGNAL void keyPressed(const Key &key);
     Q_SIGNAL void keyReleased(const Key &key);
+    Q_SIGNAL void keyCanceled();
     Q_SIGNAL void wordCandidatePressed(const WordCandidate &candidate);
     Q_SIGNAL void wordCandidateReleased(const WordCandidate &candidate);
 

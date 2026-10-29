@@ -84,6 +84,18 @@ MultiPointTouchArea {
         }
     }
 
+    // The touch ended without a release - the panel was hidden under the
+    // finger, or the window lost the grab. The key it was on is let go
+    // without acting, rather than left pressed for ever.
+    onCanceled: (points) => {
+        for (var i = 0; i < points.length; ++i) {
+            var keyArea = points[i].currentKeyArea;
+            if (keyArea)
+                keyArea.cancelPress();
+            points[i].currentKeyArea = null;
+        }
+    }
+
     onUpdated: {
         for( var i = 0; i < touchPoints.length; ++i ) {
             var currentKeyArea = touchPoints[i].currentKeyArea
