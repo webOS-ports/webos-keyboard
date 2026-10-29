@@ -301,9 +301,9 @@ AbstractTextEditorPrivate::AbstractTextEditorPrivate(const EditorOptions &new_op
                                                      Model::Text *new_text,
                                                      Logic::AbstractWordEngine *new_word_engine)
     : auto_repeat_backspace_timer()
+    , backspace_sent(false)
     , repeating_action(Key::ActionInsert)
     , in_auto_repeat(false)
-    , backspace_sent(false)
     , options(new_options)
     , text(new_text)
     , word_engine(new_word_engine)
