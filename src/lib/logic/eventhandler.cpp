@@ -113,4 +113,9 @@ void EventHandler::onKeyReleased(const QString& label, const QString& action)
     Q_EMIT keyReleased(key);
 }
 
+void EventHandler::onKeyCanceled()
+{
+    Q_EMIT keyCanceled();
+}
+
 }} // namespace Logic, MaliitKeyboard

@@ -375,6 +375,10 @@ public:
         m_geometry->setShown(false);
 
         editor.clearPreedit();
+        // A key held as the panel goes is never released: the touch is
+        // cancelled, not lifted. Its repeat would otherwise go on deleting
+        // from whatever field comes next, with nothing on screen to stop it.
+        editor.cancelRepeat();
 
         view->setVisible(false);
 

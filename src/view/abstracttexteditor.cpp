@@ -34,8 +34,16 @@
 #include "logic/abstractlanguagefeatures.h"
 
 #include <QElapsedTimer>
+#include <QLoggingCategory>
 
 namespace MaliitKeyboard {
+
+// The plugin's key category, by name: this file is built without the plugin
+// (see tests/), so it cannot use lcKeys itself, but one logging rule should
+// still switch on everything about keys.
+namespace {
+Q_LOGGING_CATEGORY(lcEditorKeys, "luneos.keyboard.keys")
+}
 
 //! \class EditorOptions
 //! \brief Plain struct implementing editor options.
@@ -301,9 +309,9 @@ AbstractTextEditorPrivate::AbstractTextEditorPrivate(const EditorOptions &new_op
                                                      Model::Text *new_text,
                                                      Logic::AbstractWordEngine *new_word_engine)
     : auto_repeat_backspace_timer()
+    , backspace_sent(false)
     , repeating_action(Key::ActionInsert)
     , in_auto_repeat(false)
-    , backspace_sent(false)
     , options(new_options)
     , text(new_text)
     , word_engine(new_word_engine)
@@ -397,8 +405,29 @@ void AbstractTextEditor::onKeyPressed(const Key &key)
             d->backspace_hold_timer.restart();
         }
 
+        // A repeat runs until its key is released, so where one came from is
+        // worth knowing when it does not stop.
+        qCInfo(lcEditorKeys, "repeat armed: action=%d label='%s'",
+               int(key.action()), qPrintable(key.label()));
         d->auto_repeat_backspace_timer.start(d->options.auto_repeat_delay);
     }
+}
+
+void AbstractTextEditor::cancelRepeat()
+{
+    Q_D(AbstractTextEditor);
+
+    if (d->repeating_action == Key::ActionInsert
+        and not d->auto_repeat_backspace_timer.isActive()) {
+        return;
+    }
+
+    qCInfo(lcEditorKeys, "repeat cancelled: action=%d", int(d->repeating_action));
+    d->auto_repeat_backspace_timer.stop();
+    d->repeating_action = Key::ActionInsert;
+    // Should the release turn up after all, it must not take one more
+    // character: a cancelled backspace deletes nothing.
+    d->backspace_sent = true;
 }
 
 //! \brief Keys the reference keyboard repeats while they are held.
