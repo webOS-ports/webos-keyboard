@@ -266,8 +266,14 @@ Item {
                 wordRibbon.emojiShown = true;
             }
 
+            //! A capital is for a letter, so back to the letters first: the
+            //! symbols page keeps shift until it is tapped off, and shifting
+            //! it turned the tablet's number row into !@# for good. The page
+            //! has been UI.currentSymbolState since the UI singleton came in;
+            //! the keypad's own state, which this used to set, no longer
+            //! picks it. Switching pages resets shift, so this goes first.
             function onActivateAutocaps() {
-                keypad.state = "CHARACTERS";
+                UI.currentSymbolState = "CHARACTERS";
                 UI.currentShiftState = "SHIFTED";
             }
         }

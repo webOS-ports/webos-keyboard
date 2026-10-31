@@ -6,6 +6,7 @@ SUBDIRS = \
     ut_hardwarekeyboard \
     ut_keyrepeat \
     ut_panelstate \
+    ut_symbolpage \
     ut_t9multitap \
 
 # "make check" recurses into every subdirectory.
