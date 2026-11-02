@@ -233,7 +233,11 @@ void InputMethod::show()
     Q_D(InputMethod);
 
     d->panel.setFocused(true);
-    applyPanelVisibility();
+
+    // After what is already queued. A field that refuses the panel says so
+    // right behind the activation that brought us here, and showing the window
+    // takes long enough on a slow device to be seen before that is read.
+    QTimer::singleShot(0, this, &InputMethod::applyPanelVisibility);
 }
 
 void InputMethod::hide()
@@ -1276,21 +1280,9 @@ void InputMethod::update()
     const bool newPredictionEnabled = predictionWanted(predictionAsked, predictionValid, hiddenText,
                                                        newContentType == FreeTextContentType);
 
-    if (d->panel.wordEngine() != newPredictionEnabled) {
-        d->panel.setWordEngine(newPredictionEnabled);
-        emitPredictionEnabled = true;
-    }
-
-    setContentType(newContentType);
-
-    // Set here and not in setContentType(), which returns early when the type
-    // has not changed: a field can be focused with the same content type the
-    // last one had, and it would then be the only one on the device that still
-    // wanted a chord for its digits.
-    d->hardwareKeyboard.setDigitsPreferred(digitsForContentType(newContentType));
-
     /*
-     * A field with a keypad of its own gets everything but the keys.
+     * A field with a keypad of its own gets everything but the keys. Settled
+     * first, as what follows applies the panel and would put it up meanwhile.
      *
      * Asked for by the field and carried here on the content hint. It cannot be
      * decided where such things usually are -- the platform input context puts
@@ -1303,6 +1295,19 @@ void InputMethod::update()
     bool panelValid = false;
     const bool onScreenKeyboardAllowed = inputMethodHost()->onScreenKeyboardAllowed(panelValid);
     d->panel.setOnScreenKeyboardAllowed(!panelValid or onScreenKeyboardAllowed);
+
+    if (d->panel.wordEngine() != newPredictionEnabled) {
+        d->panel.setWordEngine(newPredictionEnabled);
+        emitPredictionEnabled = true;
+    }
+
+    setContentType(newContentType);
+
+    // Set here and not in setContentType(), which returns early when the type
+    // has not changed: a field can be focused with the same content type the
+    // last one had, and it would then be the only one on the device that still
+    // wanted a chord for its digits.
+    d->hardwareKeyboard.setDigitsPreferred(digitsForContentType(newContentType));
 
     // Declining the panel is this method's business; putting it up is not.
     //
