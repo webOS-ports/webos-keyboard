@@ -761,16 +761,16 @@ void KeyboardView::drawAsk(QPainter &p)
 // --- The globe's menu -------------------------------------------------------------------
 
 /*!
- * The globe on the Sym page, where LuneOS's own keyboard has its language key: a
- * list of the languages checked, to go straight to one, and LuneOS's own
- * keyboard, to go back to it. (Holding the globe still switches the style.)
+ * The globe on the Sym page: a list of the languages checked, to go straight to
+ * one. (Holding the globe switches the style.)
  */
 void KeyboardView::showMenu()
 {
     m_menu.clear();
     for (const Language &l : m_settings.languages)
         m_menu << l.name;
-    m_menu << QStringLiteral("LuneOS keyboard");
+    // The Pre Keyboard is LuneOS's only keyboard: nothing to switch back to.
+    // m_menu << QStringLiteral("LuneOS keyboard");
     int globe = -1;
     for (int i = 0; i < m_zones.size(); ++i)
         if (m_zones[i].slot.key->kind == Kind::Globe) { globe = i; break; }

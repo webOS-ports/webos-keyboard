@@ -378,7 +378,9 @@ public:
         keyboardLayout = m_settings.keyboardLayout();
         qDebug() << "inputmethod_p.h registerKeyboardLayout(): keyboardLayout is:" << keyboardLayout;
         q->setKeyboardLayout(keyboardLayout);
-        pre.setActive(keyboardLayout == QLatin1String(PRE_KEYBOARD_LAYOUT));
+        // The Pre Keyboard is the keyboard, whatever keyboardLayout says.
+        // Was: pre.setActive(keyboardLayout == QLatin1String(PRE_KEYBOARD_LAYOUT));
+        pre.setActive(true);
     }
 
     void registerEnabledLanguages()

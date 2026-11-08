@@ -1682,9 +1682,10 @@ void InputMethod::setKeyboardLayout(const QString &newKeyboardLayout)
         return;
 
     d->keyboardLayout = newKeyboardLayout;
-    d->pre.setActive(newKeyboardLayout == QLatin1String(PRE_KEYBOARD_LAYOUT));
-    if (d->pre.active() && d->view && d->view->isVisible())
-        d->pre.startInput();
+    // The Pre Keyboard is the keyboard whatever the layout; this no longer switches it.
+    // d->pre.setActive(newKeyboardLayout == QLatin1String(PRE_KEYBOARD_LAYOUT));
+    // if (d->pre.active() && d->view && d->view->isVisible())
+    //     d->pre.startInput();
 
     qDebug() << "in inputMethod.cpp setKeyboardLayout() emitting keyboardLayoutChanged to" << d->keyboardLayout;
     Q_EMIT keyboardLayoutChanged(d->keyboardLayout);

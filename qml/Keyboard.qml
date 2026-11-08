@@ -32,6 +32,7 @@
  */
 
 import QtQuick 2.0
+import QtQuick.Window 2.2
 import QtMultimedia 6.3
 import keys 1.0
 import LuneOSKeyboard 1.0
@@ -44,9 +45,12 @@ Item {
     property variant input_method: maliit_input_method
     property variant event_handler: maliit_event_handler
 
-    //! The Pre Keyboard is the one chosen, and there are keys to show: with a
-    //! physical keyboard in use the panel is LuneOS's candidate bar as before.
-    readonly property bool preShown: pre_keyboard.active && !fullScreenItem.input_method.keysCollapsed
+    //! The Pre Keyboard is LuneOS's keyboard: whenever there are keys to show.
+    //! With a physical keyboard in use the panel is the candidate strip, which
+    //! is also where the keys are brought back from.
+    // Was: pre_keyboard.active && ..., when it was one choice beside the LuneOS
+    // keyboard's own layouts (keyboardLayout "Pre Keyboard").
+    readonly property bool preShown: !fullScreenItem.input_method.keysCollapsed
 
     Item {
         id: canvas
@@ -239,7 +243,13 @@ Item {
             anchors.bottom: parent.bottom
             width: parent.width
             height: headroom + keysHeight
-            dp: Settings.dpi > 0 ? Settings.dpi / 160 : Units.gu(1) / 8 * 1.5
+            // The Android Pre Keyboard's proportions on any screen: its sizes are
+            // dp on a phone 411 dp wide (1080 px at 2.625), so a key is a tenth of
+            // the width and a Medium row 54 dp, 1.31 times as tall as a key is wide.
+            // From the screen's dpi instead, the KEY2's 4.5" 1080 px screen came out
+            // at 2.41 and its keys squatter than Android's.
+            // The screen's, not the panel window's: the window is only as tall as the panel.
+            dp: Math.min(Screen.width, Screen.height) / 411.43
             landscape: UI.isLandscape
 
             onKeysHeightChanged: fullScreenItem.reportKeyboardVisibleRect();
