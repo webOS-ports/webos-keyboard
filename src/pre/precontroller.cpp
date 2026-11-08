@@ -186,7 +186,7 @@ Controller::Controller(QObject *parent)
     };
     m_composer.onCorrected = [this](const QString &typed, const QString &fixed, int tail) {
         if (m_settings.vibrate && m_lunaCall)
-            m_lunaCall(QStringLiteral("luna://com.palm.vibrate/vibrate"), QStringLiteral("{\"period\":0,\"duration\":28}"));
+            m_lunaCall(QStringLiteral("palm://com.palm.vibrate/vibrate"), QStringLiteral("{\"period\":0,\"duration\":28}"));
         // Once the whole key's work is done: then the word is marked.
         QTimer::singleShot(0, this, [this, typed, fixed, tail] { markCorrection(typed, fixed, tail); });
     };
@@ -633,20 +633,20 @@ void Controller::onOpenSettings()
 {
     if (m_host) m_host->notifyImInitiatedHiding();
     if (m_lunaCall)
-        m_lunaCall(QStringLiteral("luna://com.webos.service.applicationManager/launch"),
-                   QStringLiteral("{\"id\":\"org.webosports.app.settings\",\"params\":{\"page\":\"TextAssist\"}}"));
+        m_lunaCall(QStringLiteral("palm://com.webos.service.applicationManager/launch"),
+                   QStringLiteral("{\"id\":\"org.webosports.app.settings.textassist\"}"));
 }
 
 void Controller::hapticKey()
 {
     if (m_lunaCall)
-        m_lunaCall(QStringLiteral("luna://com.palm.vibrate/vibrate"), QStringLiteral("{\"period\":0,\"duration\":12}"));
+        m_lunaCall(QStringLiteral("palm://com.palm.vibrate/vibrate"), QStringLiteral("{\"period\":0,\"duration\":12}"));
 }
 
 void Controller::hapticLongPress()
 {
     if (m_lunaCall)
-        m_lunaCall(QStringLiteral("luna://com.palm.vibrate/vibrate"), QStringLiteral("{\"period\":0,\"duration\":20}"));
+        m_lunaCall(QStringLiteral("palm://com.palm.vibrate/vibrate"), QStringLiteral("{\"period\":0,\"duration\":20}"));
 }
 
 QString Controller::emojiFile() const { return m_dataDir + QStringLiteral("/emoji.txt"); }
