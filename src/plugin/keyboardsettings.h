@@ -30,6 +30,7 @@
 #ifndef KEYBOARDSETTINGS_H
 #define KEYBOARDSETTINGS_H
 
+#include <QJsonObject>
 #include <QObject>
 #include <QStringList>
 
@@ -62,6 +63,13 @@ public:
     void preferencesChanged(const QByteArray &data);
     void savePreferences(InputMethod *q);
 
+    //! The Pre Keyboard's object in the preference: its settings and the owner's words.
+    QJsonObject pre() const;
+    //! Writes [pre] back, the rest of the preference as it was.
+    void savePre(const QJsonObject &pre);
+    //! Calls a Luna method on the keyboard's own handle, no reply wanted.
+    void call(const QString &uri, const QString &payload);
+
 Q_SIGNALS:
     void activeLanguageChanged(QString);
     void enabledLanguagesChanged(QStringList);
@@ -72,6 +80,7 @@ Q_SIGNALS:
     void keyPressFeedbackChanged(bool);
     void keyboardSizeChanged(QString);
     void keyboardLayoutChanged(QString);
+    void preChanged(const QJsonObject &pre);
 
 private:
     LSHandle *mServiceHandle;

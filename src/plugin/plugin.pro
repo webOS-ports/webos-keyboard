@@ -35,6 +35,17 @@ HEADERS += \
     t9multitap.h \
 #    updatenotifier.h \
     luneosapplicationapiwrapper.h \
+    ../pre/precomposer.h \
+    ../pre/precontroller.h \
+    ../pre/precorrector.h \
+    ../pre/preemojipanel.h \
+    ../pre/prekeyboardview.h \
+    ../pre/prekeymap.h \
+    ../pre/prelanguage.h \
+    ../pre/prepainter.h \
+    ../pre/presettings.h \
+    ../pre/preswipedecoder.h \
+    ../pre/prewords.h \
 
 SOURCES += \
     plugin.cpp \
@@ -48,6 +59,17 @@ SOURCES += \
     t9multitap.cpp \
 #    updatenotifier.cpp \
     luneosapplicationapiwrapper.cpp \
+    ../pre/precomposer.cpp \
+    ../pre/precontroller.cpp \
+    ../pre/precorrector.cpp \
+    ../pre/preemojipanel.cpp \
+    ../pre/prekeyboardview.cpp \
+    ../pre/prekeymap.cpp \
+    ../pre/prelanguage.cpp \
+    ../pre/prepainter.cpp \
+    ../pre/presettings.cpp \
+    ../pre/preswipedecoder.cpp \
+    ../pre/prewords.cpp \
 
 target.path += $${MALIIT_PLUGINS_DIR}
 INSTALLS += target

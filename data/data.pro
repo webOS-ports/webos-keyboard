@@ -10,4 +10,9 @@ styles.files = styles
 hwkeyboard.path = $${LUNEOS_KEYBOARD_DATA_DIR}
 hwkeyboard.files = hwkeyboard
 
-INSTALLS += styles hwkeyboard
+# The Pre Keyboard's words: dictionaries, next words, emoji, and its click.
+# See pre/README.md for where they come from and their licences.
+pre.path = $${LUNEOS_KEYBOARD_DATA_DIR}
+pre.files = pre
+
+INSTALLS += styles hwkeyboard pre

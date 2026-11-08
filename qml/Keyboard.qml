@@ -32,7 +32,9 @@
  */
 
 import QtQuick 2.0
+import QtMultimedia 6.3
 import keys 1.0
+import LuneOSKeyboard 1.0
 
 import LunaNext.Common 0.1
 
@@ -42,6 +44,10 @@ Item {
     property variant input_method: maliit_input_method
     property variant event_handler: maliit_event_handler
 
+    //! The Pre Keyboard is the one chosen, and there are keys to show: with a
+    //! physical keyboard in use the panel is LuneOS's candidate bar as before.
+    readonly property bool preShown: pre_keyboard.active && !fullScreenItem.input_method.keysCollapsed
+
     Item {
         id: canvas
 
@@ -49,7 +55,7 @@ Item {
         anchors.left: parent.left
         anchors.right: parent.right
 
-        height: keyboardSurface.height
+        height: fullScreenItem.preShown ? preKeyboard.height : keyboardSurface.height
         property int keypadHeight: height;
 
         visible: true
@@ -76,7 +82,8 @@ Item {
             // its focus - the shell's toggle is behind the system menu, and
             // opening the menu takes input focus off the field, leaving nothing
             // for the panel to come back for.
-            enabled: UI.formFactor === "phone" && !UI.extendedKeysShown
+            enabled: UI.formFactor === "phone" && !UI.extendedKeysShown && !fullScreenItem.preShown
+            visible: !fullScreenItem.preShown
 
             anchors.left: parent.left
             anchors.right: parent.right
@@ -219,6 +226,38 @@ Item {
             }
         }
 
+        /*!
+         * The Pre Keyboard: the Palm Pre's keys, drawn and run in C++
+         * (src/pre). It is taller than its keys by the room its popups need;
+         * only the keys are reported as the panel, and a popup is added to the
+         * window's input mask while it is up.
+         */
+        PreKeyboardView {
+            id: preKeyboard
+            visible: fullScreenItem.preShown
+            controller: visible ? pre_keyboard : null
+            anchors.bottom: parent.bottom
+            width: parent.width
+            height: headroom + keysHeight
+            dp: Settings.dpi > 0 ? Settings.dpi / 160 : Units.gu(1) / 8 * 1.5
+            landscape: UI.isLandscape
+
+            onKeysHeightChanged: fullScreenItem.reportKeyboardVisibleRect();
+            onYChanged: fullScreenItem.reportKeyboardVisibleRect();
+            onVisibleChanged: {
+                fullScreenItem.reportKeyboardVisibleRect();
+                fullScreenItem.reportPrePopup();
+            }
+            onPopupRectChanged: fullScreenItem.reportPrePopup();
+            onKeyClick: preClick.play()
+
+            MediaPlayer {
+                id: preClick
+                source: Qt.resolvedUrl("pre/key_click.wav")
+                audioOutput: AudioOutput {}
+            }
+        }
+
         PropertyAnimation {
             id: bounceBackAnimation
             target: keyboardSurface
@@ -283,6 +322,13 @@ Item {
     // FIXME get the correct size for enabled extended keys instead of that big area
     function reportKeyboardVisibleRect() {
 
+        if (fullScreenItem.preShown) {
+            var keys = fullScreenItem.mapFromItem(preKeyboard, 0, preKeyboard.headroom,
+                                                  preKeyboard.width, preKeyboard.keysHeight);
+            maliit_geometry.visibleRect = Qt.rect(keys.x, keys.y, keys.width, keys.height);
+            return;
+        }
+
         var vx = 0;
         var vy = wordRibbon.y;
         var vwidth = keyboardSurface.width;
@@ -291,6 +337,19 @@ Item {
         var obj = fullScreenItem.mapFromItem(keyboardSurface, vx, vy, vwidth, vheight);
         maliit_geometry.visibleRect = Qt.rect(obj.x, obj.y, obj.width, obj.height);
     }
+
+    //! The Pre Keyboard's popup (accents, the globe's menu), for the window's input mask.
+    function reportPrePopup() {
+        var r = preKeyboard.popupRect;
+        if (!fullScreenItem.preShown || r.width <= 0 || r.height <= 0) {
+            maliit_geometry.popoverRect = Qt.rect(0, 0, 0, 0);
+            return;
+        }
+        var m = fullScreenItem.mapFromItem(preKeyboard, r.x, r.y, r.width, r.height);
+        maliit_geometry.popoverRect = Qt.rect(m.x, m.y, m.width, m.height);
+    }
+
+    onPreShownChanged: reportKeyboardVisibleRect();
 
     Component.onCompleted: {
         UI.isLandscape = Qt.binding( function() { return fullScreenItem.width > fullScreenItem.height; } );

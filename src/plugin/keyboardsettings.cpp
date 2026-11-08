@@ -48,6 +48,8 @@ const QLatin1String SPELL_CHECKING_KEY = QLatin1String("spellChecking");
 const QLatin1String KEY_PRESS_FEEDBACK_KEY = QLatin1String("keyPressFeedback");
 const QLatin1String KEYBOARD_SIZE_KEY = QLatin1String("keyboardSize");
 const QLatin1String KEYBOARD_LAYOUT_KEY = QLatin1String("keyboardLayout");
+//! The Pre Keyboard's own object: what Text Assist shows for it, and the owner's words.
+const QLatin1String PRE_KEY = QLatin1String("pre");
 
 /*!
  * \brief KeyboardSettings::KeyboardSettings class to load the settings, and
@@ -269,7 +271,49 @@ void KeyboardSettings::preferencesChanged(const QByteArray &data)
         }
     }
 
+    if (keyboardPref.value(PRE_KEY).isObject()
+            && keyboardPref.value(PRE_KEY) != mSavedKeyboardPrefs.value(PRE_KEY))
+        Q_EMIT preChanged(keyboardPref.value(PRE_KEY).toObject());
+
     mSavedKeyboardPrefs = keyboardPref;
+}
+
+QJsonObject KeyboardSettings::pre() const
+{
+    return mSavedKeyboardPrefs.value(PRE_KEY).toObject();
+}
+
+void KeyboardSettings::savePre(const QJsonObject &pre)
+{
+    QJsonObject keyboardObj = mSavedKeyboardPrefs;
+    keyboardObj.insert(PRE_KEY, pre);
+    if (keyboardObj == mSavedKeyboardPrefs)
+        return;
+    // Remembered now, so the next save of the rest doesn't take it back out
+    // before the preference service has echoed it.
+    mSavedKeyboardPrefs = keyboardObj;
+
+    QJsonObject prefObj;
+    prefObj.insert("keyboard", keyboardObj);
+    const QByteArray payload = QJsonDocument(prefObj).toJson(QJsonDocument::Compact);
+    LSError error;
+    LSErrorInit(&error);
+    if (!LSCallOneReply(mServiceHandle, "palm://com.palm.systemservice/setPreferences",
+                        payload.constData(), nullptr, this, nullptr, &error)) {
+        qWarning("Failed to save the Pre Keyboard's preferences: %s", error.message);
+        LSErrorFree(&error);
+    }
+}
+
+void KeyboardSettings::call(const QString &uri, const QString &payload)
+{
+    LSError error;
+    LSErrorInit(&error);
+    if (!LSCallOneReply(mServiceHandle, uri.toUtf8().constData(), payload.toUtf8().constData(),
+                        nullptr, this, nullptr, &error)) {
+        qWarning("Failed to call %s: %s", qPrintable(uri), error.message);
+        LSErrorFree(&error);
+    }
 }
 
 /*!
@@ -364,7 +408,9 @@ QString KeyboardSettings::keyboardLayout() const
 
 void KeyboardSettings::savePreferences(InputMethod *q)
 {
-    QJsonObject keyboardObj;
+    // The whole object is written back, so whatever is in it besides what is set
+    // here - the Pre Keyboard's settings and words - goes back in as it was.
+    QJsonObject keyboardObj = mSavedKeyboardPrefs;
 
     keyboardObj.insert(ACTIVE_LANGUAGE_KEY, QJsonValue(q->activeLanguage()));
     keyboardObj.insert(ENABLED_LANGUAGES_KEY, QJsonValue(QJsonArray::fromStringList(q->enabledLanguages())));

@@ -13,12 +13,17 @@
 #include "logic/wordengine.h"
 
 #include "luneosapplicationapiwrapper.h"
+#include "pre/precontroller.h"
+
+//! The keyboardLayout that picks the Pre Keyboard over LuneOS's own.
+#define PRE_KEYBOARD_LAYOUT "Pre Keyboard"
 
 #include <maliit/plugins/abstractinputmethodhost.h>
 #include <maliit/plugins/abstractpluginsetting.h>
 
 #include <QtQuick>
 #include <QStringList>
+#include <QDir>
 #include <QTimer>
 #include <qglobal.h>
 #include <QDebug>
@@ -74,6 +79,8 @@ public:
     //! to visibleChanged in the constructor.
     bool panelForcedHidden = false;
     KeyboardSettings m_settings;
+    //! The Pre Keyboard, when it is the keyboard chosen ("Pre Keyboard" in Text Assist).
+    Pre::Controller pre;
     //! Resolves the Alt and Sym levels of a physical keyboard, if this device
     //! has one we have a profile for. Inert otherwise.
     HardwareKeyboard hardwareKeyboard;
@@ -290,6 +297,23 @@ public:
         qml_context->setContextProperty("maliit_wordribbon", wordRibbon);
         qml_context->setContextProperty("maliit_word_engine", editor.wordEngine());
         qml_context->setContextProperty("maliit_hw_keyboard", &hardwareKeyboard);
+        qml_context->setContextProperty("pre_keyboard", &pre);
+    }
+
+    //! The Pre Keyboard's connections: where its words are, and how it saves and switches.
+    void setUpPreKeyboard()
+    {
+        pre.setDataDir(QStringLiteral(LUNEOS_KEYBOARD_DATA_DIR "/pre"));
+        pre.setStateDir(QDir::homePath() + QStringLiteral("/prekeyboard"));
+        pre.setHost(host);
+        pre.setLunaCall([this](const QString &uri, const QString &payload) { m_settings.call(uri, payload); });
+        pre.setSavePrefs([this](const QJsonObject &obj) { m_settings.savePre(obj); });
+        pre.setSwitchLayout([this](const QString &layout) {
+            q->setKeyboardLayout(layout);
+            m_settings.savePreferences(q);
+        });
+        QObject::connect(&m_settings, &KeyboardSettings::preChanged, &pre, &Pre::Controller::setPrefs);
+        pre.setPrefs(m_settings.pre());
     }
 
 
@@ -354,6 +378,7 @@ public:
         keyboardLayout = m_settings.keyboardLayout();
         qDebug() << "inputmethod_p.h registerKeyboardLayout(): keyboardLayout is:" << keyboardLayout;
         q->setKeyboardLayout(keyboardLayout);
+        pre.setActive(keyboardLayout == QLatin1String(PRE_KEYBOARD_LAYOUT));
     }
 
     void registerEnabledLanguages()

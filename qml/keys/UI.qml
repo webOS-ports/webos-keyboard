@@ -31,7 +31,10 @@ QtObject {
     property string currentShiftState: "NORMAL"  // can be "NORMAL", "SHIFTED" or "CAPSLOCK"
     property string currentAltState: "NORMAL"    // the orange key: "NORMAL", "ALT" (next key) or "ALTLOCK"
     property string currentSymbolState: "CHARACTER" // can be "CHARACTER" or "SYMBOL"
-    property string currentAlternativeLayout: maliit_input_method.keyboardLayout === "LuneOS" ? "" : maliit_input_method.keyboardLayout
+    // The Pre Keyboard is a keyboard of its own (src/pre), not a layout of this one.
+    property string currentAlternativeLayout: maliit_input_method.keyboardLayout === "LuneOS"
+                                              || maliit_input_method.keyboardLayout === "Pre Keyboard"
+                                              ? "" : maliit_input_method.keyboardLayout
 
     // keyboard-wide signals
     signal showExtendedKeys(variant keysExtendedModel, Item keyItem);

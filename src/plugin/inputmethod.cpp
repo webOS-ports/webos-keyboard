@@ -154,6 +154,7 @@ InputMethod::InputMethod(MAbstractInputMethodHost *host)
     d->registerActiveLanguage();
     d->registerEnabledLanguages();
     d->registerKeyboardSize();
+    d->setUpPreKeyboard();
     d->registerKeyboardLayout();
 	
     //fire signal so all listeners know what active language is
@@ -234,6 +235,9 @@ void InputMethod::show()
 
     d->panel.setFocused(true);
 
+    if (d->pre.active())
+        d->pre.startInput();
+
     // After what is already queued. A field that refuses the panel says so
     // right behind the activation that brought us here, and showing the window
     // takes long enough on a slow device to be seen before that is read.
@@ -248,6 +252,8 @@ void InputMethod::hide()
     // is already down.
     d->editor.cancelRepeat();
     d->panel.setFocused(false);
+    if (d->pre.active())
+        d->pre.finishInput();
     applyPanelVisibility();
 }
 
@@ -970,6 +976,9 @@ void InputMethod::handleFocusChange(bool focusIn)
         d->panel.setFocused(true);
         Q_EMIT keysCollapsedChanged();
 
+        if (d->pre.active())
+            d->pre.startInput();
+
         checkInitialAutocaps();
     } else {
         // Whatever was in the preedit belongs to the field we just left.
@@ -1266,6 +1275,17 @@ void InputMethod::update()
     TextContentType newContentType = static_cast<TextContentType>( inputMethodHost()->contentType(valid) );
     if (!valid) {
         newContentType = FreeTextContentType;
+    }
+
+    if (d->pre.active()) {
+        // A field for words: not a password, an address or a URL. The field's
+        // "auto correction" hint is not asked: text-input makes it opt-in, few
+        // fields set it, and its absence is not a field asking for none.
+        bool hiddenValid = false;
+        const bool hidden = inputMethodHost()->hiddenText(hiddenValid) && hiddenValid;
+        const bool prose = (newContentType == FreeTextContentType || newContentType == CustomContentType) && !hidden;
+        d->pre.setProse(prose, false);
+        d->pre.update();
     }
 
     bool predictionValid = false;
@@ -1662,6 +1682,9 @@ void InputMethod::setKeyboardLayout(const QString &newKeyboardLayout)
         return;
 
     d->keyboardLayout = newKeyboardLayout;
+    d->pre.setActive(newKeyboardLayout == QLatin1String(PRE_KEYBOARD_LAYOUT));
+    if (d->pre.active() && d->view && d->view->isVisible())
+        d->pre.startInput();
 
     qDebug() << "in inputMethod.cpp setKeyboardLayout() emitting keyboardLayoutChanged to" << d->keyboardLayout;
     Q_EMIT keyboardLayoutChanged(d->keyboardLayout);
