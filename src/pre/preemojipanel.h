@@ -61,6 +61,8 @@ public:
     void setDp(qreal dp) { m_dp = dp; }
     //! Fills the page: every category is read once, the recent ones each time it opens.
     void open(const QString &emojiFile, const QStringList &recent);
+    //! Whether the device's emoji font draws [emoji]: every code point in it, joiners and selectors aside.
+    static bool canDraw(const QString &emoji);
     void layout(const QRectF &grid, const QRectF &bar);
     void draw(QPainter &p, Painter &painter, Style style, const std::function<void(QPainter &, const QString &, const QRectF &)> &label);
 

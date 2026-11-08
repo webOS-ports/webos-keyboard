@@ -81,7 +81,9 @@ private:
 class EmojiWords
 {
 public:
-    explicit EmojiWords(const QStringList &lines);
+    //! [canDraw] says whether the device draws an emoji; the first one it does is offered.
+    explicit EmojiWords(const QStringList &lines,
+                        const std::function<bool(const QString &)> &canDraw = [](const QString &) { return true; });
     //! The emoji for [word], or for the word it is the plural or possessive of; empty if none.
     QString forWord(const QString &word) const;
 

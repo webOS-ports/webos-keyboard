@@ -553,6 +553,10 @@ static void emojiTests()
     EQ(w.forWord("France"), QString("🇫🇷"));
     EQ(w.forWord("the"), QString());
     EQ(w.forWord(""), QString());
+
+    g_test = "onlyEmojiTheDeviceCanDraw";
+    EQ(EmojiWords(lines("emoji_words.txt"), [](const QString &e) { return e != "🐱"; }).forWord("cat"), QString("🐈"));
+    EQ(EmojiWords(lines("emoji_words.txt"), [](const QString &) { return false; }).forWord("pizza"), QString());
 }
 
 // --- Swipe --------------------------------------------------------------------------------

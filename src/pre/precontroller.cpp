@@ -18,6 +18,7 @@
 
 #include "precontroller.h"
 #include "precorrector.h"
+#include "preemojipanel.h"
 #include "prekeyboardview.h"
 #include "preswipedecoder.h"
 #include "prewords.h"
@@ -299,7 +300,7 @@ QString Controller::nextWordsFile(const Language &lang) const
 QSharedPointer<Controller::FamilyWords> Controller::readFamily(const Language &lang)
 {
     QSharedPointer<FamilyWords> fam(new FamilyWords);
-    fam->emoji.reset(new EmojiWords(readLines(lang.asset(Language::EMOJI_WORDS))));
+    fam->emoji.reset(new EmojiWords(readLines(lang.asset(Language::EMOJI_WORDS)), EmojiPanel::canDraw));
     fam->next.reset(new NextWords(readLines(lang.asset(Language::NEXT_WORDS))));
     QFile mine(nextWordsFile(lang));
     if (mine.open(QIODevice::ReadOnly))

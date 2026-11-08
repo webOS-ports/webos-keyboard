@@ -1252,7 +1252,8 @@ void KeyboardView::reset()
 
 bool KeyboardView::pointerDown(int id, qreal x, qreal y)
 {
-    if (!m_menu.isEmpty()) return menuTouch(Down, x, y);
+    // A popup takes the touch; this is the finger whose lift it waits for.
+    if (!m_menu.isEmpty()) { m_finger = id; return menuTouch(Down, x, y); }
     if (m_page == Page::Emoji) {
         if (y < keyboardTop()) return false;
         keyFeedback();
@@ -1260,7 +1261,7 @@ bool KeyboardView::pointerDown(int id, qreal x, qreal y)
         m_emoji.down(x, y);
         return true;
     }
-    if (!m_asking.isEmpty()) return askTouch(Down, x, y);
+    if (!m_asking.isEmpty()) { m_finger = id; return askTouch(Down, x, y); }
     // A touch that starts in the suggestion bar stays there.
     m_barPressed = -1;
     const int bc = barCell(x, y);

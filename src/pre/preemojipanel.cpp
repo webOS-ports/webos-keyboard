@@ -20,7 +20,9 @@
 
 #include <QFile>
 #include <QFont>
+#include <QFontMetrics>
 #include <QFontMetricsF>
+#include <QMutex>
 #include <QHash>
 #include <QPainter>
 
@@ -38,6 +40,7 @@ QFont emojiFont(qreal px)
 {
     QFont f(QStringLiteral("Noto Color Emoji"));
     f.setPixelSize(std::max(1, int(px)));
+    f.setStyleStrategy(QFont::NoFontMerging);
     return f;
 }
 
@@ -57,6 +60,7 @@ void EmojiPanel::open(const QString &emojiFile, const QStringList &recent)
                 if (line.startsWith(QLatin1Char('#'))) continue;
                 const QStringList parts = line.split(QLatin1Char('\t'));
                 if (parts.size() != 3) continue;
+                if (!canDraw(parts[2])) continue;
                 if (groups.isEmpty() || groups.last().first != parts[0])
                     groups.append({ parts[0], {} });
                 groups.last().second << parts[2];
@@ -70,6 +74,23 @@ void EmojiPanel::open(const QString &emojiFile, const QStringList &recent)
     m_flinging = false;
     m_scrollY = 0;
     relayout();
+}
+
+bool EmojiPanel::canDraw(const QString &emoji)
+{
+    // One font, so one QFontMetrics for every thread that asks.
+    static QMutex lock;
+    QMutexLocker locker(&lock);
+    static const QFontMetrics metrics(emojiFont(32));
+    for (const uint cp : emoji.toUcs4()) {
+        // Joiners, variation selectors, skin tones and keycaps: not glyphs of their own.
+        if (cp == 0x200D || cp == 0xFE0F || cp == 0xFE0E || cp == 0x20E3 || (cp >= 0x1F3FB && cp <= 0x1F3FF)
+                || (cp >= 0xE0020 && cp <= 0xE007F))
+            continue;
+        if (!metrics.inFontUcs4(cp))
+            return false;
+    }
+    return true;
 }
 
 void EmojiPanel::layout(const QRectF &grid, const QRectF &bar)

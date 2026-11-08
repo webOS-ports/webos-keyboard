@@ -143,7 +143,7 @@ void NextWords::load(const QStringList &saved)
     }
 }
 
-EmojiWords::EmojiWords(const QStringList &lines)
+EmojiWords::EmojiWords(const QStringList &lines, const std::function<bool(const QString &)> &canDraw)
 {
     for (const QString &line : lines) {
         if (line.startsWith(QLatin1Char('#')))
@@ -151,10 +151,14 @@ EmojiWords::EmojiWords(const QStringList &lines)
         const int tab = line.indexOf(QLatin1Char('\t'));
         if (tab <= 0)
             continue;
-        // LuneOS draws them all (Noto Color Emoji): the likeliest one is offered.
-        const QStringList e = line.mid(tab + 1).split(QLatin1Char(' '), Qt::SkipEmptyParts);
-        if (!e.isEmpty())
-            m_byWord.insert(line.left(tab), e.first());
+        // The likeliest one the device can draw: its emoji font may be older
+        // than the list (🫥 is Unicode 14).
+        for (const QString &e : line.mid(tab + 1).split(QLatin1Char(' '), Qt::SkipEmptyParts)) {
+            if (canDraw(e)) {
+                m_byWord.insert(line.left(tab), e);
+                break;
+            }
+        }
     }
 }
 
