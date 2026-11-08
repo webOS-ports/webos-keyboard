@@ -219,6 +219,15 @@ void InputMethod::syncPanelWindowToScreen()
     if (d->view->geometry() == want)
         return;
 
+    // The screen turned on its side is the screen too: the shell rotates its
+    // whole interface for a landscape application, output and all staying as
+    // they are, and configures the panel window to the screen as it now
+    // stands. That is not the shrinking this guards against, and putting it
+    // back to portrait had the shell stretch a portrait keyboard across a
+    // landscape one.
+    if (d->view->position() == want.topLeft() && d->view->size() == want.size().transposed())
+        return;
+
     qCInfo(lcHwKeyboard, "panel window: geometry %dx%d -> %dx%d (screen)",
            d->view->width(), d->view->height(), want.width(), want.height());
 
