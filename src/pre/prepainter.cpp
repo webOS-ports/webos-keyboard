@@ -230,6 +230,37 @@ void Painter::icon(QPainter &p, Icon icon, qreal cx, qreal cy, qreal size, const
         p.drawRoundedRect(QRectF(22, 3, 20, 12), 3, 3);
         break;
     }
+    case Icon::Sticker: {
+        // The emoji page's sticker tab: a smiling sticker, its corner peeling up.
+        stroke(4.5, Qt::RoundCap, Qt::RoundJoin);
+        QPainterPath edge;
+        edge.moveTo(16, 6); edge.lineTo(48, 6); edge.quadTo(58, 6, 58, 16); edge.lineTo(58, 38);
+        edge.lineTo(38, 58); edge.lineTo(16, 58); edge.quadTo(6, 58, 6, 48); edge.lineTo(6, 16);
+        edge.quadTo(6, 6, 16, 6); edge.closeSubpath();
+        p.drawPath(edge);
+        QPainterPath peel;
+        peel.moveTo(58, 38); peel.lineTo(44, 38); peel.quadTo(38, 38, 38, 44); peel.lineTo(38, 58);
+        p.drawPath(peel);
+        // The smile: the bottom of an ellipse, from 25 to 135 degrees clockwise of three o'clock.
+        p.drawArc(QRectF(18, 22, 24, 22), -25 * 16, -110 * 16);
+        fill();
+        p.drawEllipse(QPointF(23, 23), 3.4, 3.4);
+        p.drawEllipse(QPointF(38, 23), 3.4, 3.4);
+        break;
+    }
+    case Icon::Search:
+        // The search field's magnifying glass.
+        stroke(6, Qt::RoundCap);
+        p.drawEllipse(QPointF(27, 27), 17, 17);
+        stroke(8, Qt::RoundCap);
+        p.drawLine(QPointF(40, 40), QPointF(56, 56));
+        break;
+    case Icon::Close:
+        // Clearing a search.
+        stroke(7, Qt::RoundCap);
+        p.drawLine(QPointF(12, 12), QPointF(52, 52));
+        p.drawLine(QPointF(52, 12), QPointF(12, 52));
+        break;
     }
     p.restore();
 }

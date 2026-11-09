@@ -20,6 +20,7 @@
 #define PRE_KEYBOARDVIEW_H
 
 #include "preemojipanel.h"
+#include "preklipy.h"
 #include "prekeymap.h"
 #include "prepainter.h"
 #include "presettings.h"
@@ -96,6 +97,10 @@ public:
     void reset();
     //! Where the letters are, for the swipe decoder; false when they aren't all laid out.
     bool swipeLayout(SwipeDecoder::Layout &out) const;
+    //! The keyboard went down: the GIFs stop moving.
+    void hidden();
+    //! A word for a moment over the GIFs or stickers ("Sent as a link").
+    void mediaSays(Klipy::Kind kind, const QString &s, int ms = 2500);
 
     static const int CAPS_NONE = 0;
     static const int CAPS_FIRST = 1;
@@ -159,6 +164,17 @@ private:
     void drawMenu(QPainter &p);
     void drawTrail(QPainter &p);
     void updatePopupRect();
+    void drawSearch(QPainter &p, const QRectF &r);
+    QRectF searchBack(const QRectF &bar) const;
+
+    // Searching KLIPY: the letters type into a search field drawn in the bar.
+    void startSearch(Klipy::Kind kind, const QString &query);
+    void endSearch(bool go);
+    //! Typed text: into the search while there is one, else the application.
+    void send(const QString &s);
+    void sendBackspace(bool word);
+    //! A change that may show or hide the bar: the keys move, and the application is told.
+    void barChange(const std::function<void()> &change);
 
     // Press and hold
     QStringList extendedFor(const Key &key) const;
@@ -197,6 +213,7 @@ private:
     bool canSwipe(const Zone &z) const;
     void addSwipePoint(qreal x, qreal y);
     int capsNow() const;
+    QString withShift(const QString &w) const;
     qreal swipeStart() const { return width() / 10 * 0.6; }
     bool askTouch(int phase, qreal x, qreal y);
     bool menuTouch(int phase, qreal x, qreal y);
@@ -237,8 +254,14 @@ private:
     bool m_wordsAllowed = true;
     qint64 m_flashAt;
 
-    // Holding a word in the bar: add it to the dictionary.
+    // A search for GIFs or stickers being typed (m_searching), and what is typed.
+    bool m_searching = false;
+    Klipy::Kind m_searchKind = Klipy::Kind::Gif;
+    QString m_searchText;
+
+    // Holding a word in the bar: add it to the dictionary, or delete one it has.
     QString m_asking;
+    bool m_askingRemove = false;
     QRectF m_askBox, m_askYes, m_askNo;
     bool m_askDown = false;
     int m_askPressed = 0;

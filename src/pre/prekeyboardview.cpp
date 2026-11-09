@@ -19,6 +19,7 @@
 #include "prekeyboardview.h"
 #include "precontroller.h"
 
+#include <QLocale>
 #include <QDateTime>
 #include <QFontMetricsF>
 #include <QGuiApplication>
@@ -80,12 +81,20 @@ KeyboardView::KeyboardView(QQuickItem *parent)
           [this](const QString &e) { if (m_controller) { m_controller->onText(e); m_controller->addRecentEmoji(e); } },
           [this] { if (m_controller) m_controller->onBackspace(false); },
           [this] { show(Page::Letters); },
-          [this] { update(); } }),
+          [this] { update(); },
+          [this](Klipy::Kind kind, const QString &query) { startSearch(kind, query); },
+          [this](Klipy::Kind kind, const Klipy::Item &item, const QString &query) {
+              const QString link = Klipy::link(item);
+              if (!m_controller || link.isEmpty()) return;
+              m_controller->onMedia(int(kind), link, item.slug, query);
+              m_emoji.say(kind, QStringLiteral("Sent as a link"), 1500);
+          } }),
       m_bold(QStringLiteral("Prelude")),
       m_lastShiftTap(NEVER), m_lastAltTap(NEVER), m_flashAt(NEVER)
 {
     m_bold.setBold(true);
     m_bold.setStyleStrategy(QFont::PreferAntialias);
+    m_emoji.setFont(m_bold);
     setAcceptTouchEvents(true);
     setAcceptedMouseButtons(Qt::LeftButton);
     setOpaquePainting(false);
@@ -182,7 +191,7 @@ qreal KeyboardView::rowHeight() const
 qreal KeyboardView::topBorder() const { return 3 * std::max<qreal>(1, std::round(m_dp)) + 1 * m_dp; }
 qreal KeyboardView::bottomPad() const { return 2 * m_dp; }
 //! The suggestion bar, above the keys, when it is switched on.
-bool KeyboardView::barShown() const { return m_settings.showsBar(); }
+bool KeyboardView::barShown() const { return m_settings.showsBar() || m_searching; }
 qreal KeyboardView::barHeight() const { return barShown() ? std::round(rowHeight() * 0.72) : 0; }
 qreal KeyboardView::keysHeight() const { return barHeight() + rowHeight() * 4 + topBorder() + bottomPad(); }
 qreal KeyboardView::cellH() const { return rowHeight() * 0.85; }
@@ -220,7 +229,7 @@ void KeyboardView::layoutKeys()
     if (width() <= 0) return;
     if (m_page == Page::Emoji) {
         const QRectF top = rowRect(0), bottom = rowRect(2);
-        m_emoji.layout(QRectF(0, top.top(), width(), bottom.bottom() - top.top()), rowRect(3));
+        m_emoji.layout(keyboardTop() + topBorder(), QRectF(0, top.top(), width(), bottom.bottom() - top.top()), rowRect(3));
         return;
     }
     const Rows &rs = rows();
@@ -241,6 +250,7 @@ void KeyboardView::layoutKeys()
 
 void KeyboardView::show(Page p)
 {
+    if (m_page == Page::Emoji && p != Page::Emoji) m_emoji.close();
     m_page = p;
     m_alt = Alt::Off;
     if (p == Page::Emoji && m_controller)
@@ -256,8 +266,11 @@ void KeyboardView::paint(QPainter *pp)
     QPainter &p = *pp;
     p.setRenderHint(QPainter::TextAntialiasing);
     const qreal top = keyboardTop();
-    m_painter.deck(p, QRectF(0, top + barHeight(), width(), height() - top - barHeight()));
-    if (barShown()) drawBar(p, QRectF(0, top, width(), barHeight()));
+    // The emoji page takes the suggestion bar's place for its tabs.
+    const bool emojiPage = m_page == Page::Emoji;
+    const qreal deckTop = emojiPage ? top : top + barHeight();
+    m_painter.deck(p, QRectF(0, deckTop, width(), height() - deckTop));
+    if (barShown() && !emojiPage) drawBar(p, QRectF(0, top, width(), barHeight()));
     if (m_page == Page::Emoji) {
         m_emoji.draw(p, m_painter, m_settings.style,
                      [this](QPainter &cp, const QString &s, const QRectF &r) { functionLabel(cp, s, r); });
@@ -625,6 +638,7 @@ void KeyboardView::setPasteOffered(bool offered)
 void KeyboardView::drawBar(QPainter &p, const QRectF &r)
 {
     p.fillRect(r, BAR);
+    if (m_searching) { drawSearch(p, r); return; }
     const qreal cw = r.width() / 3;
     // One baseline for every word, from the font rather than each word's ink, so a
     // word doesn't jump when a letter with a descender ("hop") comes along.
@@ -643,7 +657,8 @@ void KeyboardView::drawBar(QPainter &p, const QRectF &r)
             m_painter.icon(p, Painter::Icon::Paste, cellRect.center().x(), cellRect.center().y(), r.height() * 0.56, Qt::white);
             continue;
         }
-        const QString &w = m_words[i];
+        // Shown as shift will put it in: a capital first, or all capitals when locked.
+        const QString w = withShift(m_words[i]);
         if (w.isEmpty()) continue;
         // The likeliest word, in the middle, in the Pre's orange in either style.
         QFont wf = m_bold;
@@ -654,6 +669,121 @@ void KeyboardView::drawBar(QPainter &p, const QRectF &r)
     }
 }
 
+// --- Searching KLIPY ---------------------------------------------------------------------
+
+/*!
+ * A search for GIFs or stickers is being typed: the letters show, and what they
+ * type goes into the search field drawn in the bar, not into the application.
+ * Return searches; the bar's arrow, or the emoji key, goes back.
+ */
+void KeyboardView::startSearch(Klipy::Kind kind, const QString &query)
+{
+    barChange([&] {
+        m_searching = true;
+        m_searchKind = kind;
+        m_searchText = query;
+    });
+    m_shift = Shift::Off;
+    m_autoShift = false;
+    show(Page::Letters);
+}
+
+//! Back to the GIFs or stickers: what was typed is searched for ([go]), or put away.
+void KeyboardView::endSearch(bool go)
+{
+    if (!m_searching) return;
+    const Klipy::Kind kind = m_searchKind;
+    const QString q = m_searchText;
+    barChange([&] { m_searching = false; m_searchText.clear(); });
+    show(Page::Emoji);
+    if (go) m_emoji.searched(kind, q);
+}
+
+void KeyboardView::send(const QString &s)
+{
+    if (m_searching) { m_searchText += s; update(); return; }
+    if (m_controller) m_controller->onText(s);
+}
+
+void KeyboardView::sendBackspace(bool word)
+{
+    if (!m_searching) { if (m_controller) m_controller->onBackspace(word); return; }
+    if (word) {
+        QString t = m_searchText;
+        while (t.endsWith(QLatin1Char(' '))) t.chop(1);
+        m_searchText.truncate(t.lastIndexOf(QLatin1Char(' ')) + 1);
+    } else if (!m_searchText.isEmpty()) {
+        m_searchText.chop(1);
+    }
+    update();
+}
+
+void KeyboardView::barChange(const std::function<void()> &change)
+{
+    const qreal before = keysHeight();
+    change();
+    if (keysHeight() != before) {
+        layoutKeys();
+        updatePopupRect();
+        Q_EMIT geometryChanged();
+    }
+    update();
+}
+
+void KeyboardView::hidden()
+{
+    if (m_page == Page::Emoji) m_emoji.close();
+}
+
+void KeyboardView::mediaSays(Klipy::Kind kind, const QString &s, int ms)
+{
+    m_emoji.say(kind, s, ms);
+}
+
+//! Where the search's back arrow is, at the bar's left.
+QRectF KeyboardView::searchBack(const QRectF &bar) const
+{
+    return QRectF(bar.left(), bar.top(), bar.height() * 1.3, bar.height());
+}
+
+//! The search being typed: a back arrow, then the field, "Search KLIPY" till something is typed.
+void KeyboardView::drawSearch(QPainter &p, const QRectF &r)
+{
+    const QRectF back = searchBack(r);
+    if (m_barPressed == 0) p.fillRect(back, BAR_PRESSED);
+    m_painter.icon(p, Painter::Icon::Backspace, back.center().x(), back.center().y(), r.height() * 0.42);
+    const qreal pad = r.height() * 0.14;
+    const QRectF field(back.right(), r.top() + pad, r.right() - 8 * m_dp - back.right(), r.height() - 2 * pad);
+    p.save();
+    p.setRenderHint(QPainter::Antialiasing);
+    p.setPen(Qt::NoPen);
+    p.setBrush(QColor(255, 255, 255, 40));
+    p.drawRoundedRect(field, field.height() / 2, field.height() / 2);
+    m_painter.icon(p, Painter::Icon::Search, field.left() + field.height() * 0.6, field.center().y(), field.height() * 0.5,
+                   QColor(255, 255, 255, 170));
+    const qreal left = field.left() + field.height() * 1.1;
+    const qreal room = field.right() - left - field.height() * 0.5;
+    QFont f = m_bold;
+    f.setPixelSize(std::max(1, int(field.height() * 0.5)));
+    p.setFont(f);
+    const QFontMetricsF fm(f);
+    const qreal baseline = field.center().y() + (fm.ascent() - fm.descent()) / 2;
+    const QRectF caret(0, field.top() + field.height() * 0.22, 2 * m_dp, field.height() * 0.56);
+    if (m_searchText.isEmpty()) {
+        p.setPen(QColor(255, 255, 255, 130));
+        p.drawText(QPointF(left, baseline), QStringLiteral("Search KLIPY"));
+        p.fillRect(caret.translated(left - m_dp, 0), accent(Style::Orange));
+    } else {
+        // The end of what's typed, where the cursor is, when it's too long to show whole.
+        QString shown = m_searchText;
+        while (shown.length() > 1 && fm.horizontalAdvance(shown) > room) shown.remove(0, 1);
+        p.setPen(Qt::white);
+        p.drawText(QPointF(left, baseline), shown);
+        p.fillRect(caret.translated(left + fm.horizontalAdvance(shown) + m_dp, 0), accent(Style::Orange));
+    }
+    p.restore();
+}
+
 // --- Holding a word in the bar: add it to the dictionary -------------------------------
 
 void KeyboardView::onBarHold()
@@ -661,7 +791,11 @@ void KeyboardView::onBarHold()
     const int i = m_barPressed;
     if (i < 0 || (i == 2 && m_pasteOffered)) return;
     const QString w = m_words.value(i);
-    if (w.isEmpty() || !m_controller || !m_controller->canAdd(w)) return;
+    if (w.isEmpty() || !m_controller) return;
+    // A word the dictionary lacks may be added; one it has (a typo it knows: "yest"), deleted.
+    if (m_controller->canAdd(w)) m_askingRemove = false;
+    else if (m_controller->canRemove(w)) m_askingRemove = true;
+    else return;
     m_barPressed = -1;
     m_asking = w;
     m_askDown = false;
@@ -674,6 +808,7 @@ void KeyboardView::ask(const QString &word)
 {
     if (!m_asking.isEmpty()) return;
     m_asking = word;
+    m_askingRemove = false;
     m_askDown = false;
     if (m_controller) m_controller->hapticLongPress();
     updatePopupRect();
@@ -699,7 +834,10 @@ bool KeyboardView::askTouch(int phase, qreal x, qreal y)
             if (h == m_askPressed) {
                 m_asking.clear();
                 updatePopupRect();
-                if (h == 1 && !word.isEmpty() && m_controller) m_controller->onAddWord(word);
+                if (h == 1 && !word.isEmpty() && m_controller) {
+                    if (m_askingRemove) m_controller->onRemoveWord(word);
+                    else m_controller->onAddWord(word);
+                }
             }
             m_askDown = false;
             m_askPressed = 0;
@@ -729,7 +867,8 @@ void KeyboardView::drawAsk(QPainter &p)
     const qreal boxTop = top + std::max(4 * m_dp, (barHeight() + rowHeight() - h) / 2 + 4 * m_dp);
     m_askBox = QRectF(left, boxTop, w, h);
     bubble(p, m_askBox);
-    const QString question = QStringLiteral("Add “%1” to dictionary?").arg(m_asking);
+    const QString question = (m_askingRemove ? QStringLiteral("Delete “%1” from dictionary?")
+                                             : QStringLiteral("Add “%1” to dictionary?")).arg(m_asking);
     QFont f = m_bold;
     f.setPixelSize(std::max(1, int(fitted(question, rowHeight() * 0.33, w - 2 * pad))));
     p.setFont(f);
@@ -871,7 +1010,7 @@ bool KeyboardView::menuTouch(int phase, qreal x, qreal y)
 bool KeyboardView::canSwipe(const Zone &z) const
 {
     const Key &k = *z.slot.key;
-    return m_settings.swipe && m_wordsAllowed && m_page == Page::Letters && m_alt == Alt::Off &&
+    return m_settings.swipe && m_wordsAllowed && m_page == Page::Letters && !m_searching && m_alt == Alt::Off &&
            k.kind == Kind::Char && k.text.length() == 1 && k.text[0] >= QLatin1Char('a') && k.text[0] <= QLatin1Char('z');
 }
 
@@ -884,6 +1023,14 @@ void KeyboardView::addSwipePoint(qreal x, qreal y)
 int KeyboardView::capsNow() const
 {
     return m_shift == Shift::Off ? CAPS_NONE : m_shift == Shift::Once ? CAPS_FIRST : CAPS_ALL;
+}
+
+//! [w] as shift would type it now.
+QString KeyboardView::withShift(const QString &w) const
+{
+    if (w.isEmpty() || m_shift == Shift::Off) return w;
+    if (m_shift == Shift::Lock) return QLocale(m_settings.language.id).toUpper(w);
+    return w.left(1).toUpper() + w.mid(1);
 }
 
 bool KeyboardView::swipeLayout(SwipeDecoder::Layout &out) const
@@ -979,7 +1126,7 @@ void KeyboardView::onRepeat()
     if (m_pressed < 0 || m_zones[m_pressed].slot.key->kind != Kind::Backspace) return;
     m_repeats++;
     const bool word = m_repeats * LETTER_REPEAT > WORD_DELETE_AFTER;
-    if (m_controller) m_controller->onBackspace(word);
+    sendBackspace(word);
     m_repeatTimer.start(word ? WORD_REPEAT : LETTER_REPEAT);
 }
 
@@ -990,6 +1137,7 @@ void KeyboardView::onHold()
     const Key &key = *z.slot.key;
     switch (key.kind) {
     case Kind::Space:
+        if (m_searching) break;
         m_held = true;
         startCursor(m_downX, m_downY);
         break;
@@ -1025,8 +1173,11 @@ void KeyboardView::press(int zone)
     switch (key.kind) {
     case Kind::Backspace:
         m_repeats = 0;
-        m_deleting = true;
-        if (m_controller) { m_controller->onBackspaceHeld(true); m_controller->onBackspace(false); }
+        if (!m_searching) {
+            m_deleting = true;
+            if (m_controller) m_controller->onBackspaceHeld(true);
+        }
+        sendBackspace(false);
         m_repeatTimer.start(FIRST_REPEAT);
         break;
     case Kind::Space:
@@ -1191,18 +1342,18 @@ void KeyboardView::commit()
         break;
     }
     case Kind::Sym: show(m_page == Page::Letters ? Page::Symbols : Page::Letters); break;
-    case Kind::Emoji: show(Page::Emoji); break;
+    case Kind::Emoji: if (m_searching) endSearch(false); else show(Page::Emoji); break;
     case Kind::Backspace: break;     // sent on the way down, and repeated since
-    case Kind::Return: if (m_controller) m_controller->onEnter(); break;
+    case Kind::Return: if (m_searching) endSearch(true); else if (m_controller) m_controller->onEnter(); break;
     case Kind::Globe: showMenu(); break;
-    case Kind::Space: if (m_controller) m_controller->onText(QStringLiteral(" ")); break;
+    case Kind::Space: send(QStringLiteral(" ")); break;
     case Kind::Char: type(output(key), m_alt != Alt::Off && !key.alt.isEmpty()); break;
     }
 }
 
 void KeyboardView::type(const QString &s, bool usedAlt)
 {
-    if (m_controller) m_controller->onText(s);
+    send(s);
     // A one-shot spent is not half of a double tap.
     if (m_shift == Shift::Once) { m_shift = Shift::Off; m_autoShift = false; m_lastShiftTap = NEVER; }
     if (usedAlt && m_alt == Alt::Once) { m_alt = Alt::Off; m_lastAltTap = NEVER; }
@@ -1210,7 +1361,7 @@ void KeyboardView::type(const QString &s, bool usedAlt)
 
 void KeyboardView::updateCaps()
 {
-    if (m_page != Page::Letters || m_shift == Shift::Lock || (m_shift == Shift::Once && !m_autoShift)) return;
+    if (m_page != Page::Letters || m_searching || m_shift == Shift::Lock || (m_shift == Shift::Once && !m_autoShift)) return;
     const bool caps = m_controller && m_controller->wantsCaps();
     const Shift next = caps ? Shift::Once : Shift::Off;
     if (next != m_shift) { m_shift = next; update(); }
@@ -1224,6 +1375,7 @@ void KeyboardView::reset()
     m_alt = Alt::Off;
     m_lastShiftTap = NEVER;
     m_lastAltTap = NEVER;
+    if (m_searching) barChange([this] { m_searching = false; m_searchText.clear(); });
     if (m_page != Page::Letters) show(Page::Letters);
     m_extended.clear();
     m_extendedFrame = QRectF();
@@ -1265,6 +1417,14 @@ bool KeyboardView::pointerDown(int id, qreal x, qreal y)
     // A touch that starts in the suggestion bar stays there.
     m_barPressed = -1;
     const int bc = barCell(x, y);
+    if (bc >= 0 && m_searching) {
+        // The search field: only its back arrow does anything.
+        m_finger = id;
+        m_barPressed = searchBack(QRectF(0, keyboardTop(), width(), barHeight())).contains(QPointF(x, y)) ? 0 : 1;
+        if (m_barPressed == 0) keyFeedback();
+        update();
+        return true;
+    }
     if (bc >= 0) {
         m_finger = id;
         m_barPressed = bc;
@@ -1306,13 +1466,24 @@ void KeyboardView::pointerUp(int id, qreal x, qreal y)
         return;
     }
     if (!m_asking.isEmpty() || m_askDown) { askTouch(Up, x, y); return; }
+    if (m_barPressed >= 0 && m_searching) {
+        const int was = m_barPressed;
+        m_barPressed = -1;
+        if (was == 0 && searchBack(QRectF(0, keyboardTop(), width(), barHeight())).contains(QPointF(x, y))) endSearch(false);
+        update();
+        return;
+    }
     if (m_barPressed >= 0) {
         m_barHoldTimer.stop();
         const int i = m_barPressed;
         m_barPressed = -1;
         if (barCell(x, y) == i && m_controller) {
             if (i == 2 && m_pasteOffered) m_controller->onPaste();
-            else if (!m_words[i].isEmpty()) m_controller->onPick(i);
+            else if (!m_words[i].isEmpty()) {
+                m_controller->onPick(i, capsNow());
+                // Shift for one letter is spent on the word, as a letter would spend it.
+                if (m_shift == Shift::Once) { m_shift = Shift::Off; m_autoShift = false; m_lastShiftTap = NEVER; }
+            }
         }
         update();
         return;

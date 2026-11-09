@@ -19,6 +19,7 @@
 #include "precontroller.h"
 #include "precorrector.h"
 #include "preemojipanel.h"
+#include "preklipy.h"
 #include "prekeyboardview.h"
 #include "preswipedecoder.h"
 #include "prewords.h"
@@ -33,6 +34,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QKeyEvent>
+#include <QLocale>
 #include <QLoggingCategory>
 #include <QSaveFile>
 #include <QTimer>
@@ -162,6 +164,7 @@ struct Controller::Dictionary
     QSharedPointer<Corrector> corrector;
     QSharedPointer<SwipeDecoder> decoder;
     QStringList learned;
+    QStringList removed;
 };
 
 struct Controller::FamilyWords
@@ -193,6 +196,7 @@ Controller::Controller(QObject *parent)
     };
     connect(this, &Controller::wordsLoaded, this, [this](quint64 generation) {
         if (generation != m_wordsGeneration) return;
+        syncRemoved();
         syncLearned();
         refreshBar();
     }, Qt::QueuedConnection);
@@ -250,12 +254,14 @@ void Controller::setPrefs(const QJsonObject &pre)
 {
     const Settings s = Settings::fromJson(pre);
     const bool learnedChanged = pre.value(QLatin1String("learned")) != m_prefs.value(QLatin1String("learned"));
+    const bool removedChanged = pre.value(QLatin1String("removed")) != m_prefs.value(QLatin1String("removed"));
     m_prefs = pre;
     if (s != m_settings) {
         m_settings = s;
         if (m_view) m_view->applySettings(s);
     }
     if (m_active && s.language != m_language) useLanguage(s.language);
+    if (removedChanged) syncRemoved();
     if (learnedChanged) syncLearned();
     refreshBar();
 }
@@ -412,6 +418,23 @@ void Controller::syncLearned()
     m_dictionary->learned = now;
 }
 
+//! Words deleted from the dictionary, or put back in Text Assist: the keyboard follows.
+void Controller::syncRemoved()
+{
+    if (!m_dictionary) return;
+    const QStringList now = Settings::removed(m_prefs, m_language);
+    for (const QString &w : now)
+        if (!m_dictionary->removed.contains(w)) { m_dictionary->corrector->remove(w); m_dictionary->decoder->forget(w); }
+    for (const QString &w : m_dictionary->removed) {
+        if (now.contains(w)) continue;
+        m_dictionary->corrector->restore(w);
+        QString spelt;
+        int score = 0;
+        if (m_dictionary->corrector->listed(w, &spelt, &score)) m_dictionary->decoder->add(spelt, score);
+    }
+    m_dictionary->removed = now;
+}
+
 void Controller::saveNextWords()
 {
     if (!m_family || !m_wordsFor.isValid() || !m_family->next->dirty()) return;
@@ -456,6 +479,7 @@ void Controller::startInput()
 
 void Controller::finishInput()
 {
+    if (m_view) m_view->hidden();
     m_field->flush();
     m_marks.clear();
     m_deleting = false;
@@ -832,10 +856,12 @@ void Controller::learnPair()
     m_family->next->learn(pair.first, spelt);
 }
 
-void Controller::onPick(int i)
+void Controller::onPick(int i, int caps)
 {
-    const QString word = m_bar.value(i);
-    if (word.isEmpty()) return;
+    const QString shown = m_bar.value(i);
+    if (shown.isEmpty()) return;
+    // Shift on (or the sentence's capital waiting): the word goes in with it. Not an emoji.
+    const QString word = (i == 2 && m_barEmoji) ? shown : withCaps(shown, caps);
     if (m_barWord.valid) { replaceTapped(m_barWord, word); return; }
     ownEdit();
     const bool learn = i == 0 && m_barVerbatim && m_composer.corrector && !m_composer.corrector->isKnown(word);
@@ -909,6 +935,41 @@ void Controller::onAddWord(const QString &word)
         m_dictionary->decoder->add(word.toLower(), LEARNED_SCORE);
         m_dictionary->learned = learned;
     }
+    refreshBar();
+}
+
+//! [word] as shift says: its first letter a capital, or all of it.
+QString Controller::withCaps(const QString &word, int caps) const
+{
+    if (word.isEmpty() || caps == KeyboardView::CAPS_NONE) return word;
+    if (caps == KeyboardView::CAPS_ALL) return QLocale(m_language.id).toUpper(word);
+    return word.left(1).toUpper() + word.mid(1);
+}
+
+bool Controller::canRemove(const QString &word)
+{
+    if (!m_composer.corrector || word.isEmpty() || !word[0].isLetter()) return false;
+    for (QChar c : word) if (!c.isLetter() && c != QLatin1Char('\'')) return false;
+    return m_composer.corrector->isKnown(word);
+}
+
+//! The owner said yes to deleting [word]: never offered or corrected to again, in this language.
+void Controller::onRemoveWord(const QString &word)
+{
+    const QString w = word.toLower();
+    QStringList removed = Settings::removed(m_prefs, m_language);
+    if (!removed.contains(w)) removed << w;
+    QStringList learned = Settings::learned(m_prefs, m_language);
+    learned.removeAll(w);
+    if (m_dictionary) {
+        m_dictionary->corrector->remove(w);
+        m_dictionary->decoder->forget(w);
+        m_dictionary->removed = removed;
+        m_dictionary->learned = learned;
+    }
+    writePrefs(Settings::withLearned(Settings::withRemoved(m_prefs, m_language, removed), m_language, learned));
+    for (int i = m_swipeGuesses.size() - 1; i >= 0; --i)
+        if (m_swipeGuesses[i].compare(word, Qt::CaseInsensitive) == 0) m_swipeGuesses.removeAt(i);
     refreshBar();
 }
 
@@ -1014,6 +1075,31 @@ void Controller::offerPaste()
     const QString key = t.isEmpty() ? QString()
         : QString::fromLatin1(QCryptographicHash::hash(t.toUtf8(), QCryptographicHash::Sha1).toHex());
     m_view->setPasteOffered(!t.isEmpty() && key != m_clipDone && m_settings.showsBar());
+}
+
+void Controller::setStateDir(const QString &dir)
+{
+    m_stateDir = dir;
+    QDir().mkpath(dir);
+    Klipy::instance().setStateDir(dir);
+}
+
+/*!
+ * A GIF or sticker tapped on the emoji page. LuneOS's applications take no
+ * pictures from a keyboard (on Android it goes in as a picture where the field
+ * takes one), so its link is typed in, and KLIPY is told it was shared.
+ */
+void Controller::onMedia(int kind, const QString &link, const QString &slug, const QString &query)
+{
+    if (link.isEmpty()) return;
+    ownEdit();
+    m_composer.forget();
+    m_field->commit(link);
+    m_lastCursor = m_field->cursor;
+    refreshBar();
+    Klipy::Item item;
+    item.slug = slug;
+    Klipy::instance().shared(kind == int(Klipy::Kind::Gif) ? Klipy::Kind::Gif : Klipy::Kind::Sticker, item, query);
 }
 
 void Controller::onPaste()

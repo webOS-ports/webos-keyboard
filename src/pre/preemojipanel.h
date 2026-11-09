@@ -19,9 +19,11 @@
 #ifndef PRE_EMOJIPANEL_H
 #define PRE_EMOJIPANEL_H
 
+#include "preklipy.h"
 #include "prepainter.h"
 
 #include <QElapsedTimer>
+#include <QFont>
 #include <QList>
 #include <QRectF>
 #include <QString>
@@ -29,16 +31,23 @@
 #include <QVector>
 
 #include <functional>
+#include <memory>
 
 class QPainter;
 
 namespace Pre {
 
+class MediaPanel;
+
 /*!
  * The emoji page: every emoji, by Unicode's categories, in a grid that scrolls;
- * a row of category tabs along the bottom between ABC and backspace, as on the
- * Sym page's bottom row. Tapping a tab jumps to its category, and the tab lights
- * as you scroll.
+ * a row of category tabs along the bottom, then backspace. Tapping a tab jumps to
+ * its category, and the tab lights as you scroll.
+ *
+ * Along the top, where the suggestion bar was: ABC, then Emoji, GIF and a
+ * sticker. The other two are KLIPY's (MediaPanel): there a "Search KLIPY" field
+ * follows the tabs, and the GIFs take everything below, down to the bottom of the
+ * keys; ABC is the only key left.
  *
  * The keyboard view owns it, gives it the keys' area, and hands it every touch
  * while it shows.
@@ -52,18 +61,37 @@ public:
         std::function<void()> backspace;
         std::function<void()> letters;
         std::function<void()> update;
+        //! The search field was tapped: type a search for [kind], starting from [query].
+        std::function<void(Klipy::Kind, const QString &)> search;
+        //! A GIF or sticker was tapped, found by searching for [query] (empty: trending).
+        std::function<void(Klipy::Kind, const Klipy::Item &, const QString &)> media;
     };
 
-    enum Area { None = 0, Grid = 1, Abc = 2, Back = 3, Tabs = 4 };
+    enum Area { None = 0, Grid = 1, Abc = 2, Back = 3, Tabs = 4, Strip = 5, Search = 6 };
+    enum class Tab { Emoji, Gif, Sticker };
 
-    EmojiPanel(qreal dp, const Actions &actions) : m_dp(dp), m_actions(actions) {}
+    EmojiPanel(qreal dp, const Actions &actions);
+    ~EmojiPanel();
 
-    void setDp(qreal dp) { m_dp = dp; }
+    void setDp(qreal dp);
+    void setFont(const QFont &font) { m_font = font; }
+    Tab tab() const { return m_tab; }
+    void select(Tab t);
+    //! A search was typed for [kind]: its tab, showing what was found.
+    void searched(Klipy::Kind kind, const QString &q);
+    //! The page is going away: the GIFs stop moving.
+    void close();
+    //! A word for a moment over the GIFs or stickers.
+    void say(Klipy::Kind kind, const QString &s, int ms = 2500);
     //! Fills the page: every category is read once, the recent ones each time it opens.
     void open(const QString &emojiFile, const QStringList &recent);
     //! Whether the device's emoji font draws [emoji]: every code point in it, joiners and selectors aside.
     static bool canDraw(const QString &emoji);
-    void layout(const QRectF &grid, const QRectF &bar);
+    /*!
+     * [top] is where the page starts (the suggestion bar's place, if it shows),
+     * [rows] the top three rows of keys, [bar] the bottom row.
+     */
+    void layout(qreal top, const QRectF &rows, const QRectF &bar);
     void draw(QPainter &p, Painter &painter, Style style, const std::function<void(QPainter &, const QString &, const QRectF &)> &label);
 
     void down(qreal x, qreal y);
@@ -81,6 +109,17 @@ private:
     void relayout();
     qreal cellHeight() const;
     qreal maxScroll() const;
+    MediaPanel *media() const;
+    MediaPanel *panel(Klipy::Kind kind) const;
+    //! The scroll of whichever grid shows.
+    qreal scroll() const;
+    void setScroll(qreal y);
+    qreal maxScrollNow() const;
+    void drawStrip(QPainter &p, Painter &painter, Style style);
+    qreal tabWidth() const;
+    QRectF topTab(int i) const;
+    QRectF searchRect() const;
+    QRectF clearRect() const;
     QRectF abcRect() const;
     QRectF backRect() const;
     QRectF tabRect(int i) const;
@@ -90,9 +129,19 @@ private:
 
     qreal m_dp;
     Actions m_actions;
+    QFont m_font;
+    Tab m_tab;
+    std::unique_ptr<MediaPanel> m_gifs;
+    std::unique_ptr<MediaPanel> m_stickers;
+    //! The tab shown last, shown again next time.
+    static Tab s_lastTab;
     QList<Category> m_all;
     QList<Category> m_categories;
     QRectF m_grid, m_bar;
+    //! The GIFs' and stickers' grid: under the strip, all the way down.
+    QRectF m_mediaGrid;
+    //! The tabs (and on KLIPY's, the search field) above the grid.
+    QRectF m_strip;
     int m_cols = 8;
     qreal m_cell = 48;
     QVector<qreal> m_starts;

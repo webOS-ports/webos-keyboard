@@ -72,7 +72,7 @@ public:
     //! Where the keyboard's data is (dictionary.txt and the rest).
     void setDataDir(const QString &dir) { m_dataDir = dir; }
     //! Where the owner's next words are kept.
-    void setStateDir(const QString &dir) { m_stateDir = dir; }
+    void setStateDir(const QString &dir);
     void setHost(MAbstractInputMethodHost *host) { m_host = host; }
     //! Calls a Luna method with no reply wanted (vibrate, launch).
     void setLunaCall(const std::function<void(const QString &, const QString &)> &call) { m_lunaCall = call; }
@@ -107,11 +107,17 @@ public:
     bool wantsCaps();
     void onSwipe(const QVector<float> &xs, const QVector<float> &ys, int caps);
     void onSwipeProgress(const QVector<float> &xs, const QVector<float> &ys, int caps);
-    void onPick(int i);
+    //! The [i]th word in the bar was tapped; [caps] is shift as it was: the word goes in so.
+    void onPick(int i, int caps);
     bool canAdd(const QString &word);
     void onAddWord(const QString &word);
+    //! Whether [word], held in the bar, may be deleted from the dictionary: it is in it.
+    bool canRemove(const QString &word);
+    void onRemoveWord(const QString &word);
     void onBackspaceHeld(bool held);
     void onPaste();
+    //! A GIF or sticker from KLIPY was tapped on the emoji page, found by searching for [query].
+    void onMedia(int kind, const QString &link, const QString &slug, const QString &query);
     void onLanguageFlick(int step);
     void onUseLanguage(const QString &id);
     void onUseLuneOSKeyboard();
@@ -145,6 +151,8 @@ private:
     QString nextWordsFile(const Language &lang) const;
     void saveNextWords();
     void syncLearned();
+    void syncRemoved();
+    QString withCaps(const QString &word, int caps) const;
     void writePrefs(const QJsonObject &pre);
 
     Composer::Rules rules() const;

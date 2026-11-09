@@ -36,7 +36,8 @@ namespace Pre {
  *   "keyboard": { "keyboardLayout": "Pre Keyboard",
  *                 "pre": { "style": "orange", "height": "medium", "autocorrect": true, ...,
  *                          "languages": ["en_US", "fr"], "language": "en_US",
- *                          "learned": { "en": ["luneos"] }, "recentEmoji": ["🙂"] } }
+ *                          "learned": { "en": ["luneos"] }, "removed": { "en": ["yest"] },
+ *                          "recentEmoji": ["🙂"] } }
  */
 struct Settings
 {
@@ -76,6 +77,9 @@ struct Settings
     //! Where a language's family keeps the owner's words: "en", "fr".
     static QStringList learned(const QJsonObject &pre, const Language &lang);
     static QJsonObject withLearned(QJsonObject pre, const Language &lang, const QStringList &words);
+    //! The dictionary's words the owner deleted, kept by family as the learned ones are ("removed").
+    static QStringList removed(const QJsonObject &pre, const Language &lang);
+    static QJsonObject withRemoved(QJsonObject pre, const Language &lang, const QStringList &words);
     static QStringList recentEmoji(const QJsonObject &pre);
     static QJsonObject withRecentEmoji(QJsonObject pre, const QString &emoji);
     static const int RECENT_MAX = 32;

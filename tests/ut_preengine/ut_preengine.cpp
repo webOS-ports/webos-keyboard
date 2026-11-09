@@ -9,6 +9,7 @@
 
 #include "precomposer.h"
 #include "precorrector.h"
+#include "preklipy.h"
 #include "prekeymap.h"
 #include "prelanguage.h"
 #include "preswipedecoder.h"
@@ -306,6 +307,7 @@ static void composerTests(const QSharedPointer<Corrector> &c)
 }
 
 // --- Corrector ----------------------------------------------------------------------------
+
 
 static void correctorTests(const QSharedPointer<Corrector> &c)
 {
@@ -660,6 +662,83 @@ static void swipeTests(const QSharedPointer<Corrector> &c)
     printf("swipe decode: %.1f ms\n", t.nsecsElapsed() / 20 / 1e6);
 }
 
+//! Its own dictionary, since it deletes words from it.
+static void removedTests()
+{
+    g_test = "aDeletedWordIsCorrectedAwayFromAndCanBePutBack";
+    QSharedPointer<Corrector> d = corrector(Language::enUS());
+    EQ(d->isKnown("om"), true);
+    EQ(d->correct("om"), QString());
+    d->learn("yest");
+    EQ(d->suggestions("yest").value(0), QString("yest"));
+    d->remove("om"); d->remove("yest");
+    EQ(d->isKnown("om"), false);
+    EQ(d->isKnown("yest"), false);
+    CHECK(!d->correct("om").isEmpty());
+    CHECK(d->suggestions("om").contains("on"));
+    CHECK(d->suggestions("yest").contains("test") || d->suggestions("yest").contains("yes"));
+    bool listed = false;
+    for (const auto &e : d->entries()) if (e.first == QLatin1String("om")) listed = true;
+    EQ(listed, false);
+    d->restore("om");
+    EQ(d->isKnown("om"), true);
+
+    g_test = "aDeletedWordIsNoLongerSwiped";
+    SwipeDecoder s(d->entries());
+    const SwipeDecoder::Layout layout = swipeLayout();
+    std::mt19937 rnd(1);
+    const auto p = swipePath("hello", 0, rnd, 0);
+    EQ(s.decode(p.first, p.second, layout).value(0), QString("hello"));
+    s.forget("hello");
+    CHECK(!s.decode(p.first, p.second, layout).contains("hello"));
+}
+
+//! KLIPY's answers read (no network: only what came back).
+static void klipyTests()
+{
+    const QByteArray json = R"({"result":true,"data":{"data":[
+      {"id":8041071659142944,"slug":"hello-hi-662","title":"Hello","type":"gif",
+       "blur_preview":"data:image/jpeg;base64,AAAA",
+       "file":{
+         "hd":{"gif":{"url":"https://static.klipy.com/hd.gif","width":498,"height":498,"size":4001918}},
+         "md":{"gif":{"url":"https://static.klipy.com/md.gif","width":320,"height":320,"size":2001918},
+               "webp":{"url":"https://static.klipy.com/md.webp","width":320,"height":320,"size":200000}},
+         "sm":{"gif":{"url":"https://static.klipy.com/sm.gif","width":220,"height":110,"size":300000},
+               "jpg":{"url":"https://static.klipy.com/sm.jpg","width":220,"height":110,"size":7000}}}},
+      {"type":"ad","content":"<div></div>"},
+      {"id":2,"slug":"grrr","title":"Grrr Sticker","type":"sticker",
+       "file":{"md":{"png":{"url":"https://static.klipy.com/g.png","width":189,"height":200,"size":3178},
+                     "webp":{"url":"https://static.klipy.com/g.webp","width":189,"height":200,"size":16260}}}}
+    ],"current_page":1,"per_page":24,"has_next":true}})";
+
+    g_test = "readsAPage";
+    bool ok = false;
+    QString refusal;
+    const Klipy::Page p = Klipy::parse(json, &ok, &refusal);
+    EQ(ok, true);
+    EQ(int(p.items.size()), 2);                  // the ad, with no file, is left out
+    EQ(p.page, 1);
+    EQ(p.hasNext, true);
+    const Klipy::Item &gif = p.items.value(0);
+    EQ(gif.id, QString("8041071659142944"));
+    EQ(gif.slug, QString("hello-hi-662"));
+    const Klipy::File *jpg = gif.first("jpg", { "md", "sm" });
+    EQ(jpg ? jpg->url : QString(), QString("https://static.klipy.com/sm.jpg"));
+    CHECK(qFuzzyCompare(gif.aspect(), 1.0));
+    EQ(gif.blur, QString("data:image/jpeg;base64,AAAA"));
+    // LuneOS's applications take a GIF as its link: the medium GIF.
+    EQ(Klipy::link(gif), QString("https://static.klipy.com/md.gif"));
+    // A sticker with no GIF: its WebP.
+    EQ(Klipy::link(p.items.value(1)), QString("https://static.klipy.com/g.webp"));
+
+    g_test = "refusesAnError";
+    Klipy::parse(R"({"result":false,"message":"bad key"})", &ok, &refusal);
+    EQ(ok, false);
+    EQ(refusal, QString("bad key"));
+    Klipy::parse(R"({"result":false,"errors":{"message":["The provided API key is invalid."]}})", &ok, &refusal);
+    EQ(refusal, QString("The provided API key is invalid."));
+}
+
 int main(int argc, char **argv)
 {
     QCoreApplication app(argc, argv);
@@ -675,6 +754,8 @@ int main(int argc, char **argv)
     languageTests();
     emojiTests();
     swipeTests(c);
+    removedTests();
+    klipyTests();
     printf("%d passed, %d failed\n", g_passed, g_failed);
     return g_failed ? 1 : 0;
 }

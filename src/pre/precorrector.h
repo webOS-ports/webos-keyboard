@@ -81,6 +81,18 @@ public:
     //! The owner took [word] out of their dictionary: corrected again, unless the dictionary has it.
     void unlearn(const QString &word);
 
+    /*!
+     * Words the owner deleted from the dictionary ("yest", "om"): never offered or
+     * corrected to again, and corrected away from when typed, as if the word list
+     * didn't have them. A deleted word is no longer one of the owner's own either.
+     */
+    void remove(const QString &word);
+    void removeAll(const QStringList &words);
+    //! Put back in, from the dictionary screen.
+    void restore(const QString &word);
+    //! The dictionary's own spelling and score for [word], deleted or not; false if it hasn't it.
+    bool listed(const QString &word, QString *spelt, int *score) const;
+
     bool isKnown(const QString &word) const;
     //! [word] spelt as the dictionary spells it ("i'm" -> "I'm"), or empty for a word it doesn't know.
     QString spelling(const QString &word) const;
@@ -105,6 +117,9 @@ private:
     typedef QPair<QString, float> Scored;
 
     bool learned(const QString &lower) const;
+    bool removed(const QString &lower) const;
+    //! The dictionary's entry for a lower-case [key], unless the owner deleted it; null if none.
+    const Entry *entry(const QString &key) const;
     bool contractionMeant(const QString &word, const QString &context) const;
     Scored accented(const QString &w) const;
     Scored elision(const QString &w) const;
@@ -130,8 +145,10 @@ private:
     QHash<QString, QPair<int, int>> m_odds;
     QHash<QChar, QPair<int, int>> m_position;
 
+    //! Guards both: the suggestion thread reads them while the keyboard changes them.
     mutable QMutex m_learnedLock;
     QSet<QString> m_learned;
+    QSet<QString> m_removed;
 };
 
 } // namespace Pre

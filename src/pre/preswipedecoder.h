@@ -72,6 +72,8 @@ public:
     void add(const QString &word, int score);
     //! A word the owner took out of their dictionary: gone, unless the dictionary has it too.
     void remove(const QString &word);
+    //! A word the owner deleted from the dictionary: gone, wherever it came from.
+    void forget(const QString &word);
 
     /*!
      * The likeliest words for the path ([px], [py] in pixels), best first; empty

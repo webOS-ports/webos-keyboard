@@ -222,6 +222,17 @@ void SwipeDecoder::remove(const QString &word)
     }
 }
 
+void SwipeDecoder::forget(const QString &word)
+{
+    QMutexLocker l(&m_lock);
+    for (auto it = m_buckets.begin(); it != m_buckets.end(); ++it) {
+        QVector<Word> &list = it.value();
+        list.erase(std::remove_if(list.begin(), list.end(), [&](const Word &w) {
+                       return w.word.compare(word, Qt::CaseInsensitive) == 0;
+                   }), list.end());
+    }
+}
+
 QStringList SwipeDecoder::decode(const QVector<float> &px, const QVector<float> &py, const Layout &layout, int max,
                                  const QStringList &likely, const std::function<bool()> &stale)
 {

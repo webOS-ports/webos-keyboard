@@ -207,8 +207,10 @@ QVector<QPair<QString, int>> Corrector::entries() const
 {
     QVector<QPair<QString, int>> out;
     out.reserve(m_words.size());
+    QMutexLocker l(&m_learnedLock);
     for (auto it = m_words.cbegin(); it != m_words.cend(); ++it)
-        out.append({ it->word, it->score });
+        if (!m_removed.contains(it.key()))
+            out.append({ it->word, it->score });
     return out;
 }
 
@@ -236,13 +238,57 @@ bool Corrector::learned(const QString &lower) const
     return m_learned.contains(lower);
 }
 
+void Corrector::remove(const QString &word)
+{
+    const QString k = word.toLower();
+    QMutexLocker l(&m_learnedLock);
+    m_removed.insert(k);
+    m_learned.remove(k);
+}
+
+void Corrector::removeAll(const QStringList &words)
+{
+    for (const QString &w : words)
+        remove(w);
+}
+
+void Corrector::restore(const QString &word)
+{
+    QMutexLocker l(&m_learnedLock);
+    m_removed.remove(word.toLower());
+}
+
+bool Corrector::listed(const QString &word, QString *spelt, int *score) const
+{
+    auto it = m_words.constFind(word.toLower());
+    if (it == m_words.cend())
+        return false;
+    if (spelt) *spelt = it->word;
+    if (score) *score = it->score;
+    return true;
+}
+
+bool Corrector::removed(const QString &lower) const
+{
+    QMutexLocker l(&m_learnedLock);
+    return m_removed.contains(lower);
+}
+
+const Corrector::Entry *Corrector::entry(const QString &key) const
+{
+    auto it = m_words.constFind(key);
+    if (it == m_words.cend() || removed(key))
+        return nullptr;
+    return &it.value();
+}
+
 bool Corrector::isKnown(const QString &word) const
 {
     const auto e = m_lang.elided(word);
     if (!e.first.isEmpty())
         return isKnown(e.second) || learned(word.toLower());
     const QString lower = word.toLower();
-    return m_words.contains(lower) || learned(lower);
+    return entry(lower) || learned(lower);
 }
 
 QString Corrector::spelling(const QString &word) const
@@ -251,8 +297,7 @@ QString Corrector::spelling(const QString &word) const
     if (!e.first.isEmpty())
         return spelling(e.second);
     const QString lower = word.toLower();
-    auto it = m_words.find(lower);
-    if (it != m_words.end())
+    if (const Entry *it = entry(lower))
         return it->word;
     return learned(lower) ? lower : QString();
 }
@@ -287,8 +332,7 @@ QString Corrector::correct(const QString &typed, const QString &context) const
             return casedLike(typed, a.value());
     }
 
-    auto known = m_words.find(lower);
-    if (known != m_words.end()) {
+    if (const Entry *known = entry(lower)) {
         // Known. Only its capital can be wrong: "i", or "london" for "London".
         return (typed == lower && known->word != lower) ? known->word : QString();
     }
@@ -317,7 +361,7 @@ QString Corrector::correct(const QString &typed, const QString &context) const
 Corrector::Scored Corrector::accented(const QString &w) const
 {
     auto it = m_plain.find(Language::fold(w));
-    if (it == m_plain.end())
+    if (it == m_plain.end() || removed(it->word.toLower()))
         return {};
     if (it->word.compare(w, Qt::CaseInsensitive) == 0)
         return {};
@@ -331,8 +375,8 @@ Corrector::Scored Corrector::elision(const QString &w) const
     for (const QString &e : m_lang.elisions) {
         if (w.length() < e.length() + 2 || !w.startsWith(e))
             continue;
-        auto rest = m_words.find(w.mid(e.length()));
-        if (rest == m_words.end())
+        const Entry *rest = entry(w.mid(e.length()));
+        if (!rest)
             continue;
         // Only before a vowel or a silent h does a word elide.
         if (!QStringLiteral("aeiouyh").contains(Language::base(rest->word[0].toLower())))
@@ -364,18 +408,15 @@ QStringList Corrector::suggestions(const QString &typed, const QString &context,
         out.add(fix);
     } else if (learned(lower)) {
         out.add(typed);
-    } else {
-        auto it = m_words.find(lower);
-        if (it != m_words.end())
-            out.add(casedLike(typed, it->word));
+    } else if (const Entry *it = entry(lower)) {
+        out.add(casedLike(typed, it->word));
     }
     // A word that is also a contraction without its apostrophe ("ill", "its"):
     // the contraction next, since nothing else here would find it; or, when the
     // context made it the contraction, the word as typed next.
     if (m_lang.english()) {
         if (!fix.isEmpty() && ambiguous().contains(lower)) {
-            auto it = m_words.find(lower);
-            if (it != m_words.end())
+            if (const Entry *it = entry(lower))
                 out.add(casedLike(typed, it->word));
         }
         if (out.size() > 0) {
@@ -465,9 +506,8 @@ QStringList Corrector::completions(const QString &prefix, int max) const
     int looked = 0;
     for (auto i = lo; i != m_sorted.cend() && i->startsWith(prefix) && looked < COMPLETION_SCAN; ++i, ++looked) {
         if (i->length() > prefix.length()) {
-            auto it = m_words.constFind(*i);
-            if (it != m_words.cend())
-                found << &it.value();
+            if (const Entry *it = entry(*i))
+                found << it;
         }
     }
     std::stable_sort(found.begin(), found.end(), [](const Entry *a, const Entry *b) { return a->score > b->score; });
@@ -519,10 +559,10 @@ Corrector::Scored Corrector::split(const QString &w) const
     Scored best;
     bool have = false;
     auto consider = [&](const QString &a, const QString &b, float cost) {
-        auto ea = m_words.find(a);
-        if (ea == m_words.end()) return;
-        auto eb = m_words.find(b);
-        if (eb == m_words.end()) return;
+        const Entry *ea = entry(a);
+        if (!ea) return;
+        const Entry *eb = entry(b);
+        if (!eb) return;
         if (ea->score < halfScore(a) || eb->score < halfScore(b)) return;
         const bool paired = follows(a, b);
         // Two little words that don't go together ("to on" for "toon") are
@@ -552,10 +592,10 @@ QList<Corrector::Scored> Corrector::pickScored(const QHash<QString, float> &cand
     for (auto it = cands.cbegin(); it != cands.cend(); ++it) {
         if (it.value() > maxCost)
             continue;
-        auto e = m_words.constFind(it.key());
-        if (e == m_words.cend() || e->score < minScore)
+        const Entry *e = entry(it.key());
+        if (!e || e->score < minScore)
             continue;
-        found.append({ &e.value(), e->score - weight * it.value() });
+        found.append({ e, e->score - weight * it.value() });
     }
     std::stable_sort(found.begin(), found.end(),
                      [](const QPair<const Entry *, float> &a, const QPair<const Entry *, float> &b) {

@@ -14,8 +14,14 @@ DEFINES += MALIIT_DEFAULT_PROFILE=\\\"$$MALIIT_DEFAULT_PROFILE\\\"
 contains(QT_MAJOR_VERSION, 4) {
     QT = core gui
 } else {
-    QT = core gui widgets quick qml
+    QT = core gui widgets quick qml network
 }
+
+# KLIPY's app key, for the Pre Keyboard's GIFs and stickers: qmake KLIPY_KEY=..., or the
+# KLIPY_KEY environment variable at qmake time. Without one, their tabs say so. Whatever
+# key is used ends up readable in the library.
+isEmpty(KLIPY_KEY): KLIPY_KEY = $$(KLIPY_KEY)
+!isEmpty(KLIPY_KEY): DEFINES += PRE_KLIPY_KEY=\\\"$$KLIPY_KEY\\\"
 
 LIBS += -lluna-service2
 
@@ -39,9 +45,11 @@ HEADERS += \
     ../pre/precontroller.h \
     ../pre/precorrector.h \
     ../pre/preemojipanel.h \
+    ../pre/preklipy.h \
     ../pre/prekeyboardview.h \
     ../pre/prekeymap.h \
     ../pre/prelanguage.h \
+    ../pre/premediapanel.h \
     ../pre/prepainter.h \
     ../pre/presettings.h \
     ../pre/preswipedecoder.h \
@@ -63,9 +71,11 @@ SOURCES += \
     ../pre/precontroller.cpp \
     ../pre/precorrector.cpp \
     ../pre/preemojipanel.cpp \
+    ../pre/preklipy.cpp \
     ../pre/prekeyboardview.cpp \
     ../pre/prekeymap.cpp \
     ../pre/prelanguage.cpp \
+    ../pre/premediapanel.cpp \
     ../pre/prepainter.cpp \
     ../pre/presettings.cpp \
     ../pre/preswipedecoder.cpp \

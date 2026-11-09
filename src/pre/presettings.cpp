@@ -110,6 +110,22 @@ QJsonObject Settings::withLearned(QJsonObject pre, const Language &lang, const Q
     return pre;
 }
 
+QStringList Settings::removed(const QJsonObject &pre, const Language &lang)
+{
+    QStringList out;
+    for (const QJsonValue &v : pre.value(QLatin1String("removed")).toObject().value(familyOf(lang)).toArray())
+        out << v.toString();
+    return out;
+}
+
+QJsonObject Settings::withRemoved(QJsonObject pre, const Language &lang, const QStringList &words)
+{
+    QJsonObject removed = pre.value(QLatin1String("removed")).toObject();
+    removed.insert(familyOf(lang), QJsonArray::fromStringList(words));
+    pre.insert(QLatin1String("removed"), removed);
+    return pre;
+}
+
 QStringList Settings::recentEmoji(const QJsonObject &pre)
 {
     QStringList out;
