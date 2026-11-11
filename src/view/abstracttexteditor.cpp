@@ -636,6 +636,25 @@ void AbstractTextEditor::replacePreedit(const QString &replacement)
     sendPreeditString(d->text->preedit(), d->text->preeditFace());
 }
 
+//! \brief Asks the word engine again about the word being typed, as after
+//! a change of language: the candidates were the old language's, and the
+//! word may be spelt right in one and wrong in the other.
+void AbstractTextEditor::refreshCandidates()
+{
+    Q_D(AbstractTextEditor);
+
+    if (not d->valid()) {
+        return;
+    }
+
+    // computeCandidates can change preedit face, so needs to happen
+    // before sending preedit:
+    d->word_engine->computeCandidates(d->text.data());
+    if (not d->text->preedit().isEmpty()) {
+        sendPreeditString(d->text->preedit(), d->text->preeditFace());
+    }
+}
+
 //! \brief Replaces current preedit with given replacement and then
 //! commits it.
 //! \param replacement New preedit string to commit.

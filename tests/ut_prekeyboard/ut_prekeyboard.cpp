@@ -57,16 +57,18 @@ private:
     NoFeatures features;
 };
 
-//! Offers the same two words for whatever is typed.
+//! Offers the same two words for whatever is typed: [first], then "pi".
 class TwoWords : public Logic::AbstractWordEngine
 {
 public:
     AbstractLanguageFeatures *languageFeature() override { return &features; }
+    //! Another language's words.
+    QString first = QStringLiteral("pa");
 
 private:
     WordCandidateList fetchCandidates(Model::Text *) override
     {
-        return WordCandidateList{ WordCandidate(WordCandidate::SourcePrediction, QStringLiteral("pa")),
+        return WordCandidateList{ WordCandidate(WordCandidate::SourcePrediction, first),
                                   WordCandidate(WordCandidate::SourcePrediction, QStringLiteral("pi")) };
     }
     NoFeatures features;
@@ -467,6 +469,36 @@ private Q_SLOTS:
         c.onBackspace(false);
         c.onBackspace(false);
         QCOMPARE(editor.backspaces, up + 2);
+    }
+
+    void barFollowsALanguageSwitch()
+    {
+        auto *words = new TwoWords;
+        CountingEditor editor(words);
+        words->setEnabled(true);
+        editor.setPreeditEnabled(true);
+        Logic::EventHandler handler;
+        QObject::connect(&handler, &Logic::EventHandler::keyPressed, &editor, &AbstractTextEditor::onKeyPressed);
+        QObject::connect(&handler, &Logic::EventHandler::keyReleased, &editor, &AbstractTextEditor::onKeyReleased);
+        QStringList firsts;
+        QObject::connect(&editor, &AbstractTextEditor::wordCandidatesChanged,
+                         [&](const WordCandidateList &l) { firsts << (l.isEmpty() ? QString() : l.first().word()); });
+
+        handler.onKeyPressed(QStringLiteral("p"), QString());
+        handler.onKeyReleased(QStringLiteral("p"), QString());
+        QCOMPARE(firsts.last(), QStringLiteral("pa"));
+
+        // The word engine has the new language: the bar is asked again.
+        words->first = QStringLiteral("po");
+        editor.refreshCandidates();
+        QCOMPARE(firsts.last(), QStringLiteral("po"));
+        QCOMPARE(editor.text()->preedit(), QStringLiteral("p"));
+
+        // Nothing typed: nothing stays up.
+        handler.onKeyPressed(QString(), QStringLiteral("backspace"));
+        handler.onKeyReleased(QString(), QStringLiteral("backspace"));
+        editor.refreshCandidates();
+        QCOMPARE(firsts.last(), QString());
     }
 
     void barEmptiesWhenTheWordIsBackspacedAway()

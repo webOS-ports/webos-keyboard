@@ -129,6 +129,8 @@ InputMethod::InputMethod(MAbstractInputMethodHost *host)
 	connect(this, SIGNAL(keyboardSizeChanged(QString)), this, SLOT(setKeyboardSize(QString)));
     connect(this, SIGNAL(keyboardLayoutChanged(QString)), this, SLOT(setKeyboardLayout(QString)));
     connect(this, SIGNAL(activeLanguageChanged(QString)), d->editor.wordEngine(), SLOT(onLanguageChanged(QString)));
+    // After the word engine has its new language: the bar was the old one's.
+    connect(this, SIGNAL(activeLanguageChanged(QString)), &d->editor, SLOT(refreshCandidates()));
     connect(d->m_geometry, SIGNAL(visibleRectChanged()), this, SLOT(onVisibleRectChanged()));
     connect(d->m_geometry, SIGNAL(popoverRectChanged()), this, SLOT(updateWindowMask()));
 

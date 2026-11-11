@@ -123,6 +123,7 @@ public:
     Q_SLOT void replaceAndCommitPreedit(const QString &replacement);
     Q_SLOT void clearPreedit();
     Q_SLOT void resetPreedit();
+    Q_SLOT void refreshCandidates();
 
     bool isPreeditEnabled() const;
     Q_SLOT void setPreeditEnabled(bool enabled);
