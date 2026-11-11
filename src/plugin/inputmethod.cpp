@@ -559,8 +559,14 @@ bool InputMethod::t9HandleKey(QEvent::Type keyType, Qt::Key keyCode, bool autoRe
             return false;
         }
         if (keyType == QEvent::KeyPress) {
+            // Only the character being cycled: a word typed on the screen
+            // before it stays.
+            const QString before = d->t9Before;
             d->resetT9();
-            d->editor.clearPreedit();
+            if (before.isEmpty())
+                d->editor.clearPreedit();
+            else
+                d->editor.replacePreedit(before);
         }
         return true;
     }
@@ -585,6 +591,12 @@ bool InputMethod::t9HandleKey(QEvent::Type keyType, Qt::Key keyCode, bool autoRe
     if (!sameCharacter) {
         finalizeT9();
         d->t9Commits = d->hiddenText;
+        // A word typed on the screen keys is in the preedit too: the character
+        // goes on the end of it rather than in its place ("the", then 2-2, was
+        // "b"), and the word goes in whole when the character is done.
+        // Committing it here instead had the application's answer to that
+        // commit come back mid-cycle and end it.
+        d->t9Before = d->t9Commits ? QString() : d->editor.text()->preedit();
     }
     const T9Multitap::Step step = d->t9.press(keyCode, sameCharacter);
     const QString character(step.character);
@@ -603,7 +615,7 @@ bool InputMethod::t9HandleKey(QEvent::Type keyType, Qt::Key keyCode, bool autoRe
         inputMethodHost()->sendCommitString(character, step.replacesPrevious ? -1 : 0,
                                             step.replacesPrevious ? 1 : 0);
     } else {
-        d->editor.replacePreedit(character);
+        d->editor.replacePreedit(d->t9Before + character);
     }
     d->t9Timer->start();
     return true;

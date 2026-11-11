@@ -128,6 +128,9 @@ public:
     //! hides what is typed, or in the preedit until it is done, elsewhere.
     T9Multitap t9;
     bool t9Commits;
+    //! What was in the preedit, typed on the screen keys, when the character
+    //! being cycled was begun: the character goes on the end of it.
+    QString t9Before;
     QTimer *t9Timer;
     //! The focused field hides what is typed in it (a password), from the
     //! last update().
@@ -487,6 +490,7 @@ public:
             t9Timer->stop();
         t9.end();
         t9Commits = false;
+        t9Before.clear();
     }
 
     void truncateEnabledLanguageLocales(const QStringList& locales)
