@@ -30,6 +30,7 @@
 #include <functional>
 
 class QNetworkAccessManager;
+class TestKlipy;
 
 namespace Pre {
 
@@ -93,9 +94,9 @@ public:
     //! Where the call count and the anonymous id are kept.
     void setStateDir(const QString &dir) { m_stateDir = dir; }
 
-    static const int PER_PAGE = 24;
+    static constexpr int PER_PAGE = 24;
     //! Calls to KLIPY's API allowed in any hour, a little under a testing key's 100.
-    static const int HOURLY = 90;
+    static constexpr int HOURLY = 90;
 
     //! The trending page, or a search when [query] is given. [done] runs unless [context] is gone.
     void fetch(Kind kind, const QString &query, int page, QObject *context, const std::function<void(const Answer &)> &done);
@@ -116,7 +117,10 @@ public:
     static QString link(const Item &item);
 
 private:
+    friend class ::TestKlipy;
     Klipy();
+    //! Milliseconds on a clock that isn't set back, for how old an answer is.
+    static qint64 monotonicMs();
     QNetworkAccessManager *net();
     bool allowCall();
     QString customerId();

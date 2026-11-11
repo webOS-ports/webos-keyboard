@@ -21,6 +21,7 @@
 #include <QBuffer>
 #include <QElapsedTimer>
 #include <QFontMetricsF>
+#include <QImageReader>
 #include <QMovie>
 #include <QPainter>
 #include <QPainterPath>
@@ -36,6 +37,12 @@ namespace {
 const int CACHED = 60;
 //! What showed stays as it was for this long between openings (as Klipy keeps answers).
 const qint64 FRESH_FOR = 60 * 60000LL;
+
+//! Whether Qt here can show [format] (a plugin, e.g. qtimageformats' webp, may be missing).
+bool readable(const char *format)
+{
+    return QImageReader::supportedImageFormats().contains(QByteArray(format));
+}
 
 qint64 clockMs()
 {
@@ -75,6 +82,8 @@ void MediaPanel::search(const QString &q)
     m_refusal.clear();
     m_scrollY = 0;
     m_loading = false;
+    m_broken.clear();
+    m_blurs.clear();
     ++m_generation;
     relayout();
     if (Klipy::instance().configured()) more();
@@ -155,7 +164,8 @@ QString MediaPanel::previewUrl(const Klipy::Item &item) const
 {
     const QStringList small{ QStringLiteral("sm"), QStringLiteral("xs"), QStringLiteral("md") };
     const QStringList any{ QStringLiteral("sm"), QStringLiteral("xs"), QStringLiteral("md"), QStringLiteral("hd") };
-    const Klipy::File *f = item.first(QStringLiteral("webp"), small);
+    static const bool webp = readable("webp");
+    const Klipy::File *f = webp ? item.first(QStringLiteral("webp"), small) : nullptr;
     if (!f) f = item.first(QStringLiteral("gif"), { QStringLiteral("sm"), QStringLiteral("xs") });
     if (!f) f = item.first(QStringLiteral("jpg"), any);
     if (!f) f = item.first(QStringLiteral("png"), any);
@@ -172,14 +182,20 @@ const MediaPanel::Picture *MediaPanel::picture(const QString &url)
 
 void MediaPanel::decode(const QString &url, const QByteArray &bytes, int width)
 {
-    if (bytes.isEmpty()) return;
+    // Not there, or not a picture Qt can show: drawn as a blank, and not fetched
+    // again with every paint.
+    if (bytes.isEmpty()) { m_broken.insert(url); return; }
     auto *movie = new QMovie(this);
     auto *buffer = new QBuffer(movie);
     buffer->setData(bytes);
     buffer->open(QIODevice::ReadOnly);
     movie->setDevice(buffer);
     movie->setCacheMode(QMovie::CacheNone);
-    if (!movie->isValid() || !movie->jumpToFrame(0)) { delete movie; return; }
+    if (!movie->isValid() || !movie->jumpToFrame(0)) {
+        delete movie;
+        m_broken.insert(url);
+        return;
+    }
     // No bigger than the cell needs: a sm GIF is a few hundred pixels across.
     const QSize size = movie->currentImage().size();
     Picture pic;
@@ -236,7 +252,9 @@ void MediaPanel::afterPaint()
         else it->movie->setPaused(false);
         m_running.insert(url);
     }
-    for (const QString &url : QSet<QString>(m_running).subtract(m_drawn)) {
+    QSet<QString> offScreen = m_running;
+    offScreen.subtract(m_drawn);
+    for (const QString &url : std::as_const(offScreen)) {
         auto it = m_cache.find(url);
         if (it != m_cache.end() && it->movie) it->movie->setPaused(true);
         m_running.remove(url);
@@ -278,7 +296,7 @@ void MediaPanel::draw(QPainter &p, const QFont &font)
         const Klipy::Item &item = m_items[i];
         const QString url = previewUrl(item);
         const Picture *pic = url.isEmpty() ? nullptr : picture(url);
-        if (!url.isEmpty() && !pic) m_wanted.insert(url, int(cell.width()));
+        if (!url.isEmpty() && !pic && !m_broken.contains(url)) m_wanted.insert(url, int(cell.width()));
         p.save();
         if (m_kind == Klipy::Kind::Gif) {
             QPainterPath clip;

@@ -117,6 +117,7 @@ its exit status can be non-zero while clang-tidy's was not.
 | Test | Covers |
 | --- | --- |
 | `ut_hardwarekeyboard` | Loading the per-device JSON profiles (truncated, nameless, wrong shape, unknown level names, non-numeric scancodes — none of which may take MaliitServer down); selecting one, including the most-specific-wins rule that tells a Titan from a Titan Pocket when both register `aw9523-key`; the Alt and Sym level state machine — held, tapped to latch, double-tapped to lock, third tap to unlock — and that a release replays what its own press decided; the Shift latch; `reset()` on focus leaving a field; and that the six profiles this package ships all parse and load. |
+| `ut_klipy` | The Pre Keyboard's GIFs and stickers, with no network and no key: KLIPY's answers read as pages (an ad or an item with no files is not a picture; 16-digit ids kept exact), its refusals shown in its own words, the link a GIF goes in as, the hourly limit on calls (kept on disk, forgetting calls older than an hour or stamped in the future), answers used again for an hour and not after, and the grid not fetching a picture it could not show with every paint. |
 | `ut_prekeyboard` | The Pre Keyboard: a layout for every language plugin, its settings, the controller that hands its keys to LuneOS's editor and word engine, the suggestion bar, and its printing on every phone's screen (see Screens). |
 
 ## Screens

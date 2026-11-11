@@ -46,13 +46,6 @@ const qint64 KEEP_ANSWERS = 60 * 60000LL;
 const int ANSWERS_KEPT = 40;
 const int TIMEOUT_MS = 20000;
 
-qint64 monotonicMs()
-{
-    static QElapsedTimer clock;
-    if (!clock.isValid()) clock.start();
-    return clock.elapsed();
-}
-
 QNetworkRequest request(const QUrl &url)
 {
     QNetworkRequest r(url);
@@ -92,6 +85,13 @@ qreal Klipy::Item::aspect() const
 }
 
 // --- The client -------------------------------------------------------------------------------
+
+qint64 Klipy::monotonicMs()
+{
+    static QElapsedTimer clock;
+    if (!clock.isValid()) clock.start();
+    return clock.elapsed();
+}
 
 Klipy::Klipy() : m_key(QString::fromUtf8(PRE_KLIPY_KEY).trimmed()) {}
 
@@ -241,7 +241,7 @@ Klipy::Page Klipy::parse(const QByteArray &json, bool *ok, QString *refusal)
     }
     const QJsonObject data = root.value(QStringLiteral("data")).toObject();
     if (data.isEmpty()) return page;
-    for (const QJsonValue &v : data.value(QStringLiteral("data")).toArray()) {
+    for (const auto &v : data.value(QStringLiteral("data")).toArray()) {
         const QJsonObject o = v.toObject();
         // Only pictures: an ad (not asked for) has no file.
         const QJsonObject fileObj = o.value(QStringLiteral("file")).toObject();
@@ -261,7 +261,8 @@ Klipy::Page Klipy::parse(const QByteArray &json, bool *ok, QString *refusal)
         }
         if (item.files.isEmpty()) continue;
         const QJsonValue id = o.value(QStringLiteral("id"));
-        item.id = id.isString() ? id.toString() : QString::number(qint64(id.toDouble()));
+        // KLIPY's ids run to 16 digits, past what a double holds exactly.
+        item.id = id.isString() ? id.toString() : QString::number(id.toInteger(qint64(id.toDouble())));
         item.slug = o.value(QStringLiteral("slug")).toString();
         item.title = o.value(QStringLiteral("title")).toString();
         const QString blur = o.value(QStringLiteral("blur_preview")).toString();

@@ -35,6 +35,7 @@
 
 class QMovie;
 class QPainter;
+class TestKlipy;
 
 namespace Pre {
 
@@ -89,6 +90,7 @@ public:
     void say(const QString &s, int ms = 2500);
 
 private:
+    friend class ::TestKlipy;
     struct Picture { QMovie *movie = nullptr; QImage still; };
 
     void more();
@@ -126,6 +128,8 @@ private:
     QStringList m_cacheOrder;
     QHash<QString, int> m_wanted;      // asked for in the last paint, with the width it is for
     QSet<QString> m_pending;
+    //! Pictures that didn't come or couldn't be shown: not asked for again till the next search.
+    QSet<QString> m_broken;
     QSet<QString> m_drawn;
     QSet<QString> m_running;
     QHash<QString, QImage> m_blurs;
