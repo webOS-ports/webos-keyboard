@@ -96,11 +96,18 @@ struct Ink
     QRectF box;
 };
 
-//! [ink] drawn from [at] inside [face], a rounded rectangle with corners of [radius].
+/*!
+ * [ink] drawn from [at] inside [face], a rounded rectangle with corners of
+ * [radius]. A hundredth of a pixel's grace: a row is lifted to put its lowest
+ * letter exactly on the face's edge, and whether exactly on it counts as in
+ * is otherwise down to rounding, which differs from one machine to another
+ * (on the Sargo it did not, and every page came out a few pixels smaller).
+ */
 bool inside(const Ink &ink, const QPointF &at, const QRectF &face, qreal radius)
 {
-    if (!face.contains(ink.box.translated(at))) return false;
-    const qreal r2 = radius * radius;
+    const qreal grace = 0.01;
+    if (!face.adjusted(-grace, -grace, grace, grace).contains(ink.box.translated(at))) return false;
+    const qreal r2 = (radius + grace) * (radius + grace);
     for (const QPointF &q : ink.points) {
         const QPointF p = q + at;
         const qreal cx = std::clamp(p.x(), face.left() + radius, face.right() - radius);
