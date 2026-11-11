@@ -47,6 +47,7 @@ const char *const kStubNames[] = {
     "maliit_word_engine",
     "maliit_wordribbon",
     "audioFeedback",
+    "pre_keyboard",
 };
 
 } // namespace

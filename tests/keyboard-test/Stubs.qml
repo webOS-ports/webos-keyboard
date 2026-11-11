@@ -129,4 +129,18 @@ QtObject {
     property QtObject audioFeedback: QtObject {
         function play() { }
     }
+
+    /*!
+     * The Pre Keyboard's controller (src/pre/precontroller.h). Keyboard.qml
+     * turns it on for a phone, but its view here is a stand-in that draws
+     * nothing (LuneOSKeyboard/PreKeyboardView.qml), so this one stays off
+     * unless [preKeyboard] says otherwise: the preview and the tests then show
+     * the LuneOS keys on every form factor. The Pre Keyboard itself is
+     * covered by ut_prekeyboard.
+     */
+    property bool preKeyboard: false
+    property QtObject pre_keyboard: QtObject {
+        property bool active: false
+        onActiveChanged: if (active && !stubs.preKeyboard) active = false
+    }
 }
