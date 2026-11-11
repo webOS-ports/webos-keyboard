@@ -2,6 +2,7 @@
  * This file is part of the LuneOS keyboard: the Pre Keyboard.
  *
  * Copyright (C) 2026 Alan Morford <alan-morford@users.noreply.github.com>
+ * Copyright (C) 2026 Herman van Hazendonk <github.com@herrie.org>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +20,10 @@
 #ifndef PRE_SWIPEDECODER_H
 #define PRE_SWIPEDECODER_H
 
+#include <QByteArray>
 #include <QHash>
 #include <QMutex>
 #include <QPair>
-#include <QSet>
 #include <QString>
 #include <QStringList>
 #include <QVector>
@@ -57,19 +58,33 @@ namespace Pre {
 class SwipeDecoder
 {
 public:
-    //! Where the letters are: centres of the keys a to z, and a key's size, in pixels.
+    /*!
+     * Where the letters are: each letter key's character (lower case) and the
+     * centre of its key, and a key's size, in pixels. Any alphabet: the words
+     * are spelt out on whatever keys the page has.
+     */
     struct Layout
     {
-        float x[26];
-        float y[26];
+        QString keys;
+        QVector<float> x;
+        QVector<float> y;
         float keyWidth = 0;
         float keyHeight = 0;
+
+        bool isValid() const
+        {
+            return keys.size() >= 2 && x.size() == keys.size() && y.size() == keys.size() && keyWidth > 0 &&
+                   keyHeight > 0;
+        }
     };
 
-    explicit SwipeDecoder(const QVector<QPair<QString, int>> &entries);
+    //! [entries]: words and their scores; a word given twice counts at the higher.
+    explicit SwipeDecoder(QVector<QPair<QString, int>> entries);
 
     //! A word to offer, with its log2 frequency score (see the dictionary).
     void add(const QString &word, int score);
+    //! How many words there are to swipe (before the keys are known: all that could be).
+    int size() const;
     //! A word the owner took out of their dictionary: gone, unless the dictionary has it too.
     void remove(const QString &word);
     //! A word the owner deleted from the dictionary: gone, wherever it came from.
@@ -86,22 +101,43 @@ public:
                        const std::function<bool()> &stale = [] { return false; });
 
 private:
+    /*
+     * A language can have a third of a million words (a hunspell dictionary's
+     * stems): kept small, their text in one string and their keys in one array.
+     */
     struct Word
     {
-        QString word;
-        QVector<int> letters;   // 0..25
-        float score = 0;
+        quint32 at = 0;       // in m_text
+        quint32 keysAt = 0;   // in m_keys
+        quint16 length = 0;
+        //! How many keys it is swiped over, a double letter once; 0 if it can't be on these keys.
+        quint8 keys = 0;
         bool learned = false;
+        bool gone = false;
+        float score = 0;
     };
 
-    void addWord(const QString &word, int score, bool learned);
+    QStringView text(const Word &w) const { return QStringView(m_text).mid(w.at, w.length); }
+    const uchar *keysOf(const Word &w) const { return reinterpret_cast<const uchar *>(m_keys.constData()) + w.keysAt; }
+    void append(const QString &word, float score, bool learned);
+    //! The index of [word] in m_words, or -1.
+    int find(QStringView word) const;
+    //! [w]'s keys on m_alphabet, a double letter once; empty when a letter has no key.
+    QByteArray spell(QStringView w) const;
+    void index(int i);
+    //! The words put on [alphabet]'s keys, if they are not already.
+    void useKeys(const QString &alphabet);
     float warp(const float *ax, const float *ay, const float *bx, const float *by);
 
-    QMutex m_lock;
-    //! By first and last letter.
-    QHash<int, QVector<Word>> m_buckets;
-    //! Words without an apostrophe, to tell "were" from "we're".
-    QSet<QString> m_plain;
+    mutable QMutex m_lock;
+    QString m_text;
+    QByteArray m_keys;
+    QVector<Word> m_words;
+    //! The first m_sorted words are in order (binary searched); the learned ones after.
+    int m_sorted = 0;
+    //! The keys the words are spelt on now, and the words by first and last key.
+    QString m_alphabet;
+    QHash<int, QVector<int>> m_buckets;
 };
 
 } // namespace Pre

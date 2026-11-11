@@ -14,8 +14,11 @@ DEFINES += MALIIT_DEFAULT_PROFILE=\\\"$$MALIIT_DEFAULT_PROFILE\\\"
 contains(QT_MAJOR_VERSION, 4) {
     QT = core gui
 } else {
-    QT = core gui widgets quick qml network
+    QT = core gui widgets quick qml network sql
 }
+
+# The Pre Keyboard swipes the words hunspell knows (see src/pre/preswipewords.h).
+DEFINES += HUNSPELL_DICT_PATH=\\\"$$HUNSPELL_DICT_PATH\\\"
 
 # KLIPY's app key, for the Pre Keyboard's GIFs and stickers: qmake KLIPY_KEY=..., or the
 # KLIPY_KEY environment variable at qmake time. Without one, their tabs say so. Whatever
@@ -51,6 +54,7 @@ HEADERS += \
     ../pre/prepainter.h \
     ../pre/presettings.h \
     ../pre/preswipedecoder.h \
+    ../pre/preswipewords.h \
 
 SOURCES += \
     plugin.cpp \
@@ -75,6 +79,7 @@ SOURCES += \
     ../pre/prepainter.cpp \
     ../pre/presettings.cpp \
     ../pre/preswipedecoder.cpp \
+    ../pre/preswipewords.cpp \
 
 target.path += $${MALIIT_PLUGINS_DIR}
 INSTALLS += target

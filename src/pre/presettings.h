@@ -35,7 +35,8 @@ namespace Pre {
  *
  *   "keyboard": { ..., "pre": { "style": "orange", "height": "medium",
  *                               "holdForMore": false, "vibrate": false,
- *                               "followShift": false, "recentEmoji": ["🙂"] } }
+ *                               "followShift": false, "swipe": true,
+ *                               "recentEmoji": ["🙂"] } }
  *
  * Everything about words - suggestions, autocorrect, the owner's dictionary -
  * and the languages and the key click are the LuneOS keyboard's own settings,
@@ -54,14 +55,19 @@ struct Settings
     bool vibrate = false;
     //! The letters on the keys follow Shift (small till it is on); off, they are capitals, as printed on the Pre.
     bool followShift = false;
+    /*!
+     * Swipe to type: a finger drawn across the letters types the word they
+     * spell. The controller turns it off for a language with no words to
+     * swipe (Chinese, whose words are not its keys' letters) and till a
+     * language's words are loaded.
+     */
+    bool swipe = true;
 
     // From the LuneOS keyboard's settings.
     //! Prediction or spell checking is on: the suggestion bar shows.
     bool suggestions = false;
     //! The key click (keyPressFeedback).
     bool sound = false;
-    //! Swipe to type: off until it runs on the language plugins' words.
-    bool swipe = false;
     //! The languages enabled under Regional Settings, in their order: a flick on the space bar goes through them.
     QList<Language> languages;
     //! The one typed in now, always one of [languages].

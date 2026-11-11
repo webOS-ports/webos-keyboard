@@ -5,7 +5,7 @@ include(../tests.pri)
 # its look settings, and the controller that hands its keys to LuneOS's editor -
 # down to the editor itself, for backspace. The controller talks to the view, so
 # the view and what it draws with are built in too: QtQuick and QtNetwork.
-QT += gui qml quick network
+QT += gui qml quick network sql
 
 DEFINES += PLUGINS_DIR=\\\"$$PWD/../../plugins\\\"
 INCLUDEPATH += $$PWD/../../src/pre $$PWD/../../src/view
@@ -23,6 +23,7 @@ SOURCES += \
     $$PWD/../../src/pre/prepainter.cpp \
     $$PWD/../../src/pre/presettings.cpp \
     $$PWD/../../src/pre/preswipedecoder.cpp \
+    $$PWD/../../src/pre/preswipewords.cpp \
     $$PWD/../../src/view/abstracttexteditor.cpp \
     $$PWD/../../src/lib/logic/abstractwordengine.cpp \
     $$PWD/../../src/lib/logic/eventhandler.cpp \

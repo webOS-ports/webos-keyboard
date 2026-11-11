@@ -1350,7 +1350,7 @@ bool KeyboardView::canSwipe(const Zone &z) const
 {
     const Key &k = *z.slot.key;
     return m_settings.swipe && m_wordsAllowed && m_page == Page::Letters && !digitMode() && !m_searching && m_alt == Alt::Off &&
-           k.kind == Kind::Char && k.text.length() == 1 && k.text[0] >= QLatin1Char('a') && k.text[0] <= QLatin1Char('z');
+           k.kind == Kind::Char && k.text.length() == 1 && k.text[0].isLetter();
 }
 
 void KeyboardView::addSwipePoint(qreal x, qreal y)
@@ -1374,21 +1374,24 @@ QString KeyboardView::withShift(const QString &w) const
 
 bool KeyboardView::swipeLayout(SwipeDecoder::Layout &out) const
 {
-    int found = 0;
-    float keyW = 0;
+    out = SwipeDecoder::Layout();
+    QVector<float> widths;
     for (const Zone &z : m_zones) {
         const Key &k = *z.slot.key;
-        if (k.kind != Kind::Char || k.text.length() != 1 || k.text[0] < QLatin1Char('a') || k.text[0] > QLatin1Char('z'))
-            continue;
-        const int i = k.text[0].unicode() - 'a';
-        out.x[i] = float(z.rect.center().x());
-        out.y[i] = float(z.rect.center().y());
-        if (k.text == QLatin1String("q")) keyW = float(z.rect.width());
-        found++;
+        if (!z.slot.drawn || k.kind != Kind::Char || k.text.length() != 1 || !k.text[0].isLetter()) continue;
+        const QChar c = k.text[0].toLower();
+        if (out.keys.contains(c)) continue;
+        out.keys += c;
+        out.x << float(z.rect.center().x());
+        out.y << float(z.rect.center().y());
+        widths << float(z.rect.width());
     }
-    out.keyWidth = keyW;
+    if (widths.isEmpty()) return false;
+    // A letter key's width: most are the same, a few (a wide last key) are not.
+    std::nth_element(widths.begin(), widths.begin() + widths.size() / 2, widths.end());
+    out.keyWidth = widths[widths.size() / 2];
     out.keyHeight = float(rowHeight());
-    return found == 26 && keyW > 0;
+    return out.isValid();
 }
 
 void KeyboardView::drawTrail(QPainter &p)

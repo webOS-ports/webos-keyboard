@@ -311,6 +311,8 @@ public:
     {
         pre.setDataDir(QStringLiteral(LUNEOS_KEYBOARD_DATA_DIR "/pre"));
         pre.setStateDir(QDir::homePath() + QStringLiteral("/prekeyboard"));
+        // Swiped words come from what the word engine reads: presage's databases and hunspell's dictionaries.
+        pre.setWordDirs(QStringLiteral(MALIIT_PLUGINS_DATA_DIR "/org/luneos/lib"), QStringLiteral(HUNSPELL_DICT_PATH));
 
         Pre::Bridge b;
         b.press = [this](const QString &label, const QString &action) { event_handler.onKeyPressed(label, action); };
@@ -318,6 +320,13 @@ public:
         b.cancelRepeat = [this] { editor.cancelRepeat(); };
         b.pick = [this](const QString &word) { event_handler.onWordCandidateReleased(word); };
         b.commit = [this](const QString &text) { q->commitEmoji(text); };
+        b.setWord = [this](const QString &word) { editor.replacePreedit(word); };
+        b.atWordEnd = [this] {
+            const Model::Text *t = editor.text();
+            if (!t || !t->preedit().isEmpty()) return false;
+            const QString left = t->surroundingLeft();
+            return !left.isEmpty() && left.at(left.size() - 1).isLetterOrNumber();
+        };
         b.cursor = [this](int dx, int dy, bool select) {
             if (!select) {
                 const QString action = dx > 0 ? QStringLiteral("keyRight") : dx < 0 ? QStringLiteral("keyLeft")

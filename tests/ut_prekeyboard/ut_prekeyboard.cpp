@@ -24,6 +24,8 @@
 #include "prekeymap.h"
 #include "prelanguage.h"
 #include "presettings.h"
+#include "preswipedecoder.h"
+#include "preswipewords.h"
 
 #include "abstracttexteditor.h"
 #include "logic/abstractlanguagefeatures.h"
@@ -38,7 +40,13 @@
 #include <QSet>
 #include <QPainter>
 #include <QPainterPath>
+#include <QRandomGenerator>
+#include <QSqlDatabase>
+#include <QSqlQuery>
+#include <QTemporaryDir>
 #include <QtTest>
+
+#include <cmath>
 
 using namespace MaliitKeyboard;
 
@@ -278,17 +286,20 @@ private Q_SLOTS:
         s.holdForMore = true;
         s.vibrate = true;
         s.followShift = true;
+        s.swipe = false;
         s.suggestions = true;
         const QJsonObject pre = s.toJson(QJsonObject{ { QStringLiteral("recentEmoji"), QJsonArray{ QStringLiteral("🙂") } } });
         const QStringList keys = pre.keys();
         QCOMPARE(QSet<QString>(keys.begin(), keys.end()),
                  (QSet<QString>{ QStringLiteral("style"), QStringLiteral("height"), QStringLiteral("holdForMore"),
                                  QStringLiteral("vibrate"), QStringLiteral("followShift"),
-                                 QStringLiteral("recentEmoji") }));
+                                 QStringLiteral("swipe"), QStringLiteral("recentEmoji") }));
         const Pre::Settings back = Pre::Settings::fromJson(pre);
         QCOMPARE(back.style, Pre::Style::White);
         QCOMPARE(back.height, Pre::Settings::Height::Large);
-        QVERIFY(back.holdForMore && back.vibrate && back.followShift);
+        QVERIFY(back.holdForMore && back.vibrate && back.followShift && !back.swipe);
+        // Swiping is on till the owner turns it off.
+        QVERIFY(Pre::Settings::fromJson(QJsonObject()).swipe);
         QVERIFY(!back.suggestions);
     }
 
@@ -532,6 +543,265 @@ private Q_SLOTS:
         handler.onKeyReleased(QString(), QStringLiteral("backspace"));
         QCOMPARE(editor.text()->preedit(), QString());
         QCOMPARE(sizes.last(), 0);
+    }
+
+    // --- Swipe to type ----------------------------------------------------------------------------
+
+    /*
+     * A finger drawn through a word's keys, on a language's own keys, is that
+     * word: Latin, Cyrillic, Hebrew and Arabic letters, and a letter with no
+     * key of its own (ß, ê, a final ם, أ) on the key it is made from. The
+     * other words are close calls on purpose: the same first and last letter,
+     * as common.
+     */
+    void swipeSpellsWordsOnAnyKeys_data()
+    {
+        QTest::addColumn<QString>("language");
+        QTest::addColumn<QStringList>("words");
+        QTest::newRow("en") << "en" << QStringList{ "hello", "help", "hold", "keyboard", "people", "purple", "would", "world", "together", "the", "there" };
+        QTest::newRow("de") << "de" << QStringList{ "straße", "strand", "stunde", "danke", "decke", "zeit", "zieht" };
+        QTest::newRow("fr") << "fr" << QStringList{ "être", "entre", "merci", "maison", "matin" };
+        QTest::newRow("ru") << "ru" << QStringList{ "привет", "пират", "спасибо", "свобода", "хорошо", "хотя" };
+        QTest::newRow("uk") << "uk" << QStringList{ "дякую", "добре", "їжа", "людина" };
+        QTest::newRow("he") << "he" << QStringList{ "שלום", "שמים", "תודה", "תורה", "ילד" };
+        QTest::newRow("ar") << "ar" << QStringList{ "مرحبا", "مكتبة", "شكرا", "شجرة", "أنا", "كتاب" };
+    }
+
+    void swipeSpellsWordsOnAnyKeys()
+    {
+        QFETCH(QString, language);
+        QFETCH(QStringList, words);
+        Pre::KeyboardView view;
+        showKeys(view, Pre::Language::byId(language), 1080, 1080, false, Pre::Settings::Height::Medium);
+        view.show(Pre::KeyboardView::Page::Letters);
+        Pre::SwipeDecoder::Layout layout;
+        QVERIFY(view.swipeLayout(layout));
+        QVector<QPair<QString, int>> entries;
+        for (const QString &w : words) entries.append({ w, 12 });
+        Pre::SwipeDecoder decoder(entries);
+        for (const QString &w : words) {
+            const QVector<QPointF> path = swipePath(layout, w, 0, 1);
+            QVERIFY2(!path.isEmpty(), qPrintable(w + QStringLiteral(": a letter with no key")));
+            QVector<float> xs, ys;
+            for (const QPointF &p : path) { xs << float(p.x()); ys << float(p.y()); }
+            const QStringList found = decoder.decode(xs, ys, layout, 4);
+            QVERIFY2(!found.isEmpty() && found.first() == w,
+                     qPrintable(QStringLiteral("%1: %2").arg(w, found.join(QLatin1Char(' ')))));
+        }
+    }
+
+    //! Words given twice count once, at the higher score; a word added later is swiped, one taken out is not.
+    void swipeWordsAreAddedAndTakenOut()
+    {
+        Pre::KeyboardView view;
+        showKeys(view, Pre::Language::byId(QStringLiteral("en")), 1080, 1080, false, Pre::Settings::Height::Medium);
+        Pre::SwipeDecoder::Layout layout;
+        QVERIFY(view.swipeLayout(layout));
+        auto decode = [&](Pre::SwipeDecoder &d, const QString &w) {
+            QVector<float> xs, ys;
+            for (const QPointF &p : swipePath(layout, w, 0, 1)) { xs << float(p.x()); ys << float(p.y()); }
+            return d.decode(xs, ys, layout, 4);
+        };
+        Pre::SwipeDecoder d({ { QStringLiteral("hello"), 6 }, { QStringLiteral("hello"), 20 }, { QStringLiteral("hullo"), 12 },
+                              { QStringLiteral("x"), 20 }, { QStringLiteral("rare"), 2 }, { QStringLiteral("a1b"), 20 } });
+        QCOMPARE(d.size(), 2);
+        QCOMPARE(decode(d, QStringLiteral("hello")).value(0), QStringLiteral("hello"));
+        QVERIFY(decode(d, QStringLiteral("luneos")).isEmpty() || !decode(d, QStringLiteral("luneos")).contains(QStringLiteral("luneos")));
+        d.add(QStringLiteral("luneos"), 14);
+        QCOMPARE(decode(d, QStringLiteral("luneos")).value(0), QStringLiteral("luneos"));
+        d.remove(QStringLiteral("luneos"));
+        QVERIFY(!decode(d, QStringLiteral("luneos")).contains(QStringLiteral("luneos")));
+        // Only a learned word goes with remove(); forget() takes any.
+        d.remove(QStringLiteral("hello"));
+        QVERIFY(decode(d, QStringLiteral("hello")).contains(QStringLiteral("hello")));
+        d.forget(QStringLiteral("hello"));
+        QVERIFY(!decode(d, QStringLiteral("hello")).contains(QStringLiteral("hello")));
+    }
+
+    void swipeWordsComeFromTheWordEngine()
+    {
+        QTemporaryDir dir;
+        QVERIFY(dir.isValid());
+        writePresage(dir.filePath(QStringLiteral("lib/en/database_en.db")),
+                     { { QStringLiteral("the"), 400 }, { QStringLiteral("hello"), 3 }, { QStringLiteral("—"), 50 } });
+        writeFile(dir.filePath(QStringLiteral("dict/en_US.dic")),
+                  "5\nhello/MS\nworld/S\tpo:noun\nParis/M\nNASA\nand\\/or/X\n");
+        writeFile(dir.filePath(QStringLiteral("dict/en_US.aff")), "SET UTF-8\n");
+        writeFile(dir.filePath(QStringLiteral("dict/nb.dic")), "0\n");
+
+        const auto presage = Pre::SwipeWords::fromPresage(dir.filePath(QStringLiteral("lib/en/database_en.db")));
+        QHash<QString, int> p(presage.begin(), presage.end());
+        QCOMPARE(p.value(QStringLiteral("the")), 25);
+        QVERIFY(p.value(QStringLiteral("hello")) > Pre::SwipeWords::HUNSPELL_SCORE);
+        QVERIFY(p.value(QStringLiteral("hello")) < 25);
+
+        QCOMPARE(Pre::SwipeWords::hunspellFile(QStringLiteral("en"), dir.filePath(QStringLiteral("dict"))),
+                 dir.filePath(QStringLiteral("dict/en_US.dic")));
+        // Norwegian's keyboard is "no", its dictionary Bokmål's.
+        QCOMPARE(Pre::SwipeWords::hunspellFile(QStringLiteral("no"), dir.filePath(QStringLiteral("dict"))),
+                 dir.filePath(QStringLiteral("dict/nb.dic")));
+        QCOMPARE(Pre::SwipeWords::hunspellFile(QStringLiteral("zh"), dir.filePath(QStringLiteral("dict"))), QString());
+
+        const auto hun = Pre::SwipeWords::fromHunspell(dir.filePath(QStringLiteral("dict/en_US.dic")));
+        QHash<QString, int> h(hun.begin(), hun.end());
+        QCOMPARE(h.value(QStringLiteral("hello")), Pre::SwipeWords::HUNSPELL_SCORE);
+        QCOMPARE(h.value(QStringLiteral("world")), Pre::SwipeWords::HUNSPELL_SCORE);
+        QCOMPARE(h.value(QStringLiteral("Paris")), Pre::SwipeWords::HUNSPELL_NAME_SCORE);
+        QVERIFY(!h.contains(QStringLiteral("NASA")));
+        QVERIFY(h.contains(QStringLiteral("and/or")));
+        QCOMPARE(h.size(), 4);
+
+        // Both: presage's score wins where both have a word.
+        const auto all = Pre::SwipeWords::load(QStringLiteral("en"), dir.filePath(QStringLiteral("lib")),
+                                               dir.filePath(QStringLiteral("dict")));
+        Pre::SwipeDecoder d(all);
+        QCOMPARE(d.size(), 4);   // the, hello, world, Paris (not "—", "and/or")
+        QVERIFY(Pre::SwipeWords::load(QStringLiteral("zh"), dir.filePath(QStringLiteral("lib")),
+                                      dir.filePath(QStringLiteral("dict"))).isEmpty());
+        QVERIFY(Pre::SwipeWords::presageScore(1, 1000) >= 10);
+        QCOMPARE(Pre::SwipeWords::presageScore(0, 1000), 0);
+    }
+
+    /*
+     * Through the controller: swiping is off till the language's words are in;
+     * a swiped word stands as the word being typed with the other guesses
+     * either side of it in the bar; space or the next swipe puts it in as it
+     * is (not autocorrected), a guess from the bar in its place, and a word
+     * the cursor is right after gets a space before it. Shift goes with it.
+     */
+    void swipeThroughTheController()
+    {
+        QTemporaryDir dir;
+        writePresage(dir.filePath(QStringLiteral("lib/en/database_en.db")),
+                     { { QStringLiteral("hello"), 50 }, { QStringLiteral("hell"), 40 }, { QStringLiteral("hollo"), 2 },
+                       { QStringLiteral("world"), 50 }, { QStringLiteral("would"), 60 }, { QStringLiteral("the"), 400 } });
+        Recorder rec;
+        Pre::Controller c;
+        Pre::Bridge b = rec.bridge();
+        bool atWordEnd = false;
+        // As the editor does: what it is given to type comes back as the word being typed.
+        b.setWord = [&](const QString &w) { rec.calls << QStringLiteral("set ") + w; c.setCandidates(w, QString(), { w }); };
+        b.pick = [&](const QString &w) { rec.calls << QStringLiteral("pick ") + w; c.setCandidates(QString(), QString(), {}); };
+        b.atWordEnd = [&] { return atWordEnd; };
+        c.setBridge(b);
+        Pre::KeyboardView view;
+        showKeys(view, Pre::Language::byId(QStringLiteral("en")), 1080, 1080, false, Pre::Settings::Height::Medium);
+        c.setView(&view);
+        c.setKeyboardState(true, false, { QStringLiteral("en") }, QStringLiteral("en"));
+        QVERIFY(!view.m_settings.swipe);
+        QSignalSpy loaded(&c, &Pre::Controller::swipeWordsLoaded);
+        c.setWordDirs(dir.filePath(QStringLiteral("lib")), dir.filePath(QStringLiteral("dict")));
+        QVERIFY(loaded.wait(5000));
+        QVERIFY(view.m_settings.swipe);
+
+        Pre::SwipeDecoder::Layout layout;
+        QVERIFY(view.swipeLayout(layout));
+        auto swipe = [&](const QString &w, int caps) {
+            QVector<float> xs, ys;
+            for (const QPointF &p : swipePath(layout, w, 0, 1)) { xs << float(p.x()); ys << float(p.y()); }
+            const int before = int(rec.calls.size());
+            c.onSwipe(xs, ys, caps);
+            // Worked out off the keyboard's thread: in once the word is set.
+            QTRY_VERIFY(rec.calls.size() > before && rec.calls.last().startsWith(QStringLiteral("set ")));
+        };
+        swipe(QStringLiteral("hello"), Pre::KeyboardView::CAPS_FIRST);
+        QCOMPARE(rec.calls, QStringList{ QStringLiteral("set Hello") });
+        QCOMPARE(view.m_words.value(1), QStringLiteral("Hello"));
+        QVERIFY(view.m_words.contains(QStringLiteral("Hell")));
+        // The next swipe: the first goes in as it was.
+        rec.calls.clear();
+        swipe(QStringLiteral("world"), Pre::KeyboardView::CAPS_NONE);
+        QCOMPARE(rec.calls, (QStringList{ QStringLiteral("pick Hello"), QStringLiteral("set world") }));
+        // Another guess from the bar takes its place.
+        rec.calls.clear();
+        const int other = view.m_words.indexOf(QStringLiteral("would"));
+        QVERIFY(other == 0 || other == 2);
+        c.onPick(other, Pre::KeyboardView::CAPS_NONE);
+        QCOMPARE(rec.calls, QStringList{ QStringLiteral("pick would") });
+        // Space after a swiped word: it, as it is.
+        rec.calls.clear();
+        swipe(QStringLiteral("the"), Pre::KeyboardView::CAPS_ALL);
+        c.onText(QStringLiteral(" "));
+        QCOMPARE(rec.calls, (QStringList{ QStringLiteral("set THE"), QStringLiteral("pick THE") }));
+        // Right after a word: a space first.
+        rec.calls.clear();
+        atWordEnd = true;
+        swipe(QStringLiteral("hello"), Pre::KeyboardView::CAPS_NONE);
+        QCOMPARE(rec.calls, (QStringList{ QStringLiteral("press  |space"), QStringLiteral("release  |space"),
+                                          QStringLiteral("set hello") }));
+        // A word tapped out before a swipe goes in as space would put it.
+        rec.calls.clear();
+        atWordEnd = false;
+        c.setCandidates(QStringLiteral("teh"), QStringLiteral("the"), { QStringLiteral("the") });
+        swipe(QStringLiteral("world"), Pre::KeyboardView::CAPS_NONE);
+        QCOMPARE(rec.calls, (QStringList{ QStringLiteral("press  |space"), QStringLiteral("release  |space"),
+                                          QStringLiteral("set world") }));
+        // Swiping turned off: off in the view too.
+        c.setPrefs(QJsonObject{ { QStringLiteral("swipe"), false } });
+        QVERIFY(!view.m_settings.swipe);
+    }
+
+    /*
+     * The language plugins' own words (PRE_SWIPE_LIB, PRE_SWIPE_DICT; the
+     * device's paths by default): common words swiped a little off their keys,
+     * as a finger does, come out first nearly always. Prints how often.
+     */
+    void swipeOnTheLanguagesWords_data()
+    {
+        QTest::addColumn<QString>("language");
+        QTest::addColumn<QStringList>("words");
+        QTest::newRow("en") << "en" << QStringList{ "the", "and", "you", "that", "have", "with", "this", "from", "they", "would",
+                                                    "there", "their", "what", "about", "which", "when", "make", "like", "time", "just",
+                                                    "know", "people", "into", "year", "good", "some", "could", "them", "other", "than",
+                                                    "then", "look", "only", "come", "over", "think", "also", "back", "after", "work",
+                                                    "first", "well", "even", "want", "because", "these", "give", "most", "phone", "hello" };
+        QTest::newRow("de") << "de" << QStringList{ "und", "nicht", "eine", "habe", "auch", "noch", "wenn", "schon", "heute", "morgen",
+                                                    "danke", "bitte", "gut", "zeit", "haus", "kommen", "gehen", "wieder", "immer", "machen" };
+        QTest::newRow("nl") << "nl" << QStringList{ "niet", "het", "een", "maar", "voor", "zijn", "hebben", "goed", "morgen", "dank",
+                                                    "graag", "huis", "tijd", "komen", "gaan", "weer", "altijd", "maken", "vandaag", "werk" };
+        QTest::newRow("ru") << "ru" << QStringList{ "что", "это", "как", "она", "только", "когда", "очень", "спасибо", "хорошо", "сегодня",
+                                                    "завтра", "время", "дом", "работа", "человек", "знаю", "могу", "хочу", "тебя", "меня" };
+        QTest::newRow("he") << "he" << QStringList{ "אני", "הוא", "היא", "לא", "של", "את", "מה", "זה", "שלום", "תודה",
+                                                    "בית", "היום", "מחר", "אוהב", "רוצה", "יודע", "עכשיו", "טוב", "אתה", "אנחנו" };
+    }
+
+    void swipeOnTheLanguagesWords()
+    {
+        QFETCH(QString, language);
+        QFETCH(QStringList, words);
+        const QString lib = qEnvironmentVariable("PRE_SWIPE_LIB", QStringLiteral("/usr/share/maliit/plugins/org/luneos/lib"));
+        const QString dict = qEnvironmentVariable("PRE_SWIPE_DICT", QStringLiteral("/usr/share/hunspell"));
+        QElapsedTimer t;
+        t.start();
+        const auto entries = Pre::SwipeWords::load(language, lib, dict);
+        if (entries.isEmpty()) QSKIP("No words: set PRE_SWIPE_LIB and PRE_SWIPE_DICT");
+        Pre::SwipeDecoder decoder(entries);
+        const qint64 loadMs = t.elapsed();
+        Pre::KeyboardView view;
+        showKeys(view, Pre::Language::byId(language), 1080, 1080, false, Pre::Settings::Height::Medium);
+        Pre::SwipeDecoder::Layout layout;
+        QVERIFY(view.swipeLayout(layout));
+        int first = 0, inBar = 0, tries = 0;
+        qint64 worst = 0;
+        QStringList missed;
+        for (const QString &w : words) {
+            for (int seed = 1; seed <= 3; ++seed) {
+                QVector<float> xs, ys;
+                for (const QPointF &p : swipePath(layout, w, 0.15, quint32(seed))) { xs << float(p.x()); ys << float(p.y()); }
+                t.restart();
+                const QStringList found = decoder.decode(xs, ys, layout, 3);
+                worst = std::max(worst, t.elapsed());
+                ++tries;
+                if (found.value(0) == w) ++first;
+                else missed << QStringLiteral("%1→%2").arg(w, found.value(0));
+                if (found.contains(w)) ++inBar;
+            }
+        }
+        qInfo("%s: %d words, loaded in %lld ms; first %d/%d, in the bar %d/%d; slowest swipe %lld ms; missed %s",
+              qPrintable(language), decoder.size(), loadMs, first, tries, inBar, tries, worst,
+              qPrintable(missed.join(QLatin1Char(' '))));
+        QVERIFY2(first * 100 >= tries * 75, "fewer than three in four swiped words came out first");
+        QVERIFY2(inBar * 100 >= tries * 90, "fewer than nine in ten swiped words were in the bar");
     }
 
     // --- Printing ---------------------------------------------------------------------------------
@@ -782,6 +1052,75 @@ private Q_SLOTS:
     }
 
 private:
+    /*!
+     * A finger's path through [word]'s keys on [layout]: straight from key to
+     * key, a point every sixth of the way, each [noise] key widths off at
+     * random (seeded with [seed]). Empty if a letter has no key.
+     */
+    static QVector<QPointF> swipePath(const Pre::SwipeDecoder::Layout &layout, const QString &word, double noise,
+                                      quint32 seed)
+    {
+        static const QHash<QChar, QChar> finals = { { QChar(0x05DA), QChar(0x05DB) }, { QChar(0x05DD), QChar(0x05DE) },
+                                                    { QChar(0x05DF), QChar(0x05E0) }, { QChar(0x05E3), QChar(0x05E4) },
+                                                    { QChar(0x05E5), QChar(0x05E6) } };
+        QVector<int> keys;
+        for (QChar c : word.toLower()) {
+            if (c.isMark()) continue;
+            int k = int(layout.keys.indexOf(c));
+            QString spelt = QString(c);
+            if (k < 0) spelt = Pre::Language::fold(QString(finals.value(c, c)));
+            for (QChar f : spelt) {
+                k = int(layout.keys.indexOf(f));
+                if (k < 0) return {};
+                if (keys.isEmpty() || keys.last() != k) keys << k;
+            }
+        }
+        QRandomGenerator rng(seed);
+        auto gauss = [&] {
+            const double u = std::max(1e-9, rng.generateDouble()), v = rng.generateDouble();
+            return std::sqrt(-2 * std::log(u)) * std::cos(2 * M_PI * v);
+        };
+        const double sd = noise * layout.keyWidth;
+        QVector<QPointF> out;
+        auto at = [&](int k) { return QPointF(layout.x[k], layout.y[k]); };
+        out << at(keys.first()) + QPointF(gauss() * sd, gauss() * sd);
+        for (int i = 1; i < keys.size(); ++i) {
+            const QPointF a = at(keys[i - 1]), b = at(keys[i]);
+            for (int j = 1; j <= 6; ++j) out << a + (b - a) * (j / 6.0) + QPointF(gauss() * sd, gauss() * sd);
+        }
+        if (keys.size() == 1) out << out.first() + QPointF(1, 0);
+        return out;
+    }
+
+    static void writeFile(const QString &path, const QByteArray &bytes)
+    {
+        QDir().mkpath(QFileInfo(path).path());
+        QFile f(path);
+        QVERIFY(f.open(QIODevice::WriteOnly));
+        f.write(bytes);
+    }
+
+    //! A presage database with only its 1-grams, as text2ngram writes them.
+    static void writePresage(const QString &path, const QList<QPair<QString, int>> &words)
+    {
+        QDir().mkpath(QFileInfo(path).path());
+        {
+            QSqlDatabase db = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), QStringLiteral("writer"));
+            db.setDatabaseName(path);
+            QVERIFY(db.open());
+            QSqlQuery q(db);
+            QVERIFY(q.exec(QStringLiteral("CREATE TABLE _1_gram (word TEXT, count INTEGER, UNIQUE(word))")));
+            for (const auto &w : words) {
+                q.prepare(QStringLiteral("INSERT INTO _1_gram VALUES (?, ?)"));
+                q.addBindValue(w.first);
+                q.addBindValue(w.second);
+                QVERIFY(q.exec());
+            }
+            db.close();
+        }
+        QSqlDatabase::removeDatabase(QStringLiteral("writer"));
+    }
+
     //! What is wrong with the printing on [view]'s keys now, each line starting [where].
     static QStringList printingProblems(const Pre::KeyboardView &view, const QString &where)
     {

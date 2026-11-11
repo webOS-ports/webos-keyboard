@@ -21,14 +21,20 @@
 #define PRE_CONTROLLER_H
 
 #include "presettings.h"
+#include "preswipedecoder.h"
 
+#include <QHash>
 #include <QJsonObject>
 #include <QObject>
 #include <QPointer>
+#include <QSharedPointer>
 #include <QStringList>
+#include <QThreadPool>
 #include <QVector>
 
+#include <atomic>
 #include <functional>
+#include <memory>
 
 namespace Pre {
 
@@ -48,8 +54,12 @@ struct Bridge
     std::function<void(const QString &label, const QString &action)> release;
     //! A backspace held down was let go of without deleting (the touch was taken away).
     std::function<void()> cancelRepeat;
-    //! A word from the bar: it replaces the one being typed.
+    //! A word from the bar: it replaces the one being typed, and goes in with a space after.
     std::function<void(const QString &word)> pick;
+    //! A swiped word: it stands as the word being typed, in place of what was (none).
+    std::function<void(const QString &word)> setWord;
+    //! No word is being typed and the cursor is right after a letter: a swiped word would run into it.
+    std::function<bool()> atWordEnd;
     //! Text put in as it is, after the word being typed: emoji, a paste, a link.
     std::function<void(const QString &text)> commit;
     //! The cursor moved by a key, extending the selection when [select].
@@ -90,6 +100,14 @@ public:
     void setDataDir(const QString &dir) { m_dataDir = dir; }
     //! Where KLIPY keeps its state (its call count and customer id).
     void setStateDir(const QString &dir);
+    /*!
+     * Where the words to swipe are: the language plugins' presage databases
+     * ([libDir]/<id>/database_<id>.db) and hunspell's dictionaries ([dictDir]).
+     * Without them there is no swiping.
+     */
+    void setWordDirs(const QString &libDir, const QString &dictDir);
+    //! The words swiped in the language typed in now; null till they are loaded.
+    QSharedPointer<SwipeDecoder> swipeWords() const { return m_decoder; }
 
     bool active() const { return m_active; }
     void setActive(bool active);
@@ -148,9 +166,21 @@ public:
 
 Q_SIGNALS:
     void activeChanged();
+    //! The language's words to swipe are in (or it has none).
+    void swipeWordsLoaded();
 
 private:
     void applySettings();
+    //! The settings as the view has them: swiping only once there are words to swipe.
+    Settings shown() const;
+    void loadWords();
+    void wordsLoaded(const QString &id, const QSharedPointer<SwipeDecoder> &words);
+    //! [word] as shift typed it.
+    QString cased(const QString &word, int caps) const;
+    //! A swipe's words, best first, as shift typed them ([caps]): they go in.
+    void swiped(QStringList found, int caps);
+    //! The guesses for a swipe still going on, if they are still the latest.
+    void liveGuesses(quint64 generation, const QStringList &found);
     void showBar();
     void offerPaste();
     void writePrefs(const QJsonObject &pre);
@@ -171,6 +201,24 @@ private:
     QStringList m_bar = { QString(), QString(), QString() };
     bool m_deleting = false;
     QString m_clipDone;
+
+    // Swipe to type.
+    QString m_libDir;
+    QString m_dictDir;
+    //! Each language's words, the last few used; and the one's typed in now.
+    QHash<QString, QSharedPointer<SwipeDecoder>> m_decoders;
+    QStringList m_decoderOrder;
+    QSharedPointer<SwipeDecoder> m_decoder;
+    QString m_loading;
+    //! The swiped word standing as the word being typed, and the other guesses for it.
+    QString m_swiped;
+    QStringList m_swipeGuesses;
+    //! The guesses while the finger is still moving.
+    QStringList m_live;
+    //! Which swipe the guesses being worked out are for: any newer one makes them moot.
+    std::shared_ptr<std::atomic<quint64>> m_liveGeneration = std::make_shared<std::atomic<quint64>>(0);
+    //! Loading and live guesses, one at a time, off the keyboard's thread. Last, so it goes first.
+    QThreadPool m_pool;
 };
 
 } // namespace Pre

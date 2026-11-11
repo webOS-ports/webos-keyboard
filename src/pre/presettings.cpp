@@ -41,6 +41,7 @@ Settings Settings::fromJson(const QJsonObject &pre, Settings into)
     s.holdForMore = flag(pre, "holdForMore", false);
     s.vibrate = flag(pre, "vibrate", false);
     s.followShift = flag(pre, "followShift", false);
+    s.swipe = flag(pre, "swipe", true);
     return s;
 }
 
@@ -57,6 +58,7 @@ QJsonObject Settings::toJson(QJsonObject pre) const
     pre.insert(QLatin1String("holdForMore"), holdForMore);
     pre.insert(QLatin1String("vibrate"), vibrate);
     pre.insert(QLatin1String("followShift"), followShift);
+    pre.insert(QLatin1String("swipe"), swipe);
     return pre;
 }
 
