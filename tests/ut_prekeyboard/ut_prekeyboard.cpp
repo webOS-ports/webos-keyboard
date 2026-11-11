@@ -57,11 +57,26 @@ private:
     NoFeatures features;
 };
 
+//! Offers the same two words for whatever is typed.
+class TwoWords : public Logic::AbstractWordEngine
+{
+public:
+    AbstractLanguageFeatures *languageFeature() override { return &features; }
+
+private:
+    WordCandidateList fetchCandidates(Model::Text *) override
+    {
+        return WordCandidateList{ WordCandidate(WordCandidate::SourcePrediction, QStringLiteral("pa")),
+                                  WordCandidate(WordCandidate::SourcePrediction, QStringLiteral("pi")) };
+    }
+    NoFeatures features;
+};
+
 class CountingEditor : public AbstractTextEditor
 {
 public:
-    CountingEditor()
-        : AbstractTextEditor(EditorOptions(), new Model::Text, new NoWords)
+    explicit CountingEditor(Logic::AbstractWordEngine *words = new NoWords)
+        : AbstractTextEditor(EditorOptions(), new Model::Text, words)
     {}
 
     int backspaces = 0;
@@ -330,6 +345,21 @@ private Q_SLOTS:
         for (int i = 0; i < 3; ++i) c.onPick(i, Pre::KeyboardView::CAPS_NONE);
         QCOMPARE(rec.calls, (QStringList{ QStringLiteral("pick they"), QStringLiteral("pick the"),
                                           QStringLiteral("pick then") }));
+        // No correction for a word the engine does not know (autocorrect off):
+        // space keeps it as typed, so that is the middle, not the likeliest word.
+        rec.calls.clear();
+        c.setCandidates(QStringLiteral("quic"), QString(),
+                        { QStringLiteral("quickly"), QStringLiteral("quickened") });
+        for (int i = 0; i < 3; ++i) c.onPick(i, Pre::KeyboardView::CAPS_NONE);
+        QCOMPARE(rec.calls, (QStringList{ QStringLiteral("pick quickly"), QStringLiteral("pick quic"),
+                                          QStringLiteral("pick quickened") }));
+        // No word typed: the likeliest next word in the middle.
+        rec.calls.clear();
+        c.setCandidates(QString(), QString(),
+                        { QStringLiteral("fox"), QStringLiteral("brown"), QStringLiteral("dog") });
+        for (int i = 0; i < 3; ++i) c.onPick(i, Pre::KeyboardView::CAPS_NONE);
+        QCOMPARE(rec.calls, (QStringList{ QStringLiteral("pick brown"), QStringLiteral("pick fox"),
+                                          QStringLiteral("pick dog") }));
     }
 
     void barIsEmptyWithoutSuggestionsOrWords()
@@ -437,6 +467,31 @@ private Q_SLOTS:
         c.onBackspace(false);
         c.onBackspace(false);
         QCOMPARE(editor.backspaces, up + 2);
+    }
+
+    void barEmptiesWhenTheWordIsBackspacedAway()
+    {
+        auto *words = new TwoWords;
+        CountingEditor editor(words);
+        words->setEnabled(true);
+        editor.setPreeditEnabled(true);
+        Logic::EventHandler handler;
+        QObject::connect(&handler, &Logic::EventHandler::keyPressed, &editor, &AbstractTextEditor::onKeyPressed);
+        QObject::connect(&handler, &Logic::EventHandler::keyReleased, &editor, &AbstractTextEditor::onKeyReleased);
+        QList<int> sizes;
+        QObject::connect(&editor, &AbstractTextEditor::wordCandidatesChanged,
+                         [&](const WordCandidateList &l) { sizes << int(l.size()); });
+
+        handler.onKeyPressed(QStringLiteral("p"), QString());
+        handler.onKeyReleased(QStringLiteral("p"), QString());
+        QCOMPARE(editor.text()->preedit(), QStringLiteral("p"));
+        QVERIFY(!sizes.isEmpty());
+        QCOMPARE(sizes.last(), 2);
+
+        handler.onKeyPressed(QString(), QStringLiteral("backspace"));
+        handler.onKeyReleased(QString(), QStringLiteral("backspace"));
+        QCOMPARE(editor.text()->preedit(), QString());
+        QCOMPARE(sizes.last(), 0);
     }
 };
 

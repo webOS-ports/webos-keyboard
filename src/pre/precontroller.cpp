@@ -179,7 +179,10 @@ void Controller::showBar()
 {
     QStringList bar;
     if (m_settings.showsBar() && m_wordsAllowed) {
-        const QString best = !m_primary.isEmpty() ? m_primary : m_candidates.value(0);
+        // What space puts in: the correction, else the word as typed. With no
+        // word typed, the likeliest next word.
+        const QString best = !m_primary.isEmpty() ? m_primary
+                           : !m_typed.isEmpty() ? m_typed : m_candidates.value(0);
         QStringList others;
         for (const QString &w : m_candidates)
             if (!w.isEmpty() && w != best && w != m_typed && !others.contains(w)) others << w;
