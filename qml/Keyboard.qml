@@ -253,6 +253,7 @@ Item {
             // From the screen's dpi instead, the KEY2's 4.5" 1080 px screen came out
             // at 2.41 and its keys squatter than Android's.
             // The screen's, not the panel window's: the window is only as tall as the panel.
+            // 411.43 is SCREEN_DP in src/pre/prekeyboardview.cpp: change both.
             dp: Math.min(Screen.width, Screen.height) / 411.43
             landscape: UI.isLandscape
 

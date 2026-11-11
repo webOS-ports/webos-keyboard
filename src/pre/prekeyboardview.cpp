@@ -22,10 +22,9 @@
 #include <QLocale>
 #include <QDateTime>
 #include <QFontMetricsF>
-#include <QGuiApplication>
 #include <QPainter>
 #include <QPainterPath>
-#include <QScreen>
+#include <QPolygonF>
 #include <QTouchEvent>
 
 #include <algorithm>
@@ -62,13 +61,62 @@ const qreal FLASH_ALPHA = 230;
 const qreal RESTING_ALPHA = 46;
 //! How often the bar's guesses are brought up to date during a swipe.
 const qint64 LIVE_EVERY = 50;
+//! The screen's short side in dp: Keyboard.qml's dp is that side over this.
+const qreal SCREEN_DP = 411.43;
 //! Prelude's cap height, as a fraction of the font size.
 const qreal CAP_HEIGHT = 0.72;
 //! How far a letter sits from its key's centre, away from the alternate (off a Pre photo: E, H).
 const qreal LETTER_NUDGE = 0.07;
+//! An alternate's size, as a share of the letters'.
+const qreal ALT_SCALE = 0.7;
+//! The least room, in dp, between a key's printing and the edge of its face.
+const qreal INK_MARGIN = 1;
+//! The furthest, in dp, the alternates are brought in from their corners.
+const qreal MAX_ALT_STEP = 4;
+//! The smallest the letters are made to fit their keys, in px.
+const qreal MIN_LETTER_PX = 8;
 const qint64 NEVER = std::numeric_limits<qint64>::min() / 2;
 
 enum Phase { Down, Move, Up, Cancel };
+
+/*!
+ * A string's ink, drawn from the origin: its outline, and that outline
+ * flattened to points, which is what is held to a key's face.
+ */
+struct Ink
+{
+    Ink(const QString &s, const QFont &font)
+    {
+        path.addText(QPointF(), font, s);
+        for (const QPolygonF &poly : path.toSubpathPolygons()) points += poly;
+        box = points.boundingRect();
+    }
+    QPainterPath path;
+    QPolygonF points;
+    QRectF box;
+};
+
+//! [ink] drawn from [at] inside [face], a rounded rectangle with corners of [radius].
+bool inside(const Ink &ink, const QPointF &at, const QRectF &face, qreal radius)
+{
+    if (!face.contains(ink.box.translated(at))) return false;
+    const qreal r2 = radius * radius;
+    for (const QPointF &q : ink.points) {
+        const QPointF p = q + at;
+        const qreal cx = std::clamp(p.x(), face.left() + radius, face.right() - radius);
+        const qreal cy = std::clamp(p.y(), face.top() + radius, face.bottom() - radius);
+        const qreal dx = p.x() - cx, dy = p.y() - cy;
+        if (dx * dx + dy * dy > r2) return false;
+    }
+    return true;
+}
+
+//! [a] drawn from [at] and [b] from [bt] touch.
+bool touch(const Ink &a, const QPointF &at, const Ink &b, const QPointF &bt)
+{
+    if (!a.box.translated(at).intersects(b.box.translated(bt))) return false;
+    return a.path.translated(at).intersects(b.path.translated(bt));
+}
 
 
 } // namespace
@@ -177,14 +225,17 @@ void KeyboardView::applySettings(const Settings &s)
 
 // --- Sizes ------------------------------------------------------------------------------
 
-//! A row's height: the owner's choice, held to a share of the screen in landscape.
+/*!
+ * A row's height: the owner's choice, held to a share of the screen in
+ * landscape. The screen's short side is dp's own measure: Keyboard.qml sets dp
+ * to it over SCREEN_DP, so the two cannot disagree, and the tests can lay the
+ * keys out for any screen without having one.
+ */
 qreal KeyboardView::rowHeight() const
 {
     const qreal chosen = m_settings.heightDp() * m_dp;
     if (!m_landscape) return chosen;
-    const QScreen *screen = QGuiApplication::primaryScreen();
-    const qreal h = screen ? std::min(screen->size().width(), screen->size().height()) : chosen * 10;
-    return std::min(chosen, h * 0.105);
+    return std::min(chosen, m_dp * SCREEN_DP * 0.105);
 }
 
 qreal KeyboardView::topBorder() const { return 3 * std::max<qreal>(1, std::round(m_dp)) + 1 * m_dp; }
@@ -245,6 +296,7 @@ void KeyboardView::layoutKeys()
             left = right;
         }
     }
+    fitLetters();
 }
 
 void KeyboardView::show(Page p)
@@ -297,7 +349,7 @@ void KeyboardView::drawKey(QPainter &p, const Zone &z)
     const Key &key = *z.slot.key;
     const QPointF c = box.center();
     switch (key.kind) {
-    case Kind::Char: drawCap(p, key, box); break;
+    case Kind::Char: drawCap(p, z, box); break;
     case Kind::Space:
         if (m_cursorMode) m_painter.icon(p, Painter::Icon::Cursor, c.x(), c.y(), iconSize);
         else drawLanguageFlash(p, box);
@@ -406,56 +458,248 @@ qreal KeyboardView::letterSize() const { return std::min(rowHeight() * 0.5, widt
 //! Inset of the glyphs' ink from the key's edges.
 qreal KeyboardView::inset(const QRectF &r) const { return 2.5 * m_dp + r.width() * 0.08; }
 
-/*!
- * A character key's printing: a key with an alternate puts it in one top corner
- * and the letter low in the key, just off centre away from it; a key without one
- * centres its glyph.
- */
-void KeyboardView::drawCap(QPainter &p, const Key &key, const QRectF &r)
+//! What a character key shows: letters as capitals, as printed on the Pre.
+QString KeyboardView::capText(const Key &key) const
 {
-    const QString letter = m_page == Page::Symbols ? key.text : key.text.toUpper();
-    const qreal size = letterSize();
-    const QString &a = key.alt;
-    QFont f = m_bold;
-    if (a.isEmpty()) {
-        f.setPixelSize(std::max(1, int(fitted(letter, size, r.width() - 2 * inset(r)))));
-        p.setFont(f);
-        p.setPen(key.accent ? accent(m_settings.style) : QColor(Qt::white));
-        centred(p, letter, r);
+    return m_page == Page::Symbols ? key.text : key.text.toUpper();
+}
+
+/*!
+ * The printing of every character key on the page, as one: one size for all
+ * of them, and one baseline per row, so a row's letters stand on one line
+ * whichever keys have an alternate. The size is the largest at which every
+ * letter and alternate stays inside its key's face.
+ */
+void KeyboardView::fitLetters()
+{
+    // The same page at the same size comes out the same: work it out once.
+    QString id = QStringLiteral("%1|%2|%3|%4|%5|%6").arg(m_settings.language.id).arg(int(m_page))
+                     .arg(width()).arg(rowHeight()).arg(m_dp).arg(m_landscape);
+    // The keys as laid out, whole pixels each: two rows of the same nominal
+    // height can come out a pixel apart.
+    for (const Zone &z : std::as_const(m_zones))
+        id += QStringLiteral("|%1x%2").arg(z.rect.width()).arg(z.rect.height());
+    const auto known = m_fits.constFind(id);
+    if (known != m_fits.constEnd() && known->baselines.size() == m_zones.size()) {
+        m_altStep = known->altStep;
+        for (int k = 0; k < m_zones.size(); ++k) {
+            m_zones[k].letterPx = known->px;
+            m_zones[k].baseline = known->baselines[k];
+        }
         return;
     }
-    const qreal i = inset(r);
-    const bool altLeft = key.altPos == AltPos::Left;
-    // The letter steps back while the orange key says the alternate is what will be typed.
-    f.setPixelSize(std::max(1, int(size)));
-    p.setFont(f);
-    QColor white(Qt::white);
-    white.setAlpha(m_alt != Alt::Off ? 89 : 255);
-    p.setPen(white);
-    // Every letter sits on one baseline, taken from a flat-bottomed capital, so
-    // Q's tail hangs below the line instead of lifting the Q. As on the Pre, a
-    // letter is centred in its key by its advance, nudged a little away from its
-    // alternate. A symbol is lifted until its ink rests on the letters' line.
-    QFontMetricsF fm(f);
-    qreal baseline = r.bottom() - i - fm.tightBoundingRect(QStringLiteral("H")).bottom();
-    bool allLetters = true;
-    for (QChar ch : letter) if (!ch.isLetter()) allLetters = false;
-    if (!allLetters)
-        baseline = std::min(baseline, r.bottom() - i - fm.tightBoundingRect(letter).bottom());
-    const qreal nudge = r.width() * LETTER_NUDGE * (altLeft ? 1 : -1);
-    p.drawText(QPointF(r.center().x() + nudge - fm.horizontalAdvance(letter) / 2, baseline), letter);
 
-    // The alternate, in the top corner: its edge meets the inset, and it is
-    // centred on a capital's height there, so "-" and "'" line up with the digits.
-    const qreal asize = size * 0.7;
-    f.setPixelSize(std::max(1, int(asize)));
+    // Start just above the size the widest letter allows, rather than
+    // trying every size down from the full one: a letter's width grows with
+    // its size, a pixel or so either way for hinting.
+    const qreal full = letterSize();
+    QFont f = m_bold;
+    f.setPixelSize(std::max(1, int(full)));
+    const QFontMetricsF fm(f);
+    qreal px = full;
+    for (const Zone &z : std::as_const(m_zones)) {
+        if (!z.slot.drawn || z.slot.key->kind != Kind::Char) continue;
+        const qreal w = fm.tightBoundingRect(capText(*z.slot.key)).width();
+        const qreal room = z.rect.width() - 2 * inset(z.rect);
+        if (w > room && w > 0) px = std::min(px, std::floor(full * room / w) + 2);
+    }
+    // The largest that fits: halve the range between the start and the
+    // smallest, in whole pixels down from the start.
+    if (!placeLetters(px)) {
+        int fits = std::max(0, int(std::ceil(px - MIN_LETTER_PX))), fails = 0;
+        while (fits - fails > 1) {
+            const int mid = (fits + fails) / 2;
+            if (placeLetters(px - mid)) fits = mid;
+            else fails = mid;
+        }
+        px -= fits;
+        placeLetters(px);
+    }
+
+    Fit fit;
+    fit.px = px;
+    fit.altStep = m_altStep;
+    for (const Zone &z : std::as_const(m_zones)) fit.baselines << z.baseline;
+    if (m_fits.size() > 64) m_fits.clear();
+    m_fits.insert(id, fit);
+}
+
+/*!
+ * Lays the page's letters out at [px]; false if one of them, or an
+ * alternate, would leave its key's face or run into the other.
+ *
+ * In a row with alternates the letters sit low, as on the Pre, their line
+ * taken from a flat-bottomed capital so a Q's tail hangs below it; a row
+ * without any has its capitals centred. Where a letter hangs lower than the
+ * face allows (Arabic's ر and و, Hebrew's ק and ף), every row comes up
+ * together. A symbol is lifted until its ink rests on the line.
+ */
+bool KeyboardView::placeLetters(qreal px)
+{
+    QFont f = m_bold;
+    f.setPixelSize(std::max(1, int(px)));
+    const QFontMetricsF fm(f);
+    QFont af = m_bold;
+    af.setPixelSize(std::max(1, int(px * ALT_SCALE)));
+    const QFontMetricsF am(af);
+    const QRectF capital = fm.tightBoundingRect(QStringLiteral("H"));
+    const qreal margin = INK_MARGIN * m_dp;
+
+    auto isChar = [](const Zone &z) { return z.slot.drawn && z.slot.key->kind == Kind::Char; };
+    auto allLetters = [](const QString &s) {
+        for (QChar ch : s) if (!ch.isLetter() && !ch.isMark()) return false;
+        return !s.isEmpty();
+    };
+    // Each key in its own coordinates: what fits depends on its size alone,
+    // never on where it is, so the answer is the same wherever it is asked.
+    auto local = [](const Zone &z) { return QRectF(0, 0, z.rect.width(), z.rect.height()); };
+    //! Where ink may go on [z]: its face, a margin in.
+    auto faceOf = [&](const Zone &z) {
+        return m_painter.capFace(local(z)).adjusted(margin, margin, -margin, -margin);
+    };
+
+    // Every key's ink at this size, once.
+    QVector<Ink> letters, alts;
+    letters.reserve(m_zones.size());
+    alts.reserve(m_zones.size());
+    for (Zone &z : m_zones) {
+        const bool c = isChar(z);
+        letters << Ink(c ? capText(*z.slot.key) : QString(), f);
+        alts << Ink(c ? z.slot.key->alt : QString(), af);
+        if (c) z.letterPx = px;
+    }
+
+    // How low the page's letters reach below their line.
+    qreal hangs = capital.bottom();
+    for (int k = 0; k < m_zones.size(); ++k)
+        if (isChar(m_zones[k]) && allLetters(capText(*m_zones[k].slot.key)))
+            hangs = std::max(hangs, letters[k].box.bottom());
+
+    /*
+     * The alternates go in their corners, but a narrow key's face curves away
+     * there: bring them all in by the same step, the least that puts every one
+     * of them inside its face, so they still line up across the row.
+     */
+    // Every row is laid out even when something does not fit, so the page is
+    // always whole: the smallest size is drawn whether it fits or not.
+    bool fits = true;
+    for (m_altStep = 0;; m_altStep += 0.5 * m_dp) {
+        if (m_altStep > MAX_ALT_STEP * m_dp) {
+            m_altStep = MAX_ALT_STEP * m_dp;
+            fits = false;
+            break;
+        }
+        bool in = true;
+        for (int k = 0; in && k < m_zones.size(); ++k) {
+            const Zone &z = m_zones[k];
+            if (!isChar(z) || z.slot.key->alt.isEmpty()) continue;
+            const QRectF face = faceOf(z);
+            in = inside(alts[k], altAt(z, local(z), am), face, m_painter.capRadius(face));
+        }
+        if (in) break;
+    }
+
+    for (int a = 0; a < m_zones.size();) {
+        int b = a;
+        while (b < m_zones.size() && m_zones[b].rect.top() == m_zones[a].rect.top()) ++b;
+        bool low = false;
+        qreal i = 0;
+        for (int k = a; k < b; ++k) {
+            if (!isChar(m_zones[k])) continue;
+            low = low || !m_zones[k].slot.key->alt.isEmpty();
+            i = std::max(i, inset(m_zones[k].rect));
+        }
+        const qreal h = m_zones[a].rect.height();
+        const qreal floor = faceOf(m_zones[a]).bottom();
+        qreal line = low ? h - i - capital.bottom() : (h + capital.height()) / 2 - capital.bottom();
+        line = std::min(line, floor - hangs);
+
+        for (int k = a; k < b; ++k) {
+            Zone &z = m_zones[k];
+            if (!isChar(z)) continue;
+            const Key &key = *z.slot.key;
+            const QString s = capText(key);
+            const QRectF ink = fm.tightBoundingRect(s);
+            z.baseline = allLetters(s) ? line : std::min(line, line + capital.bottom() - ink.bottom());
+
+            // The glyphs themselves, not their boxes: a box's corner can be off a
+            // rounded corner of the face that the letter never comes near.
+            const QRectF face = faceOf(z);
+            const qreal radius = m_painter.capRadius(face);
+            const QPointF at = letterAt(z, local(z), fm);
+            // Once something does not fit, the rest is only laid out, not checked.
+            if (fits && (ink.width() > z.rect.width() - 2 * inset(z.rect)
+                         || !inside(letters[k], at, face, radius)
+                         || (!key.alt.isEmpty() && touch(alts[k], altAt(z, local(z), am), letters[k], at))))
+                fits = false;
+        }
+        a = b;
+    }
+    return fits;
+}
+
+/*!
+ * Where [z]'s letter is drawn from in [box]: on its row's line, centred in the
+ * key - by its advance and nudged a little away from an alternate, as on the
+ * Pre, or by its ink where there is none - and moved in off the key's sides.
+ */
+QPointF KeyboardView::letterAt(const Zone &z, const QRectF &box, const QFontMetricsF &fm) const
+{
+    const Key &key = *z.slot.key;
+    const QString s = capText(key);
+    const QRectF ink = fm.tightBoundingRect(s);
+    qreal x;
+    if (key.alt.isEmpty()) {
+        x = box.center().x() - (ink.left() + ink.right()) / 2;
+    } else {
+        const qreal nudge = box.width() * LETTER_NUDGE * (key.altPos == AltPos::Left ? 1 : -1);
+        x = box.center().x() + nudge - fm.horizontalAdvance(s) / 2;
+    }
+    const qreal i = inset(box);
+    x = std::min(std::max(x, box.left() + i - ink.left()), box.right() - i - ink.right());
+    return QPointF(x, box.top() + z.baseline);
+}
+
+/*!
+ * Where [z]'s alternate is drawn from in [box]: in its top corner, its edge on
+ * the inset (and in by the page's step, see placeLetters), centred on a capital's height there so "-" and "'" line up with
+ * the digits.
+ */
+QPointF KeyboardView::altAt(const Zone &z, const QRectF &box, const QFontMetricsF &fm) const
+{
+    const Key &key = *z.slot.key;
+    const QRectF ink = fm.tightBoundingRect(key.alt);
+    const qreal i = inset(box);
+    const qreal x = key.altPos == AltPos::Left ? box.left() + i + m_altStep - ink.left()
+                                               : box.right() - i - m_altStep - ink.right();
+    const qreal y = box.top() + i + m_altStep + int(z.letterPx * ALT_SCALE) * CAP_HEIGHT / 2
+                    - (ink.top() + ink.bottom()) / 2;
+    return QPointF(x, y);
+}
+
+/*!
+ * A character key's printing, as fitLetters laid it out: a key with an
+ * alternate puts it in one top corner and the letter low in the key, just off
+ * centre away from it.
+ */
+void KeyboardView::drawCap(QPainter &p, const Zone &z, const QRectF &box)
+{
+    const Key &key = *z.slot.key;
+    QFont f = m_bold;
+    f.setPixelSize(std::max(1, int(z.letterPx)));
     p.setFont(f);
+    QColor letter = key.accent ? accent(m_settings.style) : QColor(Qt::white);
+    // The letter steps back while the orange key says the alternate is what will be typed.
+    if (!key.alt.isEmpty() && m_alt != Alt::Off) letter.setAlpha(89);
+    p.setPen(letter);
+    p.drawText(letterAt(z, box, QFontMetricsF(f)), capText(key));
+    if (key.alt.isEmpty()) return;
+
+    f.setPixelSize(std::max(1, int(z.letterPx * ALT_SCALE)));
+    p.setFont(f);
+    const QString &a = key.alt;
     p.setPen(a.length() == 1 && a[0].isDigit() ? accent(m_settings.style) : QColor(Qt::white));
-    const QFontMetricsF am(f);
-    const QRectF ink = am.tightBoundingRect(a);
-    const qreal ax = altLeft ? r.left() + i - ink.left() : r.right() - i - ink.right();
-    const qreal ay = r.top() + i + asize * CAP_HEIGHT / 2 - (ink.top() + ink.bottom()) / 2;
-    p.drawText(QPointF(ax, ay), a);
+    p.drawText(altAt(z, box, QFontMetricsF(f)), a);
 }
 
 void KeyboardView::centred(QPainter &p, const QString &s, const QRectF &r)

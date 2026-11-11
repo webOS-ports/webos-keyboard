@@ -28,6 +28,18 @@
 
 namespace Pre {
 
+namespace {
+
+//! How far a cap's face sits inside its key, in dp: the dark well shows around it.
+const qreal CAP_PAD = 2.5;
+
+qreal faceRadius(const QRectF &cap, qreal dp)
+{
+    return std::min(8 * dp, std::min(cap.width(), cap.height()) / 2);
+}
+
+} // namespace
+
 QColor accent(Style style)
 {
     return style == Style::White ? QColor(Qt::white) : QColor(0xF2, 0x40, 0x2E);
@@ -40,6 +52,23 @@ const QImage &Painter::cap(int w, int h, bool pressed)
     if (it == m_caps.end())
         it = m_caps.insert(id, drawCap(w, h, pressed));
     return it.value();
+}
+
+QRectF Painter::capFace(const QRectF &key) const
+{
+    const qreal pad = CAP_PAD * m_dp;
+    return key.adjusted(pad, pad, -pad, -pad);
+}
+
+qreal Painter::capRadius(const QRectF &face) const { return faceRadius(face, m_dp); }
+
+QPainterPath Painter::capShape(const QRectF &key) const
+{
+    const QRectF cap = capFace(key);
+    const qreal r = capRadius(cap);
+    QPainterPath path;
+    path.addRoundedRect(cap, r, r);
+    return path;
 }
 
 QImage Painter::drawCap(int w, int h, bool pressed) const
@@ -58,9 +87,9 @@ QImage Painter::drawCap(int w, int h, bool pressed) const
 
     // The cap: a glow under its top edge, darkest through the middle, lifting a
     // little towards the bottom rim. Pressed, every stop is lighter.
-    const qreal capPad = 2.5 * dp;
+    const qreal capPad = CAP_PAD * dp;
     const QRectF cap(capPad, capPad, w - 2 * capPad, h - 2 * capPad);
-    const qreal capR = std::min(8 * dp, std::min(cap.width(), cap.height()) / 2);
+    const qreal capR = faceRadius(cap, dp);
     const int lift = pressed ? 26 : 0;
     auto col = [lift](int r, int g, int bl) {
         return QColor(std::min(255, r + lift), std::min(255, g + lift), std::min(255, bl + lift));

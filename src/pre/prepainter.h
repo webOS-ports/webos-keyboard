@@ -22,6 +22,7 @@
 #include <QColor>
 #include <QHash>
 #include <QImage>
+#include <QPainterPath>
 #include <QRectF>
 
 class QPainter;
@@ -50,6 +51,11 @@ public:
 
     //! One key cap, [w] x [h] device px, cached by size and state.
     const QImage &cap(int w, int h, bool pressed);
+    //! The face of the cap drawn for [key]: what a key's printing has to stay inside.
+    QPainterPath capShape(const QRectF &key) const;
+    //! That face's rectangle, and the radius of its corners.
+    QRectF capFace(const QRectF &key) const;
+    qreal capRadius(const QRectF &face) const;
     //! The deck behind the keys, and the dark-to-light stripes along its top edge.
     void deck(QPainter &p, const QRectF &r) const;
 

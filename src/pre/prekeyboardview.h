@@ -28,11 +28,15 @@
 
 #include <QElapsedTimer>
 #include <QFont>
+#include <QHash>
+#include <QFontMetricsF>
 #include <QPointer>
 #include <QQuickPaintedItem>
 #include <QStringList>
 #include <QTimer>
 #include <QVector>
+
+class TestPreKeyboard;
 
 namespace Pre {
 
@@ -124,10 +128,17 @@ protected:
     void mouseUngrabEvent() override;
 
 private:
+    friend class ::TestPreKeyboard;
+
     enum class Shift { Off, Once, Lock };
     enum class Page { Letters, Symbols, Emoji };
 
-    struct Zone { Slot slot; QRectF rect; };
+    /*!
+     * A key and where it is. A character key also has its printing worked out
+     * with the rest of its page (fitLetters): the letter's size, and its
+     * baseline as a distance down from the key's top.
+     */
+    struct Zone { Slot slot; QRectF rect; qreal letterPx = 0; qreal baseline = 0; };
 
     // Sizes
     qreal rowHeight() const;
@@ -152,7 +163,12 @@ private:
     void functionLabel(QPainter &p, const QString &s, const QRectF &box);
     qreal letterSize() const;
     qreal inset(const QRectF &r) const;
-    void drawCap(QPainter &p, const Key &key, const QRectF &r);
+    QString capText(const Key &key) const;
+    void fitLetters();
+    bool placeLetters(qreal px);
+    QPointF letterAt(const Zone &z, const QRectF &box, const QFontMetricsF &fm) const;
+    QPointF altAt(const Zone &z, const QRectF &box, const QFontMetricsF &fm) const;
+    void drawCap(QPainter &p, const Zone &z, const QRectF &box);
     void centred(QPainter &p, const QString &s, const QRectF &r);
     qreal fitted(const QString &s, qreal size, qreal room) const;
     QString output(const Key &key) const;
@@ -235,6 +251,11 @@ private:
     Page m_page = Page::Letters;
 
     QVector<Zone> m_zones;
+    //! How far in from their corners this page's alternates are printed (placeLetters).
+    qreal m_altStep = 0;
+    //! The pages laid out so far (fitLetters), by language, page and size.
+    struct Fit { qreal px = 0; qreal altStep = 0; QVector<qreal> baselines; };
+    QHash<QString, Fit> m_fits;
     int m_pressed = -1;
     int m_preview = -1;
 

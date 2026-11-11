@@ -117,6 +117,48 @@ its exit status can be non-zero while clang-tidy's was not.
 | Test | Covers |
 | --- | --- |
 | `ut_hardwarekeyboard` | Loading the per-device JSON profiles (truncated, nameless, wrong shape, unknown level names, non-numeric scancodes — none of which may take MaliitServer down); selecting one, including the most-specific-wins rule that tells a Titan from a Titan Pocket when both register `aw9523-key`; the Alt and Sym level state machine — held, tapped to latch, double-tapped to lock, third tap to unlock — and that a release replays what its own press decided; the Shift latch; `reset()` on focus leaving a field; and that the six profiles this package ships all parse and load. |
+| `ut_prekeyboard` | The Pre Keyboard: a layout for every language plugin, its settings, the controller that hands its keys to LuneOS's editor and word engine, the suggestion bar, and its printing on every phone's screen (see Screens). |
+
+## Screens
+
+`ut_prekeyboard` lays the Pre Keyboard out for every LuneOS phone, in every
+language, on the letters and the symbols, at each of its three heights, and
+checks what a screenshot would show: that the keys tile the keyboard, that a
+row's letters stand on one line, that every letter and printed alternate stays
+inside its key's rounded face and clear of the other, and that the letters are
+as large as that allows. It needs no device and no display.
+
+The phones are not listed here. They come from luneos-components, whose
+`test/imports/LunaNext/Common/SettingsStub.js` names each device with the
+screen its `luna-platform.conf` gives, and which its own tests walk the same
+way. Every profile without `tabletUi` is used (a tablet keeps the LuneOS
+keys), each way up, since the keyboard turns with the phone: a device added
+there is tested here on the next run. The test finds the checkout from
+`$LUNEOS_COMPONENTS`, or beside this one; `devicesAreKnown` skips, and says
+so, when there is none.
+
+A sweep runs as well, for screens no device has yet: short sides from 240 to
+1440 px, in portrait and in landscape at 4:3, 16:9 and 2:1. It steps 120 px by
+default; for the odd sizes and fractional dp in between,
+
+```sh
+PRE_SCREENS=full QT_QPA_PLATFORM=offscreen ./ut_prekeyboard/ut_prekeyboard keysFitEveryScreen
+```
+
+steps 8 px and takes a few minutes.
+
+What fits depends on the glyphs, so run it with the phone's fonts: Prelude for
+the Latin and Cyrillic letters, Droid Sans Arabic and Hebrew, Droid Sans
+Fallback for the rest. Copy a device's `/usr/share/fonts` and `/etc/fonts`,
+point the copy's `<dir>` at the fonts, and set `FONTCONFIG_FILE` to it. With
+the host's own fonts the test still runs, but answers for those.
+
+To look rather than check, `PRE_SHOTS=<dir>` makes `shots` save every
+language's letters and symbols on each device as a picture.
+
+`firstLayoutCost` is a benchmark: what fitting a page's letters costs the
+first time that page is shown (a page is cached after that), on the slowest
+case, Russian on a Sargo. Run it on a device to see what a phone pays.
 
 ## Not part of the suite
 
