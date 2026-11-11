@@ -102,9 +102,9 @@ public:
     //! A word for a moment over the GIFs or stickers ("Sent as a link").
     void mediaSays(Klipy::Kind kind, const QString &s, int ms = 2500);
 
-    static const int CAPS_NONE = 0;
-    static const int CAPS_FIRST = 1;
-    static const int CAPS_ALL = 2;
+    static constexpr int CAPS_NONE = 0;
+    static constexpr int CAPS_FIRST = 1;
+    static constexpr int CAPS_ALL = 2;
 
 Q_SIGNALS:
     void controllerChanged();
@@ -208,7 +208,7 @@ private:
     void onHold();
     void onRepeat();
     void onBarHold();
-    void stopRepeat();
+    void stopRepeat(bool lifted = false);
     void keyFeedback();
     bool canSwipe(const Zone &z) const;
     void addSwipePoint(qreal x, qreal y);
@@ -269,6 +269,9 @@ private:
     // The globe's menu.
     QStringList m_menu;
     QRectF m_menuFrame;
+    //! The menu's rows per column, and a column's width.
+    int m_menuRows = 1;
+    qreal m_menuColW = 0;
     int m_menuPressed = -1;
     bool m_menuDown = false;
 

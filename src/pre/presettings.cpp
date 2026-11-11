@@ -29,40 +29,23 @@ bool flag(const QJsonObject &o, const char *key, bool fallback)
     return v.isBool() ? v.toBool() : fallback;
 }
 
-QString familyOf(const Language &lang)
-{
-    return lang.family();
-}
-
 } // namespace
+
+Settings Settings::fromJson(const QJsonObject &pre, Settings into)
+{
+    Settings &s = into;
+    const QString style = pre.value(QLatin1String("style")).toString();
+    s.style = style == QLatin1String("white") ? Style::White : Style::Orange;
+    const QString h = pre.value(QLatin1String("height")).toString();
+    s.height = h == QLatin1String("small") ? Height::Small : h == QLatin1String("large") ? Height::Large : Height::Medium;
+    s.holdForMore = flag(pre, "holdForMore", false);
+    s.vibrate = flag(pre, "vibrate", false);
+    return s;
+}
 
 Settings Settings::fromJson(const QJsonObject &pre)
 {
-    Settings s;
-    s.style = pre.value(QLatin1String("style")).toString() == QLatin1String("white") ? Style::White : Style::Orange;
-    const QString h = pre.value(QLatin1String("height")).toString();
-    s.height = h == QLatin1String("small") ? Height::Small : h == QLatin1String("large") ? Height::Large : Height::Medium;
-    s.autocorrect = flag(pre, "autocorrect", s.autocorrect);
-    s.doubleSpacePeriod = flag(pre, "doubleSpacePeriod", s.doubleSpacePeriod);
-    s.suggestions = flag(pre, "suggestions", s.suggestions);
-    s.swipe = flag(pre, "swipe", s.swipe);
-    s.holdForMore = flag(pre, "holdForMore", s.holdForMore);
-    s.emojiSuggestions = flag(pre, "emojiSuggestions", s.emojiSuggestions);
-    s.vibrate = flag(pre, "vibrate", s.vibrate);
-    s.sound = flag(pre, "sound", s.sound);
-    // Text Assist's order, whatever order they were checked in; never none.
-    QStringList ids;
-    for (const QJsonValue &v : pre.value(QLatin1String("languages")).toArray())
-        ids << v.toString();
-    QList<Language> langs;
-    for (const Language &l : Language::all())
-        if (ids.contains(l.id))
-            langs << l;
-    if (!langs.isEmpty())
-        s.languages = langs;
-    const Language now = Language::byId(pre.value(QLatin1String("language")).toString());
-    s.language = (now.isValid() && s.languages.contains(now)) ? now : s.languages.first();
-    return s;
+    return fromJson(pre, Settings());
 }
 
 QJsonObject Settings::toJson(QJsonObject pre) const
@@ -70,66 +53,22 @@ QJsonObject Settings::toJson(QJsonObject pre) const
     pre.insert(QLatin1String("style"), style == Style::White ? QLatin1String("white") : QLatin1String("orange"));
     pre.insert(QLatin1String("height"), height == Height::Small ? QLatin1String("small")
                : height == Height::Large ? QLatin1String("large") : QLatin1String("medium"));
-    pre.insert(QLatin1String("autocorrect"), autocorrect);
-    pre.insert(QLatin1String("doubleSpacePeriod"), doubleSpacePeriod);
-    pre.insert(QLatin1String("suggestions"), suggestions);
-    pre.insert(QLatin1String("swipe"), swipe);
     pre.insert(QLatin1String("holdForMore"), holdForMore);
-    pre.insert(QLatin1String("emojiSuggestions"), emojiSuggestions);
     pre.insert(QLatin1String("vibrate"), vibrate);
-    pre.insert(QLatin1String("sound"), sound);
-    QJsonArray ids;
-    for (const Language &l : languages)
-        ids.append(l.id);
-    pre.insert(QLatin1String("languages"), ids);
-    pre.insert(QLatin1String("language"), language.id);
     return pre;
 }
 
 bool Settings::operator==(const Settings &o) const
 {
-    return style == o.style && height == o.height && autocorrect == o.autocorrect &&
-           doubleSpacePeriod == o.doubleSpacePeriod && suggestions == o.suggestions && swipe == o.swipe &&
-           holdForMore == o.holdForMore && emojiSuggestions == o.emojiSuggestions && vibrate == o.vibrate &&
-           sound == o.sound && languages == o.languages && language == o.language;
-}
-
-QStringList Settings::learned(const QJsonObject &pre, const Language &lang)
-{
-    QStringList out;
-    for (const QJsonValue &v : pre.value(QLatin1String("learned")).toObject().value(familyOf(lang)).toArray())
-        out << v.toString();
-    return out;
-}
-
-QJsonObject Settings::withLearned(QJsonObject pre, const Language &lang, const QStringList &words)
-{
-    QJsonObject learned = pre.value(QLatin1String("learned")).toObject();
-    learned.insert(familyOf(lang), QJsonArray::fromStringList(words));
-    pre.insert(QLatin1String("learned"), learned);
-    return pre;
-}
-
-QStringList Settings::removed(const QJsonObject &pre, const Language &lang)
-{
-    QStringList out;
-    for (const QJsonValue &v : pre.value(QLatin1String("removed")).toObject().value(familyOf(lang)).toArray())
-        out << v.toString();
-    return out;
-}
-
-QJsonObject Settings::withRemoved(QJsonObject pre, const Language &lang, const QStringList &words)
-{
-    QJsonObject removed = pre.value(QLatin1String("removed")).toObject();
-    removed.insert(familyOf(lang), QJsonArray::fromStringList(words));
-    pre.insert(QLatin1String("removed"), removed);
-    return pre;
+    return style == o.style && height == o.height && holdForMore == o.holdForMore && vibrate == o.vibrate &&
+           suggestions == o.suggestions && sound == o.sound && swipe == o.swipe &&
+           languages == o.languages && language == o.language;
 }
 
 QStringList Settings::recentEmoji(const QJsonObject &pre)
 {
     QStringList out;
-    for (const QJsonValue &v : pre.value(QLatin1String("recentEmoji")).toArray())
+    for (const auto &v : pre.value(QLatin1String("recentEmoji")).toArray())
         out << v.toString();
     return out;
 }

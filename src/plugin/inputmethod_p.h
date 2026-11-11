@@ -15,8 +15,6 @@
 #include "luneosapplicationapiwrapper.h"
 #include "pre/precontroller.h"
 
-//! The keyboardLayout that picks the Pre Keyboard over LuneOS's own.
-#define PRE_KEYBOARD_LAYOUT "Pre Keyboard"
 
 #include <maliit/plugins/abstractinputmethodhost.h>
 #include <maliit/plugins/abstractpluginsetting.h>
@@ -79,7 +77,7 @@ public:
     //! to visibleChanged in the constructor.
     bool panelForcedHidden = false;
     KeyboardSettings m_settings;
-    //! The Pre Keyboard, when it is the keyboard chosen ("Pre Keyboard" in Text Assist).
+    //! The Pre Keyboard: the phone keyboard (Keyboard.qml sets it active on a phone).
     Pre::Controller pre;
     //! Resolves the Alt and Sym levels of a physical keyboard, if this device
     //! has one we have a profile for. Inert otherwise.
@@ -300,20 +298,75 @@ public:
         qml_context->setContextProperty("pre_keyboard", &pre);
     }
 
-    //! The Pre Keyboard's connections: where its words are, and how it saves and switches.
+    /*!
+     * The Pre Keyboard's connections. Its keys go through the event handler and
+     * the editor as LuneOS's own keys do, so its words - the bar, autocorrect,
+     * auto-capitals, the owner's dictionary - are the word engine's, and its
+     * languages are the keyboard's.
+     */
     void setUpPreKeyboard()
     {
         pre.setDataDir(QStringLiteral(LUNEOS_KEYBOARD_DATA_DIR "/pre"));
         pre.setStateDir(QDir::homePath() + QStringLiteral("/prekeyboard"));
-        pre.setHost(host);
-        pre.setLunaCall([this](const QString &uri, const QString &payload) { m_settings.call(uri, payload); });
-        pre.setSavePrefs([this](const QJsonObject &obj) { m_settings.savePre(obj); });
-        pre.setSwitchLayout([this](const QString &layout) {
-            q->setKeyboardLayout(layout);
-            m_settings.savePreferences(q);
-        });
+
+        Pre::Bridge b;
+        b.press = [this](const QString &label, const QString &action) { event_handler.onKeyPressed(label, action); };
+        b.release = [this](const QString &label, const QString &action) { event_handler.onKeyReleased(label, action); };
+        b.cancelRepeat = [this] { editor.cancelRepeat(); };
+        b.pick = [this](const QString &word) { event_handler.onWordCandidateReleased(word); };
+        b.commit = [this](const QString &text) { q->commitEmoji(text); };
+        b.cursor = [this](int dx, int dy, bool select) {
+            if (!select) {
+                const QString action = dx > 0 ? QStringLiteral("keyRight") : dx < 0 ? QStringLiteral("keyLeft")
+                                     : dy > 0 ? QStringLiteral("keyDown") : QStringLiteral("keyUp");
+                event_handler.onKeyPressed(QString(), action);
+                event_handler.onKeyReleased(QString(), action);
+                return;
+            }
+            // The editor's arrows don't select: the word being typed goes in
+            // first, then the application gets shift and the arrow.
+            editor.commit();
+            const int key = dx > 0 ? Qt::Key_Right : dx < 0 ? Qt::Key_Left : dy > 0 ? Qt::Key_Down : Qt::Key_Up;
+            host->sendKeyEvent(QKeyEvent(QEvent::KeyPress, key, Qt::ShiftModifier));
+            host->sendKeyEvent(QKeyEvent(QEvent::KeyRelease, key, Qt::ShiftModifier));
+        };
+        b.autoCaps = [this] { return editor.atAutoCapsPosition(); };
+        b.canAdd = [this](const QString &word) { return editor.wordEngine()->isMisspelled(word); };
+        b.addWord = [this](const QString &word) { editor.addToUserDictionary(word); };
+        b.useLanguage = [this](const QString &id) { q->setActiveLanguage(id); };
+        b.luna = [this](const QString &uri, const QString &payload) { m_settings.call(uri, payload); };
+        b.savePrefs = [this](const QJsonObject &obj) { m_settings.savePre(obj); };
+        b.hide = [this] { host->notifyImInitiatedHiding(); };
+        pre.setBridge(b);
+
         QObject::connect(&m_settings, &KeyboardSettings::preChanged, &pre, &Pre::Controller::setPrefs);
         pre.setPrefs(m_settings.pre());
+
+        // The bar: the word engine's candidates, and what space would put in.
+        QObject::connect(&editor, &AbstractTextEditor::wordCandidatesChanged, &pre,
+                         [this](const WordCandidateList &candidates) {
+            QStringList words;
+            for (const WordCandidate &c : candidates)
+                if (c.source() != WordCandidate::SourceUser) words << c.word();
+            Model::Text *t = editor.text();
+            const QString primary = editor.isAutoCorrectEnabled() && t ? t->primaryCandidate() : QString();
+            pre.setCandidates(t ? t->preedit() : QString(), primary, words);
+        });
+        // Words for a field that takes them: the editor's preedit is on for one.
+        QObject::connect(&editor, &AbstractTextEditor::preeditEnabledChanged, &pre, &Pre::Controller::setWordsAllowed);
+        pre.setWordsAllowed(editor.isPreeditEnabled());
+        QObject::connect(&editor, &AbstractTextEditor::autoCapsActivated, &pre, &Pre::Controller::update);
+
+        // The settings it follows: suggestions on, the key click, the languages.
+        const auto sync = [this] {
+            pre.setKeyboardState(editor.wordEngine()->isEnabled(), q->useAudioFeedback(),
+                                 q->enabledLanguages(), q->activeLanguage());
+        };
+        QObject::connect(editor.wordEngine(), &Logic::AbstractWordEngine::enabledChanged, &pre, sync);
+        QObject::connect(q, &InputMethod::useAudioFeedbackChanged, &pre, sync);
+        QObject::connect(q, &InputMethod::enabledLanguagesChanged, &pre, sync);
+        QObject::connect(q, &InputMethod::activeLanguageChanged, &pre, sync);
+        sync();
     }
 
 
@@ -378,9 +431,6 @@ public:
         keyboardLayout = m_settings.keyboardLayout();
         qDebug() << "inputmethod_p.h registerKeyboardLayout(): keyboardLayout is:" << keyboardLayout;
         q->setKeyboardLayout(keyboardLayout);
-        // The Pre Keyboard is the keyboard, whatever keyboardLayout says.
-        // Was: pre.setActive(keyboardLayout == QLatin1String(PRE_KEYBOARD_LAYOUT));
-        pre.setActive(true);
     }
 
     void registerEnabledLanguages()

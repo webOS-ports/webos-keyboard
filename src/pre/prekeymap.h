@@ -54,11 +54,15 @@ struct Key
     Kind kind = Kind::Char;
     //! What the key types, and what it shows (letters show as capitals, as printed on the Pre).
     QString text;
+    //! What shift types, where that is not [text]'s capital (Arabic, Hebrew, Czech); empty otherwise.
+    QString shifted;
     //! The printed alternate, typed while the orange key is active; empty when none.
     QString alt;
     AltPos altPos = AltPos::Right;
     //! The press-and-hold list; its first entry is always the key's own character.
     QStringList extended;
+    //! The press-and-hold list with shift, where it is not [extended]'s capitals; empty otherwise.
+    QStringList extendedShifted;
     //! Printed in the accent colour: the Sym page's digits.
     bool accent = false;
     //! A label for a function key ("Sym", "ABC").

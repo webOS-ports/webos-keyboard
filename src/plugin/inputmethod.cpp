@@ -1286,16 +1286,10 @@ void InputMethod::update()
         newContentType = FreeTextContentType;
     }
 
-    if (d->pre.active()) {
-        // A field for words: not a password, an address or a URL. The field's
-        // "auto correction" hint is not asked: text-input makes it opt-in, few
-        // fields set it, and its absence is not a field asking for none.
-        bool hiddenValid = false;
-        const bool hidden = inputMethodHost()->hiddenText(hiddenValid) && hiddenValid;
-        const bool prose = (newContentType == FreeTextContentType || newContentType == CustomContentType) && !hidden;
-        d->pre.setProse(prose, false);
+    // The Pre Keyboard's bar follows the editor (preeditEnabled), as the word
+    // ribbon does; here it only checks for a capital and offers a paste.
+    if (d->pre.active())
         d->pre.update();
-    }
 
     bool predictionValid = false;
     const bool predictionAsked = inputMethodHost()->predictionEnabled(predictionValid);
@@ -1691,10 +1685,6 @@ void InputMethod::setKeyboardLayout(const QString &newKeyboardLayout)
         return;
 
     d->keyboardLayout = newKeyboardLayout;
-    // The Pre Keyboard is the keyboard whatever the layout; this no longer switches it.
-    // d->pre.setActive(newKeyboardLayout == QLatin1String(PRE_KEYBOARD_LAYOUT));
-    // if (d->pre.active() && d->view && d->view->isVisible())
-    //     d->pre.startInput();
 
     qDebug() << "in inputMethod.cpp setKeyboardLayout() emitting keyboardLayoutChanged to" << d->keyboardLayout;
     Q_EMIT keyboardLayoutChanged(d->keyboardLayout);

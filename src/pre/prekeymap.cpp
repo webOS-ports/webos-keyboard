@@ -134,17 +134,47 @@ Slot letter(QChar letter, int row, int col, const Language &lang)
     return slot(1.0f, makeKey(Kind::Char, QString(letter), alt, leftHalf ? AltPos::Left : AltPos::Right, ext));
 }
 
+//! A letter of a language with its own rows: its phone layout's key, with the Pre's alternate in [row], [col].
+Slot ownLetter(const LetterKey &lk, int row, int col, int rowLength)
+{
+    const QStringList &a = alts()[row];
+    const QString alt = col < a.size() ? a[col] : QString();
+    QSharedPointer<Key> k(new Key);
+    k->kind = Kind::Char;
+    k->text = lk.text;
+    k->shifted = lk.shifted.isEmpty() || lk.shifted == lk.text.toUpper() ? QString() : lk.shifted;
+    k->alt = alt;
+    k->altPos = col < (rowLength + 1) / 2 ? AltPos::Left : AltPos::Right;
+    k->extended = lk.extended.size() > 1 ? lk.extended : QStringList();
+    if (!k->extended.isEmpty()) {
+        QStringList upper;
+        for (const QString &e : k->extended) upper << e.toUpper();
+        if (lk.extendedShifted.size() == k->extended.size() && lk.extendedShifted != upper)
+            k->extendedShifted = lk.extendedShifted;
+    }
+    return slot(1.0f, k);
+}
+
 Rows lettersOf(const Language &lang)
 {
     static const KeyPtr shift = makeKey(Kind::Shift);
     static const KeyPtr sym = makeKey(Kind::Sym, QString(), QString(), AltPos::Right, {}, false, QStringLiteral("Sym"));
-    const QStringList rows = layoutRows(lang.layout);
     QList<Slot> top, middle, bottom, last;
-    for (int i = 0; i < rows[0].length(); ++i) top << letter(rows[0][i], 0, i, lang);
-    for (int i = 0; i < rows[1].length(); ++i) middle << letter(rows[1][i], 1, i, lang);
-    middle << f(Kind::Backspace);
-    bottom << f(Kind::Orange);
-    for (int i = 0; i < rows[2].length(); ++i) bottom << letter(rows[2][i], 2, i, lang);
+    if (lang.layout == Layout::Own && lang.letters.size() == 3) {
+        const LetterRows &r = lang.letters;
+        for (int i = 0; i < r[0].size(); ++i) top << ownLetter(r[0][i], 0, i, r[0].size());
+        for (int i = 0; i < r[1].size(); ++i) middle << ownLetter(r[1][i], 1, i, r[1].size());
+        middle << f(Kind::Backspace);
+        bottom << f(Kind::Orange);
+        for (int i = 0; i < r[2].size(); ++i) bottom << ownLetter(r[2][i], 2, i, r[2].size());
+    } else {
+        const QStringList rows = layoutRows(lang.layout == Layout::Own ? Layout::Qwerty : lang.layout);
+        for (int i = 0; i < rows[0].length(); ++i) top << letter(rows[0][i], 0, i, lang);
+        for (int i = 0; i < rows[1].length(); ++i) middle << letter(rows[1][i], 1, i, lang);
+        middle << f(Kind::Backspace);
+        bottom << f(Kind::Orange);
+        for (int i = 0; i < rows[2].length(); ++i) bottom << letter(rows[2][i], 2, i, lang);
+    }
     // The comma holds what the Pre's period did.
     bottom << c(QStringLiteral(","), QStringLiteral("_"), AltPos::Right, QStringLiteral(", … • ¿"));
     bottom << f(Kind::Return);
@@ -229,7 +259,7 @@ const Rows &Keymap::letters(const Language &lang)
     QMutexLocker locker(&lock);
     auto it = built.find(lang.id);
     if (it == built.end())
-        it = built.emplace(lang.id, lettersOf(lang.isValid() ? lang : Language::enUS())).first;
+        it = built.emplace(lang.id, lettersOf(lang.isValid() ? lang : Language::orEnglish(lang.id))).first;
     return it->second;
 }
 

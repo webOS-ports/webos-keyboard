@@ -29,60 +29,58 @@
 namespace Pre {
 
 /*!
- * The owner's choices, from the "pre" object of the system "keyboard"
- * preference, which Text Assist writes. The keyboard follows a change at once,
- * with the keyboard still on screen.
+ * What the Pre Keyboard follows. Its look is its own, in the "pre" object of the
+ * system "keyboard" preference (Text Assist writes it, and the keys switch the
+ * style and Hold for More):
  *
- *   "keyboard": { "keyboardLayout": "Pre Keyboard",
- *                 "pre": { "style": "orange", "height": "medium", "autocorrect": true, ...,
- *                          "languages": ["en_US", "fr"], "language": "en_US",
- *                          "learned": { "en": ["luneos"] }, "removed": { "en": ["yest"] },
- *                          "recentEmoji": ["🙂"] } }
+ *   "keyboard": { ..., "pre": { "style": "orange", "height": "medium",
+ *                               "holdForMore": false, "vibrate": false,
+ *                               "recentEmoji": ["🙂"] } }
+ *
+ * Everything about words - suggestions, autocorrect, the owner's dictionary -
+ * and the languages and the key click are the LuneOS keyboard's own settings,
+ * which the controller copies in (Controller::setKeyboardState).
  */
 struct Settings
 {
     enum class Height { Small, Medium, Large };
 
+    // From the "pre" object.
     Style style = Style::Orange;
     Height height = Height::Medium;
-    bool autocorrect = true;
-    bool doubleSpacePeriod = true;
-    bool suggestions = false;
-    bool swipe = false;
     //! Press and hold a key for its extra characters (accents, more symbols), each such key dotted.
     bool holdForMore = false;
-    //! An emoji for the word in the suggestion bar's right-hand place, when there is one.
-    bool emojiSuggestions = false;
     //! A light vibration as each key goes down.
     bool vibrate = false;
-    //! A click as each key goes down.
-    bool sound = false;
-    //! The languages checked in Text Assist, in its order: a flick on the space bar goes through them.
-    QList<Language> languages = { Language::enUS() };
-    //! The one typed in now, always one of [languages].
-    Language language = Language::enUS();
 
-    //! Swiping and emoji suggestions need the bar too: it is where they show.
-    bool showsBar() const { return suggestions || swipe || emojiSuggestions; }
+    // From the LuneOS keyboard's settings.
+    //! Prediction or spell checking is on: the suggestion bar shows.
+    bool suggestions = false;
+    //! The key click (keyPressFeedback).
+    bool sound = false;
+    //! Swipe to type: off until it runs on the language plugins' words.
+    bool swipe = false;
+    //! The languages enabled under Regional Settings, in their order: a flick on the space bar goes through them.
+    QList<Language> languages;
+    //! The one typed in now, always one of [languages].
+    Language language;
+
+    bool showsBar() const { return suggestions || swipe; }
     //! Row heights in dp. Medium is close to a Pre key's proportions on a modern phone.
     int heightDp() const { return height == Height::Small ? 46 : height == Height::Large ? 62 : 54; }
 
+    //! [into] with the "pre" object's choices read over it.
+    static Settings fromJson(const QJsonObject &pre, Settings into);
     static Settings fromJson(const QJsonObject &pre);
-    //! The choices into [pre], leaving what isn't a choice (words, emoji) as it was.
+    //! The choices into [pre], leaving what isn't a choice (recent emoji) as it was.
     QJsonObject toJson(QJsonObject pre) const;
 
     bool operator==(const Settings &o) const;
     bool operator!=(const Settings &o) const { return !(*this == o); }
 
-    //! Where a language's family keeps the owner's words: "en", "fr".
-    static QStringList learned(const QJsonObject &pre, const Language &lang);
-    static QJsonObject withLearned(QJsonObject pre, const Language &lang, const QStringList &words);
-    //! The dictionary's words the owner deleted, kept by family as the learned ones are ("removed").
-    static QStringList removed(const QJsonObject &pre, const Language &lang);
-    static QJsonObject withRemoved(QJsonObject pre, const Language &lang, const QStringList &words);
     static QStringList recentEmoji(const QJsonObject &pre);
     static QJsonObject withRecentEmoji(QJsonObject pre, const QString &emoji);
-    static const int RECENT_MAX = 32;
+    static constexpr int RECENT_MAX = 32;
 };
 
 } // namespace Pre

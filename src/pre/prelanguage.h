@@ -2,6 +2,7 @@
  * This file is part of the LuneOS keyboard: the Pre Keyboard.
  *
  * Copyright (C) 2026 Alan Morford <alan-morford@users.noreply.github.com>
+ * Copyright (C) 2026 Herman van Hazendonk <github.com@herrie.org>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,81 +21,66 @@
 #define PRE_LANGUAGE_H
 
 #include <QList>
-#include <QPair>
-#include <QSet>
 #include <QString>
 #include <QStringList>
 
 namespace Pre {
 
-//! Where the letters go on the Pre's grid: the layout each language's typists know.
-enum class Layout { Qwerty, Qwertz, Azerty };
+/*!
+ * Where the letters go. Qwerty, Qwertz and Azerty are the Pre's own grid, with
+ * its printed number and symbol alternates; Own is a language whose letters
+ * come from its phone layout (tools/gen_pre_keymaps.py).
+ */
+enum class Layout { Qwerty, Qwertz, Azerty, Own };
 
-//! The three letter rows of [layout]: "qwertyuiop", "asdfghjkl", "zxcvbnm".
+//! The three letter rows of the Pre's grid for [layout]: "qwertyuiop", "asdfghjkl", "zxcvbnm".
 QStringList layoutRows(Layout layout);
 
-/*!
- * A language the keyboard types: its keys, and the words it corrects to and
- * suggests. The owner checks the ones they want in Text Assist and flicks the
- * space bar to go from one to the next.
- *
- * The four Englishes share everything but their dictionaries (colour or
- * color): the owner's own words, what they type after what, and the emoji.
- * Each other language has its own.
- */
-class Language
+//! A letter key of a language with its own rows, as its phone layout has it.
+struct LetterKey
 {
-public:
-    Language() = default;
-    Language(const QString &id, const QString &name, const QString &shortName, Layout layout,
-             const QString &dictionaryDir, const QString &dataDir,
-             const QString &accents = QString(), const QSet<QString> &elisions = {});
+    QString text;
+    //! What shift types; empty for the letter's capital.
+    QString shifted;
+    //! The press-and-hold list, the letter first; empty for none.
+    QStringList extended;
+    QStringList extendedShifted;
+};
 
-    //! Stored in the settings: "en_US", "fr".
+typedef QList<QList<LetterKey>> LetterRows;
+
+/*!
+ * A keyboard language, by the code LuneOS's keyboard uses for it ("en", "ru",
+ * "zh"): one per language plugin. Its words - prediction, spelling, the owner's
+ * dictionary - are the plugin's; this is only where its letters go.
+ */
+struct Language
+{
+    Language() = default;
+
     QString id;
-    //! In Text Assist, in the language itself.
+    //! In its own language: "Deutsch", "Русский".
     QString name;
-    //! Flashed on the space bar when it comes up.
-    QString shortName;
     Layout layout = Layout::Qwerty;
-    //! The language's own accented letters, commonest first.
+    //! On the Pre's grid: the language's own accents, first in a letter's holds.
     QString accents;
-    //! Words written against the next one with an apostrophe ("l'homme").
-    QSet<QString> elisions;
+    //! Layout::Own: its letter rows.
+    LetterRows letters;
+    bool rightToLeft = false;
 
     bool isValid() const { return !id.isEmpty(); }
-    bool english() const { return id.startsWith(QLatin1String("en")); }
-    //! Words the owner adds, and what they type after what, are kept per family: "en", "fr".
-    QString family() const { return id.section(QLatin1Char('_'), 0, 0); }
+    bool operator==(const Language &o) const { return id == o.id; }
+    bool operator!=(const Language &o) const { return id != o.id; }
 
-    //! The file [name] for this language, relative to the data directory.
-    QString asset(const QString &name) const;
-    //! The dictionary's files, read one after the other (a regional English after the US one).
-    QStringList dictionaries() const;
-    //! Whether there is a file [name] for this language (contractions are English only).
-    bool has(const QString &name) const;
-    //! [letter]'s accented forms in this language ("e": é è ê ë), commonest first.
+    //! The accents of [accents] whose letter is [letter], in order: e -> "éèêë".
     QString accentsOf(QChar letter) const;
-    /*!
-     * [word] split at its elision: ("l'", "homme") for "l'homme"; an empty pair
-     * when it has none. The prefix keeps its apostrophe and its case.
-     */
-    QPair<QString, QString> elided(const QString &word) const;
-    //! The word to look [word] up by: without its elision.
-    QString bare(const QString &word) const;
 
-    bool operator==(const Language &other) const { return id == other.id; }
-    bool operator!=(const Language &other) const { return id != other.id; }
-
-    static const QString DICTIONARY;
-    static const QString NEXT_WORDS;
-    static const QString EMOJI_WORDS;
-    static const QString CONTRACTIONS;
-
-    //! Every language, in Text Assist's order.
+    //! Every language with a plugin, by id.
     static const QList<Language> &all();
+    //! The language [id], or an invalid one.
     static Language byId(const QString &id);
-    static const Language &enUS();
+    //! The language for [id] whatever it is: English for one without a plugin.
+    static Language orEnglish(const QString &id);
 
     //! [c] without its accent: é -> e, ß -> s; anything else as it is.
     static QChar base(QChar c);
@@ -102,8 +88,9 @@ public:
     static QString fold(const QString &word);
 
 private:
-    QString m_dictionaryDir;
-    QString m_dataDir;
+    // For the generated table (prelanguages_generated.cpp).
+    static Language preGrid(const QString &id, const QString &name, Layout layout);
+    static Language ownRows(const QString &id, const QString &name, bool rightToLeft, const LetterRows &rows);
 };
 
 } // namespace Pre

@@ -6,7 +6,7 @@ SUBDIRS = \
     ut_hardwarekeyboard \
     ut_keyrepeat \
     ut_panelstate \
-    ut_preengine \
+    ut_prekeyboard \
     ut_symbolpage \
     ut_t9multitap \
 

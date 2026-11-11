@@ -50,7 +50,7 @@ QFont emojiFont(qreal px)
 EmojiPanel::Tab EmojiPanel::s_lastTab = EmojiPanel::Tab::Emoji;
 
 EmojiPanel::EmojiPanel(qreal dp, const Actions &actions)
-    : m_dp(dp), m_actions(actions), m_tab(s_lastTab)
+    : m_dp(dp), m_actions(actions), m_tab(Klipy::instance().configured() ? s_lastTab : Tab::Emoji)
 {
     auto update = [this] { if (m_actions.update) m_actions.update(); };
     m_gifs.reset(new MediaPanel(Klipy::Kind::Gif, update, [this](const Klipy::Item &item, const QString &q) {
@@ -84,7 +84,8 @@ MediaPanel *EmojiPanel::panel(Klipy::Kind kind) const
 
 void EmojiPanel::select(Tab t)
 {
-    if (t == m_tab) return;
+    // Without KLIPY's key (a build without one), there are no GIF or sticker tabs.
+    if (t == m_tab || (t != Tab::Emoji && !Klipy::instance().configured())) return;
     if (MediaPanel *m = media()) m->close();
     m_tab = t;
     s_lastTab = t;
@@ -214,6 +215,7 @@ QRectF EmojiPanel::abcRect() const
     return QRectF(m_strip.left() + pad, m_strip.top() + pad,
                   std::min(m_strip.width() * 0.15, 72 * m_dp) - pad, m_strip.height() - 2 * pad);
 }
+int EmojiPanel::tabCount() const { return Klipy::instance().configured() ? 3 : 1; }
 qreal EmojiPanel::tabWidth() const { return std::min(m_strip.width() * 0.15, 70 * m_dp); }
 QRectF EmojiPanel::topTab(int i) const
 {
@@ -310,7 +312,7 @@ void EmojiPanel::drawStrip(QPainter &p, Painter &painter, Style style)
     p.save();
     p.setRenderHint(QPainter::Antialiasing);
     const Tab tabs[] = { Tab::Emoji, Tab::Gif, Tab::Sticker };
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < tabCount(); ++i) {
         const QRectF r = topTab(i);
         const bool on = tabs[i] == m_tab;
         const int alpha = on ? 255 : 130;
@@ -434,7 +436,7 @@ void EmojiPanel::up(qreal x, qreal y)
         if (m_strip.contains(pt) && x < abcRect().right() + 2 * m_dp && m_actions.letters) m_actions.letters();
         break;
     case Strip:
-        for (int i = 0; i < 3; ++i)
+        for (int i = 0; i < tabCount(); ++i)
             if (topTab(i).contains(pt)) { select(i == 0 ? Tab::Emoji : i == 1 ? Tab::Gif : Tab::Sticker); break; }
         break;
     case Search:

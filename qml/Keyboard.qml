@@ -45,12 +45,16 @@ Item {
     property variant input_method: maliit_input_method
     property variant event_handler: maliit_event_handler
 
-    //! The Pre Keyboard is LuneOS's keyboard: whenever there are keys to show.
-    //! With a physical keyboard in use the panel is the candidate strip, which
-    //! is also where the keys are brought back from.
-    // Was: pre_keyboard.active && ..., when it was one choice beside the LuneOS
-    // keyboard's own layouts (keyboardLayout "Pre Keyboard").
-    readonly property bool preShown: !fullScreenItem.input_method.keysCollapsed
+    //! The Pre Keyboard is the phone keyboard; a tablet keeps LuneOS's own
+    //! layouts. With a physical keyboard in use the panel is the candidate
+    //! strip, which is also where the keys are brought back from.
+    readonly property bool preShown: pre_keyboard.active && !fullScreenItem.input_method.keysCollapsed
+
+    Binding {
+        target: pre_keyboard
+        property: "active"
+        value: UI.formFactor === "phone"
+    }
 
     Item {
         id: canvas
@@ -261,9 +265,11 @@ Item {
             onPopupRectChanged: fullScreenItem.reportPrePopup();
             onKeyClick: preClick.play()
 
+            // The keyboard's own click (KeyboardContainer's audioFeedback), on
+            // the same "key press feedback" setting.
             MediaPlayer {
                 id: preClick
-                source: Qt.resolvedUrl("pre/key_click.wav")
+                source: Qt.resolvedUrl("styles/ubuntu/sounds/key_tick2_quiet.wav")
                 audioOutput: AudioOutput {}
             }
         }

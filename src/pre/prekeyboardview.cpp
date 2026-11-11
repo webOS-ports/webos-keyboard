@@ -70,7 +70,6 @@ const qint64 NEVER = std::numeric_limits<qint64>::min() / 2;
 
 enum Phase { Down, Move, Up, Cancel };
 
-QRectF inflated(const QRectF &r, qreal by) { return r.adjusted(-by, -by, by, by); }
 
 } // namespace
 
@@ -365,7 +364,7 @@ void KeyboardView::flashLanguage()
 void KeyboardView::drawLanguageFlash(QPainter &p, const QRectF &box)
 {
     if (m_settings.languages.size() < 2) return;
-    const QString name = m_settings.language.shortName;
+    const QString name = m_settings.language.name;
     const qint64 age = now() - m_flashAt;
     const qreal alpha = age <= FLASH_SHOW ? FLASH_ALPHA
         : age < FLASH_SHOW + FLASH_FADE ? FLASH_ALPHA - (FLASH_ALPHA - RESTING_ALPHA) * (age - FLASH_SHOW) / FLASH_FADE
@@ -377,9 +376,10 @@ void KeyboardView::drawLanguageFlash(QPainter &p, const QRectF &box)
     QFont f = m_bold;
     f.setPixelSize(std::max(1, int(rowHeight() * 0.3)));
     QFontMetricsF fm(f);
-    for (const Language &l : Language::all()) {
-        const qreal w = fm.horizontalAdvance(l.shortName);
-        if (w > widest) { widest = w; longest = l.shortName; }
+    // The languages the space bar goes through, not every one there is.
+    for (const Language &l : m_settings.languages) {
+        const qreal w = fm.horizontalAdvance(l.name);
+        if (w > widest) { widest = w; longest = l.name; }
     }
     f.setPixelSize(std::max(1, int(fitted(longest, rowHeight() * 0.3, box.width() - 12 * m_dp))));
     p.setFont(f);
@@ -483,7 +483,8 @@ qreal KeyboardView::fitted(const QString &s, qreal size, qreal room) const
 QString KeyboardView::output(const Key &key) const
 {
     if (m_alt != Alt::Off && !key.alt.isEmpty()) return key.alt;
-    return m_shift != Shift::Off ? key.text.toUpper() : key.text;
+    if (m_shift == Shift::Off) return key.text;
+    return key.shifted.isEmpty() ? key.text.toUpper() : key.shifted;
 }
 
 void KeyboardView::drawPreview(QPainter &p)
@@ -524,6 +525,7 @@ void KeyboardView::bubble(QPainter &p, const QRectF &r)
 QStringList KeyboardView::extendedFor(const Key &key) const
 {
     if (m_shift != Shift::Off && m_page == Page::Letters) {
+        if (!key.extendedShifted.isEmpty()) return key.extendedShifted;
         QStringList up;
         for (const QString &s : key.extended) up << s.toUpper();
         return up;
@@ -908,21 +910,28 @@ void KeyboardView::showMenu()
     m_menu.clear();
     for (const Language &l : m_settings.languages)
         m_menu << l.name;
-    // The Pre Keyboard is LuneOS's only keyboard: nothing to switch back to.
-    // m_menu << QStringLiteral("LuneOS keyboard");
     int globe = -1;
     for (int i = 0; i < m_zones.size(); ++i)
         if (m_zones[i].slot.key->kind == Kind::Globe) { globe = i; break; }
     const qreal rowH = cellH();
+    const qreal pad = popupPad();
     QFont f = m_bold;
     f.setPixelSize(std::max(1, int(rowHeight() * 0.36)));
-    qreal w = 0;
-    for (const QString &s : m_menu) w = std::max(w, QFontMetricsF(f).horizontalAdvance(s));
-    w = std::min(width(), w + 4 * popupPad() + 16 * m_dp);
-    const qreal h = m_menu.size() * rowH + 2 * popupPad();
+    qreal textW = 0;
+    for (const QString &s : m_menu) textW = std::max(textW, QFontMetricsF(f).horizontalAdvance(s));
+    // As many rows as the keyboard is tall, and as many columns as that takes:
+    // every language stays on screen and in reach, however many are enabled.
+    const int n = std::max(1, int(m_menu.size()));
+    const int fits = std::max(1, int((height() - 2 * pad) / rowH));
+    const int cols = (n + fits - 1) / fits;
+    m_menuRows = (n + cols - 1) / cols;
+    m_menuColW = std::min(textW + 2 * pad + 16 * m_dp, (width() - 2 * pad) / cols);
+    const qreal w = cols * m_menuColW + 2 * pad;
+    const qreal h = m_menuRows * rowH + 2 * pad;
     const QRectF key = globe >= 0 ? m_zones[globe].rect : QRectF(0, keyboardTop(), 0, 0);
-    const qreal top = std::max<qreal>(0, key.top() - h);
-    m_menuFrame = QRectF(std::min(key.left(), width() - w), top, w, h);
+    // Above the globe where there is room; otherwise as low as it goes over the keys.
+    const qreal top = key.top() - h >= 0 ? key.top() - h : std::max<qreal>(0, height() - h);
+    m_menuFrame = QRectF(std::max<qreal>(0, std::min(key.left(), width() - w)), top, w, h);
     m_menuPressed = -1;
     m_menuDown = false;
     updatePopupRect();
@@ -931,8 +940,12 @@ void KeyboardView::showMenu()
 
 QRectF KeyboardView::menuRow(int i) const
 {
-    return QRectF(m_menuFrame.left() + popupPad(), m_menuFrame.top() + popupPad() + i * cellH(),
-                  m_menuFrame.width() - 2 * popupPad(), cellH());
+    const int perColumn = std::max(1, m_menuRows);
+    const int column = i / perColumn;
+    const int row = i % perColumn;
+    return QRectF(m_menuFrame.left() + popupPad() + column * m_menuColW,
+                  m_menuFrame.top() + popupPad() + row * cellH(),
+                  m_menuColW, cellH());
 }
 
 int KeyboardView::menuAt(qreal x, qreal y) const
@@ -961,8 +974,6 @@ void KeyboardView::drawMenu(QPainter &p)
             p.drawRoundedRect(r.adjusted(m_dp, m_dp, -m_dp, -m_dp), 6 * m_dp, 6 * m_dp);
             p.restore();
         }
-        if (i == languages)
-            p.fillRect(QRectF(r.left() + 6 * m_dp, r.top(), r.width() - 12 * m_dp, std::max<qreal>(1, m_dp)), BAR_RULE);
         p.setPen(i == m_menuPressed && m_settings.style == Style::White ? QColor(Qt::black)
                  : current ? accent(Style::Orange) : QColor(Qt::white));
         const QFontMetricsF fm(f);
@@ -990,10 +1001,7 @@ bool KeyboardView::menuTouch(int phase, qreal x, qreal y)
         m_menuDown = false;
         m_menuPressed = -1;
         updatePopupRect();
-        if (m_controller && i >= 0) {
-            if (i < languages) m_controller->onUseLanguage(m_settings.languages[i].id);
-            else m_controller->onUseLuneOSKeyboard();
-        }
+        if (m_controller && i >= 0 && i < languages) m_controller->onUseLanguage(m_settings.languages[i].id);
         break;
     }
     case Cancel:
@@ -1112,12 +1120,12 @@ void KeyboardView::keyFeedback()
     if (m_settings.sound) Q_EMIT keyClick();
 }
 
-void KeyboardView::stopRepeat()
+void KeyboardView::stopRepeat(bool lifted)
 {
     m_repeatTimer.stop();
     if (m_deleting) {
         m_deleting = false;
-        if (m_controller) m_controller->onBackspaceHeld(false);
+        if (m_controller) m_controller->onBackspaceHeld(false, lifted);
     }
 }
 
@@ -1165,6 +1173,12 @@ void KeyboardView::press(int zone)
 {
     m_holdTimer.stop();
     stopRepeat();
+    // A new press never inherits an accent popup: what it types is its own key.
+    if (!m_extended.isEmpty()) {
+        m_extended.clear();
+        m_extendedFrame = QRectF();
+        updatePopupRect();
+    }
     m_pressed = zone;
     m_held = false;
     m_preview = (zone >= 0 && m_zones[zone].slot.key->kind == Kind::Char) ? zone : -1;
@@ -1174,8 +1188,11 @@ void KeyboardView::press(int zone)
     case Kind::Backspace:
         m_repeats = 0;
         if (!m_searching) {
+            // Down here, deleted as it comes up or repeated while held, by the
+            // editor, as LuneOS's own backspace is.
             m_deleting = true;
             if (m_controller) m_controller->onBackspaceHeld(true);
+            break;
         }
         sendBackspace(false);
         m_repeatTimer.start(FIRST_REPEAT);
@@ -1285,7 +1302,7 @@ bool KeyboardView::flickedLanguage(qreal x, qreal y)
 void KeyboardView::lift(bool up)
 {
     m_holdTimer.stop();
-    stopRepeat();
+    stopRepeat(up);
     if (m_swiping) {
         if (up && m_controller) {
             m_controller->onSwipe(m_swipeX, m_swipeY, capsNow());
@@ -1419,6 +1436,7 @@ bool KeyboardView::pointerDown(int id, qreal x, qreal y)
     const int bc = barCell(x, y);
     if (bc >= 0 && m_searching) {
         // The search field: only its back arrow does anything.
+        if (m_finger >= 0) lift(!(m_swiping || m_cursorMode || !m_extended.isEmpty() || m_held));
         m_finger = id;
         m_barPressed = searchBack(QRectF(0, keyboardTop(), width(), barHeight())).contains(QPointF(x, y)) ? 0 : 1;
         if (m_barPressed == 0) keyFeedback();
@@ -1426,6 +1444,9 @@ bool KeyboardView::pointerDown(int id, qreal x, qreal y)
         return true;
     }
     if (bc >= 0) {
+        // A key still held by another finger is finished first, as a finger
+        // landing on another key does: typed if it was a tap, otherwise let go.
+        if (m_finger >= 0) lift(!(m_swiping || m_cursorMode || !m_extended.isEmpty() || m_held));
         m_finger = id;
         m_barPressed = bc;
         if (!m_words[bc].isEmpty() || (bc == 2 && m_pasteOffered)) keyFeedback();

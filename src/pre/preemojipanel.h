@@ -118,6 +118,8 @@ private:
     void drawStrip(QPainter &p, Painter &painter, Style style);
     qreal tabWidth() const;
     QRectF topTab(int i) const;
+    //! The tabs above the grid: Emoji, and GIFs and stickers when KLIPY has a key.
+    int tabCount() const;
     QRectF searchRect() const;
     QRectF clearRect() const;
     QRectF abcRect() const;
