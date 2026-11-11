@@ -409,7 +409,7 @@ QString KeyboardSettings::keyboardLayout() const
 void KeyboardSettings::savePreferences(InputMethod *q)
 {
     // The whole object is written back, so whatever is in it besides what is set
-    // here - the Pre Keyboard's settings and words - goes back in as it was.
+    // here - the Pre Keyboard's look and recent emoji - goes back in as it was.
     QJsonObject keyboardObj = mSavedKeyboardPrefs;
 
     keyboardObj.insert(ACTIVE_LANGUAGE_KEY, QJsonValue(q->activeLanguage()));
@@ -424,6 +424,9 @@ void KeyboardSettings::savePreferences(InputMethod *q)
 
     if (keyboardObj == mSavedKeyboardPrefs)
         return;
+    // Remembered now, as savePre() does, so a save of the Pre Keyboard's object
+    // before the preference service echoes this one does not put the old values back.
+    mSavedKeyboardPrefs = keyboardObj;
 
     QJsonObject prefObj;
     prefObj.insert("keyboard", keyboardObj);
