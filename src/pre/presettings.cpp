@@ -40,6 +40,7 @@ Settings Settings::fromJson(const QJsonObject &pre, Settings into)
     s.height = h == QLatin1String("small") ? Height::Small : h == QLatin1String("large") ? Height::Large : Height::Medium;
     s.holdForMore = flag(pre, "holdForMore", false);
     s.vibrate = flag(pre, "vibrate", false);
+    s.followShift = flag(pre, "followShift", false);
     return s;
 }
 
@@ -55,13 +56,14 @@ QJsonObject Settings::toJson(QJsonObject pre) const
                : height == Height::Large ? QLatin1String("large") : QLatin1String("medium"));
     pre.insert(QLatin1String("holdForMore"), holdForMore);
     pre.insert(QLatin1String("vibrate"), vibrate);
+    pre.insert(QLatin1String("followShift"), followShift);
     return pre;
 }
 
 bool Settings::operator==(const Settings &o) const
 {
     return style == o.style && height == o.height && holdForMore == o.holdForMore && vibrate == o.vibrate &&
-           suggestions == o.suggestions && sound == o.sound && swipe == o.swipe &&
+           followShift == o.followShift && suggestions == o.suggestions && sound == o.sound && swipe == o.swipe &&
            languages == o.languages && language == o.language;
 }
 

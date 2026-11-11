@@ -91,6 +91,13 @@ public:
     bool pasteOffered() const { return m_pasteOffered; }
     //! Swiping may happen here: switched on, and a field for words (not a password, say).
     void setWordsAllowed(bool allowed) { m_wordsAllowed = allowed; }
+    /*!
+     * The field takes only [allowed] (a number: digits, sign and separators; a
+     * phone number: the dial characters), or anything when it is empty. The
+     * letters then give way to what the field takes: each key that has one of
+     * those characters shows it alone, big, and types it; the rest go blank.
+     */
+    void setDigits(const QString &allowed);
     //! The language just changed: its name shows bright on the space bar, then fades.
     void flashLanguage();
     //! Opens the add-to-dictionary popup for [word] from outside the bar.
@@ -164,9 +171,14 @@ private:
     qreal letterSize() const;
     qreal inset(const QRectF &r) const;
     QString capText(const Key &key) const;
+    QString altText(const Key &key) const;
+    QStringList faces(const Key &key) const;
+    QString digitOf(const Key &key) const;
+    bool digitMode() const { return !m_digits.isEmpty() && m_page == Page::Letters; }
     void fitLetters();
     bool placeLetters(qreal px);
     QPointF letterAt(const Zone &z, const QRectF &box, const QFontMetricsF &fm) const;
+    QPointF letterAt(const Zone &z, const QRectF &box, const QFontMetricsF &fm, const QString &s) const;
     QPointF altAt(const Zone &z, const QRectF &box, const QFontMetricsF &fm) const;
     void drawCap(QPainter &p, const Zone &z, const QRectF &box);
     void centred(QPainter &p, const QString &s, const QRectF &r);
@@ -273,6 +285,8 @@ private:
     int m_barPressed = -1;
     bool m_pasteOffered = false;
     bool m_wordsAllowed = true;
+    //! What the field takes, when it takes only that (see setDigits).
+    QString m_digits;
     qint64 m_flashAt;
 
     // A search for GIFs or stickers being typed (m_searching), and what is typed.

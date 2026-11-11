@@ -218,7 +218,7 @@ void KeyboardView::setLandscape(bool landscape)
 void KeyboardView::applySettings(const Settings &s)
 {
     const bool resize = s.height != m_settings.height || s.showsBar() != m_settings.showsBar();
-    const bool relayout = s.language != m_settings.language;
+    const bool relayout = s.language != m_settings.language || s.followShift != m_settings.followShift;
     m_settings = s;
     if (resize) {
         m_painter.clear();
@@ -362,15 +362,24 @@ void KeyboardView::drawKey(QPainter &p, const Zone &z)
         else drawLanguageFlash(p, box);
         break;
     case Kind::Shift:
-        m_painter.icon(p, m_shift == Shift::Off ? Painter::Icon::Shift
-                          : m_shift == Shift::Once ? Painter::Icon::ShiftOn : Painter::Icon::ShiftLock,
-                       c.x(), c.y(), iconSize);
+        // A number field has no capitals and no alternates: those keys go blank.
+        if (digitMode()) break;
+        // On, Shift takes the style's colour: the Pre's orange, or in the White
+        // style white, where an outline says it is off.
+        if (m_settings.style == Style::White)
+            m_painter.icon(p, m_shift == Shift::Off ? Painter::Icon::ShiftOpen
+                              : m_shift == Shift::Once ? Painter::Icon::ShiftOn : Painter::Icon::ShiftLock,
+                           c.x(), c.y(), iconSize, QColor(Qt::white));
+        else
+            m_painter.icon(p, m_shift == Shift::Off ? Painter::Icon::Shift
+                              : m_shift == Shift::Once ? Painter::Icon::ShiftOn : Painter::Icon::ShiftLock,
+                           c.x(), c.y(), iconSize);
         break;
     case Kind::Backspace: m_painter.icon(p, Painter::Icon::Backspace, c.x(), c.y(), iconSize); break;
     case Kind::Return: m_painter.icon(p, Painter::Icon::Return, c.x(), c.y(), iconSize); break;
     case Kind::Globe: m_painter.icon(p, Painter::Icon::Globe, c.x(), c.y(), iconSize); break;
     case Kind::Emoji: m_painter.icon(p, Painter::Icon::Emoji, c.x(), c.y(), iconSize); break;
-    case Kind::Orange: m_painter.orange(p, box, m_settings.style, m_alt); break;
+    case Kind::Orange: if (!digitMode()) m_painter.orange(p, box, m_settings.style, m_alt); break;
     case Kind::Sym: functionLabel(p, key.label, box); break;
     }
     if (key.corner != Corner::None) cornerIcon(p, key.corner, box);
@@ -391,7 +400,7 @@ void KeyboardView::cornerIcon(QPainter &p, Corner corner, const QRectF &r)
 //! Whether holding [key] opens its list: only with "Hold for more" on.
 bool KeyboardView::holds(const Key &key) const
 {
-    return m_settings.holdForMore && !key.extended.isEmpty();
+    return m_settings.holdForMore && !key.extended.isEmpty() && !digitMode();
 }
 
 //! The mark of a key with more under it: a small dot in the style's colour, in the top corner the alternate leaves free.
@@ -465,10 +474,58 @@ qreal KeyboardView::letterSize() const { return std::min(rowHeight() * 0.5, widt
 //! Inset of the glyphs' ink from the key's edges.
 qreal KeyboardView::inset(const QRectF &r) const { return 2.5 * m_dp + r.width() * 0.08; }
 
-//! What a character key shows: letters as capitals, as printed on the Pre.
+void KeyboardView::setDigits(const QString &allowed)
+{
+    if (allowed == m_digits) return;
+    m_digits = allowed;
+    m_alt = Alt::Off;
+    layoutKeys();
+    update();
+}
+
+/*!
+ * What a character key shows: letters as capitals, as printed on the Pre, or
+ * small till Shift is on when the owner wants them to follow it; in a number
+ * field, only what the field takes.
+ */
 QString KeyboardView::capText(const Key &key) const
 {
-    return m_page == Page::Symbols ? key.text : key.text.toUpper();
+    if (m_page == Page::Symbols) return key.text;
+    if (digitMode()) return digitOf(key);
+    if (m_settings.followShift && m_shift == Shift::Off) return key.text;
+    return key.text.toUpper();
+}
+
+//! The alternate printed in [key]'s corner: none in a number field, where it is the key's one character.
+QString KeyboardView::altText(const Key &key) const
+{
+    return digitMode() ? QString() : key.alt;
+}
+
+/*!
+ * Every way [key]'s letter can look on this page: small and capital when the
+ * letters follow Shift. The page is fitted for all of them, so pressing Shift
+ * never moves or resizes a letter.
+ */
+QStringList KeyboardView::faces(const Key &key) const
+{
+    if (m_page == Page::Letters && !digitMode() && m_settings.followShift) {
+        const QString up = key.text.toUpper();
+        return up == key.text ? QStringList{ up } : QStringList{ key.text, up };
+    }
+    return { capText(key) };
+}
+
+//! In a number field, what [key] types: its alternate, or itself, where the field takes that; else nothing.
+QString KeyboardView::digitOf(const Key &key) const
+{
+    auto taken = [this](const QString &s) {
+        for (QChar c : s) if (!m_digits.contains(c)) return false;
+        return !s.isEmpty();
+    };
+    if (taken(key.alt)) return key.alt;
+    if (taken(key.text)) return key.text;
+    return QString();
 }
 
 /*!
@@ -480,8 +537,9 @@ QString KeyboardView::capText(const Key &key) const
 void KeyboardView::fitLetters()
 {
     // The same page at the same size comes out the same: work it out once.
-    QString id = QStringLiteral("%1|%2|%3|%4|%5|%6").arg(m_settings.language.id).arg(int(m_page))
-                     .arg(width()).arg(rowHeight()).arg(m_dp).arg(m_landscape);
+    QString id = QStringLiteral("%1|%2|%3|%4|%5|%6|%7|%8").arg(m_settings.language.id).arg(int(m_page))
+                     .arg(width()).arg(rowHeight()).arg(m_dp).arg(m_landscape)
+                     .arg(m_settings.followShift).arg(digitMode() ? m_digits : QString());
     // The keys as laid out, whole pixels each: two rows of the same nominal
     // height can come out a pixel apart.
     for (const Zone &z : std::as_const(m_zones))
@@ -506,9 +564,11 @@ void KeyboardView::fitLetters()
     qreal px = full;
     for (const Zone &z : std::as_const(m_zones)) {
         if (!z.slot.drawn || z.slot.key->kind != Kind::Char) continue;
-        const qreal w = fm.tightBoundingRect(capText(*z.slot.key)).width();
         const qreal room = z.rect.width() - 2 * inset(z.rect);
-        if (w > room && w > 0) px = std::min(px, std::floor(full * room / w) + 2);
+        for (const QString &face : faces(*z.slot.key)) {
+            const qreal w = fm.tightBoundingRect(face).width();
+            if (w > room && w > 0) px = std::min(px, std::floor(full * room / w) + 2);
+        }
     }
     // The largest that fits: halve the range between the start and the
     // smallest, in whole pixels down from the start.
@@ -565,22 +625,28 @@ bool KeyboardView::placeLetters(qreal px)
         return m_painter.capFace(local(z)).adjusted(margin, margin, -margin, -margin);
     };
 
-    // Every key's ink at this size, once.
-    QVector<Ink> letters, alts;
+    // Every key's ink at this size, once: each of its faces, and its alternate.
+    QVector<QStringList> texts;
+    QVector<QVector<Ink>> letters;
+    QVector<Ink> alts;
+    texts.reserve(m_zones.size());
     letters.reserve(m_zones.size());
     alts.reserve(m_zones.size());
     for (Zone &z : m_zones) {
         const bool c = isChar(z);
-        letters << Ink(c ? capText(*z.slot.key) : QString(), f);
-        alts << Ink(c ? z.slot.key->alt : QString(), af);
+        texts << (c ? faces(*z.slot.key) : QStringList());
+        QVector<Ink> inks;
+        for (const QString &t : std::as_const(texts.last())) inks << Ink(t, f);
+        letters << inks;
+        alts << Ink(c ? altText(*z.slot.key) : QString(), af);
         if (c) z.letterPx = px;
     }
 
     // How low the page's letters reach below their line.
     qreal hangs = capital.bottom();
     for (int k = 0; k < m_zones.size(); ++k)
-        if (isChar(m_zones[k]) && allLetters(capText(*m_zones[k].slot.key)))
-            hangs = std::max(hangs, letters[k].box.bottom());
+        for (int j = 0; j < texts[k].size(); ++j)
+            if (allLetters(texts[k][j])) hangs = std::max(hangs, letters[k][j].box.bottom());
 
     /*
      * The alternates go in their corners, but a narrow key's face curves away
@@ -599,7 +665,7 @@ bool KeyboardView::placeLetters(qreal px)
         bool in = true;
         for (int k = 0; in && k < m_zones.size(); ++k) {
             const Zone &z = m_zones[k];
-            if (!isChar(z) || z.slot.key->alt.isEmpty()) continue;
+            if (!isChar(z) || altText(*z.slot.key).isEmpty()) continue;
             const QRectF face = faceOf(z);
             in = inside(alts[k], altAt(z, local(z), am), face, m_painter.capRadius(face));
         }
@@ -613,7 +679,7 @@ bool KeyboardView::placeLetters(qreal px)
         qreal i = 0;
         for (int k = a; k < b; ++k) {
             if (!isChar(m_zones[k])) continue;
-            low = low || !m_zones[k].slot.key->alt.isEmpty();
+            low = low || !altText(*m_zones[k].slot.key).isEmpty();
             i = std::max(i, inset(m_zones[k].rect));
         }
         const qreal h = m_zones[a].rect.height();
@@ -633,12 +699,17 @@ bool KeyboardView::placeLetters(qreal px)
             // rounded corner of the face that the letter never comes near.
             const QRectF face = faceOf(z);
             const qreal radius = m_painter.capRadius(face);
-            const QPointF at = letterAt(z, local(z), fm);
             // Once something does not fit, the rest is only laid out, not checked.
-            if (fits && (ink.width() > z.rect.width() - 2 * inset(z.rect)
-                         || !inside(letters[k], at, face, radius)
-                         || (!key.alt.isEmpty() && touch(alts[k], altAt(z, local(z), am), letters[k], at))))
-                fits = false;
+            const bool alt = !altText(key).isEmpty();
+            for (int j = 0; fits && j < texts[k].size(); ++j) {
+                // A blank key (a number field's letters) has nothing to fit.
+                if (texts[k][j].isEmpty()) continue;
+                const QPointF at = letterAt(z, local(z), fm, texts[k][j]);
+                if (fm.tightBoundingRect(texts[k][j]).width() > z.rect.width() - 2 * inset(z.rect)
+                    || !inside(letters[k][j], at, face, radius)
+                    || (alt && touch(alts[k], altAt(z, local(z), am), letters[k][j], at)))
+                    fits = false;
+            }
         }
         a = b;
     }
@@ -652,11 +723,16 @@ bool KeyboardView::placeLetters(qreal px)
  */
 QPointF KeyboardView::letterAt(const Zone &z, const QRectF &box, const QFontMetricsF &fm) const
 {
+    return letterAt(z, box, fm, capText(*z.slot.key));
+}
+
+//! Where [z]'s letter would be drawn from in [box] if it showed [s].
+QPointF KeyboardView::letterAt(const Zone &z, const QRectF &box, const QFontMetricsF &fm, const QString &s) const
+{
     const Key &key = *z.slot.key;
-    const QString s = capText(key);
     const QRectF ink = fm.tightBoundingRect(s);
     qreal x;
-    if (key.alt.isEmpty()) {
+    if (altText(key).isEmpty()) {
         x = box.center().x() - (ink.left() + ink.right()) / 2;
     } else {
         const qreal nudge = box.width() * LETTER_NUDGE * (key.altPos == AltPos::Left ? 1 : -1);
@@ -675,7 +751,7 @@ QPointF KeyboardView::letterAt(const Zone &z, const QRectF &box, const QFontMetr
 QPointF KeyboardView::altAt(const Zone &z, const QRectF &box, const QFontMetricsF &fm) const
 {
     const Key &key = *z.slot.key;
-    const QRectF ink = fm.tightBoundingRect(key.alt);
+    const QRectF ink = fm.tightBoundingRect(altText(key));
     const qreal i = inset(box);
     const qreal x = key.altPos == AltPos::Left ? box.left() + i + m_altStep - ink.left()
                                                : box.right() - i - m_altStep - ink.right();
@@ -695,16 +771,19 @@ void KeyboardView::drawCap(QPainter &p, const Zone &z, const QRectF &box)
     QFont f = m_bold;
     f.setPixelSize(std::max(1, int(z.letterPx)));
     p.setFont(f);
-    QColor letter = key.accent ? accent(m_settings.style) : QColor(Qt::white);
+    const QString s = capText(key);
+    const QString a = altText(key);
+    // In a number field its digits are the ones printed in colour, as the alternates were.
+    const bool coloured = key.accent || (digitMode() && s.length() == 1 && s[0].isDigit());
+    QColor letter = coloured ? accent(m_settings.style) : QColor(Qt::white);
     // The letter steps back while the orange key says the alternate is what will be typed.
-    if (!key.alt.isEmpty() && m_alt != Alt::Off) letter.setAlpha(89);
+    if (!a.isEmpty() && m_alt != Alt::Off) letter.setAlpha(89);
     p.setPen(letter);
-    p.drawText(letterAt(z, box, QFontMetricsF(f)), capText(key));
-    if (key.alt.isEmpty()) return;
+    p.drawText(letterAt(z, box, QFontMetricsF(f), s), s);
+    if (a.isEmpty()) return;
 
     f.setPixelSize(std::max(1, int(z.letterPx * ALT_SCALE)));
     p.setFont(f);
-    const QString &a = key.alt;
     p.setPen(a.length() == 1 && a[0].isDigit() ? accent(m_settings.style) : QColor(Qt::white));
     p.drawText(altAt(z, box, QFontMetricsF(f)), a);
 }
@@ -733,6 +812,7 @@ qreal KeyboardView::fitted(const QString &s, qreal size, qreal room) const
 //! What a character key would type right now.
 QString KeyboardView::output(const Key &key) const
 {
+    if (digitMode()) return digitOf(key);
     if (m_alt != Alt::Off && !key.alt.isEmpty()) return key.alt;
     if (m_shift == Shift::Off) return key.text;
     return key.shifted.isEmpty() ? key.text.toUpper() : key.shifted;
@@ -752,7 +832,7 @@ void KeyboardView::drawPreview(QPainter &p)
     QFont f = m_bold;
     f.setPixelSize(std::max(1, int(fitted(s, rowHeight() * 0.7, w - 8 * m_dp))));
     p.setFont(f);
-    p.setPen(z.slot.key->accent || (m_alt != Alt::Off && s.length() == 1 && s[0].isDigit())
+    p.setPen(z.slot.key->accent || ((m_alt != Alt::Off || digitMode()) && s.length() == 1 && s[0].isDigit())
              ? accent(m_settings.style) : QColor(Qt::white));
     centred(p, s, r);
 }
@@ -1269,7 +1349,7 @@ bool KeyboardView::menuTouch(int phase, qreal x, qreal y)
 bool KeyboardView::canSwipe(const Zone &z) const
 {
     const Key &k = *z.slot.key;
-    return m_settings.swipe && m_wordsAllowed && m_page == Page::Letters && !m_searching && m_alt == Alt::Off &&
+    return m_settings.swipe && m_wordsAllowed && m_page == Page::Letters && !digitMode() && !m_searching && m_alt == Alt::Off &&
            k.kind == Kind::Char && k.text.length() == 1 && k.text[0] >= QLatin1Char('a') && k.text[0] <= QLatin1Char('z');
 }
 
@@ -1432,7 +1512,8 @@ void KeyboardView::press(int zone)
     }
     m_pressed = zone;
     m_held = false;
-    m_preview = (zone >= 0 && m_zones[zone].slot.key->kind == Kind::Char) ? zone : -1;
+    m_preview = (zone >= 0 && m_zones[zone].slot.key->kind == Kind::Char
+                 && !output(*m_zones[zone].slot.key).isEmpty()) ? zone : -1;
     if (zone < 0) { update(); return; }
     const Key &key = *m_zones[zone].slot.key;
     switch (key.kind) {
@@ -1587,6 +1668,8 @@ void KeyboardView::commit()
     }
     if (m_held || m_pressed < 0) return;
     const Key &key = *m_zones[m_pressed].slot.key;
+    // In a number field shift and the orange key have nothing to do.
+    if (digitMode() && (key.kind == Kind::Shift || key.kind == Kind::Orange)) return;
     switch (key.kind) {
     case Kind::Shift: {
         const qint64 t = now();
@@ -1615,7 +1698,11 @@ void KeyboardView::commit()
     case Kind::Return: if (m_searching) endSearch(true); else if (m_controller) m_controller->onEnter(); break;
     case Kind::Globe: showMenu(); break;
     case Kind::Space: send(QStringLiteral(" ")); break;
-    case Kind::Char: type(output(key), m_alt != Alt::Off && !key.alt.isEmpty()); break;
+    case Kind::Char: {
+        const QString s = output(key);
+        if (!s.isEmpty()) type(s, !digitMode() && m_alt != Alt::Off && !key.alt.isEmpty());
+        break;
+    }
     }
 }
 

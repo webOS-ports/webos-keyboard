@@ -102,6 +102,8 @@ public:
     void setCandidates(const QString &typed, const QString &primary, const QStringList &words);
     //! Whether the field takes words: the bar shows only for one that does.
     void setWordsAllowed(bool allowed);
+    //! The field takes only these characters (a number, a phone number), or anything when empty.
+    void setDigits(const QString &allowed);
 
     //! A field took the focus, or the keyboard came up for one.
     void startInput();
@@ -161,6 +163,7 @@ private:
     QJsonObject m_prefs;
     Settings m_settings;
     bool m_wordsAllowed = true;
+    QString m_digits;
 
     QString m_typed;
     QString m_primary;

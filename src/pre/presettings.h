@@ -35,7 +35,7 @@ namespace Pre {
  *
  *   "keyboard": { ..., "pre": { "style": "orange", "height": "medium",
  *                               "holdForMore": false, "vibrate": false,
- *                               "recentEmoji": ["🙂"] } }
+ *                               "followShift": false, "recentEmoji": ["🙂"] } }
  *
  * Everything about words - suggestions, autocorrect, the owner's dictionary -
  * and the languages and the key click are the LuneOS keyboard's own settings,
@@ -52,6 +52,8 @@ struct Settings
     bool holdForMore = false;
     //! A light vibration as each key goes down.
     bool vibrate = false;
+    //! The letters on the keys follow Shift (small till it is on); off, they are capitals, as printed on the Pre.
+    bool followShift = false;
 
     // From the LuneOS keyboard's settings.
     //! Prediction or spell checking is on: the suggestion bar shows.

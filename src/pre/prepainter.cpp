@@ -176,7 +176,7 @@ void Painter::icon(QPainter &p, Icon icon, qreal cx, qreal cy, qreal size, const
     p.setRenderHint(QPainter::Antialiasing);
     p.translate(std::round(cx - size / 2), std::round(cy - size / 2));
     p.scale(size / 64.0, size / 64.0);
-    // Shift, when the next letter (or every letter) will be a capital: the Pre's orange, in either style.
+    // Shift, when the next letter (or every letter) will be a capital: the Pre's orange, unless [color] says otherwise.
     const QColor c = color.isValid() ? color
         : (icon == Icon::ShiftOn || icon == Icon::ShiftLock) ? accent(Style::Orange) : QColor(Qt::white);
     p.setPen(Qt::NoPen);
@@ -189,6 +189,10 @@ void Painter::icon(QPainter &p, Icon icon, qreal cx, qreal cy, qreal size, const
     switch (icon) {
     case Icon::Shift:
     case Icon::ShiftOn:
+        p.drawPolygon(up);
+        break;
+    case Icon::ShiftOpen:
+        stroke(4, Qt::FlatCap, Qt::MiterJoin);
         p.drawPolygon(up);
         break;
     case Icon::ShiftLock:

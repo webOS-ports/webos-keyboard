@@ -113,6 +113,13 @@ void Controller::applySettings()
     if (!m_view) return;
     m_view->applySettings(m_settings);
     m_view->setWordsAllowed(m_wordsAllowed);
+    m_view->setDigits(m_digits);
+}
+
+void Controller::setDigits(const QString &allowed)
+{
+    m_digits = allowed;
+    if (m_view) m_view->setDigits(allowed);
 }
 
 void Controller::setWordsAllowed(bool allowed)

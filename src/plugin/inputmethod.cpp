@@ -1352,6 +1352,8 @@ void InputMethod::update()
     // last one had, and it would then be the only one on the device that still
     // wanted a chord for its digits.
     d->hardwareKeyboard.setDigitsPreferred(digitsForContentType(newContentType));
+    // The Pre Keyboard shows a number field only the keys it takes, for the same reason.
+    d->pre.setDigits(digitsForContentType(newContentType));
 
     // Declining the panel is this method's business; putting it up is not.
     //

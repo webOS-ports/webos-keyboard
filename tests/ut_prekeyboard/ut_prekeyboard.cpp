@@ -277,16 +277,18 @@ private Q_SLOTS:
         s.height = Pre::Settings::Height::Large;
         s.holdForMore = true;
         s.vibrate = true;
+        s.followShift = true;
         s.suggestions = true;
         const QJsonObject pre = s.toJson(QJsonObject{ { QStringLiteral("recentEmoji"), QJsonArray{ QStringLiteral("🙂") } } });
         const QStringList keys = pre.keys();
         QCOMPARE(QSet<QString>(keys.begin(), keys.end()),
                  (QSet<QString>{ QStringLiteral("style"), QStringLiteral("height"), QStringLiteral("holdForMore"),
-                                 QStringLiteral("vibrate"), QStringLiteral("recentEmoji") }));
+                                 QStringLiteral("vibrate"), QStringLiteral("followShift"),
+                                 QStringLiteral("recentEmoji") }));
         const Pre::Settings back = Pre::Settings::fromJson(pre);
         QCOMPARE(back.style, Pre::Style::White);
         QCOMPARE(back.height, Pre::Settings::Height::Large);
-        QVERIFY(back.holdForMore && back.vibrate);
+        QVERIFY(back.holdForMore && back.vibrate && back.followShift);
         QVERIFY(!back.suggestions);
     }
 
@@ -606,6 +608,122 @@ private Q_SLOTS:
     }
 
     /*
+     * Letters that follow Shift: small with it off, capitals with it on, and
+     * in the same place at the same size either way, on every phone and in
+     * every language, with nothing out of its key in either.
+     */
+    void followShiftKeepsPlace()
+    {
+        QStringList problems;
+        for (const Screen &sc : screens()) {
+            if (!sc.measured) continue;
+            for (const Pre::Language &l : Pre::Language::all()) {
+                Pre::KeyboardView view;
+                Pre::Settings s;
+                s.language = l;
+                s.languages = { l };
+                s.followShift = true;
+                view.setDp(sc.shortSide / 411.43);
+                view.setLandscape(sc.landscape);
+                view.applySettings(s);
+                view.setWidth(sc.width);
+                view.setHeight(view.headroom() + view.keysHeight());
+                const QString where = sc.name + QLatin1Char(' ') + l.id + QStringLiteral(": ");
+                QVector<QPair<qreal, qreal>> off;
+                for (const auto &z : view.m_zones) off << qMakePair(z.letterPx, z.baseline);
+                bool small = false;
+                for (const auto &z : view.m_zones)
+                    if (z.slot.drawn && z.slot.key->kind == Pre::Kind::Char)
+                        small = small || view.capText(*z.slot.key) != view.capText(*z.slot.key).toUpper();
+                if (l.id != QLatin1String("ar") && l.id != QLatin1String("he") && l.id != QLatin1String("zh") && !small)
+                    problems << where + QStringLiteral("no small letters with shift off");
+                problems << printingProblems(view, where + QStringLiteral("shift off: "));
+                // Laid out afresh with shift on, it must come out the same.
+                view.m_shift = Pre::KeyboardView::Shift::Once;
+                view.m_fits.clear();
+                view.layoutKeys();
+                for (int k = 0; k < view.m_zones.size(); ++k) {
+                    const auto &z = view.m_zones[k];
+                    if (!z.slot.drawn || z.slot.key->kind != Pre::Kind::Char) continue;
+                    if (qMakePair(z.letterPx, z.baseline) != off[k])
+                        problems << where + view.capText(*z.slot.key) + QStringLiteral(": moves with shift");
+                    if (z.slot.drawn && z.slot.key->kind == Pre::Kind::Char
+                        && view.capText(*z.slot.key) != z.slot.key->text.toUpper())
+                        problems << where + view.capText(*z.slot.key) + QStringLiteral(": not a capital with shift on");
+                }
+                problems << printingProblems(view, where + QStringLiteral("shift on: "));
+            }
+        }
+        if (!problems.isEmpty()) qWarning().noquote() << problems.mid(0, 40).join(QLatin1Char('\n'));
+        QCOMPARE(problems.size(), 0);
+    }
+
+    void numberFields_data()
+    {
+        QTest::addColumn<QString>("allowed");
+        // InputMethod::digitsForContentType's.
+        QTest::newRow("number") << QStringLiteral("0123456789+-.,");
+        QTest::newRow("phone") << QStringLiteral("0123456789*#+");
+    }
+
+    /*
+     * A number field, on every phone either way up: the keys show only what it
+     * takes, each alone and big, and type just that; every digit is there, in
+     * every language; the rest are blank and type nothing; the Sym page is
+     * as it was.
+     */
+    void numberFields()
+    {
+        QFETCH(QString, allowed);
+        QStringList problems;
+        for (const Screen &sc : screens())
+        for (const Pre::Language &l : Pre::Language::all()) {
+            if (!sc.measured) continue;
+            Pre::KeyboardView view;
+            showKeys(view, l, sc.shortSide, sc.width, sc.landscape, Pre::Settings::Height::Medium);
+            qreal letters = 0;
+            for (const auto &z : view.m_zones)
+                if (z.slot.drawn && z.slot.key->kind == Pre::Kind::Char) letters = z.letterPx;
+            view.setDigits(allowed);
+            const QString where = sc.name + QLatin1Char(' ') + l.id + QStringLiteral(": ");
+            // A digit is no wider than the letters were: as big as them, at least.
+            for (const auto &z : view.m_zones)
+                if (z.slot.drawn && z.slot.key->kind == Pre::Kind::Char && z.letterPx < letters) {
+                    problems << where + QStringLiteral("%1 px, smaller than the letters' %2").arg(z.letterPx).arg(letters);
+                    break;
+                }
+            QSet<QChar> shown;
+            int blank = 0;
+            for (const auto &z : view.m_zones) {
+                if (!z.slot.drawn || z.slot.key->kind != Pre::Kind::Char) continue;
+                const QString s = view.capText(*z.slot.key);
+                if (s != view.output(*z.slot.key)) problems << where + s + QStringLiteral(": types ") + view.output(*z.slot.key);
+                if (!view.altText(*z.slot.key).isEmpty()) problems << where + s + QStringLiteral(": an alternate still printed");
+                if (s.isEmpty()) ++blank;
+                for (QChar c : s) {
+                    if (!allowed.contains(c)) problems << where + s + QStringLiteral(": not for this field");
+                    shown.insert(c);
+                }
+            }
+            for (QChar d : QStringLiteral("0123456789"))
+                if (!shown.contains(d)) problems << where + QStringLiteral("no ") + d;
+            if (!blank) problems << where + QStringLiteral("no key went blank");
+            problems << printingProblems(view, where);
+            view.show(Pre::KeyboardView::Page::Symbols);
+            for (const auto &z : view.m_zones)
+                if (z.slot.drawn && z.slot.key->kind == Pre::Kind::Char && view.capText(*z.slot.key) != z.slot.key->text)
+                    problems << where + QStringLiteral("Sym page changed: ") + view.capText(*z.slot.key);
+            view.setDigits(QString());
+            view.show(Pre::KeyboardView::Page::Letters);
+            for (const auto &z : view.m_zones)
+                if (z.slot.drawn && z.slot.key->kind == Pre::Kind::Char && view.capText(*z.slot.key).isEmpty())
+                    problems << where + QStringLiteral("a key still blank after the number field");
+        }
+        if (!problems.isEmpty()) qWarning().noquote() << problems.mid(0, 40).join(QLatin1Char('\n'));
+        QCOMPARE(problems.size(), 0);
+    }
+
+    /*
      * Every language's letters and symbols on the measured screens of
      * screens(), at Medium height: PRE_SHOTS=<dir> saves them as pictures, to
      * look at with the phone's fonts (FONTCONFIG_FILE pointing at a copy of
@@ -618,24 +736,48 @@ private Q_SLOTS:
         QDir().mkpath(dir);
         for (const Screen &sc : screens()) {
             if (!sc.measured) continue;
+            QString name = sc.name;
+            name.replace(QLatin1Char(' '), QLatin1Char('-'));
+            auto save = [&](Pre::KeyboardView &view, const QString &what) {
+                QImage img(int(view.width()), int(view.height()), QImage::Format_ARGB32_Premultiplied);
+                img.fill(Qt::black);
+                QPainter p(&img);
+                view.paint(&p);
+                p.end();
+                const int top = int(view.height() - view.keysHeight());
+                img.copy(0, top, img.width(), img.height() - top)
+                    .save(QStringLiteral("%1/%2-%3.png").arg(dir, name, what));
+            };
             for (const Pre::Language &l : Pre::Language::all()) {
                 Pre::KeyboardView view;
                 showKeys(view, l, sc.shortSide, sc.width, sc.landscape, Pre::Settings::Height::Medium);
                 for (auto page : { Pre::KeyboardView::Page::Letters, Pre::KeyboardView::Page::Symbols }) {
                     view.show(page);
-                    QImage img(int(view.width()), int(view.height()), QImage::Format_ARGB32_Premultiplied);
-                    img.fill(Qt::black);
-                    QPainter p(&img);
-                    view.paint(&p);
-                    p.end();
-                    const int top = int(view.height() - view.keysHeight());
-                    QString name = sc.name;
-                    name.replace(QLatin1Char(' '), QLatin1Char('-'));
-                    img.copy(0, top, img.width(), img.height() - top)
-                        .save(QStringLiteral("%1/%2-%3-%4.png").arg(dir, name, l.id,
-                              page == Pre::KeyboardView::Page::Letters ? QStringLiteral("abc") : QStringLiteral("sym")));
+                    save(view, l.id + (page == Pre::KeyboardView::Page::Letters ? QStringLiteral("-abc") : QStringLiteral("-sym")));
                 }
             }
+            // The other looks, in English: letters following shift, the White
+            // style with shift on, and number and phone fields.
+            const Pre::Language en = Pre::Language::byId(QStringLiteral("en"));
+            Pre::KeyboardView view;
+            showKeys(view, en, sc.shortSide, sc.width, sc.landscape, Pre::Settings::Height::Medium);
+            Pre::Settings s = view.settings();
+            s.followShift = true;
+            view.applySettings(s);
+            save(view, QStringLiteral("en-small"));
+            s.followShift = false;
+            s.style = Pre::Style::White;
+            view.applySettings(s);
+            save(view, QStringLiteral("en-white"));
+            view.m_shift = Pre::KeyboardView::Shift::Once;
+            save(view, QStringLiteral("en-white-shift"));
+            view.m_shift = Pre::KeyboardView::Shift::Off;
+            s.style = Pre::Style::Orange;
+            view.applySettings(s);
+            view.setDigits(QStringLiteral("0123456789+-.,"));
+            save(view, QStringLiteral("en-number"));
+            view.setDigits(QStringLiteral("0123456789*#+"));
+            save(view, QStringLiteral("en-phone"));
         }
     }
 
@@ -659,6 +801,8 @@ private:
             if (!z.slot.drawn || z.slot.key->kind != Pre::Kind::Char) continue;
             const Pre::Key &key = *z.slot.key;
             const QString s = view.capText(key);
+            // A key with nothing on it (a number field's letters) has nothing to be out of place.
+            if (s.isEmpty()) continue;
             if (px < 0) px = z.letterPx;
             if (z.letterPx != px) out << where + s + QStringLiteral(": a size of its own");
             if (letters(s)) {
@@ -673,12 +817,13 @@ private:
             const QPainterPath ink = outline(s, f, view.letterAt(z, z.rect, fm));
             const QPainterPath face = view.m_painter.capShape(z.rect);
             if (!face.contains(ink)) out << where + s + QStringLiteral(": out of its key");
-            if (key.alt.isEmpty()) continue;
+            const QString a = view.altText(key);
+            if (a.isEmpty()) continue;
             f.setPixelSize(int(z.letterPx * 0.7));
             const QFontMetricsF am(f);
-            const QPainterPath alt = outline(key.alt, f, view.altAt(z, z.rect, am));
-            if (!face.contains(alt)) out << where + s + QStringLiteral(": its ") + key.alt + QStringLiteral(" out of the key");
-            if (alt.intersects(ink)) out << where + s + QStringLiteral(": into its ") + key.alt;
+            const QPainterPath alt = outline(a, f, view.altAt(z, z.rect, am));
+            if (!face.contains(alt)) out << where + s + QStringLiteral(": its ") + a + QStringLiteral(" out of the key");
+            if (alt.intersects(ink)) out << where + s + QStringLiteral(": into its ") + a;
         }
         // As large as fits: a pixel more and something would not.
         if (px >= 0 && px < view.letterSize()) {
