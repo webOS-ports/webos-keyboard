@@ -135,9 +135,15 @@ void AbstractWordEngine::computeCandidates(Model::Text *text)
     // with that we probably will want to turn off preedit styling at
     // all.
 
+    // A word backspaced away: its candidates go too, rather than staying up
+    // for a word that is no longer there.
+    if (text && text->preedit().isEmpty()) {
+        clearCandidates();
+        return;
+    }
+
     if (!isEnabled()
         || !text
-        || text->preedit().isEmpty()
         || !text->preedit().at(text->preedit().length() - 1).isLetterOrNumber()) {
         // FIXME: We should here set some special preedit face in text
         // model (say Disabled or None) which would be interpreted by
