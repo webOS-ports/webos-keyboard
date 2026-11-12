@@ -63,7 +63,7 @@ void Editor::sendPreeditString(const QString &preedit,
                                Model::Text::PreeditFace face,
                                const Replacement &replacement)
 {
-    if (not m_host) {
+    if (!m_host) {
         qWarning() << __PRETTY_FUNCTION__
                    << "Host not set, ignoring.";
         return;
@@ -83,7 +83,7 @@ void Editor::sendPreeditString(const QString &preedit,
 
 void Editor::sendCommitString(const QString &commit)
 {
-    if (not m_host) {
+    if (!m_host) {
         qWarning() << __PRETTY_FUNCTION__
                    << "Host not set, ignoring.";
         return;
@@ -94,7 +94,7 @@ void Editor::sendCommitString(const QString &commit)
 
 void Editor::sendKeyEvent(const QKeyEvent &ev)
 {
-    if (not m_host) {
+    if (!m_host) {
         qWarning() << __PRETTY_FUNCTION__
                      << "Host not set, ignoring.";
         return;
@@ -105,7 +105,7 @@ void Editor::sendKeyEvent(const QKeyEvent &ev)
 
 void Editor::invokeAction(const QString &action, const QKeySequence &sequence)
 {
-    if (not m_host) {
+    if (!m_host) {
         qWarning() << __PRETTY_FUNCTION__
                      << "Host not set, ignoring.";
         return;

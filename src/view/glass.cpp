@@ -43,7 +43,7 @@ namespace {
 void removeActiveKey(QVector<Key> *active_keys,
                      const Key &key)
 {
-    if (not active_keys) {
+    if (!active_keys) {
         return;
     }
 
@@ -112,7 +112,7 @@ void Glass::setSurface(const QSharedPointer<Maliit::Plugins::AbstractGraphicsVie
 
     QWidget *window = surface ? surface->view()->viewport() : 0;
 
-    if (not window) {
+    if (!window) {
         qCritical() << __PRETTY_FUNCTION__
                     << "No window given";
         return;
@@ -131,7 +131,7 @@ void Glass::setExtendedSurface(const QSharedPointer<Maliit::Plugins::AbstractGra
 
     QWidget *window = surface ? surface->view()->viewport() : 0;
 
-    if (not window) {
+    if (!window) {
         qCritical() << __PRETTY_FUNCTION__
                     << "No window given";
         return;
@@ -161,7 +161,7 @@ bool Glass::eventFilter(QObject *obj,
     Q_D(Glass);
     static bool measure_fps(QCoreApplication::arguments().contains("-measure-fps"));
 
-    if (not obj || not ev) {
+    if (!obj || !ev) {
         return false;
     }
 
@@ -290,7 +290,7 @@ void Glass::onLongPressTriggered()
 
     if (d->gesture_triggered
         || d->active_keys.isEmpty()
-        || not d->long_press_layout
+        || !d->long_press_layout
         || d->long_press_layout->activePanel() == Logic::LayoutHelper::ExtendedPanel) {
         return;
     }
@@ -306,7 +306,7 @@ void Glass::onLongPressTriggered()
 bool Glass::handlePressReleaseEvent(QEvent *ev,
                                     const QSharedPointer<Maliit::Plugins::AbstractGraphicsViewSurface> &eventSurface)
 {
-    if (not ev) {
+    if (!ev) {
         return false;
     }
 

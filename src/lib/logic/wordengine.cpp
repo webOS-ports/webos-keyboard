@@ -64,19 +64,19 @@ void appendToCandidates(WordCandidateList *candidates,
                         const QString &candidate,
                         bool is_preedit_capitalized)
 {
-    if (not candidates) {
+    if (!candidates) {
         return;
     }
 
     QString changed_candidate(candidate);
 
-    if (not changed_candidate.isEmpty() && is_preedit_capitalized) {
+    if (!changed_candidate.isEmpty() && is_preedit_capitalized) {
         changed_candidate[0] = changed_candidate.at(0).toUpper();
     }
 
     const WordCandidate word_candidate(source, changed_candidate);
 
-    if (not candidates->contains(word_candidate)) {
+    if (!candidates->contains(word_candidate)) {
         candidates->append(word_candidate);
     }
 }
@@ -250,7 +250,7 @@ WordCandidateList WordEngine::fetchCandidates(Model::Text *text)
 
     WordCandidateList candidates;
     const QString &preedit(text->preedit());
-    const bool is_preedit_capitalized(not preedit.isEmpty() && preedit.at(0).isUpper());
+    const bool is_preedit_capitalized(!preedit.isEmpty() && preedit.at(0).isUpper());
 
     if (d->use_predictive_text && d->languagePlugin) {
 
@@ -266,7 +266,7 @@ WordCandidateList WordEngine::fetchCandidates(Model::Text *text)
     const bool correct_spelling(d->languagePlugin ? d->languagePlugin->spell(preedit)
                                                   : true);
 
-    if (candidates.isEmpty() and not correct_spelling) {
+    if (candidates.isEmpty() && !correct_spelling) {
         Q_FOREACH(const QString &correction, d->languagePlugin->spellCheckerSuggest(preedit, 5)) {
             appendToCandidates(&candidates, WordCandidate::SourceSpellChecking, correction, is_preedit_capitalized);
         }

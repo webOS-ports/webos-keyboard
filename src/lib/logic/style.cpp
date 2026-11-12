@@ -96,7 +96,7 @@ void Style::setProfile(const QString &profile)
     StyleAttributes *main_attributes = nullptr;
     StyleAttributes *extended_keys_attributes = nullptr;
 
-    if (not d->profile.isEmpty()) {
+    if (!d->profile.isEmpty()) {
         const QString main_file_name(g_main_fn_format
                                      .arg(CoreUtils::maliitKeyboardStyleProfilesDirectory())
                                      .arg(profile));

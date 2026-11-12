@@ -45,7 +45,7 @@ WordRibbon::WordRibbon(QObject* parent)
 
 bool WordRibbon::valid() const
 {
-    return not m_area.size().isEmpty();
+    return !m_area.size().isEmpty();
 }
 
 QRect WordRibbon::rect() const
@@ -112,7 +112,7 @@ bool operator==(const WordRibbon &lhs,
 bool operator!=(const WordRibbon &lhs,
                 const WordRibbon &rhs)
 {
-    return (not (lhs == rhs));
+    return (!(lhs == rhs));
 }
 
 QVariant WordRibbon::data(const QModelIndex &index, int role) const

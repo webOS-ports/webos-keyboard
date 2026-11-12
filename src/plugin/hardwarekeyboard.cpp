@@ -60,7 +60,7 @@ QStringList profileDirectories()
     QStringList dirs;
 
     const QByteArray override(qgetenv("LUNEOS_KEYBOARD_HW_LAYOUT_DIR"));
-    if (not override.isEmpty()) {
+    if (!override.isEmpty()) {
         dirs.append(QString::fromLocal8Bit(override));
     }
 
@@ -129,7 +129,7 @@ HardwareKeyboardProfile readProfile(const QJsonObject &object,
     const QJsonArray names(match.value("inputDeviceNames").toArray());
     for (const QJsonValueConstRef &value : names) {
         const QString name(value.toString());
-        if (not name.isEmpty())
+        if (!name.isEmpty())
             profile.inputDeviceNames.append(name);
     }
 
@@ -137,7 +137,7 @@ HardwareKeyboardProfile readProfile(const QJsonObject &object,
     for (auto it = levels.constBegin(); it != levels.constEnd(); ++it) {
         bool known = false;
         const HardwareKeyboardLevel level(levelFromName(it.key(), &known));
-        if (not known) {
+        if (!known) {
             qWarning() << "hardware keyboard profile" << profile.name
                        << "has an unknown level" << it.key() << "-- ignoring it";
             continue;
@@ -149,11 +149,11 @@ HardwareKeyboardProfile readProfile(const QJsonObject &object,
             bool valid = false;
             const uint code = entry.key().toUInt(&valid);
             const QString text(entry.value().toString());
-            if (valid and not text.isEmpty())
+            if (valid && !text.isEmpty())
                 characters.insert(code, text);
         }
 
-        if (not characters.isEmpty())
+        if (!characters.isEmpty())
             profile.levels.insert(levelKey(level), characters);
     }
 
@@ -190,7 +190,7 @@ void HardwareKeyboard::loadProfiles()
 
     for (const QString &directory : directories) {
         QDir dir(directory);
-        if (not dir.exists())
+        if (!dir.exists())
             continue;
 
         const QStringList files(dir.entryList(QStringList("*.json"),
@@ -199,7 +199,7 @@ void HardwareKeyboard::loadProfiles()
             const QString path(dir.filePath(file));
 
             QFile json(path);
-            if (not json.open(QIODevice::ReadOnly)) {
+            if (!json.open(QIODevice::ReadOnly)) {
                 qWarning() << "cannot read the hardware keyboard profile" << path
                            << ":" << json.errorString();
                 continue;
@@ -238,7 +238,7 @@ bool HardwareKeyboard::InputDevice::advertises(quint32 scanCode) const
 //! so the two layers cannot describe the hardware differently.
 bool HardwareKeyboard::InputDevice::isKeyboard() const
 {
-    return advertises(KEY_A) and advertises(KEY_Q) and advertises(KEY_M);
+    return advertises(KEY_A) && advertises(KEY_Q) && advertises(KEY_M);
 }
 
 bool HardwareKeyboard::InputDevice::repeats() const
@@ -276,7 +276,7 @@ QList<HardwareKeyboard::InputDevice> HardwareKeyboard::readInputDevices()
         path = "/proc/bus/input/devices";
 
     QFile proc(QString::fromLocal8Bit(path));
-    if (not proc.open(QIODevice::ReadOnly | QIODevice::Text))
+    if (!proc.open(QIODevice::ReadOnly | QIODevice::Text))
         return devices;
 
     static const QRegularExpression name_line("^N: Name=\"(.*)\"$");
@@ -302,13 +302,13 @@ QList<HardwareKeyboard::InputDevice> HardwareKeyboard::readInputDevices()
         }
 
         const QRegularExpressionMatch events(ev_line.match(line));
-        if (events.hasMatch() and not devices.isEmpty()) {
+        if (events.hasMatch() && !devices.isEmpty()) {
             devices.last().eventBits = events.captured(1).toULongLong(nullptr, 16);
             continue;
         }
 
         const QRegularExpressionMatch keys(key_line.match(line));
-        if (not keys.hasMatch() or devices.isEmpty())
+        if (!keys.hasMatch() || devices.isEmpty())
             continue;
 
         const QStringList words(keys.captured(1).split(QLatin1Char(' '),
@@ -346,7 +346,7 @@ void HardwareKeyboard::selectProfile()
     // or what its driver does with a held key.
     m_kernelRepeats = false;
     for (const InputDevice &device : present) {
-        if (device.isKeyboard() and device.repeats())
+        if (device.isKeyboard() && device.repeats())
             m_kernelRepeats = true;
     }
     qCInfo(lcHwKeyboard) << "a held key is repeated by"
@@ -364,7 +364,7 @@ void HardwareKeyboard::selectProfile()
         return;
     }
 
-    if (not requested.isEmpty()) {
+    if (!requested.isEmpty()) {
         const QString wanted(QString::fromLocal8Bit(requested));
         for (int i = 0; i < m_profiles.size(); ++i) {
             if (m_profiles.at(i).name == wanted) {
@@ -386,18 +386,18 @@ void HardwareKeyboard::selectProfile()
             const HardwareKeyboardProfile &profile = m_profiles.at(i);
 
             if (best >= 0
-                and profile.requiredKeys.size()
+                && profile.requiredKeys.size()
                     <= m_profiles.at(best).requiredKeys.size()) {
                 continue;
             }
 
             for (const InputDevice &device : present) {
-                if (not profile.inputDeviceNames.contains(device.name))
+                if (!profile.inputDeviceNames.contains(device.name))
                     continue;
 
                 bool has_all = true;
                 for (quint32 key : profile.requiredKeys) {
-                    if (not device.advertises(key)) {
+                    if (!device.advertises(key)) {
                         has_all = false;
                         break;
                     }
@@ -416,11 +416,11 @@ void HardwareKeyboard::selectProfile()
         // rescan so a keypad that appears late is still found.
         m_telephoneKeypad = false;
         for (const InputDevice &device : present) {
-            const bool digits = device.advertises(KEY_2) and device.advertises(KEY_5)
-                and device.advertises(KEY_9);
-            const bool letters = device.advertises(KEY_A) or device.advertises(KEY_Q);
+            const bool digits = device.advertises(KEY_2) && device.advertises(KEY_5)
+                && device.advertises(KEY_9);
+            const bool letters = device.advertises(KEY_A) || device.advertises(KEY_Q);
 
-            if (digits and not letters) {
+            if (digits && !letters) {
                 m_telephoneKeypad = true;
                 qCInfo(lcHwKeyboard) << "telephone keypad:" << device.name;
             }
@@ -497,7 +497,7 @@ QVariantMap HardwareKeyboard::keyFaceDigits() const
 {
     QVariantMap digits;
 
-    if (not isPresent())
+    if (!isPresent())
         return digits;
 
     // The Alt level is where the digits are printed on a keyboard of this shape:
@@ -552,7 +552,7 @@ bool HardwareKeyboard::kernelRepeats() const
 
 bool HardwareKeyboard::shiftLatchActive() const
 {
-    if (not isPresent())
+    if (!isPresent())
         return false;
 
     if (m_profiles.at(m_activeProfile).shiftKeys.isEmpty())
@@ -560,7 +560,7 @@ bool HardwareKeyboard::shiftLatchActive() const
 
     // Held is Qt's business, not ours.
     return m_shift.state == LevelState::Latched
-        or m_shift.state == LevelState::Locked;
+        || m_shift.state == LevelState::Locked;
 }
 
 void HardwareKeyboard::consumeShiftLatch()
@@ -571,7 +571,7 @@ void HardwareKeyboard::consumeShiftLatch()
 
 bool HardwareKeyboard::ownsAltModifier() const
 {
-    if (not isPresent())
+    if (!isPresent())
         return false;
 
     const HardwareKeyboardProfile &profile = m_profiles.at(m_activeProfile);
@@ -579,8 +579,8 @@ bool HardwareKeyboard::ownsAltModifier() const
     // Both the Alt and the Sym key of these keyboards sit on a scancode a
     // stock keymap reads as an Alt of some kind, so either being engaged
     // explains an Alt modifier we should not treat as a shortcut.
-    return (not profile.altKeys.isEmpty() and m_alt.isActive())
-        or (not profile.symKeys.isEmpty() and m_sym.isActive());
+    return (!profile.altKeys.isEmpty() && m_alt.isActive())
+        || (!profile.symKeys.isEmpty() && m_sym.isActive());
 }
 
 void HardwareKeyboard::rescan()
@@ -600,7 +600,7 @@ QString HardwareKeyboard::digitsPreferred() const
 
 QString HardwareKeyboard::preferredDigit(quint32 scanCode) const
 {
-    if (m_digitsPreferred.isEmpty() or not isPresent())
+    if (m_digitsPreferred.isEmpty() || !isPresent())
         return QString();
 
     const QString mapped(m_profiles.at(m_activeProfile)
@@ -609,7 +609,7 @@ QString HardwareKeyboard::preferredDigit(quint32 scanCode) const
     // One character, and one the field will have. The length test is what
     // keeps a multi-character legend out: those are not digits, and half of
     // one is worse than none.
-    if (mapped.size() != 1 or not m_digitsPreferred.contains(mapped))
+    if (mapped.size() != 1 || !m_digitsPreferred.contains(mapped))
         return QString();
 
     return mapped;
@@ -617,8 +617,8 @@ QString HardwareKeyboard::preferredDigit(quint32 scanCode) const
 
 void HardwareKeyboard::reset()
 {
-    const bool was_active = m_alt.isActive() or m_sym.isActive()
-        or m_shift.isActive();
+    const bool was_active = m_alt.isActive() || m_sym.isActive()
+        || m_shift.isActive();
 
     m_alt = LevelKeyState();
     m_sym = LevelKeyState();
@@ -677,7 +677,7 @@ void HardwareKeyboard::handleLevelKeyRelease(LevelKeyState *level)
     if (level->state != LevelState::Held)
         return;
 
-    if (level->usedWhileHeld or level->pendingUnlock) {
+    if (level->usedWhileHeld || level->pendingUnlock) {
         // Held down over one or more keys, or a third tap: back to normal.
         level->state = LevelState::Off;
     } else if (level->pendingLock) {
@@ -721,7 +721,7 @@ HardwareKeyboardLevel HardwareKeyboard::activeLevel(Qt::KeyboardModifiers modifi
     if (m_alt.isActive())
         return HardwareKeyboardLevel::Alt;
 
-    if ((modifiers & Qt::ShiftModifier) or m_shift.isActive())
+    if ((modifiers & Qt::ShiftModifier) || m_shift.isActive())
         return HardwareKeyboardLevel::Shift;
 
     return HardwareKeyboardLevel::Base;
@@ -736,7 +736,7 @@ HardwareKeyboard::Result HardwareKeyboard::handleKey(QEvent::Type type,
     // to notice, and it tells us through InputMethod::setState(), which calls
     // rescan(). Re-reading /proc from the keystroke path meant a device with no
     // matching profile did it every two seconds forever.
-    if (not isPresent())
+    if (!isPresent())
         return NotHandled;
 
     if (nativeScanCode < g_evdev_offset)
@@ -771,7 +771,7 @@ HardwareKeyboard::Result HardwareKeyboard::handleKey(QEvent::Type type,
         return type == QEvent::KeyPress ? EmojiPanel : Consumed;
     }
 
-    if (profile.altKeys.contains(code) or profile.symKeys.contains(code)) {
+    if (profile.altKeys.contains(code) || profile.symKeys.contains(code)) {
         LevelKeyState *const level = profile.altKeys.contains(code) ? &m_alt : &m_sym;
 
         if (type == QEvent::KeyPress)
@@ -811,7 +811,7 @@ HardwareKeyboard::Result HardwareKeyboard::handleKey(QEvent::Type type,
      */
     if (level == HardwareKeyboardLevel::Base) {
         const QString digit(preferredDigit(code));
-        if (not digit.isEmpty()) {
+        if (!digit.isEmpty()) {
             qCInfo(lcHwKeyboard, "code %u -> '%s' (numeric field)",
                    code, qPrintable(digit));
             m_pressedKeys.insert(code, digit);
@@ -830,7 +830,7 @@ HardwareKeyboard::Result HardwareKeyboard::handleKey(QEvent::Type type,
     // typically -- still spends the latch, but the key itself carries on to
     // the application unchanged rather than disappearing.
     if (mapped.isEmpty()) {
-        if (level == HardwareKeyboardLevel::Alt or level == HardwareKeyboardLevel::Sym) {
+        if (level == HardwareKeyboardLevel::Alt || level == HardwareKeyboardLevel::Sym) {
             consumeLevel(&m_sym);
             consumeLevel(&m_alt);
             Q_EMIT levelChanged();
@@ -838,7 +838,7 @@ HardwareKeyboard::Result HardwareKeyboard::handleKey(QEvent::Type type,
         return NotHandled;
     }
 
-    if (level == HardwareKeyboardLevel::Alt or level == HardwareKeyboardLevel::Sym) {
+    if (level == HardwareKeyboardLevel::Alt || level == HardwareKeyboardLevel::Sym) {
         consumeLevel(&m_sym);
         consumeLevel(&m_alt);
         Q_EMIT levelChanged();

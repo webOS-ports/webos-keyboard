@@ -160,7 +160,7 @@ void Renderer::setSurfaceFactory(AbstractSurfaceFactory *factory)
     d->factory = factory;
 
     // Assuming that factory == 0 means reset:
-    if (not d->factory) {
+    if (!d->factory) {
         // Drop references => shared surface instances are eventually deleted:
         d->surface.clear();
         d->extended_surface.clear();

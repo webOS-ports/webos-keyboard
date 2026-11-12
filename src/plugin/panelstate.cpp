@@ -71,7 +71,7 @@ void PanelState::setOnScreenKeyboardAllowed(bool allowed)
 
 bool PanelState::panelWanted() const
 {
-    return m_focused and not m_dismissed and (not keysHidden() or m_wordEngine);
+    return m_focused && !m_dismissed && (!keysHidden() || m_wordEngine);
 }
 
 } // namespace MaliitKeyboard
