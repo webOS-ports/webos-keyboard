@@ -187,7 +187,8 @@ Rows lettersOf(const Language &lang)
          << slot(WIDE, shift)
          << c(QStringLiteral("@"), QStringLiteral("0"), AltPos::Left, QString())
          << slot(4.0f, makeKey(Kind::Space, QStringLiteral(" ")))
-         << slot(1.0f, makeKey(Kind::Char, QStringLiteral(".")))
+         << slot(1.0f, makeKey(Kind::Char, QStringLiteral("."), QString(), AltPos::Right, {}, false,
+                               QString(), Corner::Mic))
          << slot(WIDE, sym)
          << slot(EDGE, sym, false);
     return { top, middle, bottom, last };
@@ -243,7 +244,8 @@ Rows symbolsOf()
           slot(1.0f, makeKey(Kind::Emoji, QString(), QString(), AltPos::Right,
                              words(QStringLiteral(":-) ;-) :-( :'( :-P :-O <3")))),
           slot(4.0f, makeKey(Kind::Space, QStringLiteral(" "))),
-          slot(1.0f, makeKey(Kind::Char, QStringLiteral("."))),
+          slot(1.0f, makeKey(Kind::Char, QStringLiteral("."), QString(), AltPos::Right, {}, false,
+                             QString(), Corner::Mic)),
           slot(WIDE, ret),
           slot(EDGE, ret, false) },
     };

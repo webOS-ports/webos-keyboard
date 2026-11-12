@@ -17,6 +17,7 @@ INCLUDEPATH += $$PWD/../../src/pre $$PWD/../../src/view
 SOURCES += \
     ut_prekeyboard.cpp \
     $$PWD/../../src/pre/precontroller.cpp \
+    $$PWD/../../src/pre/predictation.cpp \
     $$PWD/../../src/pre/preemojipanel.cpp \
     $$PWD/../../src/pre/preemojiwords.cpp \
     $$PWD/../../src/pre/prekeyboardview.cpp \
@@ -40,6 +41,7 @@ SOURCES += \
 
 HEADERS += \
     $$PWD/../../src/pre/precontroller.h \
+    $$PWD/../../src/pre/predictation.h \
     $$PWD/../../src/pre/preemojipanel.h \
     $$PWD/../../src/pre/prekeyboardview.h \
     $$PWD/../../src/pre/preklipy.h \

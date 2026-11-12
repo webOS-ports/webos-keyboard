@@ -31,6 +31,19 @@ LIBS += -lluna-service2
 # The Pre Keyboard's swipe reads presage's word databases with SQLite itself (preswipewords.cpp).
 LIBS += -lsqlite3
 
+# Dictation from the Pre Keyboard's period (src/pre/prevosk.cpp): the microphone
+# through PulseAudio, and Vosk (libvosk.so.0) loaded when first used, with a model
+# per language in VOSK_MODEL_DIR. Without Vosk or a model the period has no
+# microphone. CONFIG+=no-dictation leaves it out.
+!no-dictation {
+    DEFINES += PRE_DICTATION
+    isEmpty(VOSK_MODEL_DIR): VOSK_MODEL_DIR = $$PREFIX/share/vosk
+    DEFINES += VOSK_MODEL_DIR=\\\"$$VOSK_MODEL_DIR\\\"
+    HEADERS += ../pre/prevosk.h
+    SOURCES += ../pre/prevosk.cpp
+    LIBS += -lpulse-simple -lpulse
+}
+
 CONFIG += \
     plugin \
 
@@ -48,6 +61,7 @@ HEADERS += \
 #    updatenotifier.h \
     luneosapplicationapiwrapper.h \
     ../pre/precontroller.h \
+    ../pre/predictation.h \
     ../pre/preemojipanel.h \
     ../pre/preklipy.h \
     ../pre/prekeyboardview.h \
@@ -73,6 +87,7 @@ SOURCES += \
 #    updatenotifier.cpp \
     luneosapplicationapiwrapper.cpp \
     ../pre/precontroller.cpp \
+    ../pre/predictation.cpp \
     ../pre/preemojipanel.cpp \
     ../pre/preklipy.cpp \
     ../pre/prekeyboardview.cpp \

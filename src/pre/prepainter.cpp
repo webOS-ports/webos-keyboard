@@ -245,6 +245,14 @@ void Painter::icon(QPainter &p, Icon icon, qreal cx, qreal cy, qreal size, const
         stroke(10);
         p.drawEllipse(QPointF(32, 32), 15, 15);
         break;
+    case Icon::Mic:
+        // The period's corner: dictation.
+        p.drawRoundedRect(QRectF(22, 2, 20, 36), 10, 10);
+        stroke(5, Qt::RoundCap);
+        p.drawArc(QRectF(13, 16, 38, 32), 180 * 16, 180 * 16);
+        p.drawLine(QPointF(32, 48), QPointF(32, 58));
+        p.drawLine(QPointF(21, 60), QPointF(43, 60));
+        break;
     case Icon::Paste: {
         // The bar's paste: a clipboard with a page on it, its corner turned down.
         stroke(4, Qt::FlatCap, Qt::RoundJoin);

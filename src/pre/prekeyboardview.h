@@ -91,6 +91,12 @@ public:
      */
     void setSuggestions(const QStringList &words, bool emoji = false);
     void setPasteOffered(bool offered);
+    /*!
+     * Dictation: the period shows its microphone ([mic]), lit while
+     * [listening]; [line] across the whole bar, while there is one, says what
+     * is being heard, or why listening stopped. Tapping it calls onVoice.
+     */
+    void setVoice(bool mic, bool listening, const QString &line);
     bool pasteOffered() const { return m_pasteOffered; }
     //! Swiping may happen here: switched on, and a field for words (not a password, say).
     void setWordsAllowed(bool allowed) { m_wordsAllowed = allowed; }
@@ -293,6 +299,10 @@ private:
     bool m_barEmoji = false;
     bool m_pasteOffered = false;
     bool m_wordsAllowed = true;
+    // Dictation (setVoice).
+    bool m_voiceMic = false;
+    bool m_listening = false;
+    QString m_voiceLine;
     //! What the field takes, when it takes only that (see setDigits).
     QString m_digits;
     qint64 m_flashAt;

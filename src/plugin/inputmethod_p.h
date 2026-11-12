@@ -14,6 +14,9 @@
 
 #include "luneosapplicationapiwrapper.h"
 #include "pre/precontroller.h"
+#ifdef PRE_DICTATION
+#include "pre/prevosk.h"
+#endif
 
 
 #include <maliit/plugins/abstractinputmethodhost.h>
@@ -311,6 +314,10 @@ public:
     {
         pre.setDataDir(QStringLiteral(LUNEOS_KEYBOARD_DATA_DIR "/pre"));
         pre.setStateDir(QDir::homePath() + QStringLiteral("/prekeyboard"));
+#ifdef PRE_DICTATION
+        // The period's microphone: Vosk, with the models installed under VOSK_MODEL_DIR.
+        pre.setDictation(new Pre::VoskDictation(QStringLiteral(VOSK_MODEL_DIR)));
+#endif
         // Swiped words come from what the word engine reads: presage's databases and hunspell's dictionaries.
         pre.setWordDirs(QStringLiteral(MALIIT_PLUGINS_DATA_DIR "/org/luneos/lib"), QStringLiteral(HUNSPELL_DICT_PATH));
 

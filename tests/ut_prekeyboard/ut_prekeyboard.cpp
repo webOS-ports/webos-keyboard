@@ -20,6 +20,7 @@
 // letters, and its keys handed to the same editor as every LuneOS layout's.
 
 #include "precontroller.h"
+#include "predictation.h"
 #include "preemojiwords.h"
 #include "prekeyboardview.h"
 #include "prekeymap.h"
@@ -240,6 +241,35 @@ struct Field
         };
         return b;
     }
+};
+
+/*!
+ * Dictation as the controller sees it: the test says what is heard (hear,
+ * say) and when listening ends (end); start, stop and cancel are written
+ * down. Like the real one, cancel says it stopped at once.
+ */
+class FakeDictation : public Pre::Dictation
+{
+public:
+    QStringList models = { QStringLiteral("en") };
+    QStringList calls;
+    bool on = false;
+
+    bool available(const QString &language) const override { return models.contains(language); }
+    void start(const QString &language) override { calls << QStringLiteral("start ") + language; on = true; }
+    void stop() override { calls << QStringLiteral("stop"); }
+    void cancel() override
+    {
+        calls << QStringLiteral("cancel");
+        if (!on) return;
+        on = false;
+        Q_EMIT stopped(QString());
+    }
+    bool listening() const override { return on; }
+
+    void hear(const QString &t) { Q_EMIT partial(t); }
+    void say(const QString &t) { Q_EMIT final(t); }
+    void end(const QString &problem = QString()) { on = false; Q_EMIT stopped(problem); }
 };
 
 //! The language codes of the plugins' phone layouts: Keyboard_<code>_phone.qml.
@@ -2013,7 +2043,290 @@ private Q_SLOTS:
         }
     }
 
+    // --- Dictation ----------------------------------------------------------------------------
+
+    /*
+     * The period has its microphone only where dictation could start: with a
+     * model for the language, in a field for prose that takes words, not a
+     * number or a password.
+     */
+    void theMicrophoneOnlyWhereDictationCouldStart()
+    {
+        Recorder rec;
+        Field field;
+        bool prose = true;
+        Pre::Bridge b = field.bridge(rec);
+        b.prose = [&] { return prose; };
+        Pre::Controller c;
+        c.setBridge(b);
+        Pre::KeyboardView view;
+        showKeys(view, Pre::Language::byId(QStringLiteral("en")), 1080, 1080, false, Pre::Settings::Height::Medium);
+        view.setControllerObject(&c);
+        c.setKeyboardState(true, false, { QStringLiteral("en"), QStringLiteral("de") }, QStringLiteral("en"));
+        const int period = periodZone(view);
+        QVERIFY(period >= 0);
+        QCOMPARE(view.m_zones[period].slot.key->corner, Pre::Corner::Mic);
+        QVERIFY(!view.m_voiceMic); // no dictation at all
+
+        auto *d = new FakeDictation;
+        c.setDictation(d);
+        QVERIFY(view.m_voiceMic);
+        c.setKeyboardState(true, false, { QStringLiteral("en"), QStringLiteral("de") }, QStringLiteral("de"));
+        QVERIFY(!view.m_voiceMic); // no model for German
+        c.setKeyboardState(true, false, { QStringLiteral("en"), QStringLiteral("de") }, QStringLiteral("en"));
+        QVERIFY(view.m_voiceMic);
+        c.setDigits(QStringLiteral("0123456789"));
+        QVERIFY(!view.m_voiceMic);
+        c.setDigits(QString());
+        QVERIFY(view.m_voiceMic);
+        c.setWordsAllowed(false);
+        QVERIFY(!view.m_voiceMic);
+        c.setWordsAllowed(true);
+        prose = false; // a URL, an address, a password
+        c.startInput();
+        QVERIFY(!view.m_voiceMic);
+        prose = true;
+        c.startInput();
+        QVERIFY(view.m_voiceMic);
+        // A model installed while the keyboard runs: the next field has it.
+        d->models << QStringLiteral("de");
+        c.setKeyboardState(true, false, { QStringLiteral("en"), QStringLiteral("de") }, QStringLiteral("de"));
+        QVERIFY(view.m_voiceMic);
+    }
+
+    /*
+     * The period held listens, and types nothing; the bar says so, even with
+     * suggestions and swiping off, and goes again when listening ends.
+     * Without the microphone, holding the period is typing one.
+     */
+    void holdingThePeriodListens()
+    {
+        Recorder rec;
+        Field field;
+        Pre::Controller c;
+        c.setBridge(field.bridge(rec));
+        Pre::KeyboardView view;
+        showKeys(view, Pre::Language::byId(QStringLiteral("en")), 1080, 1080, false, Pre::Settings::Height::Medium);
+        view.setControllerObject(&c);
+        c.setPrefs(QJsonObject{ { QStringLiteral("swipe"), false } });
+        c.setKeyboardState(false, false, { QStringLiteral("en") }, QStringLiteral("en"));
+        QCOMPARE(view.barHeight(), 0.0);
+        const QPointF at = view.m_zones[periodZone(view)].rect.center();
+
+        // No dictation: a period.
+        QVERIFY(view.down(at.x(), at.y()));
+        view.onHold();
+        view.lift(true);
+        QVERIFY(field.text.contains(QLatin1Char('.')));
+
+        auto *d = new FakeDictation;
+        c.setDictation(d);
+        field.set(QString());
+        rec.calls.clear();
+        QVERIFY(view.down(at.x(), at.y()));
+        QVERIFY(view.m_holdTimer.isActive());
+        view.onHold();
+        view.lift(true);
+        QCOMPARE(d->calls, QStringList{ QStringLiteral("start en") });
+        QVERIFY(field.text.isEmpty());
+        QVERIFY(view.m_listening);
+        QCOMPARE(view.m_voiceLine, QStringLiteral("Listening… tap here to stop"));
+        QVERIFY(view.barHeight() > 0);
+
+        d->end();
+        QVERIFY(!view.m_listening);
+        QVERIFY(view.m_voiceLine.isEmpty());
+        QCOMPARE(view.barHeight(), 0.0);
+        QVERIFY(view.m_voiceMic);
+    }
+
+    /*
+     * The words heard so far show in the bar; each phrase goes in when it is
+     * finished, after a space where it follows a word, with a capital where
+     * one is due, and English's "i" as "I".
+     */
+    void dictatedWordsGoIn()
+    {
+        Recorder rec;
+        Field field;
+        Pre::Bridge b = field.bridge(rec);
+        b.commit = [&](const QString &t) { rec.calls << QStringLiteral("commit ") + t; field.insert(t); };
+        Pre::Controller c;
+        c.setBridge(b);
+        Pre::KeyboardView view;
+        showKeys(view, Pre::Language::byId(QStringLiteral("en")), 1080, 1080, false, Pre::Settings::Height::Medium);
+        view.setControllerObject(&c);
+        c.setKeyboardState(true, false, { QStringLiteral("en") }, QStringLiteral("en"));
+        auto *d = new FakeDictation;
+        c.setDictation(d);
+
+        rec.autoCaps = true;
+        c.onVoice();
+        d->hear(QStringLiteral("hello th"));
+        QCOMPARE(view.m_voiceLine, QStringLiteral("hello th"));
+        QVERIFY(field.text.isEmpty());
+        d->say(QStringLiteral("hello there"));
+        QCOMPARE(field.text, QStringLiteral("Hello there"));
+        QCOMPARE(view.m_voiceLine, QStringLiteral("Listening… tap here to stop"));
+        rec.autoCaps = false;
+        d->say(QStringLiteral("i think i'm late"));
+        QCOMPARE(field.text, QStringLiteral("Hello there I think I'm late"));
+        d->end();
+
+        // After an opening bracket, no space.
+        field.set(QStringLiteral("("));
+        c.onVoice();
+        d->say(QStringLiteral("as planned"));
+        QCOMPARE(field.text, QStringLiteral("(as planned"));
+        d->end();
+    }
+
+    // Tapping the bar while listening stops it: what was being said still comes, then it ends.
+    void tappingTheBarStopsListening()
+    {
+        Recorder rec;
+        Field field;
+        Pre::Controller c;
+        c.setBridge(field.bridge(rec));
+        Pre::KeyboardView view;
+        showKeys(view, Pre::Language::byId(QStringLiteral("en")), 1080, 1080, false, Pre::Settings::Height::Medium);
+        view.setControllerObject(&c);
+        c.setKeyboardState(true, false, { QStringLiteral("en") }, QStringLiteral("en"));
+        auto *d = new FakeDictation;
+        c.setDictation(d);
+        Pre::Settings s = view.settings();
+        s.sound = true;
+        view.applySettings(s);
+        c.onVoice();
+        const QPointF bar(view.width() / 2, view.keyboardTop() + view.barHeight() / 2);
+        QVERIFY(view.barCell(bar.x(), bar.y()) >= 0);
+        // It clicks like a key, though no word shows there.
+        QSignalSpy click(&view, &Pre::KeyboardView::keyClick);
+        QVERIFY(view.pointerDown(0, bar.x(), bar.y()));
+        QCOMPARE(click.count(), 1);
+        view.pointerUp(0, bar.x(), bar.y());
+        QCOMPARE(d->calls, (QStringList{ QStringLiteral("start en"), QStringLiteral("stop") }));
+        QVERIFY(view.m_listening);
+        d->say(QStringLiteral("the end"));
+        d->end();
+        QVERIFY(rec.calls.contains(QStringLiteral("commit the end")));
+        QVERIFY(!view.m_listening);
+    }
+
+    /*
+     * A key while listening stops it at once: a letter, Return or a cursor
+     * move keep the words heard so far, put in first; a backspace takes them
+     * back; another field, or the keyboard going, drops them.
+     */
+    void aKeyEndsListening()
+    {
+        Recorder rec;
+        Field field;
+        Pre::Bridge b = field.bridge(rec);
+        Pre::Controller c;
+        c.setBridge(b);
+        c.setKeyboardState(true, false, { QStringLiteral("en") }, QStringLiteral("en"));
+        auto *d = new FakeDictation;
+        c.setDictation(d);
+
+        rec.autoCaps = true;
+        c.onVoice();
+        d->hear(QStringLiteral("good morning"));
+        c.onText(QStringLiteral("x"));
+        QCOMPARE(d->calls, (QStringList{ QStringLiteral("start en"), QStringLiteral("cancel") }));
+        QCOMPARE(rec.calls.value(0), QStringLiteral("commit Good morning"));
+        QCOMPARE(field.text, QStringLiteral("x"));
+        QVERIFY(!d->on);
+
+        rec.calls.clear();
+        c.onVoice();
+        d->hear(QStringLiteral("oops"));
+        c.onBackspace(false);
+        QVERIFY(!rec.calls.join(QLatin1Char(',')).contains(QStringLiteral("commit")));
+        QVERIFY(field.text.isEmpty());
+
+        rec.calls.clear();
+        c.onVoice();
+        d->hear(QStringLiteral("secret"));
+        c.startInput();
+        QVERIFY(!d->on);
+        QVERIFY(rec.calls.isEmpty());
+
+        c.onVoice();
+        d->hear(QStringLiteral("gone"));
+        c.finishInput();
+        QVERIFY(!d->on);
+        QVERIFY(rec.calls.isEmpty());
+
+        c.onVoice();
+        d->hear(QStringLiteral("new line"));
+        c.onEnter();
+        QCOMPARE(rec.calls.value(0), QStringLiteral("commit New line"));
+        QVERIFY(field.text.endsWith(QLatin1Char('\n')));
+    }
+
+    /*
+     * Why listening stopped shows in the bar for a moment; tapping it listens
+     * again. A language with no model says so, and doesn't listen.
+     */
+    void whyListeningStopped()
+    {
+        Recorder rec;
+        Field field;
+        Pre::Controller c;
+        c.setBridge(field.bridge(rec));
+        Pre::KeyboardView view;
+        showKeys(view, Pre::Language::byId(QStringLiteral("en")), 1080, 1080, false, Pre::Settings::Height::Medium);
+        view.setControllerObject(&c);
+        c.setKeyboardState(true, false, { QStringLiteral("en"), QStringLiteral("de") }, QStringLiteral("en"));
+        auto *d = new FakeDictation;
+        c.setDictation(d);
+        c.onVoice();
+        d->end(QStringLiteral("Didn't catch that"));
+        QCOMPARE(view.m_voiceLine, QStringLiteral("Didn't catch that"));
+        const QPointF bar(view.width() / 2, view.keyboardTop() + view.barHeight() / 2);
+        QVERIFY(view.pointerDown(0, bar.x(), bar.y()));
+        view.pointerUp(0, bar.x(), bar.y());
+        QCOMPARE(d->calls.last(), QStringLiteral("start en"));
+        QVERIFY(view.m_listening);
+        d->end(QStringLiteral("The microphone stopped"));
+        QCOMPARE(view.m_voiceLine, QStringLiteral("The microphone stopped"));
+        QTRY_VERIFY_WITH_TIMEOUT(view.m_voiceLine.isEmpty(), Pre::Controller::VOICE_PROBLEM_MS + 2000);
+
+        d->calls.clear();
+        c.setKeyboardState(true, false, { QStringLiteral("en"), QStringLiteral("de") }, QStringLiteral("de"));
+        c.onVoice();
+        QVERIFY(d->calls.isEmpty());
+        QCOMPARE(view.m_voiceLine, QStringLiteral("No speech model for Deutsch"));
+    }
+
+    // Changing language while listening stops it, keeping the words heard so far.
+    void anotherLanguageEndsListening()
+    {
+        Recorder rec;
+        Field field;
+        Pre::Controller c;
+        c.setBridge(field.bridge(rec));
+        c.setKeyboardState(true, false, { QStringLiteral("en"), QStringLiteral("de") }, QStringLiteral("en"));
+        auto *d = new FakeDictation;
+        c.setDictation(d);
+        c.onVoice();
+        d->hear(QStringLiteral("before"));
+        c.onLanguageFlick(1);
+        QVERIFY(!d->on);
+        QCOMPARE(rec.calls.value(0), QStringLiteral("commit before"));
+        QCOMPARE(rec.calls.value(1), QStringLiteral("language de"));
+    }
+
 private:
+    //! The period on the letters page.
+    static int periodZone(const Pre::KeyboardView &view)
+    {
+        for (int i = 0; i < view.m_zones.size(); ++i)
+            if (view.m_zones[i].slot.key->text == QLatin1String(".")) return i;
+        return -1;
+    }
+
     /*!
      * A finger's path through [word]'s keys on [layout]: straight from key to
      * key, a point every sixth of the way, each [noise] key widths off at

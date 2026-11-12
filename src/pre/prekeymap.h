@@ -44,7 +44,8 @@ namespace Pre {
 enum class Kind { Char, Shift, Backspace, Return, Orange, Sym, Space, Globe, Emoji };
 
 //! A small icon printed in a key's top right corner, for what holding the key does.
-enum class Corner { None, Gear };
+//! The period's microphone shows only where dictation could start.
+enum class Corner { None, Gear, Mic };
 
 //! Which top corner a key's printed alternate sits in; the letter takes the bottom corner opposite.
 enum class AltPos { Left, Right };
@@ -67,7 +68,7 @@ struct Key
     bool accent = false;
     //! A label for a function key ("Sym", "ABC").
     QString label;
-    //! Printed in the top right: Return's gear on the Sym page.
+    //! Printed in the top right: Return's gear on the Sym page, the period's microphone.
     Corner corner = Corner::None;
 };
 

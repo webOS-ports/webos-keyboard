@@ -60,7 +60,7 @@ public:
     void deck(QPainter &p, const QRectF &r) const;
 
     //! ShiftOpen: shift off in the White style, an outline, since its "on" is white too.
-    enum class Icon { Shift, ShiftOpen, ShiftOn, ShiftLock, Backspace, Return, Globe, Emoji, Cursor, Gear, Paste, Sticker, Search, Close };
+    enum class Icon { Shift, ShiftOpen, ShiftOn, ShiftLock, Backspace, Return, Globe, Emoji, Cursor, Gear, Mic, Paste, Sticker, Search, Close };
     //! Draws an icon [size] px square, centred on ([cx], [cy]); an invalid [color] means its usual one.
     void icon(QPainter &p, Icon icon, qreal cx, qreal cy, qreal size, const QColor &color = QColor()) const;
     //! The Pre's orange key: a printed square, lit with a rim while active and a heavier rim when locked.

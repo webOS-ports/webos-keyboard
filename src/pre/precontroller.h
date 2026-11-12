@@ -20,6 +20,7 @@
 #ifndef PRE_CONTROLLER_H
 #define PRE_CONTROLLER_H
 
+#include "predictation.h"
 #include "preemojiwords.h"
 #include "presettings.h"
 #include "preswipedecoder.h"
@@ -124,6 +125,11 @@ public:
     void setBridge(const Bridge &bridge);
     //! Where emoji.txt is, and each language's emoji_words.txt (<dir>/<language>/).
     void setDataDir(const QString &dir) { m_dataDir = dir; }
+    /*!
+     * Speech to text for the period's microphone; the controller takes it.
+     * Without one (or a model for the language) the period has no microphone.
+     */
+    void setDictation(Dictation *dictation);
     //! Where KLIPY keeps its state (its call count and customer id).
     void setStateDir(const QString &dir);
     /*!
@@ -194,6 +200,11 @@ public:
     void onLanguageFlick(int step);
     void onUseLanguage(const QString &id);
     void onOpenSettings();
+    /*!
+     * The period held, or the bar tapped while it says something about
+     * listening: dictation starts, or stops with what was being said put in.
+     */
+    void onVoice();
     void hapticKey();
     void hapticLongPress();
     QString emojiFile() const;
@@ -215,6 +226,8 @@ public:
     static constexpr qint64 OWN_EDIT_MS = 400;
     //! The buzz for a word autocorrected, with vibration on (ms).
     static constexpr int CORRECTED_MS = 28;
+    //! Why listening stopped shows in the bar this long (ms).
+    static constexpr int VOICE_PROBLEM_MS = 2500;
 
     /*!
      * The word the cursor is in or touching, in text ending in [before] and
@@ -264,6 +277,19 @@ private:
     //! A backspace straight after an autocorrection: what was typed is put back. False if it wasn't.
     bool undoCorrection();
     void offerPaste();
+
+    // Dictation.
+    //! It could start here: a model for the language, in a field for prose.
+    bool canDictate() const;
+    //! The period's microphone, and what the bar says about listening, to the view.
+    void showVoice();
+    //! A key, or another field, while listening: it stops at once, the words heard so far put in when [keep].
+    void endDictation(bool keep);
+    void dictationPartial(const QString &text);
+    void dictationFinal(const QString &text);
+    void dictationStopped(const QString &problem);
+    void voiceProblem(const QString &problem);
+
     void writePrefs(const QJsonObject &pre);
     void vibrate(int ms);
 
@@ -316,6 +342,17 @@ private:
     EmojiWords m_emojiWords;
     QString m_emojiFor;
     const EmojiWords &emojiWords();
+
+    // Dictation.
+    QPointer<Dictation> m_dictation;
+    //! The words heard so far of what is being said.
+    QString m_voicePartial;
+    //! Why listening stopped, while the bar says so; when it began to.
+    QString m_voiceProblem;
+    qint64 m_voiceProblemAt = 0;
+    //! Whether the period has its microphone, and for which field and language that was worked out.
+    bool m_voiceMic = false;
+    QString m_voiceFor;
 
     // Swipe to type.
     QString m_libDir;

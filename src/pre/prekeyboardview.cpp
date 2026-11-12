@@ -48,6 +48,8 @@ const int HOLD_FOR_EXTENDED = 400;
 // Our own: long enough that a slow tap never trips them.
 const int HOLD_FOR_CURSOR = 450;
 const int HOLD_FOR_SETTING = 600;
+//! The period held this long listens, as the Android Pre Keyboard's does.
+const int HOLD_FOR_VOICE = 450;
 //! Holding a word in the bar, to add it to the dictionary.
 const int HOLD_FOR_ADD = 500;
 const qreal CURSOR_STEP_X = 12;
@@ -257,7 +259,7 @@ qreal KeyboardView::rowHeight() const
 qreal KeyboardView::topBorder() const { return 3 * std::max<qreal>(1, std::round(m_dp)) + 1 * m_dp; }
 qreal KeyboardView::bottomPad() const { return 2 * m_dp; }
 //! The suggestion bar, above the keys, when it is switched on.
-bool KeyboardView::barShown() const { return m_settings.showsBar() || m_searching; }
+bool KeyboardView::barShown() const { return m_settings.showsBar() || m_searching || !m_voiceLine.isEmpty(); }
 qreal KeyboardView::barHeight() const { return barShown() ? std::round(rowHeight() * 0.72) : 0; }
 qreal KeyboardView::keysHeight() const { return barHeight() + rowHeight() * 4 + topBorder() + bottomPad(); }
 qreal KeyboardView::cellH() const { return rowHeight() * 0.85; }
@@ -405,7 +407,8 @@ void KeyboardView::drawKey(QPainter &p, const Zone &z)
     case Kind::Orange: if (!digitMode()) m_painter.orange(p, box, m_settings.style, m_alt); break;
     case Kind::Sym: functionLabel(p, key.label, box); break;
     }
-    if (key.corner != Corner::None) cornerIcon(p, key.corner, box);
+    if (key.corner == Corner::Gear || (key.corner == Corner::Mic && m_voiceMic && !digitMode()))
+        cornerIcon(p, key.corner, box);
     if (holds(key)) holdDot(p, key, box);
 }
 
@@ -418,6 +421,18 @@ void KeyboardView::cornerIcon(QPainter &p, Corner corner, const QRectF &r)
     const qreal cy = r.top() + i + size / 2 - size * 0.08;
     if (corner == Corner::Gear)
         m_painter.icon(p, Painter::Icon::Gear, cx, cy, size * 0.9, Qt::white);
+    // While listening, the microphone sits in a white disc.
+    if (corner == Corner::Mic && m_listening) {
+        p.save();
+        p.setRenderHint(QPainter::Antialiasing);
+        p.setPen(Qt::NoPen);
+        p.setBrush(Qt::white);
+        p.drawEllipse(QPointF(cx, cy), size * 0.62, size * 0.62);
+        p.restore();
+        m_painter.icon(p, Painter::Icon::Mic, cx, cy, size * 0.8, QColor(0x16, 0x18, 0x1A));
+    } else if (corner == Corner::Mic) {
+        m_painter.icon(p, Painter::Icon::Mic, cx, cy, size, Qt::white);
+    }
 }
 
 //! Whether holding [key] opens its list: only with "Hold for more" on.
@@ -1014,10 +1029,32 @@ void KeyboardView::setPasteOffered(bool offered)
     if (offered != m_pasteOffered) { m_pasteOffered = offered; update(); }
 }
 
+void KeyboardView::setVoice(bool mic, bool listening, const QString &line)
+{
+    if (mic == m_voiceMic && listening == m_listening && line == m_voiceLine) return;
+    m_voiceMic = mic;
+    m_listening = listening;
+    if (line != m_voiceLine) barChange([&] { m_voiceLine = line; });
+    update();
+}
+
 void KeyboardView::drawBar(QPainter &p, const QRectF &r)
 {
     p.fillRect(r, BAR);
     if (m_searching) { drawSearch(p, r); return; }
+    if (!m_voiceLine.isEmpty()) {
+        // Across the whole bar, in the Pre's orange: what is being heard, or why listening stopped.
+        if (m_barPressed >= 0) p.fillRect(r, BAR_PRESSED);
+        // Smaller to fit, down to a size still easy to read; past that the newest words show.
+        const qreal room = r.width() - 24 * m_dp;
+        const qreal full = r.height() * 0.46 * 0.85;
+        QFont vf = m_bold;
+        vf.setPixelSize(std::max(1, int(std::max(fitted(m_voiceLine, full, room), full * 0.7))));
+        p.setFont(vf);
+        p.setPen(accent(Style::Orange));
+        p.drawText(r, Qt::AlignCenter, QFontMetricsF(vf).elidedText(m_voiceLine, Qt::ElideLeft, room));
+        return;
+    }
     const qreal cw = r.width() / 3;
     // One baseline for every word, from the font rather than each word's ink, so a
     // word doesn't jump when a letter with a descender ("hop") comes along.
@@ -1176,8 +1213,8 @@ void KeyboardView::drawSearch(QPainter &p, const QRectF &r)
 void KeyboardView::onBarHold()
 {
     const int i = m_barPressed;
-    // Nothing to add or delete in the paste icon or an emoji.
-    if (i < 0 || (i == 2 && (m_pasteOffered || m_barEmoji))) return;
+    // Nothing to add or delete in the paste icon or an emoji, nor while the bar is about listening.
+    if (i < 0 || !m_voiceLine.isEmpty() || (i == 2 && (m_pasteOffered || m_barEmoji))) return;
     const QString w = m_words.value(i);
     if (w.isEmpty() || !m_controller) return;
     // A word the dictionary lacks may be added; one it has (a typo it knows: "yest"), deleted.
@@ -1535,6 +1572,13 @@ void KeyboardView::onHold()
     if (m_pressed < 0) return;
     const Zone z = m_zones[m_pressed];
     const Key &key = *z.slot.key;
+    if (key.corner == Corner::Mic && m_voiceMic && !m_searching && !digitMode()) {
+        m_held = true;
+        m_preview = -1;
+        if (m_controller) { m_controller->hapticLongPress(); m_controller->onVoice(); }
+        update();
+        return;
+    }
     switch (key.kind) {
     case Kind::Space:
         if (m_searching) break;
@@ -1598,7 +1642,8 @@ void KeyboardView::press(int zone)
         m_holdTimer.start(HOLD_FOR_SETTING);
         break;
     default:
-        if (key.corner == Corner::Gear) m_holdTimer.start(HOLD_FOR_SETTING);
+        if (key.corner == Corner::Mic && m_voiceMic && !m_searching && !digitMode()) m_holdTimer.start(HOLD_FOR_VOICE);
+        else if (key.corner == Corner::Gear) m_holdTimer.start(HOLD_FOR_SETTING);
         else if (holds(key)) m_holdTimer.start(HOLD_FOR_EXTENDED);
         break;
     }
@@ -1847,6 +1892,15 @@ bool KeyboardView::pointerDown(int id, qreal x, qreal y)
         update();
         return true;
     }
+    if (bc >= 0 && !m_voiceLine.isEmpty()) {
+        // The bar says something about listening: a tap on it anywhere stops, or tries again.
+        if (m_finger >= 0) lift(!(m_swiping || m_cursorMode || !m_extended.isEmpty() || m_held));
+        m_finger = id;
+        m_barPressed = bc;
+        keyFeedback();
+        update();
+        return true;
+    }
     if (bc >= 0) {
         // A key still held by another finger is finished first, as a finger
         // landing on another key does: typed if it was a tap, otherwise let go.
@@ -1895,6 +1949,12 @@ void KeyboardView::pointerUp(int id, qreal x, qreal y)
         const int was = m_barPressed;
         m_barPressed = -1;
         if (was == 0 && searchBack(QRectF(0, keyboardTop(), width(), barHeight())).contains(QPointF(x, y))) endSearch(false);
+        update();
+        return;
+    }
+    if (m_barPressed >= 0 && !m_voiceLine.isEmpty()) {
+        m_barPressed = -1;
+        if (barCell(x, y) >= 0 && m_controller) m_controller->onVoice();
         update();
         return;
     }

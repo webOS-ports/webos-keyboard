@@ -30,6 +30,7 @@
 #include <QGuiApplication>
 #include <QLocale>
 #include <QLoggingCategory>
+#include <QTimer>
 
 #include <algorithm>
 #include <limits>
@@ -138,6 +139,8 @@ void Controller::setView(KeyboardView *view)
         applySettings();
         showBar();
         offerPaste();
+        m_voiceFor.clear();
+        showVoice();
     }
 }
 
@@ -175,10 +178,13 @@ void Controller::setKeyboardState(bool suggestions, bool sound, const QStringLis
     if (!s.languages.contains(now)) s.languages.prepend(now);
     s.language = now;
     if (s != m_settings) {
+        // Listening was for the language before.
+        if (s.language != m_settings.language) endDictation(true);
         m_settings = s;
         loadWords();
         applySettings();
         showBar();
+        showVoice();
     }
 }
 
@@ -209,6 +215,7 @@ void Controller::setDigits(const QString &allowed)
 {
     m_digits = allowed;
     if (m_view) m_view->setDigits(allowed);
+    showVoice();
 }
 
 void Controller::setWordsAllowed(bool allowed)
@@ -217,6 +224,7 @@ void Controller::setWordsAllowed(bool allowed)
     m_wordsAllowed = allowed;
     if (m_view) m_view->setWordsAllowed(allowed);
     showBar();
+    showVoice();
 }
 
 void Controller::writePrefs(const QJsonObject &pre)
@@ -227,6 +235,9 @@ void Controller::writePrefs(const QJsonObject &pre)
 
 void Controller::startInput()
 {
+    // Listening was for the field before; what it heard has nowhere to go.
+    endDictation(false);
+    m_voiceFor.clear();
     m_deleting = false;
     m_lastSpaceAt = NEVER;
     m_autoTail.clear();
@@ -240,10 +251,12 @@ void Controller::startInput()
     }
     showBar();
     offerPaste();
+    showVoice();
 }
 
 void Controller::finishInput()
 {
+    endDictation(false);
     if (m_view) m_view->hidden();
     if (m_deleting) {
         m_deleting = false;
@@ -561,6 +574,7 @@ void Controller::onRemoveWord(const QString &word)
 void Controller::onText(const QString &text)
 {
     if (text.isEmpty()) return;
+    endDictation(true);
     // Anything typed moves on from the last correction (this may make another).
     m_fixTyped.clear();
     m_fixed.clear();
@@ -692,6 +706,8 @@ bool Controller::punctuate(const QString &text)
 
 void Controller::onBackspace(bool)
 {
+    // Backspace while listening takes back what was being said, not the text before it.
+    endDictation(false);
     const bool undone = undoCorrection();
     // Straight after a period, it takes just the period's space.
     m_autoTail.clear();
@@ -705,6 +721,7 @@ void Controller::onBackspaceHeld(bool held, bool lifted)
     // The editor repeats a held backspace, and goes over to whole words, as it
     // does for LuneOS's own keys.
     if (held) {
+        endDictation(false);
         m_autoTail.clear();
         m_spaceIsLast = false;
         m_lastSpaceAt = NEVER;
@@ -723,6 +740,7 @@ void Controller::onBackspaceHeld(bool held, bool lifted)
 
 void Controller::onEnter()
 {
+    endDictation(true);
     m_fixTyped.clear();
     m_fixed.clear();
     // The keyboard's own space is not left at the end of the line.
@@ -736,6 +754,7 @@ void Controller::onEnter()
 
 void Controller::onCursor(int dx, int dy, bool select)
 {
+    endDictation(true);
     if (m_bridge.cursor) m_bridge.cursor(dx, dy, select);
 }
 
@@ -803,6 +822,7 @@ QString Controller::cased(const QString &word, int caps) const
  */
 void Controller::onSwipe(const QVector<float> &xs, const QVector<float> &ys, int caps)
 {
+    endDictation(true);
     // Guesses still being worked out for the moving finger are moot now.
     const quint64 generation = m_liveGeneration->fetch_add(1) + 1;
     m_live.clear();
@@ -893,6 +913,7 @@ void Controller::onToggleHold()
 
 void Controller::onLanguageFlick(int step)
 {
+    endDictation(true);
     const QList<Language> &langs = m_settings.languages;
     if (langs.size() < 2 || !m_bridge.useLanguage) return;
     const int at = std::max(0, int(langs.indexOf(m_settings.language)));
@@ -902,15 +923,138 @@ void Controller::onLanguageFlick(int step)
 
 void Controller::onUseLanguage(const QString &id)
 {
+    endDictation(true);
     if (m_bridge.useLanguage && Language::byId(id).isValid()) m_bridge.useLanguage(id);
 }
 
 void Controller::onOpenSettings()
 {
+    endDictation(false);
     if (m_bridge.hide) m_bridge.hide();
     if (m_bridge.luna)
         m_bridge.luna(QStringLiteral("palm://com.webos.service.applicationManager/launch"),
                       QStringLiteral("{\"id\":\"org.webosports.app.settings.textassist\"}"));
+}
+
+// --- Dictation ------------------------------------------------------------------------------
+
+void Controller::setDictation(Dictation *dictation)
+{
+    if (m_dictation) {
+        m_dictation->cancel();
+        delete m_dictation;
+    }
+    m_dictation = dictation;
+    if (dictation) {
+        dictation->setParent(this);
+        connect(dictation, &Dictation::partial, this, &Controller::dictationPartial);
+        connect(dictation, &Dictation::final, this, &Controller::dictationFinal);
+        connect(dictation, &Dictation::stopped, this, &Controller::dictationStopped);
+    }
+    m_voiceFor.clear();
+    showVoice();
+}
+
+bool Controller::canDictate() const
+{
+    return m_dictation && m_wordsAllowed && m_digits.isEmpty() && m_bridge.prose && m_bridge.prose()
+           && m_dictation->available(m_settings.language.id);
+}
+
+/*
+ * The period has its microphone where dictation could start; while listening
+ * the bar says so, or shows the words heard so far, and for a moment after it
+ * stopped for a reason, why.
+ */
+void Controller::showVoice()
+{
+    const bool listening = m_dictation && m_dictation->listening();
+    // Worked out again only for another field or language: a model is looked for on disk.
+    const QString key = m_settings.language.id + QLatin1Char('|') + m_digits + QLatin1Char('|')
+                        + QString::number(m_wordsAllowed) + QString::number(m_bridge.prose && m_bridge.prose())
+                        + QString::number(!m_dictation.isNull());
+    if (key != m_voiceFor) {
+        m_voiceFor = key;
+        m_voiceMic = canDictate();
+    }
+    QString line;
+    if (listening)
+        line = m_voicePartial.isEmpty() ? QStringLiteral("Listening\u2026 tap here to stop") : m_voicePartial;
+    else
+        line = m_voiceProblem;
+    if (m_view) m_view->setVoice(m_voiceMic || listening, listening, line);
+}
+
+void Controller::onVoice()
+{
+    if (!m_dictation) return;
+    if (m_dictation->listening()) {
+        // What was being said still comes, then it stops.
+        m_dictation->stop();
+        return;
+    }
+    m_voiceProblem.clear();
+    m_voiceFor.clear();
+    showVoice();
+    if (!m_voiceMic) {
+        if (m_bridge.prose && m_bridge.prose() && m_digits.isEmpty())
+            voiceProblem(QStringLiteral("No speech model for %1").arg(m_settings.language.name));
+        return;
+    }
+    m_voicePartial.clear();
+    m_dictation->start(m_settings.language.id);
+    showVoice();
+}
+
+void Controller::endDictation(bool keep)
+{
+    if (!m_dictation || !m_dictation->listening()) return;
+    const QString partial = m_voicePartial;
+    m_dictation->cancel();
+    if (keep && !partial.isEmpty()) dictationFinal(partial);
+}
+
+void Controller::dictationPartial(const QString &text)
+{
+    m_voicePartial = text;
+    showVoice();
+}
+
+//! A phrase said: in it goes, after a space if it follows a word, with a capital where one is due.
+void Controller::dictationFinal(const QString &text)
+{
+    m_voicePartial.clear();
+    const QString before = m_bridge.before ? m_bridge.before(1) : QString();
+    const bool capital = m_bridge.autoCaps && m_bridge.autoCaps();
+    const QString joined = Speech::join(text, before, capital, m_settings.language.id);
+    if (!joined.isEmpty() && m_bridge.commit) {
+        m_fixTyped.clear();
+        m_fixed.clear();
+        m_autoTail.clear();
+        m_spaceIsLast = false;
+        m_lastSpaceAt = NEVER;
+        m_bridge.commit(joined);
+    }
+    showVoice();
+}
+
+void Controller::dictationStopped(const QString &problem)
+{
+    m_voicePartial.clear();
+    if (!problem.isEmpty()) voiceProblem(problem);
+    else showVoice();
+}
+
+void Controller::voiceProblem(const QString &problem)
+{
+    m_voiceProblem = problem;
+    const qint64 at = ++m_voiceProblemAt;
+    showVoice();
+    QTimer::singleShot(VOICE_PROBLEM_MS, this, [this, at] {
+        if (at != m_voiceProblemAt) return;
+        m_voiceProblem.clear();
+        showVoice();
+    });
 }
 
 void Controller::vibrate(int ms)
