@@ -107,6 +107,17 @@ public:
     QString currentPlugin;
     //! The language typed in ("en"), for what space corrects a word to (Correction).
     QString language;
+    //! The phone's country ("nl"), for which of a language's dictionaries spells it.
+    QString country;
+    //! Hands the plugin its dictionary: the language, and where it is typed.
+    void setSpellCheckerLanguage()
+    {
+        if (!languagePlugin || language.isEmpty())
+            return;
+        const QString spelled = country.isEmpty() ? language : language + QLatin1Char('_') + country;
+        if (languagePlugin->setSpellCheckerLanguage(spelled))
+            languagePlugin->setSpellCheckerEnabled(use_spell_checker);
+    }
     void loadPlugin(const QString& pluginName, const QString& subfolder="en")
     {
         if (pluginName == currentPlugin)
@@ -399,12 +410,20 @@ void WordEngine::onLanguageChanged(const QString &languageId)
     else
         d->loadPlugin(DEFAULT_PLUGIN);
 
-    if (!d->languagePlugin)
-        return;
+    d->setSpellCheckerLanguage();
+}
 
-    const bool ok = d->languagePlugin->setSpellCheckerLanguage(languageId);
-    if (ok)
-        d->languagePlugin->setSpellCheckerEnabled(d->use_spell_checker);
+//! \brief The phone's country (an ISO 3166 code, "nl"): English is spelled the
+//! American or the British way by it, and a language that has a dictionary for
+//! the country (de_CH, pt_BR) is spelled with that one.
+void WordEngine::setCountry(const QString &country)
+{
+    Q_D(WordEngine);
+    const QString cc = country.toLower();
+    if (cc == d->country)
+        return;
+    d->country = cc;
+    d->setSpellCheckerLanguage();
 }
 
 AbstractLanguageFeatures* WordEngine::languageFeature()

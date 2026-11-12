@@ -157,6 +157,52 @@ void KeyboardSettings::preferenceServiceIsAvailable()
         qWarning("Setting up subscription for keyboard preferences failed: %s", error.message);
         LSErrorFree(&error);
     }
+
+    // The country, for which dictionary spells a language (en_GB or en_US).
+    if (!LSCall(mServiceHandle, "palm://com.palm.systemservice/getPreferences",
+              "{\"subscribe\":true,\"keys\":[\"region\",\"locale\"]}",
+              countryChangedCallback, this, nullptr, &error)) {
+        qWarning("Setting up subscription for the region failed: %s", error.message);
+        LSErrorFree(&error);
+    }
+}
+
+void KeyboardSettings::countryFrom(const QJsonObject &root, QString *region, QString *locale)
+{
+    const auto code = [](const QJsonValue &v) {
+        return v.toObject().value(QStringLiteral("countryCode")).toString().trimmed().toLower();
+    };
+    if (root.value(QStringLiteral("region")).isObject())
+        *region = code(root.value(QStringLiteral("region")));
+    if (root.value(QStringLiteral("locale")).isObject())
+        *locale = code(root.value(QStringLiteral("locale")));
+}
+
+QString KeyboardSettings::country() const
+{
+    return mRegionCountry.isEmpty() ? mLocaleCountry : mRegionCountry;
+}
+
+bool KeyboardSettings::countryChangedCallback(LSHandle *handle, LSMessage *message, void *user_data)
+{
+    Q_UNUSED(handle);
+
+    if (!message)
+        return true;
+    const char *payload = LSMessageGetPayload(message);
+    if (!payload)
+        return true;
+
+    KeyboardSettings *settings = static_cast<KeyboardSettings*>(user_data);
+    const QString before = settings->country();
+    countryFrom(QJsonDocument::fromJson(QByteArray(payload)).object(),
+                &settings->mRegionCountry, &settings->mLocaleCountry);
+    const QString now = settings->country();
+    if (now != before) {
+        g_message("country: %s", qPrintable(now));
+        Q_EMIT settings->countryChanged(now);
+    }
+    return true;
 }
 
 

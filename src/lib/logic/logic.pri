@@ -7,6 +7,7 @@ HEADERS += \
     logic/style.h \
     logic/abstractwordengine.h \
     logic/wordengine.h \
+    logic/hunspelldictionary.h \
     logic/correction.h \
     logic/abstractlanguagefeatures.h \
     logic/eventhandler.h \

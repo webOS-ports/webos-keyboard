@@ -467,6 +467,19 @@ public:
         editor.wordEngine()->setSpellcheckerEnabled(m_settings.spellchecking());
     }
 
+    /*!
+     * The phone's country, which picks a language's dictionary: English is
+     * spelled the American or the British way by it (hunspellDictionary()).
+     * It comes after the first language has loaded, which then reloads its
+     * dictionary once.
+     */
+    void registerCountry()
+    {
+        QObject::connect(&m_settings, SIGNAL(countryChanged(QString)),
+                         editor.wordEngine(), SLOT(setCountry(QString)));
+        QObject::connect(&m_settings, &KeyboardSettings::countryChanged, &pre, &Pre::Controller::setCountry);
+    }
+
     void registerActiveLanguage()
     {
         QObject::connect(&m_settings, SIGNAL(activeLanguageChanged(QString)),

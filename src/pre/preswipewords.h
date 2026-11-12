@@ -42,15 +42,18 @@ namespace SwipeWords {
 
 using Entries = QVector<QPair<QString, int>>;
 
-//! Everything for [languageId], from presage databases under [libDir] and hunspell's [dictDir].
-Entries load(const QString &languageId, const QString &libDir, const QString &dictDir);
+//! Everything for [languageId], from presage databases under [libDir] and hunspell's [dictDir],
+//! with the dictionary the language is spelled with in [country] (see hunspellDictionary()).
+Entries load(const QString &languageId, const QString &libDir, const QString &dictDir,
+             const QString &country = QString());
 
 //! A presage database's 1-grams, scored (see above).
 Entries fromPresage(const QString &dbFile);
 //! A hunspell dictionary's words, without their affix flags, scored (see above).
 Entries fromHunspell(const QString &dicFile);
-//! Where [languageId]'s hunspell dictionary is in [dictDir]; empty if it has none.
-QString hunspellFile(const QString &languageId, const QString &dictDir);
+//! Where [languageId]'s hunspell dictionary for [country] is in [dictDir]; empty if it has none.
+QString hunspellFile(const QString &languageId, const QString &dictDir,
+                     const QString &country = QString());
 
 //! Scores for the presage words: the commonest word [max] times, at 25.
 int presageScore(qint64 count, qint64 max);

@@ -17,12 +17,15 @@
  */
 
 #include "correction.h"
+#include "hunspelldictionary.h"
 
 #include <QHash>
 #include <QSet>
 #include <QtTest>
 
 using MaliitKeyboard::Logic::Correction;
+using MaliitKeyboard::Logic::hunspellDictionary;
+using MaliitKeyboard::Logic::hunspellDictionaries;
 
 namespace {
 
@@ -52,6 +55,69 @@ class TestCorrection : public QObject
     Q_OBJECT
 
 private Q_SLOTS:
+    // Which dictionary a language is spelled with, by country.
+    void dictionaryForCountry_data()
+    {
+        QTest::addColumn<QString>("language");
+        QTest::addColumn<QString>("country");
+        QTest::addColumn<QString>("dictionary");
+
+        // As LuneOS installs them (/usr/share/hunspell on a phone).
+        QTest::newRow("en, US") << "en" << "us" << "en_US";
+        QTest::newRow("en, UK") << "en" << "gb" << "en_GB";
+        QTest::newRow("en, upper case") << "en" << "GB" << "en_GB";
+        QTest::newRow("en, Netherlands: British") << "en" << "nl" << "en_GB";
+        QTest::newRow("en, Ireland: British") << "en" << "ie" << "en_GB";
+        QTest::newRow("en, India: British") << "en" << "in" << "en_GB";
+        QTest::newRow("en, Philippines: American") << "en" << "ph" << "en_US";
+        QTest::newRow("en, Puerto Rico: American") << "en" << "pr" << "en_US";
+        QTest::newRow("en, Australia: its own") << "en" << "au" << "en_AU";
+        QTest::newRow("en, Canada: its own") << "en" << "ca" << "en_CA";
+        QTest::newRow("en, South Africa: its own") << "en" << "za" << "en_ZA";
+        QTest::newRow("en, no country: American") << "en" << "" << "en_US";
+        QTest::newRow("de, Germany") << "de" << "de" << "de";
+        QTest::newRow("de, Switzerland") << "de" << "ch" << "de_CH";
+        QTest::newRow("de, Austria") << "de" << "at" << "de_AT";
+        QTest::newRow("de, Netherlands") << "de" << "nl" << "de";
+        QTest::newRow("pt, Brazil") << "pt" << "br" << "pt_BR";
+        QTest::newRow("pt, Portugal") << "pt" << "pt" << "pt";
+        QTest::newRow("no is Bokmål") << "no" << "no" << "nb";
+        QTest::newRow("nl") << "nl" << "nl" << "nl";
+        QTest::newRow("zh: none") << "zh" << "cn" << "";
+        QTest::newRow("no language") << "" << "nl" << "";
+    }
+
+    void dictionaryForCountry()
+    {
+        QFETCH(QString, language);
+        QFETCH(QString, country);
+        QFETCH(QString, dictionary);
+        const QStringList installed = {
+            "de", "de_AT", "de_CH", "en_AU", "en_CA", "en_GB", "en_US", "en_ZA",
+            "nb", "nl", "nn", "pt", "pt_BR",
+        };
+        QCOMPARE(hunspellDictionary(language, country, installed), dictionary);
+    }
+
+    void dictionaryWhenSomeAreMissing()
+    {
+        // Only one English: that one, wherever.
+        QCOMPARE(hunspellDictionary("en", "nl", { "en_US" }), QString("en_US"));
+        QCOMPARE(hunspellDictionary("en", "us", { "en_GB" }), QString("en_GB"));
+        // Neither: the first there is.
+        QCOMPARE(hunspellDictionary("en", "nl", { "en_ZA", "en_AU" }), QString("en_AU"));
+        // A language with only country variants: its home one, then the first.
+        QCOMPARE(hunspellDictionary("fr", "be", { "fr_CA", "fr_FR" }), QString("fr_FR"));
+        QCOMPARE(hunspellDictionary("fr", "be", { "fr_CA", "fr_CH" }), QString("fr_CA"));
+        // "en" is not "eo" or "es".
+        QCOMPARE(hunspellDictionary("e", "", { "en_US", "eo", "es" }), QString());
+        QCOMPARE(hunspellDictionary("en", "", { "eo", "es" }), QString());
+
+        // A dictionary is a pair: an .aff without its .dic is no dictionary.
+        QCOMPARE(hunspellDictionaries({ "en_AU.aff", "en_GB.aff", "en_GB.dic", "en_US.dic", "README" }),
+                 QStringList({ "en_GB" }));
+    }
+
     void data_fold()
     {
         QCOMPARE(Correction::fold(QStringLiteral("Don't")), QStringLiteral("dont"));

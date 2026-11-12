@@ -1469,6 +1469,19 @@ private Q_SLOTS:
 
         QCOMPARE(Pre::SwipeWords::hunspellFile(QStringLiteral("en"), dir.filePath(QStringLiteral("dict"))),
                  dir.filePath(QStringLiteral("dict/en_US.dic")));
+        // The country's spelling: British outside the US, when it is there.
+        writeFile(dir.filePath(QStringLiteral("dict/en_GB.dic")), "1\ncolour\n");
+        writeFile(dir.filePath(QStringLiteral("dict/en_AU.dic")), "1\ncolour\n");
+        QCOMPARE(Pre::SwipeWords::hunspellFile(QStringLiteral("en"), dir.filePath(QStringLiteral("dict")),
+                                               QStringLiteral("nl")),
+                 dir.filePath(QStringLiteral("dict/en_GB.dic")));
+        QCOMPARE(Pre::SwipeWords::hunspellFile(QStringLiteral("en"), dir.filePath(QStringLiteral("dict")),
+                                               QStringLiteral("us")),
+                 dir.filePath(QStringLiteral("dict/en_US.dic")));
+        QCOMPARE(Pre::SwipeWords::hunspellFile(QStringLiteral("en"), dir.filePath(QStringLiteral("dict"))),
+                 dir.filePath(QStringLiteral("dict/en_US.dic")));
+        QFile::remove(dir.filePath(QStringLiteral("dict/en_GB.dic")));
+        QFile::remove(dir.filePath(QStringLiteral("dict/en_AU.dic")));
         // Norwegian's keyboard is "no", its dictionary Bokmål's.
         QCOMPARE(Pre::SwipeWords::hunspellFile(QStringLiteral("no"), dir.filePath(QStringLiteral("dict"))),
                  dir.filePath(QStringLiteral("dict/nb.dic")));
@@ -1501,6 +1514,56 @@ private Q_SLOTS:
      * is (not autocorrected), a guess from the bar in its place, and a word
      * the cursor is right after gets a space before it. Shift goes with it.
      */
+    // The words swiped are spelled as the phone's country spells them, and a
+    // change of country while they load leaves the latest country's words.
+    void swipeWordsFollowTheCountry()
+    {
+        QTemporaryDir dir;
+        writeFile(dir.filePath(QStringLiteral("dict/en_US.dic")), "2\ncolor\nhello\n");
+        writeFile(dir.filePath(QStringLiteral("dict/en_GB.dic")), "2\ncolour\nhello\n");
+        Recorder rec;
+        Pre::Controller c;
+        c.setBridge(rec.bridge());
+        Pre::KeyboardView view;
+        showKeys(view, Pre::Language::byId(QStringLiteral("en")), 1080, 1080, false, Pre::Settings::Height::Medium);
+        c.setView(&view);
+        c.setKeyboardState(true, false, { QStringLiteral("en") }, QStringLiteral("en"));
+        Pre::SwipeDecoder::Layout layout;
+        QVERIFY(view.swipeLayout(layout));
+        const auto knows = [&](const QString &w) {
+            const QSharedPointer<Pre::SwipeDecoder> d = c.swipeWords();
+            if (!d) return false;
+            QVector<float> xs, ys;
+            for (const QPointF &p : swipePath(layout, w, 0, 1)) { xs << float(p.x()); ys << float(p.y()); }
+            return d->decode(xs, ys, layout, 4).contains(w);
+        };
+
+        // No country yet: American. The country comes in while those load,
+        // and the American words are dropped when they arrive: only the
+        // British ones are ever taken in.
+        QSignalSpy loaded(&c, &Pre::Controller::swipeWordsLoaded);
+        c.setWordDirs(dir.filePath(QStringLiteral("lib")), dir.filePath(QStringLiteral("dict")));
+        c.setCountry(QStringLiteral("NL"));
+        QTRY_VERIFY_WITH_TIMEOUT(knows(QStringLiteral("colour")), 5000);
+        QVERIFY(!knows(QStringLiteral("color")));
+        QTest::qWait(300);
+        QCOMPARE(loaded.count(), 1);
+        QVERIFY(knows(QStringLiteral("colour")));
+        QVERIFY(!knows(QStringLiteral("color")));
+
+        // To the US and straight back out: the last country wins.
+        c.setCountry(QStringLiteral("us"));
+        c.setCountry(QStringLiteral("gb"));
+        QTRY_VERIFY_WITH_TIMEOUT(knows(QStringLiteral("colour")), 5000);
+        c.setCountry(QStringLiteral("us"));
+        QTRY_VERIFY_WITH_TIMEOUT(knows(QStringLiteral("color")), 5000);
+        QVERIFY(!knows(QStringLiteral("colour")));
+        // The same country again, in other letters, keeps what is loaded.
+        const QSharedPointer<Pre::SwipeDecoder> before = c.swipeWords();
+        c.setCountry(QStringLiteral("US"));
+        QCOMPARE(c.swipeWords(), before);
+    }
+
     void swipeThroughTheController()
     {
         QTemporaryDir dir;

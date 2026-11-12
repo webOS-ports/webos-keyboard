@@ -17,6 +17,7 @@
  */
 
 #include "preswipewords.h"
+#include "logic/hunspelldictionary.h"
 
 #include <QDir>
 #include <QFile>
@@ -32,13 +33,6 @@
 namespace Pre {
 namespace SwipeWords {
 namespace {
-
-//! Hunspell's name for a language whose keyboard is called otherwise.
-QString dictionaryId(const QString &id)
-{
-    if (id == QLatin1String("no")) return QStringLiteral("nb");
-    return id;
-}
 
 //! The encoding a hunspell dictionary is in: its .aff's SET line; UTF-8 when it has none.
 QByteArray encodingOf(const QString &dicFile)
@@ -93,17 +87,16 @@ Entries fromPresage(const QString &dbFile)
     return out;
 }
 
-QString hunspellFile(const QString &languageId, const QString &dictDir)
+QString hunspellFile(const QString &languageId, const QString &dictDir, const QString &country)
 {
-    const QString id = dictionaryId(languageId);
+    // The spell checker's dictionary for the language and country. Swipe only
+    // reads the .dic (an .aff, when there is one, gives its encoding).
     const QDir dir(dictDir);
-    QStringList tries = { id + QStringLiteral(".dic") };
-    if (id == QLatin1String("en")) tries << QStringLiteral("en_US.dic");
-    tries << id + QLatin1Char('_') + id.toUpper() + QStringLiteral(".dic");
-    for (const QString &t : tries)
-        if (dir.exists(t)) return dir.filePath(t);
-    const QStringList any = dir.entryList({ id + QStringLiteral("_*.dic") }, QDir::Files, QDir::Name);
-    return any.isEmpty() ? QString() : dir.filePath(any.first());
+    QStringList names;
+    for (const QString &f : dir.entryList({ QStringLiteral("*.dic") }, QDir::Files))
+        names << f.left(f.size() - 4);
+    const QString name = MaliitKeyboard::Logic::hunspellDictionary(languageId, country, names);
+    return name.isEmpty() ? QString() : dir.filePath(name + QStringLiteral(".dic"));
 }
 
 Entries fromHunspell(const QString &dicFile)
@@ -137,10 +130,11 @@ Entries fromHunspell(const QString &dicFile)
     return out;
 }
 
-Entries load(const QString &languageId, const QString &libDir, const QString &dictDir)
+Entries load(const QString &languageId, const QString &libDir, const QString &dictDir,
+             const QString &country)
 {
     Entries out = fromPresage(QStringLiteral("%1/%2/database_%2.db").arg(libDir, languageId));
-    out += fromHunspell(hunspellFile(languageId, dictDir));
+    out += fromHunspell(hunspellFile(languageId, dictDir, country));
     return out;
 }
 

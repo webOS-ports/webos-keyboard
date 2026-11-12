@@ -153,6 +153,7 @@ InputMethod::InputMethod(MAbstractInputMethodHost *host)
     d->registerAutoCorrectSetting();
     d->registerAutoCapsSetting();
     d->registerWordEngineSetting();
+    d->registerCountry();
     d->registerActiveLanguage();
     d->registerEnabledLanguages();
     d->registerKeyboardSize();

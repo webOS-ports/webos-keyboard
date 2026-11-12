@@ -111,6 +111,20 @@ void Controller::setWordDirs(const QString &libDir, const QString &dictDir)
     loadWords();
 }
 
+void Controller::setCountry(const QString &country)
+{
+    const QString cc = country.toLower();
+    if (cc == m_country) return;
+    m_country = cc;
+    // Words loaded with the other country's dictionary are let go, and so are
+    // any still loading with it when they arrive (see loadWords()).
+    m_decoders.clear();
+    m_decoderOrder.clear();
+    m_loading.clear();
+    if (m_decoder) { m_decoder.reset(); applySettings(); }
+    loadWords();
+}
+
 void Controller::setStateDir(const QString &dir)
 {
     QDir().mkpath(dir);
@@ -744,14 +758,17 @@ void Controller::loadWords()
     if (m_decoder) { m_decoder.reset(); applySettings(); }
     if (m_loading == id) return;
     m_loading = id;
-    const QString lib = m_libDir, dict = m_dictDir;
-    m_pool.start([this, id, lib, dict] {
+    const QString lib = m_libDir, dict = m_dictDir, country = m_country;
+    m_pool.start([this, id, lib, dict, country] {
         QElapsedTimer t;
         t.start();
-        QSharedPointer<SwipeDecoder> words(new SwipeDecoder(SwipeWords::load(id, lib, dict)));
+        QSharedPointer<SwipeDecoder> words(new SwipeDecoder(SwipeWords::load(id, lib, dict, country)));
         qCInfo(lcPre, "swipe: %d words for %s in %lld ms", words->size(), qPrintable(id), t.elapsed());
         // The controller waits for this before it goes (see ~Controller), so it is here to take them.
-        QMetaObject::invokeMethod(this, [this, id, words] { wordsLoaded(id, words); }, Qt::QueuedConnection);
+        // Words for a country the phone has since left are dropped (setCountry()).
+        QMetaObject::invokeMethod(this, [this, id, country, words] {
+            if (country == m_country) wordsLoaded(id, words);
+        }, Qt::QueuedConnection);
     });
 }
 

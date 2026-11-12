@@ -68,6 +68,7 @@ public:
 
     Q_SLOT void onWordCandidateSelected(QString word);
     Q_SLOT void onLanguageChanged(const QString& languageId);
+    Q_SLOT void setCountry(const QString& country);
 
     AbstractLanguageFeatures* languageFeature() override;
 

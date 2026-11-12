@@ -32,6 +32,7 @@
  */
 
 #include "spellchecker.h"
+#include "hunspelldictionary.h"
 
 #ifdef HAVE_HUNSPELL
 #include "hunspell/hunspell.hxx"
@@ -527,36 +528,31 @@ bool SpellChecker::delCallback(LSHandle *handle, LSMessage *message, void *user_
 }
 
 //! \brief SpellChecker::setLanguage switches to the given language if possible
-//! \param language The new language use "en" or "en_US". If more than one
-//! exists, the first one in the directory listing is used
+//! \param language The keyboard's language ("en"), or it and the country it is
+//! typed in ("en_NL"): see hunspellDictionary() for which dictionary that is.
 //! \return true if switching the language succeded
 bool SpellChecker::setLanguage(const QString &language)
 {
     Q_D(SpellChecker);
 
-    qDebug() << "spellechecker.cpp in setLanguage() lang=" << language << "dictPath=" << dictPath();
+    const int sep = language.indexOf(QLatin1Char('_'));
+    const QString id = sep < 0 ? language : language.left(sep);
+    const QString country = sep < 0 ? QString() : language.mid(sep + 1);
 
     const QDir dictDir(dictPath());
-    QStringList affMatches = dictDir.entryList(QStringList(language+"*.aff"));
-    QStringList dicMatches = dictDir.entryList(QStringList(language+"*.dic"));
+    const QString name = MaliitKeyboard::Logic::hunspellDictionary(
+        id, country, MaliitKeyboard::Logic::hunspellDictionaries(dictDir.entryList(QDir::Files)));
 
-    if (affMatches.isEmpty() || dicMatches.isEmpty()) {
-        QString lang = language;
-        lang.truncate(2);
-        qWarning() << "Did not find a dictionary for" << language << " - checking for " << lang;
-        if (language.length() > 2) {
-            return setLanguage(lang);
-        }
-
+    if (name.isEmpty()) {
         qWarning() << "No dictionary found for" << language << "turning off spellchecking";
         d->clear();
         return false;
     }
 
-    d->aff_file = dictPath() + "/" + affMatches[0];
-    d->dic_file = dictPath() + "/" + dicMatches[0];
+    d->aff_file = dictDir.filePath(name + QStringLiteral(".aff"));
+    d->dic_file = dictDir.filePath(name + QStringLiteral(".dic"));
 
-    qDebug() << "spellechecker.cpp in setLanguage() aff_file=" << d->aff_file << "dic_file=" << d->dic_file;
+    qInfo("spellchecker: %s is spelled with %s", qPrintable(language), qPrintable(name));
 
     if (enabled()) {
         setEnabled(false);

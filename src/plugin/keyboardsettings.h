@@ -55,9 +55,17 @@ public:
     bool keyPressFeedback() const;
     QString keyboardSize() const;
     QString keyboardLayout() const;
+    //! The phone's country, lower case ("nl"): Regional Settings' region, else
+    //! the locale's country; empty till the preference service has said.
+    QString country() const;
+    //! Reads the countries in the preference service's answer [root] into
+    //! [region] and [locale]. An answer can hold only the key that changed;
+    //! the other is left as it was.
+    static void countryFrom(const QJsonObject &root, QString *region, QString *locale);
 
     static bool systemServiceStatusCallback(LSHandle *handle, LSMessage *message, void *user_data);
     static bool preferencesChangedCallback(LSHandle *handle, LSMessage *message, void *user_data);
+    static bool countryChangedCallback(LSHandle *handle, LSMessage *message, void *user_data);
 
     void preferenceServiceIsAvailable();
     void preferencesChanged(const QByteArray &data);
@@ -81,6 +89,7 @@ Q_SIGNALS:
     void keyboardSizeChanged(QString);
     void keyboardLayoutChanged(QString);
     void preChanged(const QJsonObject &pre);
+    void countryChanged(QString);
 
 private:
     LSHandle *mServiceHandle;
@@ -95,6 +104,8 @@ private:
     bool mKeyPressFeedback;
     QString mKeyboardSize;
     QString mKeyboardLayout;
+    QString mRegionCountry;
+    QString mLocaleCountry;
     QJsonObject mSavedKeyboardPrefs;
 };
 

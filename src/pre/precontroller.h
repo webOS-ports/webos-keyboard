@@ -132,6 +132,8 @@ public:
      * Without them there is no swiping.
      */
     void setWordDirs(const QString &libDir, const QString &dictDir);
+    //! The phone's country: which of a language's hunspell dictionaries is swiped (en_GB, en_US).
+    void setCountry(const QString &country);
     //! The words swiped in the language typed in now; null till they are loaded.
     QSharedPointer<SwipeDecoder> swipeWords() const { return m_decoder; }
 
@@ -318,6 +320,7 @@ private:
     // Swipe to type.
     QString m_libDir;
     QString m_dictDir;
+    QString m_country;
     //! Each language's words, the last few used; and the one's typed in now.
     QHash<QString, QSharedPointer<SwipeDecoder>> m_decoders;
     QStringList m_decoderOrder;
