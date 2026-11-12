@@ -163,6 +163,9 @@ public:
 
 protected:
     void commitPreedit();
+    //! Sentence punctuation [separator] typed after the word being typed: the
+    //! word is finished with it, corrected first if it is misspelled.
+    void finishWord(const QString &separator);
 
 private:
     const QScopedPointer<AbstractTextEditorPrivate> d_ptr;

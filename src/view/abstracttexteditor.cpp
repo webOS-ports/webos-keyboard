@@ -472,6 +472,15 @@ void AbstractTextEditor::onKeyReleased(const Key &key)
 
     switch(key.action()) {
     case Key::ActionInsert: {
+        // Sentence punctuation ends the word typed before it. Appended to the
+        // word instead, it left the word's candidate standing, and the next
+        // space put that in place of word and punctuation both: "teh." became
+        // "the", the period lost.
+        if (d->preedit_enabled && !d->text->preedit().isEmpty()
+            && key_label.length() == 1 && QStringLiteral(".,?!;:").contains(key_label.at(0))) {
+            finishWord(key_label);
+            break;
+        }
         d->text->appendToPreedit(key_label);
 
         // computeCandidates can change preedit face, so needs to happen
@@ -817,6 +826,22 @@ void AbstractTextEditor::commitPreedit()
     sendCommitString(d->text->preedit());
     d->text->commitPreedit();
     d->word_engine->clearCandidates();
+}
+
+void AbstractTextEditor::finishWord(const QString &separator)
+{
+    Q_D(AbstractTextEditor);
+
+    const QString typed = d->text->preedit();
+    const QString primary = d->text->primaryCandidate();
+    // Only a word that is wrong: a prefix of a longer word ("e" of "e.g."), or
+    // a number, stays as typed, where a space would have completed it.
+    const bool correct = d->auto_correct_enabled && !primary.isEmpty() && primary != typed
+                         && d->word_engine->isMisspelled(typed);
+    if (correct)
+        Q_EMIT autoCorrected(typed, primary, d->text->surroundingLeft());
+    d->text->setPreedit((correct ? primary : typed) + separator);
+    commitPreedit();
 }
 
 // TODO: this implementation does not take into account following features:

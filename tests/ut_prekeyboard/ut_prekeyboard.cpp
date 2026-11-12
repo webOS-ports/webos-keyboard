@@ -81,6 +81,9 @@ public:
     //! The owner's dictionary.
     QStringList own;
     QStringList userWords() override { return own; }
+    //! The words spelt wrong.
+    QStringList misspelled;
+    bool isMisspelled(const QString &w) override { return misspelled.contains(w) || isBlocked(w); }
 
 private:
     WordCandidateList fetchCandidates(Model::Text *text) override
@@ -108,6 +111,34 @@ private:
                                   WordCandidate(WordCandidate::SourcePrediction, QStringLiteral("pi")) };
     }
     NoFeatures features;
+};
+
+//! An editor whose application is a string: what it commits goes on the end, a backspace takes one off.
+class StringEditor : public AbstractTextEditor
+{
+public:
+    explicit StringEditor(Logic::AbstractWordEngine *words)
+        : AbstractTextEditor(EditorOptions(), new Model::Text, words)
+    {}
+
+    QString committed;
+    QString preedit;
+
+    //! As the application would report it back: the text before the cursor.
+    void report()
+    {
+        text()->setSurrounding(committed);
+        text()->setSurroundingOffset(uint(committed.length()));
+    }
+
+private:
+    void sendPreeditString(const QString &p, Model::Text::PreeditFace, const Replacement &) override { preedit = p; }
+    void sendCommitString(const QString &s) override { committed += s; preedit.clear(); }
+    void sendKeyEvent(const QKeyEvent &ev) override
+    {
+        if (ev.type() == QEvent::KeyPress && ev.key() == Qt::Key_Backspace) committed.chop(1);
+    }
+    void invokeAction(const QString &, const QKeySequence &) override {}
 };
 
 class CountingEditor : public AbstractTextEditor
@@ -644,6 +675,52 @@ private Q_SLOTS:
         text.setPreedit(QStringLiteral("webos"));
         words.computeCandidates(&text);
         QVERIFY(text.primaryCandidate() != QStringLiteral("webOS"));
+    }
+
+    // The editor: a period typed after a word that would be corrected keeps it, and the correction waits.
+    void periodAfterACorrectableWordIsKept()
+    {
+        SetWords *words = new SetWords;
+        words->setEnabled(true);
+        words->words = { QStringLiteral("the") };
+        StringEditor editor(words);
+        editor.setPreeditEnabled(true);
+        editor.setAutoCorrectEnabled(true);
+        Logic::EventHandler handler;
+        QObject::connect(&handler, &Logic::EventHandler::keyPressed, &editor, &AbstractTextEditor::onKeyPressed);
+        QObject::connect(&handler, &Logic::EventHandler::keyReleased, &editor, &AbstractTextEditor::onKeyReleased);
+        auto key = [&](const QString &label, const QString &action = QString()) {
+            handler.onKeyPressed(label, action);
+            handler.onKeyReleased(label, action);
+        };
+        auto type = [&](const QString &t) {
+            for (const QChar c : t) {
+                if (c == QLatin1Char(' ')) key(QStringLiteral(" "), QStringLiteral("space"));
+                else key(QString(c));
+            }
+        };
+        // Spelt right: the period goes on the word as typed, and space adds nothing more.
+        type(QStringLiteral("teh. "));
+        QCOMPARE(editor.committed, QStringLiteral("teh. "));
+        // Spelt wrong: corrected, as space would, and the period kept.
+        words->misspelled = { QStringLiteral("teh") };
+        editor.committed.clear();
+        type(QStringLiteral("teh, "));
+        QCOMPARE(editor.committed, QStringLiteral("the, "));
+        // Inside a word an apostrophe is the word's.
+        words->words = { QStringLiteral("don't") };
+        words->misspelled.clear();
+        editor.committed.clear();
+        type(QStringLiteral("don't"));
+        QCOMPARE(editor.preedit, QStringLiteral("don't"));
+        QVERIFY(editor.committed.isEmpty());
+        // Autocorrect off: as typed.
+        editor.setAutoCorrectEnabled(false);
+        words->words = { QStringLiteral("the") };
+        words->misspelled = { QStringLiteral("teh") };
+        editor.committed.clear();
+        type(QStringLiteral(" teh?"));
+        QCOMPARE(editor.committed, QStringLiteral("don't teh?"));
     }
 
     void wordsAreAddedToLuneOSsDictionary()
