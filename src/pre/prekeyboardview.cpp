@@ -57,6 +57,8 @@ const qreal FLICK_KEYS = 1.2;
 //! The screen's full width would make them twice as wide, so the keys keep
 //! this shape in the middle and the deck fills the sides.
 const qreal LANDSCAPE_KEY_SHAPE = 1.35;
+//! In landscape a Medium row is at most this share of the screen's short side.
+const qreal LANDSCAPE_ROW_SHARE = 0.105;
 //! The language's name on the space bar: shown this long, then fading for this long...
 const qint64 FLASH_SHOW = 900;
 const qint64 FLASH_FADE = 400;
@@ -237,8 +239,10 @@ void KeyboardView::applySettings(const Settings &s)
 // --- Sizes ------------------------------------------------------------------------------
 
 /*!
- * A row's height: the owner's choice, held to a share of the screen in
- * landscape. The screen's short side is dp's own measure: Keyboard.qml sets dp
+ * A row's height: the owner's choice. In landscape a Medium row is held to a
+ * share of the screen's short side, and Small and Large keep their proportion
+ * to it, so the choice shows there too (held to one share, all three came out
+ * the same). The screen's short side is dp's own measure: Keyboard.qml sets dp
  * to it over SCREEN_DP, so the two cannot disagree, and the tests can lay the
  * keys out for any screen without having one.
  */
@@ -246,7 +250,8 @@ qreal KeyboardView::rowHeight() const
 {
     const qreal chosen = m_settings.heightDp() * m_dp;
     if (!m_landscape) return chosen;
-    return std::min(chosen, m_dp * SCREEN_DP * 0.105);
+    const qreal share = LANDSCAPE_ROW_SHARE * m_settings.heightDp() / Settings().heightDp();
+    return std::min(chosen, m_dp * SCREEN_DP * share);
 }
 
 qreal KeyboardView::topBorder() const { return 3 * std::max<qreal>(1, std::round(m_dp)) + 1 * m_dp; }

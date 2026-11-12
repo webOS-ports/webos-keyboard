@@ -826,6 +826,31 @@ private Q_SLOTS:
         QVERIFY2(devices > 0, qPrintable(profilesFile() + QStringLiteral(" gave no phones")));
     }
 
+    /*
+     * Small, Medium and Large are three heights on every screen, upright and
+     * on its side: in landscape all three were held to one share of the
+     * screen, so the choice did nothing there.
+     */
+    void heightsDiffer()
+    {
+        QStringList same;
+        const Pre::Language en = Pre::Language::byId(QStringLiteral("en"));
+        for (const Screen &sc : screens()) {
+            qreal last = 0;
+            for (auto height : { Pre::Settings::Height::Small, Pre::Settings::Height::Medium,
+                                 Pre::Settings::Height::Large }) {
+                Pre::KeyboardView view;
+                showKeys(view, en, sc.shortSide, sc.width, sc.landscape, height);
+                if (view.keysHeight() <= last + 1)
+                    same << QStringLiteral("%1: height %2 is %3 px, not above %4")
+                                .arg(sc.name).arg(int(height)).arg(view.keysHeight()).arg(last);
+                last = view.keysHeight();
+            }
+        }
+        for (const QString &s : same.mid(0, 20)) qWarning().noquote() << s;
+        QVERIFY2(same.isEmpty(), qPrintable(QStringLiteral("%1 screens").arg(same.size())));
+    }
+
     void keysFitEveryScreen_data()
     {
         QTest::addColumn<int>("shortSide");
@@ -1029,6 +1054,19 @@ private Q_SLOTS:
             // The other looks, in English: letters following shift, the White
             // style with shift on, and number and phone fields.
             const Pre::Language en = Pre::Language::byId(QStringLiteral("en"));
+            // The three heights, letters and symbols.
+            for (auto height : { Pre::Settings::Height::Small, Pre::Settings::Height::Large }) {
+                Pre::KeyboardView sized;
+                showKeys(sized, en, sc.shortSide, sc.width, sc.landscape, height);
+                const QString h = height == Pre::Settings::Height::Small ? QStringLiteral("small")
+                                                                         : QStringLiteral("large");
+                for (auto page : { Pre::KeyboardView::Page::Letters, Pre::KeyboardView::Page::Symbols }) {
+                    sized.show(page);
+                    save(sized, QStringLiteral("en-height-%1-%2")
+                                    .arg(h, page == Pre::KeyboardView::Page::Letters ? QStringLiteral("abc")
+                                                                                    : QStringLiteral("sym")));
+                }
+            }
             Pre::KeyboardView view;
             showKeys(view, en, sc.shortSide, sc.width, sc.landscape, Pre::Settings::Height::Medium);
             Pre::Settings s = view.settings();
