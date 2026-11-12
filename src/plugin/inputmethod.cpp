@@ -175,6 +175,23 @@ InputMethod::InputMethod(MAbstractInputMethodHost *host)
     d->view->setSource(QUrl::fromLocalFile(g_maliit_keyboard_qml));
     syncPanelWindowToScreen();
 
+    /*
+     * The mask follows the window's size, at once.
+     *
+     * The compositor takes the panel's rectangle from the mask, and scales it
+     * by the window it is on. When the window changes size - the shell turned
+     * between portrait and landscape, often while the panel was hidden behind
+     * an application that does not turn - the mask still held the rectangle
+     * for the old size until QML had laid out again, and the next show sent
+     * that to the application scaled into the new one: on a sargo, landscape's
+     * 2220x552 strip at 353 became 1080x1247 at 798 in portrait, and Memos
+     * shrank to make room for a keyboard twice the real one's height and did
+     * not grow back. So the strip is put back on the bottom of the window as
+     * soon as the window changes, and QML corrects its height a moment later.
+     */
+    connect(d->view, &QWindow::widthChanged, this, [this](int) { maskPanelStrip(); });
+    connect(d->view, &QWindow::heightChanged, this, [this](int) { maskPanelStrip(); });
+
     // The panel window has to keep following the screen, not just start on it.
     // See syncPanelWindowToScreen() for what goes wrong when it does not.
     if (QScreen *screen = qGuiApp->primaryScreen()) {
@@ -449,6 +466,9 @@ void InputMethod::applyPanelVisibility()
     // Before the window is shown, because a window at a stale size is not shown
     // at all - see syncPanelWindowToScreen().
     syncPanelWindowToScreen();
+    // And its mask on the window as it now is: the compositor reports it to the
+    // application the moment the window maps, before QML has said anything.
+    maskPanelStrip();
 
     d->showingPanel = true;
     d->view->setVisible(true);
