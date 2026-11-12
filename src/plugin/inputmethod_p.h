@@ -345,6 +345,11 @@ public:
         b.autoCaps = [this] { return editor.atAutoCapsPosition(); };
         b.canAdd = [this](const QString &word) { return editor.wordEngine()->isMisspelled(word); };
         b.addWord = [this](const QString &word) { editor.addToUserDictionary(word); };
+        b.removeWord = [this](const QString &word) {
+            editor.wordEngine()->removeFromUserDictionary(word);
+            blockRemovedWords();
+            editor.refreshCandidates();
+        };
         b.useLanguage = [this](const QString &id) { q->setActiveLanguage(id); };
         b.luna = [this](const QString &uri, const QString &payload) { m_settings.call(uri, payload); };
         b.savePrefs = [this](const QJsonObject &obj) { m_settings.savePre(obj); };
@@ -353,6 +358,15 @@ public:
 
         QObject::connect(&m_settings, &KeyboardSettings::preChanged, &pre, &Pre::Controller::setPrefs);
         pre.setPrefs(m_settings.pre());
+        // The words deleted from the Pre Keyboard's bar (or put back in Text
+        // Assist), for the language typed in: the word engine neither offers
+        // nor corrects to them, whichever keys are typed on.
+        // Asked again after: the bar may hold one just deleted, or the old
+        // language's list (refreshCandidates() is connected before this).
+        const auto reblock = [this] { blockRemovedWords(); editor.refreshCandidates(); };
+        QObject::connect(&m_settings, &KeyboardSettings::preChanged, q, reblock);
+        QObject::connect(q, &InputMethod::activeLanguageChanged, q, reblock);
+        blockRemovedWords();
 
         // The bar: the word engine's candidates, and what space would put in.
         QObject::connect(&editor, &AbstractTextEditor::wordCandidatesChanged, &pre,
@@ -381,6 +395,11 @@ public:
         sync();
     }
 
+
+    void blockRemovedWords()
+    {
+        editor.wordEngine()->setBlockedWords(Pre::Settings::removed(m_settings.pre(), q->activeLanguage()));
+    }
 
     /*
      * register settings

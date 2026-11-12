@@ -26,6 +26,9 @@ public:
     virtual QStringList spellCheckerSuggest(const QString& word, int limit) = 0;
     virtual void addToSpellCheckerUserWordList(const QString& word) = 0;
     virtual bool setSpellCheckerLanguage(const QString& languageId) = 0;
+    //! Takes [word] out of the owner's dictionary; a plugin without one has nothing to do.
+    //! Last, so the slots before it keep their places.
+    virtual void removeFromSpellCheckerUserWordList(const QString& word) { Q_UNUSED(word); }
 };
 
 #define LanguagePluginInterface_iid "org.webosports.LuneOSKeyboard.LanguagePluginInterface"

@@ -36,6 +36,8 @@
 #include <functional>
 #include <memory>
 
+class TestPreKeyboard;
+
 namespace Pre {
 
 class KeyboardView;
@@ -69,6 +71,8 @@ struct Bridge
     //! Whether [word] could be added to the owner's dictionary: it is not known.
     std::function<bool(const QString &word)> canAdd;
     std::function<void(const QString &word)> addWord;
+    //! Takes [word] out of the owner's dictionary, where it is one of theirs.
+    std::function<void(const QString &word)> removeWord;
     //! Makes [id] the language typed in.
     std::function<void(const QString &id)> useLanguage;
     //! Calls a Luna method with no reply wanted (vibrate, launch).
@@ -86,6 +90,7 @@ struct Bridge
 class Controller : public QObject
 {
     Q_OBJECT
+    friend class ::TestPreKeyboard;
     //! The Pre Keyboard is the keyboard: set by Keyboard.qml on a phone; a tablet keeps LuneOS's own.
     Q_PROPERTY(bool active READ active WRITE setActive NOTIFY activeChanged)
 
@@ -149,9 +154,10 @@ public:
     void onPick(int i, int caps);
     bool canAdd(const QString &word);
     void onAddWord(const QString &word);
-    //! Words can't be taken out of LuneOS's dictionaries from the bar.
-    bool canRemove(const QString &) { return false; }
-    void onRemoveWord(const QString &) {}
+    //! Whether [word] could be deleted: the dictionaries know it.
+    bool canRemove(const QString &word);
+    //! [word] is never offered or corrected to again in this language; Text Assist can put it back.
+    void onRemoveWord(const QString &word);
     void onPaste();
     //! A GIF or sticker from KLIPY was tapped on the emoji page, found by searching for [query].
     void onMedia(int kind, const QString &link, const QString &slug, const QString &query);

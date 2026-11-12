@@ -265,9 +265,37 @@ bool Controller::canAdd(const QString &word)
 
 void Controller::onAddWord(const QString &word)
 {
+    // A word deleted before is wanted after all.
+    const QString id = m_settings.language.id;
+    QStringList removed = Settings::removed(m_prefs, id);
+    if (removed.removeAll(word) > 0) writePrefs(Settings::withRemoved(m_prefs, id, removed));
     if (m_bridge.addWord) m_bridge.addWord(word);
     // Swiped from now on too.
     if (m_decoder) m_decoder->add(word, LEARNED_SCORE);
+}
+
+bool Controller::canRemove(const QString &word)
+{
+    return !word.isEmpty() && m_bridge.canAdd && !m_bridge.canAdd(word);
+}
+
+void Controller::onRemoveWord(const QString &word)
+{
+    if (word.isEmpty()) return;
+    const QString id = m_settings.language.id;
+    QStringList removed = Settings::removed(m_prefs, id);
+    if (!removed.contains(word)) removed << word;
+    // Saved first: the input method blocks the "removed" words in the word
+    // engine as the preference comes back, and the bridge's removal asks it again.
+    writePrefs(Settings::withRemoved(m_prefs, id, removed));
+    if (m_bridge.removeWord) m_bridge.removeWord(word);
+    // Not swiped either, and gone from the bar now.
+    if (m_decoder) m_decoder->forget(word);
+    m_candidates.removeAll(word);
+    m_swipeGuesses.removeAll(word);
+    m_live.removeAll(word);
+    if (m_primary == word) m_primary.clear();
+    showBar();
 }
 
 // --- Keys -----------------------------------------------------------------------------------

@@ -31,6 +31,8 @@
 
 #include "abstractwordengine.h"
 
+#include <algorithm>
+
 namespace MaliitKeyboard {
 namespace Logic {
 
@@ -63,6 +65,8 @@ class AbstractWordEnginePrivate
 {
 public:
     bool enabled;
+    //! The blocked words, in lower case.
+    QSet<QString> blocked;
 
     explicit AbstractWordEnginePrivate();
 };
@@ -153,7 +157,31 @@ void AbstractWordEngine::computeCandidates(Model::Text *text)
         return;
     }
 
-    Q_EMIT candidatesChanged(fetchCandidates(text));
+    WordCandidateList candidates = fetchCandidates(text);
+    Q_D(AbstractWordEngine);
+    if (!d->blocked.isEmpty()) {
+        // A deleted word is neither offered nor what space puts in.
+        candidates.erase(std::remove_if(candidates.begin(), candidates.end(),
+                                        [this](const WordCandidate &c) { return isBlocked(c.word()); }),
+                         candidates.end());
+        if (isBlocked(text->primaryCandidate()))
+            text->setPrimaryCandidate(candidates.isEmpty() ? QString() : candidates.first().label());
+    }
+    Q_EMIT candidatesChanged(candidates);
+}
+
+void AbstractWordEngine::setBlockedWords(const QStringList &words)
+{
+    Q_D(AbstractWordEngine);
+    d->blocked.clear();
+    for (const QString &w : words)
+        if (!w.isEmpty()) d->blocked.insert(w.toLower());
+}
+
+bool AbstractWordEngine::isBlocked(const QString &word) const
+{
+    Q_D(const AbstractWordEngine);
+    return !word.isEmpty() && d->blocked.contains(word.toLower());
 }
 
 //! \brief Adds a word to user dictionary.
@@ -161,6 +189,11 @@ void AbstractWordEngine::computeCandidates(Model::Text *text)
 //!
 //! Needs to be implemented in derived classes. This does nothing.
 void AbstractWordEngine::addToUserDictionary(const QString &word)
+{
+    Q_UNUSED(word);
+}
+
+void AbstractWordEngine::removeFromUserDictionary(const QString &word)
 {
     Q_UNUSED(word);
 }

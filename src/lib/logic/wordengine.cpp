@@ -223,6 +223,8 @@ bool WordEngine::isMisspelled(const QString &word)
 
     // The spell checker being off is the setting saying nothing is to be marked
     // wrong, not a reason to mark everything.
+    if (d->use_spell_checker && isBlocked(word))
+        return true;
     return d->use_spell_checker && d->languagePlugin && !d->languagePlugin->spell(word);
 }
 
@@ -233,7 +235,11 @@ QStringList WordEngine::spellingSuggestions(const QString &word, int limit)
     if (!d->use_spell_checker || !d->languagePlugin)
         return QStringList();
 
-    return d->languagePlugin->spellCheckerSuggest(word, limit);
+    QStringList out;
+    // Asked for a few more, as a deleted word among them is dropped.
+    for (const QString &w : d->languagePlugin->spellCheckerSuggest(word, limit < 0 ? limit : limit + 3))
+        if (!isBlocked(w) && (limit < 0 || out.size() < limit)) out << w;
+    return out;
 }
 
 void WordEngine::onWordCandidateSelected(QString word)
@@ -262,9 +268,9 @@ WordCandidateList WordEngine::fetchCandidates(Model::Text *text)
         }
     }
 
-    // spell checking
-    const bool correct_spelling(d->languagePlugin ? d->languagePlugin->spell(preedit)
-                                                  : true);
+    // spell checking; a word the owner deleted is spelt wrong, to be corrected
+    const bool correct_spelling(!isBlocked(preedit)
+                                && (d->languagePlugin ? d->languagePlugin->spell(preedit) : true));
 
     if (candidates.isEmpty() && !correct_spelling) {
         Q_FOREACH(const QString &correction, d->languagePlugin->spellCheckerSuggest(preedit, 5)) {
@@ -288,6 +294,13 @@ void WordEngine::addToUserDictionary(const QString &word)
     Q_D(WordEngine);
     if (d->languagePlugin)
         d->languagePlugin->addToSpellCheckerUserWordList(word);
+}
+
+void WordEngine::removeFromUserDictionary(const QString &word)
+{
+    Q_D(WordEngine);
+    if (d->languagePlugin)
+        d->languagePlugin->removeFromSpellCheckerUserWordList(word);
 }
 
 void WordEngine::onLanguageChanged(const QString &languageId)

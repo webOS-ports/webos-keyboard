@@ -72,6 +72,24 @@ private:
     NoFeatures features;
 };
 
+//! Offers [words] for whatever is typed, the first as what space puts in, as WordEngine does.
+class SetWords : public Logic::AbstractWordEngine
+{
+public:
+    AbstractLanguageFeatures *languageFeature() override { return &features; }
+    QStringList words;
+
+private:
+    WordCandidateList fetchCandidates(Model::Text *text) override
+    {
+        WordCandidateList out;
+        for (const QString &w : words) out << WordCandidate(WordCandidate::SourcePrediction, w);
+        text->setPrimaryCandidate(words.value(0));
+        return out;
+    }
+    NoFeatures features;
+};
+
 //! Offers the same two words for whatever is typed: [first], then "pi".
 class TwoWords : public Logic::AbstractWordEngine
 {
@@ -114,6 +132,8 @@ private:
 struct Recorder
 {
     QStringList calls;
+    //! The "pre" object last saved.
+    QJsonObject saved;
     bool autoCaps = false;
     bool unknown = true;
 
@@ -131,7 +151,8 @@ struct Recorder
         b.addWord = [this](const QString &w) { calls << QStringLiteral("add ") + w; };
         b.useLanguage = [this](const QString &id) { calls << QStringLiteral("language ") + id; };
         b.luna = [this](const QString &uri, const QString &payload) { calls << QStringLiteral("luna %1 %2").arg(uri, payload); };
-        b.savePrefs = [this](const QJsonObject &) { calls << QStringLiteral("save"); };
+        b.savePrefs = [this](const QJsonObject &pre) { calls << QStringLiteral("save"); saved = pre; };
+        b.removeWord = [this](const QString &w) { calls << QStringLiteral("remove ") + w; };
         b.hide = [this] { calls << QStringLiteral("hide"); };
         return b;
     }
@@ -514,6 +535,67 @@ private Q_SLOTS:
         QCOMPARE(Pre::Settings::fromJson(QJsonObject()).vibrateLevel, 1);
     }
 
+    /*
+     * Hold a word the dictionaries know, and it can be deleted: kept per
+     * language under "removed" in the "pre" object, taken out of the owner's
+     * dictionary, and off the bar at once. Adding it again puts it back.
+     */
+    void wordsCanBeDeleted()
+    {
+        Recorder rec;
+        rec.unknown = false;
+        Pre::Controller c;
+        c.setBridge(rec.bridge());
+        c.setKeyboardState(true, false, { QStringLiteral("en"), QStringLiteral("de") }, QStringLiteral("en"));
+        QVERIFY(c.canRemove(QStringLiteral("yest")));
+        QVERIFY(!c.canRemove(QString()));
+        c.setCandidates(QStringLiteral("yes"), QStringLiteral("yest"),
+                        { QStringLiteral("yest"), QStringLiteral("yes"), QStringLiteral("yesterday") });
+        QVERIFY(c.m_bar.contains(QStringLiteral("yest")));
+        rec.calls.clear();
+        c.onRemoveWord(QStringLiteral("yest"));
+        QVERIFY(rec.calls.contains(QStringLiteral("remove yest")));
+        QCOMPARE(Pre::Settings::removed(rec.saved, QStringLiteral("en")), QStringList{ QStringLiteral("yest") });
+        QVERIFY(Pre::Settings::removed(rec.saved, QStringLiteral("de")).isEmpty());
+        QVERIFY(!c.m_bar.contains(QStringLiteral("yest")));
+        // Deleted twice is still one.
+        c.setPrefs(rec.saved);
+        c.onRemoveWord(QStringLiteral("yest"));
+        QCOMPARE(Pre::Settings::removed(rec.saved, QStringLiteral("en")).size(), 1);
+        // Wanted after all: added, and off the list.
+        c.setPrefs(rec.saved);
+        rec.unknown = true;
+        c.onAddWord(QStringLiteral("yest"));
+        QVERIFY(Pre::Settings::removed(rec.saved, QStringLiteral("en")).isEmpty());
+        QVERIFY(!rec.saved.value(QStringLiteral("removed")).toObject().contains(QStringLiteral("en")));
+    }
+
+    // The word engine neither offers a deleted word nor puts it in for space, whatever its case.
+    void deletedWordsAreNotOffered()
+    {
+        SetWords words;
+        words.setEnabled(true);
+        words.words = { QStringLiteral("yest"), QStringLiteral("yes"), QStringLiteral("yesterday") };
+        Model::Text text;
+        text.setPreedit(QStringLiteral("yes"));
+        WordCandidateList got;
+        QObject::connect(&words, &Logic::AbstractWordEngine::candidatesChanged,
+                         [&](const WordCandidateList &c) { got = c; });
+        words.computeCandidates(&text);
+        QCOMPARE(text.primaryCandidate(), QStringLiteral("yest"));
+        words.setBlockedWords({ QStringLiteral("Yest") });
+        QVERIFY(words.isBlocked(QStringLiteral("YEST")));
+        QVERIFY(!words.isBlocked(QStringLiteral("yes")));
+        words.computeCandidates(&text);
+        QStringList offered;
+        for (const WordCandidate &c : got) offered << c.word();
+        QCOMPARE(offered, (QStringList{ QStringLiteral("yes"), QStringLiteral("yesterday") }));
+        QCOMPARE(text.primaryCandidate(), QStringLiteral("yes"));
+        words.setBlockedWords({});
+        words.computeCandidates(&text);
+        QCOMPARE(text.primaryCandidate(), QStringLiteral("yest"));
+    }
+
     void wordsAreAddedToLuneOSsDictionary()
     {
         Recorder rec;
@@ -521,7 +603,8 @@ private Q_SLOTS:
         c.setBridge(rec.bridge());
         QVERIFY(c.canAdd(QStringLiteral("LuneOS")));
         QVERIFY(!c.canAdd(QString()));
-        QVERIFY(!c.canRemove(QStringLiteral("the")));
+        // Unknown: it can be added, not deleted.
+        QVERIFY(!c.canRemove(QStringLiteral("LuneOS")));
         c.onAddWord(QStringLiteral("LuneOS"));
         QCOMPARE(rec.calls, QStringList{ QStringLiteral("add LuneOS") });
         rec.unknown = false;

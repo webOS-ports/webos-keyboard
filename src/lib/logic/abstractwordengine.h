@@ -70,6 +70,16 @@ public:
     Q_SIGNAL void candidatesChanged(const WordCandidateList &candidates);
 
     virtual void addToUserDictionary(const QString &word);
+    //! \brief Takes \a word out of the owner's dictionary, if it is there. This does nothing.
+    virtual void removeFromUserDictionary(const QString &word);
+
+    /*!
+     * \brief Words never to offer or correct to, whatever the dictionaries
+     * say: the ones the owner deleted (the Pre Keyboard's "removed"), for the
+     * language typed in. Matched without regard to case.
+     */
+    void setBlockedWords(const QStringList &words);
+    bool isBlocked(const QString &word) const;
 
     //! \brief Whether \a word is spelled wrongly. False when nothing can say.
     virtual bool isMisspelled(const QString &word);

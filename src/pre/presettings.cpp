@@ -81,6 +81,23 @@ int Settings::keyBuzzMs() const
     return ms[std::clamp(vibrateLevel, 1, VIBRATE_LEVELS) - 1];
 }
 
+QStringList Settings::removed(const QJsonObject &pre, const QString &id)
+{
+    QStringList out;
+    for (const QJsonValue &v : pre.value(QLatin1String("removed")).toObject().value(id).toArray())
+        if (v.isString() && !v.toString().isEmpty()) out << v.toString();
+    return out;
+}
+
+QJsonObject Settings::withRemoved(QJsonObject pre, const QString &id, const QStringList &words)
+{
+    QJsonObject removed = pre.value(QLatin1String("removed")).toObject();
+    if (words.isEmpty()) removed.remove(id);
+    else removed.insert(id, QJsonArray::fromStringList(words));
+    pre.insert(QLatin1String("removed"), removed);
+    return pre;
+}
+
 QStringList Settings::recentEmoji(const QJsonObject &pre)
 {
     QStringList out;

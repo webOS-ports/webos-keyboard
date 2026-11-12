@@ -96,6 +96,15 @@ struct Settings
     bool operator==(const Settings &o) const;
     bool operator!=(const Settings &o) const { return !(*this == o); }
 
+    /*!
+     * The words the owner deleted in language [id] (held in the bar, "Delete
+     * from dictionary?"): never offered, nor corrected to. Kept in the "pre"
+     * object as "removed": { <language>: [words] }, the Android Pre Keyboard's
+     * shape, for Text Assist to put back.
+     */
+    static QStringList removed(const QJsonObject &pre, const QString &id);
+    static QJsonObject withRemoved(QJsonObject pre, const QString &id, const QStringList &words);
+
     static QStringList recentEmoji(const QJsonObject &pre);
     static QJsonObject withRecentEmoji(QJsonObject pre, const QString &emoji);
     static constexpr int RECENT_MAX = 32;

@@ -70,6 +70,7 @@ public:
                         int limit = -1);
     void ignoreWord(const QString &word);
     void addToUserWordlist(const QString &word);
+    void removeFromUserWordlist(const QString &word);
 
     bool setLanguage(const QString& language);
 
@@ -81,6 +82,7 @@ private:
 
     static bool findCallback(LSHandle *handle, LSMessage *message, void *user_data);
     static bool putCallback(LSHandle *handle, LSMessage *message, void *user_data);
+    static bool delCallback(LSHandle *handle, LSMessage *message, void *user_data);
     static gboolean pollCallback(gpointer user_data);
 
     static const unsigned int POLL_INTERVAL_SECONDS = 30;

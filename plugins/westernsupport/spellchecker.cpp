@@ -96,6 +96,9 @@ public:
     guint pollSourceId;  //!< The db8 poll timer, 0 when not registered.
 
     QStringList userWords;
+    //! The user words the live Hunspell instance has been given, to take back
+    //! out the ones that leave db8 (deleted in Text Assist, or from the keys).
+    QStringList appliedWords;
 
     explicit SpellCheckerPrivate(const QString &user_dictionary_kind);
     ~SpellCheckerPrivate();
@@ -147,8 +150,12 @@ void SpellCheckerPrivate::applyUserWords()
     if (!hunspell)
         return;
 
+    for (const QString &word : appliedWords)
+        if (!userWords.contains(word))
+            hunspell->remove(codec->fromUnicode(word).toStdString());
     for (const QString &word : userWords)
         hunspell->add(codec->fromUnicode(word).toStdString());
+    appliedWords = userWords;
 }
 
 //! \brief SpellCheckerPrivate::clear cleans up all memory and does reset
@@ -157,6 +164,7 @@ void SpellCheckerPrivate::clear()
 {
     delete(hunspell);
     hunspell = nullptr;
+    appliedWords.clear();
     aff_file.clear();
     dic_file.clear();
 }
@@ -448,19 +456,68 @@ void SpellChecker::addToUserWordlist(const QString &word)
     // subscription in the constructor will reconfirm it a moment later.
     if (!d->userWords.contains(word)) {
         d->userWords.append(word);
-        if (d->hunspell)
+        if (d->hunspell) {
             d->hunspell->add(d->codec->fromUnicode(word).toStdString());
+            d->appliedWords.append(word);
+        }
     }
 
     LSError error;
     LSErrorInit(&error);
-    const QByteArray payload = "{\"objects\":[{\"_kind\":\"" + d->user_dictionary_kind.toUtf8() +
-                         "\",\"word\":\"" + word.toUtf8() + "\"}]}";
+    // Built as JSON rather than pasted in: a word with a quote or a backslash
+    // in it made the put unparseable.
+    const QJsonObject object{ { QStringLiteral("_kind"), d->user_dictionary_kind },
+                              { QStringLiteral("word"), word } };
+    const QByteArray payload = QJsonDocument(QJsonObject{ { QStringLiteral("objects"), QJsonArray{ object } } })
+                                   .toJson(QJsonDocument::Compact);
     if (!LSCall(d->serviceHandle, "luna://com.palm.db/put", payload.constData(),
               SpellChecker::putCallback, this, nullptr, &error)) {
         qWarning("Failed to add '%s' to user dictionary: %s", qPrintable(word), error.message);
         LSErrorFree(&error);
     }
+}
+
+//! \brief Takes a word out of the user dictionary, if it is there: out of
+//! the live Hunspell instance at once, and out of db8, where Text Assist and
+//! presage see it go too.
+void SpellChecker::removeFromUserWordlist(const QString &word)
+{
+    Q_D(SpellChecker);
+
+    if (!d->userWords.contains(word))
+        return;
+
+    d->userWords.removeAll(word);
+    if (d->hunspell && d->appliedWords.contains(word)) {
+        d->hunspell->remove(d->codec->fromUnicode(word).toStdString());
+        d->appliedWords.removeAll(word);
+    }
+
+    const QJsonObject query{
+        { QStringLiteral("from"), d->user_dictionary_kind },
+        { QStringLiteral("where"), QJsonArray{ QJsonObject{ { QStringLiteral("prop"), QStringLiteral("word") },
+                                                            { QStringLiteral("op"), QStringLiteral("=") },
+                                                            { QStringLiteral("val"), word } } } } };
+    const QByteArray payload = QJsonDocument(QJsonObject{ { QStringLiteral("query"), query } })
+                                   .toJson(QJsonDocument::Compact);
+    LSError error;
+    LSErrorInit(&error);
+    if (!LSCall(d->serviceHandle, "luna://com.palm.db/del", payload.constData(),
+                SpellChecker::delCallback, this, nullptr, &error)) {
+        qWarning("Failed to take '%s' out of the user dictionary: %s", qPrintable(word), error.message);
+        LSErrorFree(&error);
+    }
+}
+
+bool SpellChecker::delCallback(LSHandle *handle, LSMessage *message, void *user_data)
+{
+    Q_UNUSED(handle);
+    Q_UNUSED(user_data);
+
+    const char *payload = message ? LSMessageGetPayload(message) : nullptr;
+    if (payload && !QJsonDocument::fromJson(QByteArray(payload)).object().value(QStringLiteral("returnValue")).toBool())
+        qWarning() << "com.palm.db/del failed:" << payload;
+    return true;
 }
 
 //! \brief SpellChecker::setLanguage switches to the given language if possible
