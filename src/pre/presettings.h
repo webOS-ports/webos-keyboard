@@ -2,6 +2,7 @@
  * This file is part of the LuneOS keyboard: the Pre Keyboard.
  *
  * Copyright (C) 2026 Alan Morford <alan-morford@users.noreply.github.com>
+ * Copyright (C) 2026 Herman van Hazendonk <github.com@herrie.org>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,8 +52,17 @@ struct Settings
     Height height = Height::Medium;
     //! Press and hold a key for its extra characters (accents, more symbols), each such key dotted.
     bool holdForMore = false;
-    //! A light vibration as each key goes down.
+    //! A vibration as each key goes down...
     bool vibrate = false;
+    //! ...this strong: 1 (Light, the tap it always was), 2 (Firmer) or 3 (Strong).
+    int vibrateLevel = 1;
+    static constexpr int VIBRATE_LEVELS = 3;
+    /*!
+     * A key's buzz at the chosen strength, in ms. LuneOS's vibrator
+     * (com.palm.vibrate) takes a length but no strength, so a firmer buzz is
+     * a longer one.
+     */
+    int keyBuzzMs() const;
     //! The letters on the keys follow Shift (small till it is on); off, they are capitals, as printed on the Pre.
     bool followShift = false;
     /*!

@@ -2,6 +2,7 @@
  * This file is part of the LuneOS keyboard: the Pre Keyboard.
  *
  * Copyright (C) 2026 Alan Morford <alan-morford@users.noreply.github.com>
+ * Copyright (C) 2026 Herman van Hazendonk <github.com@herrie.org>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +20,8 @@
 #include "presettings.h"
 
 #include <QJsonArray>
+
+#include <algorithm>
 
 namespace Pre {
 namespace {
@@ -40,6 +43,7 @@ Settings Settings::fromJson(const QJsonObject &pre, Settings into)
     s.height = h == QLatin1String("small") ? Height::Small : h == QLatin1String("large") ? Height::Large : Height::Medium;
     s.holdForMore = flag(pre, "holdForMore", false);
     s.vibrate = flag(pre, "vibrate", false);
+    s.vibrateLevel = std::clamp(pre.value(QLatin1String("vibrateLevel")).toInt(1), 1, VIBRATE_LEVELS);
     s.followShift = flag(pre, "followShift", false);
     s.swipe = flag(pre, "swipe", true);
     return s;
@@ -57,6 +61,7 @@ QJsonObject Settings::toJson(QJsonObject pre) const
                : height == Height::Large ? QLatin1String("large") : QLatin1String("medium"));
     pre.insert(QLatin1String("holdForMore"), holdForMore);
     pre.insert(QLatin1String("vibrate"), vibrate);
+    pre.insert(QLatin1String("vibrateLevel"), vibrateLevel);
     pre.insert(QLatin1String("followShift"), followShift);
     pre.insert(QLatin1String("swipe"), swipe);
     return pre;
@@ -65,8 +70,15 @@ QJsonObject Settings::toJson(QJsonObject pre) const
 bool Settings::operator==(const Settings &o) const
 {
     return style == o.style && height == o.height && holdForMore == o.holdForMore && vibrate == o.vibrate &&
+           vibrateLevel == o.vibrateLevel &&
            followShift == o.followShift && suggestions == o.suggestions && sound == o.sound && swipe == o.swipe &&
            languages == o.languages && language == o.language;
+}
+
+int Settings::keyBuzzMs() const
+{
+    static const int ms[VIBRATE_LEVELS] = { 12, 20, 30 };
+    return ms[std::clamp(vibrateLevel, 1, VIBRATE_LEVELS) - 1];
 }
 
 QStringList Settings::recentEmoji(const QJsonObject &pre)

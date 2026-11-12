@@ -504,9 +504,10 @@ void Controller::vibrate(int ms)
                   QStringLiteral("{\"period\":0,\"duration\":%1}").arg(ms));
 }
 
-void Controller::hapticKey() { vibrate(12); }
+void Controller::hapticKey() { vibrate(m_settings.keyBuzzMs()); }
 
-void Controller::hapticLongPress() { vibrate(20); }
+//! A long press: a little more than a key, at the same strength.
+void Controller::hapticLongPress() { vibrate(m_settings.keyBuzzMs() + 8); }
 
 // --- Emoji, paste and GIFs ------------------------------------------------------------------
 

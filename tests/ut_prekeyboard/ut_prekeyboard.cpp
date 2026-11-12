@@ -37,6 +37,7 @@
 #include <QJSEngine>
 #include <QJSValueIterator>
 #include <QJsonArray>
+#include <QRegularExpression>
 #include <QSet>
 #include <QPainter>
 #include <QPainterPath>
@@ -292,7 +293,8 @@ private Q_SLOTS:
         const QStringList keys = pre.keys();
         QCOMPARE(QSet<QString>(keys.begin(), keys.end()),
                  (QSet<QString>{ QStringLiteral("style"), QStringLiteral("height"), QStringLiteral("holdForMore"),
-                                 QStringLiteral("vibrate"), QStringLiteral("followShift"),
+                                 QStringLiteral("vibrate"), QStringLiteral("vibrateLevel"),
+                                 QStringLiteral("followShift"),
                                  QStringLiteral("swipe"), QStringLiteral("recentEmoji") }));
         const Pre::Settings back = Pre::Settings::fromJson(pre);
         QCOMPARE(back.style, Pre::Style::White);
@@ -481,6 +483,35 @@ private Q_SLOTS:
         c.hapticLongPress();
         QCOMPARE(rec.calls.size(), 1);
         QVERIFY(rec.calls.first().contains(QStringLiteral("\"duration\":20")));
+    }
+
+    /*
+     * Light, Firmer and Strong: each a longer buzz than the one before (the
+     * vibrator takes no strength), Light the 12 ms it always was, and a long
+     * press a little more than a key. Anything else read is Light or Strong.
+     */
+    void vibrationHasThreeStrengths()
+    {
+        Recorder rec;
+        Pre::Controller c;
+        c.setBridge(rec.bridge());
+        QList<int> key, hold;
+        for (int level = 1; level <= Pre::Settings::VIBRATE_LEVELS; ++level) {
+            c.setPrefs(QJsonObject{ { QStringLiteral("vibrate"), true }, { QStringLiteral("vibrateLevel"), level } });
+            rec.calls.clear();
+            c.hapticKey();
+            c.hapticLongPress();
+            QCOMPARE(rec.calls.size(), 2);
+            const QRegularExpression ms(QStringLiteral("\"duration\":(\\d+)"));
+            key << ms.match(rec.calls[0]).captured(1).toInt();
+            hold << ms.match(rec.calls[1]).captured(1).toInt();
+        }
+        QCOMPARE(key.first(), 12);
+        for (int i = 1; i < key.size(); ++i) QVERIFY2(key[i] > key[i - 1], "a level no firmer than the one before");
+        for (int i = 0; i < key.size(); ++i) QVERIFY(hold[i] > key[i]);
+        QCOMPARE(Pre::Settings::fromJson(QJsonObject{ { QStringLiteral("vibrateLevel"), 0 } }).vibrateLevel, 1);
+        QCOMPARE(Pre::Settings::fromJson(QJsonObject{ { QStringLiteral("vibrateLevel"), 9 } }).vibrateLevel, 3);
+        QCOMPARE(Pre::Settings::fromJson(QJsonObject()).vibrateLevel, 1);
     }
 
     void wordsAreAddedToLuneOSsDictionary()
