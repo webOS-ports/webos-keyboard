@@ -53,6 +53,10 @@ const int HOLD_FOR_ADD = 500;
 const qreal CURSOR_STEP_X = 12;
 //! How far across, in keys, a flick on the space bar goes to change language.
 const qreal FLICK_KEYS = 1.2;
+//! In landscape a key is at most this many times as wide as its row is tall.
+//! The screen's full width would make them twice as wide, so the keys keep
+//! this shape in the middle and the deck fills the sides.
+const qreal LANDSCAPE_KEY_SHAPE = 1.35;
 //! The language's name on the space bar: shown this long, then fading for this long...
 const qint64 FLASH_SHOW = 900;
 const qint64 FLASH_FADE = 400;
@@ -258,6 +262,19 @@ qreal KeyboardView::headroom() const { return std::ceil(2 * cellH() + 2 * popupP
 //! Where the keyboard proper (the bar, if shown, then the keys) starts: above is the popups' room.
 qreal KeyboardView::keyboardTop() const { return height() - std::floor(keysHeight()); }
 
+/*!
+ * The keys' width: the screen's, held in landscape to ten keys of
+ * LANDSCAPE_KEY_SHAPE. Ten for every language, as in portrait, so a twelve-key
+ * row has narrower keys there too. The keys sit in the middle.
+ */
+qreal KeyboardView::keysWidth() const
+{
+    if (!m_landscape) return width();
+    return std::min(width(), std::round(10 * LANDSCAPE_KEY_SHAPE * rowHeight()));
+}
+
+qreal KeyboardView::keysLeft() const { return std::round((width() - keysWidth()) / 2); }
+
 QRectF KeyboardView::rowRect(int i) const
 {
     const qreal top = keyboardTop() + barHeight() + topBorder() + i * rowHeight();
@@ -294,11 +311,12 @@ void KeyboardView::layoutKeys()
         const QRectF r = rowRect(i);
         qreal units = 0;
         for (const Slot &s : rs[i]) units += s.weight;
-        qreal left = 0, sofar = 0;
+        const qreal x0 = keysLeft(), w = keysWidth();
+        qreal left = x0, sofar = 0;
         for (const Slot &s : rs[i]) {
             sofar += s.weight;
             // Whole pixels, so neighbouring caps never share a blurred edge.
-            const qreal right = std::round(width() * sofar / units);
+            const qreal right = x0 + std::round(w * sofar / units);
             m_zones.append(Zone{ s, QRectF(left, r.top(), right - left, r.height()) });
             left = right;
         }
@@ -469,7 +487,7 @@ void KeyboardView::functionLabel(QPainter &p, const QString &s, const QRectF &bo
 }
 
 //! The letter's size: big and bold, but held to the key's width and to half its height.
-qreal KeyboardView::letterSize() const { return std::min(rowHeight() * 0.5, width() / 10 * 0.56); }
+qreal KeyboardView::letterSize() const { return std::min(rowHeight() * 0.5, keysWidth() / 10 * 0.56); }
 
 //! Inset of the glyphs' ink from the key's edges.
 qreal KeyboardView::inset(const QRectF &r) const { return 2.5 * m_dp + r.width() * 0.08; }
@@ -599,7 +617,10 @@ void KeyboardView::fitLetters()
  * taken from a flat-bottomed capital so a Q's tail hangs below it; a row
  * without any has its capitals centred. Where a letter hangs lower than the
  * face allows (Arabic's ر and و, Hebrew's ק and ף), every row comes up
- * together. A symbol is lifted until its ink rests on the line.
+ * together. A symbol is lifted until its ink rests on the line; in a row
+ * without alternates (the Sym page) it is centred on the face by its own ink
+ * instead, so < > ~ { } line up by their middles. Marks whose place is their
+ * meaning (see placedMark) stay on the line.
  */
 bool KeyboardView::placeLetters(qreal px)
 {
@@ -683,8 +704,11 @@ bool KeyboardView::placeLetters(qreal px)
             i = std::max(i, inset(m_zones[k].rect));
         }
         const qreal h = m_zones[a].rect.height();
-        const qreal floor = faceOf(m_zones[a]).bottom();
-        qreal line = low ? h - i - capital.bottom() : (h + capital.height()) / 2 - capital.bottom();
+        const QRectF rowFace = faceOf(m_zones[a]);
+        const qreal floor = rowFace.bottom();
+        // Centred on the face, not the key: the key's shadow is below it.
+        const qreal middle = rowFace.center().y();
+        qreal line = low ? h - i - capital.bottom() : middle - (capital.top() + capital.bottom()) / 2;
         line = std::min(line, floor - hangs);
 
         for (int k = a; k < b; ++k) {
@@ -693,7 +717,10 @@ bool KeyboardView::placeLetters(qreal px)
             const Key &key = *z.slot.key;
             const QString s = capText(key);
             const QRectF ink = fm.tightBoundingRect(s);
-            z.baseline = allLetters(s) ? line : std::min(line, line + capital.bottom() - ink.bottom());
+            if (allLetters(s) || s.isEmpty()) z.baseline = line;
+            else if (low) z.baseline = std::min(line, line + capital.bottom() - ink.bottom());
+            else if (placedMark(s)) z.baseline = line;
+            else z.baseline = middle - (ink.top() + ink.bottom()) / 2;
 
             // The glyphs themselves, not their boxes: a box's corner can be off a
             // rounded corner of the face that the letter never comes near.
@@ -714,6 +741,18 @@ bool KeyboardView::placeLetters(qreal px)
         a = b;
     }
     return fits;
+}
+
+/*!
+ * A mark whose height on the line is what it means - a full stop, a comma, an
+ * underscore, quotes, a caret, a degree sign - so it is not centred like the
+ * other symbols: a centred full stop would read as a middle dot.
+ */
+bool KeyboardView::placedMark(const QString &s)
+{
+    static const QString marks = QStringLiteral(".,_'\"`^°´¨¸‚„‘’“”…˚");
+    for (QChar c : s) if (!marks.contains(c)) return false;
+    return !s.isEmpty();
 }
 
 /*!
@@ -864,7 +903,7 @@ QStringList KeyboardView::extendedFor(const Key &key) const
     return key.extended;
 }
 
-qreal KeyboardView::cellW() const { return std::max(width() / 10 * 0.92, 34 * m_dp); }
+qreal KeyboardView::cellW() const { return std::max(keysWidth() / 10 * 0.92, 34 * m_dp); }
 
 void KeyboardView::showExtended(const Zone &z)
 {
@@ -1432,11 +1471,13 @@ int KeyboardView::zoneAt(qreal x, qreal y) const
     for (int i = 0; i < m_zones.size(); ++i)
         if (m_zones[i].rect.contains(QPointF(x, y))) return i;
     if (y < keyboardTop() || m_zones.isEmpty()) return -1;
-    // Below the last row (the bottom pad) or in a rounding gap: the key in that column.
+    // Below the last row (the bottom pad), in a rounding gap, or beside the keys
+    // in landscape: the nearest key in that row.
     const qreal yy = std::max(m_zones.first().rect.top(), std::min(y, m_zones.last().rect.bottom() - 1));
+    const qreal xx = std::max(keysLeft(), std::min(x, keysLeft() + keysWidth() - 1));
     for (int i = 0; i < m_zones.size(); ++i) {
         const QRectF &r = m_zones[i].rect;
-        if (yy >= r.top() && yy < r.bottom() && x >= r.left() && x < r.right()) return i;
+        if (yy >= r.top() && yy < r.bottom() && xx >= r.left() && xx < r.right()) return i;
     }
     return -1;
 }
@@ -1623,7 +1664,7 @@ bool KeyboardView::flickedLanguage(qreal x, qreal y)
 {
     if (m_settings.languages.size() < 2) return false;
     const qreal dx = x - m_downX;
-    if (std::abs(dx) < width() / 10 * FLICK_KEYS || std::abs(dx) < 2 * std::abs(y - m_downY)) return false;
+    if (std::abs(dx) < keysWidth() / 10 * FLICK_KEYS || std::abs(dx) < 2 * std::abs(y - m_downY)) return false;
     m_holdTimer.stop();
     m_spent = true;
     m_pressed = -1;

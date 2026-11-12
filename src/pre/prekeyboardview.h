@@ -156,6 +156,9 @@ private:
     qreal cellH() const;
     qreal popupPad() const;
     qreal keyboardTop() const;
+    qreal keysWidth() const;
+    static bool placedMark(const QString &s);
+    qreal keysLeft() const;
     QRectF rowRect(int i) const;
     void layoutKeys();
     const Rows &rows() const;

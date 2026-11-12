@@ -852,7 +852,7 @@ private Q_SLOTS:
                                               .arg(l.id, page == Pre::KeyboardView::Page::Letters
                                                              ? QStringLiteral("letters") : QStringLiteral("symbols"))
                                               .arg(int(height));
-                    wrong << layoutProblems(view, where) << printingProblems(view, where);
+                    wrong << layoutProblems(view, where) << printingProblems(view, where) << centringProblems(view, where);
                 }
             }
         }
@@ -978,7 +978,7 @@ private Q_SLOTS:
             for (QChar d : QStringLiteral("0123456789"))
                 if (!shown.contains(d)) problems << where + QStringLiteral("no ") + d;
             if (!blank) problems << where + QStringLiteral("no key went blank");
-            problems << printingProblems(view, where);
+            problems << printingProblems(view, where) << centringProblems(view, where);
             view.show(Pre::KeyboardView::Page::Symbols);
             for (const auto &z : view.m_zones)
                 if (z.slot.drawn && z.slot.key->kind == Pre::Kind::Char && view.capText(*z.slot.key) != z.slot.key->text)
@@ -1276,6 +1276,63 @@ private:
                 if (r.intersected(view.m_zones[j].rect).width() > 0.5
                     && r.intersected(view.m_zones[j].rect).height() > 0.5)
                     out << where + key + QStringLiteral(": on top of another key");
+            // In landscape the screen is twice as wide as ten keys of the
+            // portrait shape: a key may be a little wider, not stretched.
+            if (view.m_zones[i].slot.key->kind == Pre::Kind::Char
+                && r.width() > view.m_zones[i].slot.weight * 1.35 * view.rowHeight() + 1)
+                out << where + key + QStringLiteral(": stretched, %1 wide in a row %2 tall")
+                                         .arg(r.width()).arg(view.rowHeight());
+        }
+        // The keys in the middle, and a touch beside them goes to the key at
+        // that end of its row.
+        qreal left = view.width(), right = 0;
+        for (const auto &z : view.m_zones) { left = std::min(left, z.rect.left()); right = std::max(right, z.rect.right()); }
+        if (std::abs(left - (view.width() - right)) > 1)
+            out << where + QStringLiteral("keys not in the middle: %1 px left of them, %2 right").arg(left).arg(view.width() - right);
+        for (int i = 0; i < view.m_zones.size(); ++i) {
+            const QRectF &r = view.m_zones[i].rect;
+            const bool first = i == 0 || view.m_zones[i - 1].rect.top() != r.top();
+            const bool last = i + 1 == view.m_zones.size() || view.m_zones[i + 1].rect.top() != r.top();
+            if (first && view.zoneAt(0, r.center().y()) != i)
+                out << where + QStringLiteral("a touch at the left edge misses the row's first key");
+            if (last && view.zoneAt(view.width() - 0.5, r.center().y()) != i)
+                out << where + QStringLiteral("a touch at the right edge misses the row's last key");
+        }
+        return out;
+    }
+
+    /*!
+     * In a row without alternates (the Sym page, a number field's keypad) a
+     * symbol's ink is centred on its key's face, so < > ~ { } and the digits
+     * line up by their middles. A mark whose height is its meaning (. , ' ^)
+     * keeps its place on the line.
+     */
+    static QStringList centringProblems(const Pre::KeyboardView &view, const QString &where)
+    {
+        QStringList out;
+        for (int a = 0; a < view.m_zones.size();) {
+            int b = a;
+            while (b < view.m_zones.size() && view.m_zones[b].rect.top() == view.m_zones[a].rect.top()) ++b;
+            bool alts = false;
+            for (int k = a; k < b; ++k)
+                if (view.m_zones[k].slot.drawn && view.m_zones[k].slot.key->kind == Pre::Kind::Char)
+                    alts = alts || !view.altText(*view.m_zones[k].slot.key).isEmpty();
+            for (int k = a; !alts && k < b; ++k) {
+                const auto &z = view.m_zones[k];
+                if (!z.slot.drawn || z.slot.key->kind != Pre::Kind::Char) continue;
+                const QString t = view.capText(*z.slot.key);
+                bool letters = !t.isEmpty();
+                for (QChar c : t) letters = letters && (c.isLetter() || c.isMark());
+                if (t.isEmpty() || letters || Pre::KeyboardView::placedMark(t)) continue;
+                QFont f = view.m_bold;
+                f.setPixelSize(std::max(1, int(z.letterPx)));
+                const QRectF ink = QFontMetricsF(f).tightBoundingRect(t);
+                const QRectF face = view.m_painter.capFace(QRectF(0, 0, z.rect.width(), z.rect.height()));
+                const qreal off = z.baseline + (ink.top() + ink.bottom()) / 2 - face.center().y();
+                if (std::abs(off) > 1)
+                    out << where + t + QStringLiteral(": %1 px off the middle of its key").arg(off);
+            }
+            a = b;
         }
         return out;
     }
