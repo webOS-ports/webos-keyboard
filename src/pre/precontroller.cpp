@@ -724,7 +724,13 @@ void Controller::onBackspaceHeld(bool held, bool lifted)
     // The editor repeats a held backspace, and goes over to whole words, as it
     // does for LuneOS's own keys.
     if (held) {
-        endDictation(false);
+        // Pressed while listening, it takes back what was being said and
+        // deletes nothing: not pressed in the editor, nothing to let go.
+        if (m_dictation && m_dictation->listening()) {
+            endDictation(false);
+            m_deleting = false;
+            return;
+        }
         m_autoTail.clear();
         m_spaceIsLast = false;
         m_lastSpaceAt = NEVER;

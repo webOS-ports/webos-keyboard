@@ -2306,6 +2306,52 @@ private Q_SLOTS:
         QCOMPARE(view.m_voiceLine, QStringLiteral("No speech model for Deutsch"));
     }
 
+    /*
+     * The backspace key while listening, pressed and lifted as a finger does:
+     * the words heard so far go, and nothing of the text before them.
+     */
+    void theBackspaceKeyWhileListening()
+    {
+        Recorder rec;
+        Field field;
+        Pre::Controller c;
+        c.setBridge(field.bridge(rec));
+        Pre::KeyboardView view;
+        showKeys(view, Pre::Language::byId(QStringLiteral("en")), 1080, 1080, false, Pre::Settings::Height::Medium);
+        view.setControllerObject(&c);
+        c.setKeyboardState(true, false, { QStringLiteral("en") }, QStringLiteral("en"));
+        auto *d = new FakeDictation;
+        c.setDictation(d);
+        int back = -1;
+        for (int i = 0; i < view.m_zones.size(); ++i)
+            if (view.m_zones[i].slot.key->kind == Pre::Kind::Backspace) back = i;
+        QVERIFY(back >= 0);
+        const QPointF at = view.m_zones[back].rect.center();
+
+        field.set(QStringLiteral("zoek"));
+        c.onVoice();
+        d->hear(QStringLiteral("one zero"));
+        QVERIFY(view.down(at.x(), at.y()));
+        view.lift(true);
+        QVERIFY(!d->on);
+        QCOMPARE(field.text, QStringLiteral("zoek"));
+        QVERIFY(!rec.calls.join(QLatin1Char(',')).contains(QStringLiteral("commit")));
+        QVERIFY(view.m_voiceLine.isEmpty());
+
+        // Not listening, the same key deletes.
+        QVERIFY(view.down(at.x(), at.y()));
+        view.lift(true);
+        QCOMPARE(field.text, QStringLiteral("zoe"));
+
+        // Held while listening: it stops listening, and doesn't repeat.
+        c.onVoice();
+        QVERIFY(view.down(at.x(), at.y()));
+        QTest::qWait(700);
+        view.lift(true);
+        QVERIFY(!d->on);
+        QCOMPARE(field.text, QStringLiteral("zoe"));
+    }
+
     // Changing language while listening stops it, keeping the words heard so far.
     void anotherLanguageEndsListening()
     {
