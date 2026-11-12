@@ -7,6 +7,7 @@ HEADERS += \
     logic/style.h \
     logic/abstractwordengine.h \
     logic/wordengine.h \
+    logic/correction.h \
     logic/abstractlanguagefeatures.h \
     logic/eventhandler.h \
     logic/languageplugininterface.h \
@@ -18,6 +19,7 @@ SOURCES += \
     logic/style.cpp \
     logic/abstractwordengine.cpp \
     logic/wordengine.cpp \
+    logic/correction.cpp \
     logic/eventhandler.cpp \
 
 DEPENDPATH += $$LOGIC_DIR

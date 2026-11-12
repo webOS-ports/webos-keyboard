@@ -30,6 +30,7 @@
  */
 
 #include "wordengine.h"
+#include "correction.h"
 
 #include <utility>
 #include "logic/abstractlanguagefeatures.h"
@@ -104,6 +105,8 @@ public:
     explicit WordEnginePrivate();
 
     QString currentPlugin;
+    //! The language typed in ("en"), for what space corrects a word to (Correction).
+    QString language;
     void loadPlugin(const QString& pluginName, const QString& subfolder="en")
     {
         if (pluginName == currentPlugin)
@@ -257,11 +260,13 @@ WordCandidateList WordEngine::fetchCandidates(Model::Text *text)
     WordCandidateList candidates;
     const QString &preedit(text->preedit());
     const bool is_preedit_capitalized(!preedit.isEmpty() && preedit.at(0).isUpper());
+    QStringList predictions;
 
     if (d->use_predictive_text && d->languagePlugin) {
 
         d->languagePlugin->parse(text->surroundingLeft(), preedit);
         const QStringList suggestions = d->languagePlugin->getWordCandidates();
+        predictions = suggestions;
 
         Q_FOREACH(const QString &suggestion, suggestions) {
             appendToCandidates(&candidates, WordCandidate::SourcePrediction, suggestion, is_preedit_capitalized);
@@ -282,8 +287,37 @@ WordCandidateList WordEngine::fetchCandidates(Model::Text *text)
                                                                   : Model::Text::PreeditNoCandidates)
                                               : Model::Text::PreeditActive);
 
-    text->setPrimaryCandidate(candidates.isEmpty() ? QString()
-                                                   : candidates.first().label());
+    /*
+     * What space puts in: the word as typed when the dictionary knows it, else
+     * its best correction (see Correction), not presage's first guess, which
+     * only goes by the letters typed so far ("hund" was "hundert").
+     */
+    QString primary = candidates.isEmpty() ? QString() : candidates.first().label();
+    if (d->languagePlugin && (!candidates.isEmpty() || !correct_spelling)) {
+        QHash<QString, QStringList> asked;
+        Correction::Dictionary dictionary;
+        dictionary.spell = [this, d](const QString &w) { return !isBlocked(w) && d->languagePlugin->spell(w); };
+        dictionary.suggest = [this, d, &asked](const QString &w) {
+            const auto it = asked.constFind(w);
+            if (it != asked.constEnd()) return it.value();
+            QStringList out;
+            for (const QString &s : d->languagePlugin->spellCheckerSuggest(w, 8))
+                if (!isBlocked(s)) out << s;
+            asked.insert(w, out);
+            return out;
+        };
+        primary = Correction::choose(preedit, d->language, dictionary, predictions);
+        // In the list, first, as it will go in.
+        if (!primary.isEmpty()) {
+            candidates.erase(std::remove_if(candidates.begin(), candidates.end(),
+                                            [&primary](const WordCandidate &c) { return c.word() == primary; }),
+                             candidates.end());
+            candidates.prepend(WordCandidate(primary == preedit ? WordCandidate::SourcePrediction
+                                                                : WordCandidate::SourceSpellChecking,
+                                             primary));
+        }
+    }
+    text->setPrimaryCandidate(primary);
 
 
     return candidates;
@@ -322,6 +356,7 @@ QStringList WordEngine::userWords()
 void WordEngine::onLanguageChanged(const QString &languageId)
 {
     Q_D(WordEngine);
+    d->language = languageId;
 
     if (languageId == "ar")
         d->loadPlugin("libarabicplugin.so", "ar");

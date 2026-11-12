@@ -3,6 +3,7 @@ CONFIG += ordered
 
 # One binary per unit under test. Keep this list alphabetical.
 SUBDIRS = \
+    ut_correction \
     ut_hardwarekeyboard \
     ut_keyrepeat \
     ut_klipy \
