@@ -356,6 +356,21 @@ public:
             const Model::Text *t = editor.text();
             return t ? editor.wordEngine()->nextWords(t->surroundingLeft(), 3) : QStringList();
         };
+        b.replace = [this](int before, int after, const QString &text) {
+            host->sendCommitString(text, -before, before + after);
+        };
+        b.position = [this] {
+            const Model::Text *t = editor.text();
+            return t ? int(t->surroundingOffset()) : -1;
+        };
+        b.alternatives = [this](const QString &word, const QString &left) {
+            QStringList out;
+            // The word the space key put in place of another, still where it was put: that one first.
+            if (!autoCorrectedWord.isEmpty() && word == autoCorrectedWord && left.endsWith(autoCorrectedLeft))
+                out << autoCorrectedOriginal;
+            out << editor.wordEngine()->spellingSuggestions(word, 4);
+            return out;
+        };
         b.canAdd = [this](const QString &word) { return editor.wordEngine()->isMisspelled(word); };
         b.addWord = [this](const QString &word) { editor.addToUserDictionary(word); };
         b.removeWord = [this](const QString &word) {
@@ -368,6 +383,8 @@ public:
         b.savePrefs = [this](const QJsonObject &obj) { m_settings.savePre(obj); };
         b.hide = [this] { host->notifyImInitiatedHiding(); };
         pre.setBridge(b);
+        QObject::connect(&editor, &AbstractTextEditor::autoCorrected, &pre,
+                         [this](const QString &typed, const QString &fixed) { pre.corrected(typed, fixed); });
 
         QObject::connect(&m_settings, &KeyboardSettings::preChanged, &pre, &Pre::Controller::setPrefs);
         pre.setPrefs(m_settings.pre());

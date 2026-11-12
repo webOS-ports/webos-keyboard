@@ -68,8 +68,26 @@ QString sha1(const QString &t)
 Controller::Controller(QObject *parent)
     : QObject(parent)
     , m_lastSpaceAt(NEVER)
+    , m_ownEditAt(NEVER)
 {
     m_pool.setMaxThreadCount(1);
+}
+
+void Controller::setBridge(const Bridge &bridge)
+{
+    m_bridge = bridge;
+    // Whatever the keyboard does to the text: the cursor moving straight after is its doing.
+    const auto own = [this] {
+        m_ownEditAt = now();
+        m_tapped = false;
+    };
+    if (bridge.press)
+        m_bridge.press = [own, f = bridge.press](const QString &l, const QString &a) { own(); f(l, a); };
+    if (bridge.pick) m_bridge.pick = [own, f = bridge.pick](const QString &w) { own(); f(w); };
+    if (bridge.setWord) m_bridge.setWord = [own, f = bridge.setWord](const QString &w) { own(); f(w); };
+    if (bridge.commit) m_bridge.commit = [own, f = bridge.commit](const QString &t) { own(); f(t); };
+    if (bridge.replace)
+        m_bridge.replace = [own, f = bridge.replace](int b, int a, const QString &t) { own(); f(b, a, t); };
 }
 
 Controller::~Controller()
@@ -212,9 +230,19 @@ void Controller::update()
 {
     if (m_view) m_view->updateCaps();
     offerPaste();
-    // The application told where its cursor is: the next words follow it.
+    // The cursor moved, and not by anything the keyboard did: the owner tapped the text.
+    const int position = m_bridge.position ? m_bridge.position() : -1;
+    if (position != m_position) {
+        m_position = position;
+        if (position >= 0 && now() - m_ownEditAt > OWN_EDIT_MS) {
+            m_tapped = true;
+            m_fixTyped.clear();
+            m_fixed.clear();
+        }
+    }
+    // The application told where its cursor is: the next words, or the tapped word's fixes, follow it.
     if (m_typed.isEmpty() && m_swiped.isEmpty()) {
-        const QStringList next = nextWords();
+        const QStringList next = idleWords();
         if (next != m_candidates) {
             m_candidates = next;
             showBar();
@@ -238,8 +266,113 @@ void Controller::setCandidates(const QString &typed, const QString &primary, con
     }
     m_typed = typed;
     m_primary = primary;
-    m_candidates = words.isEmpty() && typed.isEmpty() ? nextWords() : words;
+    m_candidates = words.isEmpty() && typed.isEmpty() ? idleWords() : words;
+    if (!typed.isEmpty()) m_barWord.clear();
     showBar();
+}
+
+QStringList Controller::idleWords()
+{
+    const QStringList fixes = wordFixes();
+    return fixes.isEmpty() ? nextWords() : fixes;
+}
+
+namespace {
+
+bool wordChar(const QString &text, qsizetype i)
+{
+    const QChar c = text.at(i);
+    if (c.isLetter() || c.isMark()) return true;
+    // An apostrophe inside a word - don't, it's - and not one that quotes it.
+    return (c == QLatin1Char('\'') || c == QChar(0x2019)) && i > 0 && i + 1 < text.size()
+           && text.at(i - 1).isLetter() && text.at(i + 1).isLetter();
+}
+
+//! [word] with its first letter a capital when [like]'s is.
+QString casedLike(const QString &like, const QString &word)
+{
+    if (like.isEmpty() || word.isEmpty() || !like.at(0).isUpper() || !word.at(0).isLower()) return word;
+    return word.left(1).toUpper() + word.mid(1);
+}
+
+} // namespace
+
+QString Controller::wordAround(const QString &before, const QString &after, int *nBefore, int *nAfter)
+{
+    *nBefore = 0;
+    *nAfter = 0;
+    const QString text = before + after;
+    const qsizetype cursor = before.size();
+    qsizetype start = cursor, end = cursor;
+    while (start > 0 && wordChar(text, start - 1)) --start;
+    while (end < text.size() && wordChar(text, end)) ++end;
+    if (start == end) return QString();
+    // Running on past what was asked for: too long to be a word.
+    if ((start == 0 && before.size() >= MAX_TOKEN) || (end == text.size() && after.size() >= MAX_TOKEN))
+        return QString();
+    // Part of something that isn't a word: 3rd, an address, a link, a #tag.
+    static const QString joinsBefore = QStringLiteral("@#_/.-");
+    static const QString joinsAfter = QStringLiteral("@_/");
+    if (start > 0 && (text.at(start - 1).isDigit() || joinsBefore.contains(text.at(start - 1)))) return QString();
+    if (end < text.size() && (text.at(end).isDigit() || joinsAfter.contains(text.at(end)))) return QString();
+    if (!text.at(start).isLetter()) return QString();
+    *nBefore = int(cursor - start);
+    *nAfter = int(end - cursor);
+    return text.mid(start, end - start);
+}
+
+QStringList Controller::wordFixes()
+{
+    m_barWord.clear();
+    if (!m_settings.suggestions || !m_wordsAllowed || !m_bridge.alternatives || !m_bridge.replace
+        || !m_bridge.before || !m_bridge.after || (m_bridge.prose && !m_bridge.prose()))
+        return QStringList();
+    const QString before = m_bridge.before(MAX_TOKEN), after = m_bridge.after(MAX_TOKEN);
+    int nb = 0, na = 0;
+    const QString word = wordAround(before, after, &nb, &na);
+    // Tapped on, or the cursor inside it (not just after a word typed).
+    if (word.isEmpty() || (!m_tapped && na == 0)) return QStringList();
+    const QString left = before.left(before.size() - nb);
+    const QString key = left + QChar(0) + word;
+    if (key != m_fixesFor) {
+        m_fixesFor = key;
+        m_fixes.clear();
+        for (const QString &w : m_bridge.alternatives(word, left)) {
+            const QString c = casedLike(word, w);
+            if (!w.isEmpty() && w.compare(word, Qt::CaseInsensitive) != 0 && !m_fixes.contains(c)) m_fixes << c;
+            if (m_fixes.size() == 3) break;
+        }
+    }
+    if (!m_fixes.isEmpty()) {
+        m_barWord = word;
+        m_barWordBefore = nb;
+        m_barWordAfter = na;
+    }
+    return m_fixes;
+}
+
+void Controller::corrected(const QString &typed, const QString &fixed)
+{
+    m_fixTyped = typed;
+    m_fixed = fixed;
+    vibrate(CORRECTED_MS);
+}
+
+bool Controller::undoCorrection()
+{
+    if (m_fixed.isEmpty() || !m_bridge.before || !m_bridge.replace) return false;
+    // After a period: just its space, here; the word's correction waits for the next backspace.
+    if (autoSpaced()) return false;
+    const QString typed = m_fixTyped, fixed = m_fixed;
+    m_fixTyped.clear();
+    m_fixed.clear();
+    // The word, then what finished it (a space or punctuation), still the last thing typed.
+    const QString b = m_bridge.before(int(fixed.size()) + 2);
+    const qsizetype at = b.size() - fixed.size() - 1;
+    if (at < 0 || b.mid(at, fixed.size()) != fixed || b.back().isLetterOrNumber() || (at > 0 && wordChar(b, at - 1)))
+        return false;
+    m_bridge.replace(int(fixed.size()) + 1, 0, typed + b.back());
+    return true;
 }
 
 QStringList Controller::nextWords()
@@ -324,6 +457,24 @@ void Controller::onPick(int i, int caps)
 {
     QString w = m_bar.value(i);
     if (w.isEmpty() || !m_bridge.pick) return;
+    m_fixTyped.clear();
+    m_fixed.clear();
+    if (!m_barWord.isEmpty()) {
+        // In place of the word tapped, if it is still there; the bar goes on offering for the new one.
+        int nb = 0, na = 0;
+        const QString word = m_bridge.before && m_bridge.after
+                           ? wordAround(m_bridge.before(MAX_TOKEN), m_bridge.after(MAX_TOKEN), &nb, &na) : QString();
+        const bool same = word == m_barWord && nb == m_barWordBefore && na == m_barWordAfter;
+        m_barWord.clear();
+        if (same) {
+            if (caps == KeyboardView::CAPS_ALL) w = QLocale(m_settings.language.id).toUpper(w);
+            m_bridge.replace(nb, na, w);
+            m_tapped = true;
+        }
+        m_candidates = idleWords();
+        showBar();
+        return;
+    }
     if (i == 2 && m_barEmoji) {
         // In place of the word, as it is: shift is nothing to an emoji.
         m_bridge.pick(w);
@@ -385,6 +536,9 @@ void Controller::onRemoveWord(const QString &word)
 void Controller::onText(const QString &text)
 {
     if (text.isEmpty()) return;
+    // Anything typed moves on from the last correction (this may make another).
+    m_fixTyped.clear();
+    m_fixed.clear();
     // A character goes in as a LuneOS key's would, to be predicted and corrected;
     // anything longer (an emoji, an emoticon) as it is.
     if (text == QLatin1String(" ") && !m_swiped.isEmpty() && m_typed == m_swiped && m_bridge.pick) {
@@ -513,11 +667,12 @@ bool Controller::punctuate(const QString &text)
 
 void Controller::onBackspace(bool)
 {
+    const bool undone = undoCorrection();
     // Straight after a period, it takes just the period's space.
     m_autoTail.clear();
     m_spaceIsLast = false;
     m_lastSpaceAt = NEVER;
-    backspaceKey();
+    if (!undone) backspaceKey();
 }
 
 void Controller::onBackspaceHeld(bool held, bool lifted)
@@ -543,6 +698,8 @@ void Controller::onBackspaceHeld(bool held, bool lifted)
 
 void Controller::onEnter()
 {
+    m_fixTyped.clear();
+    m_fixed.clear();
     // The keyboard's own space is not left at the end of the line.
     if (autoSpaced()) backspaceKey();
     m_autoTail.clear();

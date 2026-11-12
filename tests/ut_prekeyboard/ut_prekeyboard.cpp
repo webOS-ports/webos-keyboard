@@ -200,6 +200,47 @@ struct Recorder
     }
 };
 
+/*!
+ * A text field with a cursor, as the bridge sees it: keys type into it (a
+ * backspace deletes, Return is "\n"), and words and replacements go in.
+ * [onKey] stands in for the editor reacting to a key (autocorrecting).
+ */
+struct Field
+{
+    QString text;
+    int cursor = 0;
+    std::function<void(const QString &)> onKey;
+
+    void set(const QString &t, int at = -1) { text = t; cursor = at < 0 ? int(t.size()) : at; }
+    void insert(const QString &t) { text.insert(cursor, t); cursor += int(t.size()); }
+
+    Pre::Bridge bridge(Recorder &rec)
+    {
+        Pre::Bridge b = rec.bridge();
+        const auto press = b.press;
+        b.release = [this, press](const QString &l, const QString &a) {
+            if (a == QLatin1String("backspace")) {
+                if (cursor > 0) { text.remove(cursor - 1, 1); --cursor; }
+            } else if (a == QLatin1String("return")) {
+                insert(QStringLiteral("\n"));
+            } else {
+                insert(l);
+            }
+            if (onKey) onKey(l);
+        };
+        b.before = [this](int n) { return text.left(cursor).right(n); };
+        b.after = [this](int n) { return text.mid(cursor, n); };
+        b.position = [this] { return cursor; };
+        b.prose = [] { return true; };
+        b.replace = [this, &rec](int before, int after, const QString &t) {
+            rec.calls << QStringLiteral("replace %1 %2 %3").arg(before).arg(after).arg(t);
+            text.replace(cursor - before, before + after, t);
+            cursor += int(t.size()) - before;
+        };
+        return b;
+    }
+};
+
 //! The language codes of the plugins' phone layouts: Keyboard_<code>_phone.qml.
 QStringList pluginLanguages()
 {
@@ -964,6 +1005,197 @@ private Q_SLOTS:
         QCOMPARE(c.m_bar, (QStringList{ QString(), QStringLiteral("pizza"), pizza }));
         c.setWordsAllowed(false);
         QCOMPARE(c.m_bar, (QStringList{ QString(), QString(), QString() }));
+    }
+
+    /*
+     * A word tapped in the text: the bar offers what else it might be, the
+     * likeliest in the middle, and tapping one puts it in its place, with the
+     * capital the word had. The cursor inside a word offers them too; just
+     * after a word the keyboard typed, it doesn't.
+     */
+    void fixATappedWord()
+    {
+        Recorder rec;
+        Field field;
+        qint64 clock = 10000;
+        QStringList asked;
+        Pre::Bridge b = field.bridge(rec);
+        b.alternatives = [&](const QString &w, const QString &left) {
+            asked << left + QLatin1Char('|') + w;
+            return QStringList{ QStringLiteral("ball"), QStringLiteral("bell"), QStringLiteral("bill"),
+                                QStringLiteral("bull"), QStringLiteral("belt") };
+        };
+        Pre::Controller c;
+        c.setClock([&] { return clock; });
+        c.setBridge(b);
+        c.setKeyboardState(true, false, { QStringLiteral("en") }, QStringLiteral("en"));
+        field.set(QStringLiteral("I saw a bell here"), 12);
+        c.update();
+        QCOMPARE(c.m_bar, (QStringList{ QStringLiteral("bill"), QStringLiteral("ball"), QStringLiteral("bull") }));
+        QCOMPARE(asked, QStringList{ QStringLiteral("I saw a |bell") });
+        QCOMPARE(c.m_candidates.size(), 3);
+        c.update();
+        QCOMPARE(asked.size(), 1); // asked once for the same word
+        c.onPick(1, Pre::KeyboardView::CAPS_NONE);
+        QCOMPARE(rec.calls.last(), QStringLiteral("replace 4 0 ball"));
+        QCOMPARE(field.text, QStringLiteral("I saw a ball here"));
+        // Still the word to fix: its others now.
+        c.update();
+        QCOMPARE(c.m_bar.value(1), QStringLiteral("bell"));
+
+        // A capital stays; the cursor in the middle of the word.
+        clock += 1000;
+        field.set(QStringLiteral("Bell rang"), 2);
+        c.update();
+        QCOMPARE(c.m_bar.value(1), QStringLiteral("Ball"));
+        c.onPick(0, Pre::KeyboardView::CAPS_NONE);
+        QCOMPARE(rec.calls.last(), QStringLiteral("replace 2 2 Bill"));
+        QCOMPARE(field.text, QStringLiteral("Bill rang"));
+        QCOMPARE(field.cursor, 4);
+
+        // The word changed under it: nothing replaced.
+        clock += 1000;
+        field.set(QStringLiteral("a bell"), 6);
+        c.update();
+        QCOMPARE(c.m_bar.value(1), QStringLiteral("ball"));
+        field.set(QStringLiteral("a belly"), 7);
+        rec.calls.clear();
+        c.onPick(1, Pre::KeyboardView::CAPS_NONE);
+        QVERIFY(rec.calls.isEmpty());
+
+        // Just after a word the keyboard typed: not tapped, no fixes.
+        clock += 1000;
+        field.set(QStringLiteral("the bell"), 0);
+        c.update();
+        c.key(QStringLiteral("x"));
+        field.set(QStringLiteral("the bell"));
+        clock += 50;
+        c.update();
+        QCOMPARE(c.m_bar, (QStringList{ QString(), QString(), QString() }));
+        // Inside one, though, yes.
+        field.set(QStringLiteral("the bell"), 6);
+        clock += 50;
+        c.update();
+        QCOMPARE(c.m_bar.value(1), QStringLiteral("ball"));
+
+        // Not part of an address, a link, a tag or a number; not a word that runs on past what was asked.
+        for (const QString &t : { QStringLiteral("me@bell"), QStringLiteral("bell@me"), QStringLiteral("a.bell"),
+                                  QStringLiteral("#bell"), QStringLiteral("3rd"), QStringLiteral("bell3"),
+                                  QString(70, QLatin1Char('b')) }) {
+            clock += 1000;
+            field.set(t, int(t.size()) - 1);
+            c.update();
+            QVERIFY2(c.m_bar.value(1).isEmpty(), qPrintable(t));
+        }
+        // Not with suggestions off, nor outside prose.
+        clock += 1000;
+        field.set(QStringLiteral("a bell"), 4);
+        c.setKeyboardState(false, false, { QStringLiteral("en") }, QStringLiteral("en"));
+        c.update();
+        QVERIFY(c.m_candidates.isEmpty());
+    }
+
+    // Typing over the word tapped: the bar is the typed word's, and a pick is a pick.
+    void typingOverATappedWord()
+    {
+        Recorder rec;
+        Field field;
+        Pre::Bridge b = field.bridge(rec);
+        b.alternatives = [](const QString &, const QString &) { return QStringList{ QStringLiteral("ball") }; };
+        Pre::Controller c;
+        c.setClock([] { return qint64(10000); });
+        c.setBridge(b);
+        c.setKeyboardState(true, false, { QStringLiteral("en") }, QStringLiteral("en"));
+        field.set(QStringLiteral("a bell"));
+        c.update();
+        QCOMPARE(c.m_bar.value(1), QStringLiteral("ball"));
+        c.setCandidates(QStringLiteral("x"), QString(), { QStringLiteral("x"), QStringLiteral("xi") });
+        rec.calls.clear();
+        c.onPick(1, Pre::KeyboardView::CAPS_NONE);
+        QCOMPARE(rec.calls, QStringList{ QStringLiteral("pick x") });
+    }
+
+    void wordAround()
+    {
+        int b = -1, a = -1;
+        QCOMPARE(Pre::Controller::wordAround(QStringLiteral("say don"), QStringLiteral("'t go"), &b, &a),
+                 QStringLiteral("don't"));
+        QCOMPARE(b, 3);
+        QCOMPARE(a, 2);
+        QCOMPARE(Pre::Controller::wordAround(QStringLiteral("'quote"), QStringLiteral("' x"), &b, &a),
+                 QStringLiteral("quote"));
+        QCOMPARE(Pre::Controller::wordAround(QStringLiteral("a "), QStringLiteral(" b"), &b, &a), QString());
+        QCOMPARE(b, 0);
+        QCOMPARE(a, 0);
+        QCOMPARE(Pre::Controller::wordAround(QStringLiteral("caf\u00e9"), QString(), &b, &a), QStringLiteral("caf\u00e9"));
+        QCOMPARE(Pre::Controller::wordAround(QStringLiteral("x-ray"), QString(), &b, &a), QString());
+        QCOMPARE(Pre::Controller::wordAround(QStringLiteral("bell"), QStringLiteral("/x"), &b, &a), QString());
+    }
+
+    /*
+     * The very next backspace after an autocorrection puts back what was
+     * typed, with what finished the word; after a period it first takes the
+     * period's space. Anything typed in between, and it is a backspace again.
+     * With vibration on, a correction buzzes.
+     */
+    void backspaceUndoesACorrection()
+    {
+        Recorder rec;
+        Field field;
+        Pre::Controller c;
+        field.onKey = [&](const QString &k) {
+            if ((k == QLatin1String(" ") || k == QLatin1String(".")) && field.text.endsWith(QStringLiteral("teh") + k)) {
+                field.text.replace(field.text.size() - 4, 3, QStringLiteral("the"));
+                c.corrected(QStringLiteral("teh"), QStringLiteral("the"));
+            }
+        };
+        c.setBridge(field.bridge(rec));
+        c.setPrefs(QJsonObject{ { QStringLiteral("vibrate"), true } });
+        c.setKeyboardState(true, false, { QStringLiteral("en") }, QStringLiteral("en"));
+        field.set(QStringLiteral("I teh"));
+        c.onText(QStringLiteral(" "));
+        QCOMPARE(field.text, QStringLiteral("I the "));
+        QVERIFY(rec.calls.contains(QStringLiteral("luna palm://com.palm.vibrate/vibrate {\"period\":0,\"duration\":28}")));
+        c.onBackspace(false);
+        QCOMPARE(field.text, QStringLiteral("I teh "));
+        QCOMPARE(rec.calls.last(), QStringLiteral("replace 4 0 teh "));
+        c.onBackspace(false);
+        QCOMPARE(field.text, QStringLiteral("I teh"));
+
+        // A period, and its own space.
+        field.set(QStringLiteral("I teh"));
+        c.onText(QStringLiteral("."));
+        QCOMPARE(field.text, QStringLiteral("I the. "));
+        c.onBackspace(false);
+        QCOMPARE(field.text, QStringLiteral("I the."));
+        c.onBackspace(false);
+        QCOMPARE(field.text, QStringLiteral("I teh."));
+
+        // Something typed in between.
+        field.set(QStringLiteral("I teh"));
+        c.onText(QStringLiteral(" "));
+        c.onText(QStringLiteral("x"));
+        c.onBackspace(false);
+        c.onBackspace(false);
+        QCOMPARE(field.text, QStringLiteral("I the"));
+        // Or Return.
+        field.set(QStringLiteral("I teh"));
+        c.onText(QStringLiteral(" "));
+        c.onEnter();
+        c.onBackspace(false);
+        QCOMPARE(field.text, QStringLiteral("I the "));
+        // The text no longer ending in it (the application changed it).
+        field.set(QStringLiteral("I teh"));
+        c.onText(QStringLiteral(" "));
+        field.set(QStringLiteral("I then "));
+        c.onBackspace(false);
+        QCOMPARE(field.text, QStringLiteral("I then"));
+        // Part of a longer word: "atthe " was never this correction.
+        field.set(QStringLiteral("I teh"));
+        c.onText(QStringLiteral(" "));
+        field.set(QStringLiteral("I atthe "));
+        c.onBackspace(false);
+        QCOMPARE(field.text, QStringLiteral("I atthe"));
     }
 
     void wordsAreAddedToLuneOSsDictionary()

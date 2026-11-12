@@ -65,6 +65,18 @@ struct Bridge
     std::function<bool()> atWordEnd;
     //! Text put in as it is, after the word being typed: emoji, a paste, a link.
     std::function<void(const QString &text)> commit;
+    /*!
+     * [before] characters before the cursor and [after] after it give way to
+     * [text], as it is, the cursor after it. No word is being typed.
+     */
+    std::function<void(int before, int after, const QString &text)> replace;
+    //! Where the cursor is in the field; -1 when the application doesn't say.
+    std::function<int()> position;
+    /*!
+     * What else [word], at the cursor after [left], might be, likeliest first:
+     * what was typed, for a word autocorrected; then the spelling checker's.
+     */
+    std::function<QStringList(const QString &word, const QString &left)> alternatives;
     //! The cursor moved by a key, extending the selection when [select].
     std::function<void(int dx, int dy, bool select)> cursor;
     //! Whether the next letter starts a sentence.
@@ -108,7 +120,8 @@ public:
 
     // --- From the input method ---------------------------------------------------------
 
-    void setBridge(const Bridge &bridge) { m_bridge = bridge; }
+    //! What the keyboard does to the text goes through [bridge]; the controller notes when it did.
+    void setBridge(const Bridge &bridge);
     //! Where emoji.txt is, and each language's emoji_words.txt (<dir>/<language>/).
     void setDataDir(const QString &dir) { m_dataDir = dir; }
     //! Where KLIPY keeps its state (its call count and customer id).
@@ -141,6 +154,11 @@ public:
     void finishInput();
     //! The application told the keyboard about its text or cursor, or a capital became due.
     void update();
+    /*!
+     * Space or punctuation put [fixed] in place of the [typed] word. The very
+     * next backspace puts back what was typed; a tap on the word offers it.
+     */
+    void corrected(const QString &typed, const QString &fixed);
 
     void setView(KeyboardView *view);
 
@@ -189,6 +207,17 @@ public:
 
     //! Two spaces at most this far apart (ms) after a word are a period.
     static constexpr qint64 DOUBLE_SPACE_MS = 1000;
+    //! The cursor moving this long (ms) after the keyboard's last change to the text is the owner's doing.
+    static constexpr qint64 OWN_EDIT_MS = 400;
+    //! The buzz for a word autocorrected, with vibration on (ms).
+    static constexpr int CORRECTED_MS = 28;
+
+    /*!
+     * The word the cursor is in or touching, in text ending in [before] and
+     * going on with [after]: its parts either side of the cursor. Empty for
+     * none, a number, or part of an address, a link or a #tag.
+     */
+    static QString wordAround(const QString &before, const QString &after, int *nBefore, int *nAfter);
 
 private:
     /*!
@@ -224,6 +253,12 @@ private:
     void showBar();
     //! With no word typed, after a space or at the start: the likeliest next words for the bar.
     QStringList nextWords();
+    //! With no word typed: what the word at the cursor might be, if it was tapped; else the next words.
+    QStringList idleWords();
+    //! The word at the cursor was tapped, or the cursor is inside it: what else it might be.
+    QStringList wordFixes();
+    //! A backspace straight after an autocorrection: what was typed is put back. False if it wasn't.
+    bool undoCorrection();
     void offerPaste();
     void writePrefs(const QJsonObject &pre);
     void vibrate(int ms);
@@ -257,6 +292,22 @@ private:
 
     //! The bar's right-hand place holds an emoji for the middle word, not a word.
     bool m_barEmoji = false;
+
+    // Fixing words.
+    //! When the keyboard last changed the text; and the cursor moved since by the owner's hand.
+    qint64 m_ownEditAt;
+    bool m_tapped = false;
+    int m_position = -1;
+    //! The last autocorrection, till anything but a backspace is typed.
+    QString m_fixTyped;
+    QString m_fixed;
+    //! The word at the cursor the bar offers others for (its parts either side of the cursor).
+    QString m_barWord;
+    int m_barWordBefore = 0;
+    int m_barWordAfter = 0;
+    //! What it was asked about, and the answer.
+    QString m_fixesFor;
+    QStringList m_fixes;
     //! The emoji for words in [m_emojiFor], read the first time it is wanted.
     EmojiWords m_emojiWords;
     QString m_emojiFor;
