@@ -167,7 +167,27 @@ void AbstractWordEngine::computeCandidates(Model::Text *text)
         if (isBlocked(text->primaryCandidate()))
             text->setPrimaryCandidate(candidates.isEmpty() ? QString() : candidates.first().label());
     }
+    // A word of the owner's typed in another case is theirs as they saved it
+    // ("webos" is "webOS"): first, and what space puts in.
+    const QString preedit = text->preedit();
+    for (const QString &own : userWords()) {
+        if (own == preedit || own.compare(preedit, Qt::CaseInsensitive) != 0 || isBlocked(own))
+            continue;
+        candidates.erase(std::remove_if(candidates.begin(), candidates.end(),
+                                        [&own](const WordCandidate &c) {
+                                            return c.word().compare(own, Qt::CaseInsensitive) == 0;
+                                        }),
+                         candidates.end());
+        candidates.prepend(WordCandidate(WordCandidate::SourceSpellChecking, own));
+        text->setPrimaryCandidate(own);
+        break;
+    }
     Q_EMIT candidatesChanged(candidates);
+}
+
+QStringList AbstractWordEngine::userWords()
+{
+    return QStringList();
 }
 
 void AbstractWordEngine::setBlockedWords(const QStringList &words)

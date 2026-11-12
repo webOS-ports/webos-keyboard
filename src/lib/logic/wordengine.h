@@ -60,6 +60,7 @@ public:
 
     void addToUserDictionary(const QString &word) override;
     void removeFromUserDictionary(const QString &word) override;
+    QStringList userWords() override;
     void setSpellcheckerEnabled(bool enabled) override;
     bool isMisspelled(const QString &word) override;
     QStringList spellingSuggestions(const QString &word, int limit) override;

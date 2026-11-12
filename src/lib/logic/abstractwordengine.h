@@ -81,6 +81,10 @@ public:
     void setBlockedWords(const QStringList &words);
     bool isBlocked(const QString &word) const;
 
+    //! \brief The owner's own words, as saved: one typed in another case
+    //! ("webos" for "webOS") is put in as saved. None here.
+    virtual QStringList userWords();
+
     //! \brief Whether \a word is spelled wrongly. False when nothing can say.
     virtual bool isMisspelled(const QString &word);
 

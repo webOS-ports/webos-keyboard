@@ -78,6 +78,9 @@ class SetWords : public Logic::AbstractWordEngine
 public:
     AbstractLanguageFeatures *languageFeature() override { return &features; }
     QStringList words;
+    //! The owner's dictionary.
+    QStringList own;
+    QStringList userWords() override { return own; }
 
 private:
     WordCandidateList fetchCandidates(Model::Text *text) override
@@ -594,6 +597,53 @@ private Q_SLOTS:
         words.setBlockedWords({});
         words.computeCandidates(&text);
         QCOMPARE(text.primaryCandidate(), QStringLiteral("yest"));
+    }
+
+    /*
+     * A word the owner saved keeps its capitals: "webos" typed is "webOS",
+     * first in the bar and what space puts in, in place of the dictionary's
+     * own guesses at it. Typed as saved, or a different word, nothing changes;
+     * a saved word that was deleted isn't put in either.
+     */
+    void savedWordsKeepTheirCapitals()
+    {
+        SetWords words;
+        words.setEnabled(true);
+        words.words = { QStringLiteral("webs"), QStringLiteral("WebOS"), QStringLiteral("web") };
+        words.own = { QStringLiteral("LuneOS"), QStringLiteral("webOS") };
+        Model::Text text;
+        WordCandidateList got;
+        QObject::connect(&words, &Logic::AbstractWordEngine::candidatesChanged,
+                         [&](const WordCandidateList &c) { got = c; });
+        auto offered = [&] {
+            QStringList out;
+            for (const WordCandidate &c : got) out << c.word();
+            return out;
+        };
+
+        text.setPreedit(QStringLiteral("webos"));
+        words.computeCandidates(&text);
+        QCOMPARE(text.primaryCandidate(), QStringLiteral("webOS"));
+        QCOMPARE(offered(), (QStringList{ QStringLiteral("webOS"), QStringLiteral("webs"), QStringLiteral("web") }));
+
+        text.setPreedit(QStringLiteral("WEBOS"));
+        words.computeCandidates(&text);
+        QCOMPARE(text.primaryCandidate(), QStringLiteral("webOS"));
+
+        // As saved: the engine's own answer stands.
+        text.setPreedit(QStringLiteral("webOS"));
+        words.computeCandidates(&text);
+        QCOMPARE(text.primaryCandidate(), QStringLiteral("webs"));
+
+        // Only the whole word: "webo" is on its way to something else.
+        text.setPreedit(QStringLiteral("webo"));
+        words.computeCandidates(&text);
+        QCOMPARE(text.primaryCandidate(), QStringLiteral("webs"));
+
+        words.setBlockedWords({ QStringLiteral("webos") });
+        text.setPreedit(QStringLiteral("webos"));
+        words.computeCandidates(&text);
+        QVERIFY(text.primaryCandidate() != QStringLiteral("webOS"));
     }
 
     void wordsAreAddedToLuneOSsDictionary()

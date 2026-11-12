@@ -88,6 +88,11 @@ void WesternLanguagesPlugin::removeFromSpellCheckerUserWordList(const QString& w
     m_spellChecker.removeFromUserWordlist(word);
 }
 
+QStringList WesternLanguagesPlugin::spellCheckerUserWords()
+{
+    return m_spellChecker.userWords();
+}
+
 void WesternLanguagesPlugin::_useDatabase(const QString &locale)
 {
     const QString dbFileName = "database_"+locale+".db";

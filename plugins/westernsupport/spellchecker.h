@@ -71,6 +71,8 @@ public:
     void ignoreWord(const QString &word);
     void addToUserWordlist(const QString &word);
     void removeFromUserWordlist(const QString &word);
+    //! The owner's words, as saved in db8.
+    QStringList userWords() const;
 
     bool setLanguage(const QString& language);
 

@@ -509,6 +509,12 @@ void SpellChecker::removeFromUserWordlist(const QString &word)
     }
 }
 
+QStringList SpellChecker::userWords() const
+{
+    Q_D(const SpellChecker);
+    return d->userWords;
+}
+
 bool SpellChecker::delCallback(LSHandle *handle, LSMessage *message, void *user_data)
 {
     Q_UNUSED(handle);

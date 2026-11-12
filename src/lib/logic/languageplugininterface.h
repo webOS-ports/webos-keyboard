@@ -29,6 +29,8 @@ public:
     //! Takes [word] out of the owner's dictionary; a plugin without one has nothing to do.
     //! Last, so the slots before it keep their places.
     virtual void removeFromSpellCheckerUserWordList(const QString& word) { Q_UNUSED(word); }
+    //! The words in the owner's dictionary, as they were saved (their capitals kept).
+    virtual QStringList spellCheckerUserWords() { return QStringList(); }
 };
 
 #define LanguagePluginInterface_iid "org.webosports.LuneOSKeyboard.LanguagePluginInterface"

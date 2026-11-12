@@ -303,6 +303,12 @@ void WordEngine::removeFromUserDictionary(const QString &word)
         d->languagePlugin->removeFromSpellCheckerUserWordList(word);
 }
 
+QStringList WordEngine::userWords()
+{
+    Q_D(WordEngine);
+    return d->languagePlugin && d->use_spell_checker ? d->languagePlugin->spellCheckerUserWords() : QStringList();
+}
+
 void WordEngine::onLanguageChanged(const QString &languageId)
 {
     Q_D(WordEngine);
