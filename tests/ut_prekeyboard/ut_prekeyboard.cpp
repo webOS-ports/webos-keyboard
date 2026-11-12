@@ -2239,11 +2239,17 @@ private Q_SLOTS:
         QVERIFY(!d->on);
 
         rec.calls.clear();
+        field.set(QStringLiteral("Kept"));
         c.onVoice();
         d->hear(QStringLiteral("oops"));
         c.onBackspace(false);
+        QVERIFY(!d->on);
         QVERIFY(!rec.calls.join(QLatin1Char(',')).contains(QStringLiteral("commit")));
-        QVERIFY(field.text.isEmpty());
+        QCOMPARE(field.text, QStringLiteral("Kept"));
+        // Not listening, it is a backspace again.
+        c.onBackspace(false);
+        QCOMPARE(field.text, QStringLiteral("Kep"));
+        field.set(QString());
 
         rec.calls.clear();
         c.onVoice();

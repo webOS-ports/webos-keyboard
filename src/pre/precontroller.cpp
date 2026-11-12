@@ -707,7 +707,10 @@ bool Controller::punctuate(const QString &text)
 void Controller::onBackspace(bool)
 {
     // Backspace while listening takes back what was being said, not the text before it.
-    endDictation(false);
+    if (m_dictation && m_dictation->listening()) {
+        endDictation(false);
+        return;
+    }
     const bool undone = undoCorrection();
     // Straight after a period, it takes just the period's space.
     m_autoTail.clear();
