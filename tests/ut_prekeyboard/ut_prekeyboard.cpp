@@ -417,6 +417,57 @@ private Q_SLOTS:
         QCOMPARE(rec.calls, QStringList{ QStringLiteral("language en") });
     }
 
+    /*
+     * Space held still and let go: the languages, over the space bar. Held
+     * and slid: the cursor moves, and no menu. With one language, no menu.
+     */
+    void holdingSpaceStillOffersTheLanguages()
+    {
+        Recorder rec;
+        Pre::Controller c;
+        c.setBridge(rec.bridge());
+        Pre::KeyboardView view;
+        view.setControllerObject(&c);
+        const Pre::Language en = Pre::Language::byId(QStringLiteral("en"));
+        const Pre::Language de = Pre::Language::byId(QStringLiteral("de"));
+        showKeys(view, en, 1080, 1080, false, Pre::Settings::Height::Medium);
+        Pre::Settings s = view.settings();
+        s.languages = { en, de };
+        view.applySettings(s);
+        int space = -1;
+        for (int i = 0; i < view.m_zones.size(); ++i)
+            if (view.m_zones[i].slot.key->kind == Pre::Kind::Space) { space = i; break; }
+        QVERIFY(space >= 0);
+        const QPointF at = view.m_zones[space].rect.center();
+
+        // Held still, let go: the menu, above the space bar, and no space typed.
+        QVERIFY(view.down(at.x(), at.y()));
+        view.onHold();
+        view.lift(true);
+        QCOMPARE(view.m_menu, (QStringList{ en.name, de.name }));
+        QVERIFY(view.m_menuFrame.bottom() <= view.m_zones[space].rect.top() + 1);
+        QVERIFY(!rec.calls.join(QLatin1Char(',')).contains(QStringLiteral("|space")));
+        view.reset();
+
+        // Held and slid: the cursor, and no menu.
+        rec.calls.clear();
+        QVERIFY(view.down(at.x(), at.y()));
+        view.onHold();
+        view.move(at.x() + 40 * view.m_dp, at.y());
+        view.lift(true);
+        QVERIFY(view.m_menu.isEmpty());
+        QVERIFY(rec.calls.contains(QStringLiteral("cursor 1 0 0")));
+        view.reset();
+
+        // One language: nothing to choose.
+        s.languages = { en };
+        view.applySettings(s);
+        QVERIFY(view.down(at.x(), at.y()));
+        view.onHold();
+        view.lift(true);
+        QVERIFY(view.m_menu.isEmpty());
+    }
+
     // Vibration only when it is switched on, a long press included.
     void vibratesOnlyWhenAsked()
     {
@@ -1033,13 +1084,14 @@ private Q_SLOTS:
             if (!sc.measured) continue;
             QString name = sc.name;
             name.replace(QLatin1Char(' '), QLatin1Char('-'));
-            auto save = [&](Pre::KeyboardView &view, const QString &what) {
+            // The keys only; [whole] keeps the room above them, where popups and menus go.
+            auto save = [&](Pre::KeyboardView &view, const QString &what, bool whole = false) {
                 QImage img(int(view.width()), int(view.height()), QImage::Format_ARGB32_Premultiplied);
                 img.fill(Qt::black);
                 QPainter p(&img);
                 view.paint(&p);
                 p.end();
-                const int top = int(view.height() - view.keysHeight());
+                const int top = whole ? 0 : int(view.height() - view.keysHeight());
                 img.copy(0, top, img.width(), img.height() - top)
                     .save(QStringLiteral("%1/%2-%3.png").arg(dir, name, what));
             };
@@ -1054,6 +1106,21 @@ private Q_SLOTS:
             // The other looks, in English: letters following shift, the White
             // style with shift on, and number and phone fields.
             const Pre::Language en = Pre::Language::byId(QStringLiteral("en"));
+            // The language menu: from the space bar held still, and from the globe on the Sym page.
+            {
+                Pre::KeyboardView menu;
+                showKeys(menu, en, sc.shortSide, sc.width, sc.landscape, Pre::Settings::Height::Medium);
+                Pre::Settings ms = menu.settings();
+                ms.languages = { en, Pre::Language::byId(QStringLiteral("de")), Pre::Language::byId(QStringLiteral("fr")) };
+                menu.applySettings(ms);
+                for (int i = 0; i < menu.m_zones.size(); ++i)
+                    if (menu.m_zones[i].slot.key->kind == Pre::Kind::Space) { menu.showMenu(i); break; }
+                save(menu, QStringLiteral("en-languages-space"), true);
+                menu.m_menu.clear();
+                menu.show(Pre::KeyboardView::Page::Symbols);
+                menu.showMenu();
+                save(menu, QStringLiteral("en-languages-globe"), true);
+            }
             // The three heights, letters and symbols.
             for (auto height : { Pre::Settings::Height::Small, Pre::Settings::Height::Large }) {
                 Pre::KeyboardView sized;

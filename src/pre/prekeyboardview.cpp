@@ -978,6 +978,7 @@ int KeyboardView::extendedAt(qreal x, qreal y) const
 void KeyboardView::startCursor(qreal x, qreal y)
 {
     m_cursorMode = true;
+    m_cursorMoved = false;
     m_cursorX = x;
     m_cursorY = y;
     m_preview = -1;
@@ -992,6 +993,7 @@ void KeyboardView::moveCursor(qreal x, qreal y)
     const bool select = m_shift != Shift::Off;
     const qreal stepX = CURSOR_STEP_X * m_dp;
     const qreal stepY = rowHeight() * 0.5;
+    if (std::abs(x - m_cursorX) >= stepX || std::abs(y - m_cursorY) >= stepY) m_cursorMoved = true;
     while (x - m_cursorX >= stepX) { m_cursorX += stepX; m_controller->onCursor(1, 0, select); }
     while (m_cursorX - x >= stepX) { m_cursorX -= stepX; m_controller->onCursor(-1, 0, select); }
     while (y - m_cursorY >= stepY) { m_cursorY += stepY; m_controller->onCursor(0, 1, select); }
@@ -1277,16 +1279,17 @@ void KeyboardView::drawAsk(QPainter &p)
 // --- The globe's menu -------------------------------------------------------------------
 
 /*!
- * The globe on the Sym page: a list of the languages checked, to go straight to
- * one. (Holding the globe switches the style.)
+ * The globe on the Sym page, or the space bar held still and let go: a list of
+ * the languages checked, to go straight to one. (Holding the globe switches the
+ * style; holding space and sliding moves the cursor.)
  */
-void KeyboardView::showMenu()
+void KeyboardView::showMenu(int anchor)
 {
     m_menu.clear();
     for (const Language &l : m_settings.languages)
         m_menu << l.name;
-    int globe = -1;
-    for (int i = 0; i < m_zones.size(); ++i)
+    int globe = anchor >= 0 && anchor < m_zones.size() ? anchor : -1;
+    for (int i = 0; globe < 0 && i < m_zones.size(); ++i)
         if (m_zones[i].slot.key->kind == Kind::Globe) { globe = i; break; }
     const qreal rowH = cellH();
     const qreal pad = popupPad();
@@ -1684,6 +1687,9 @@ void KeyboardView::lift(bool up)
 {
     m_holdTimer.stop();
     stopRepeat(up);
+    // Space held and let go where it was: the languages, when there is more than one.
+    const int languagesFrom = up && m_cursorMode && !m_cursorMoved && !m_searching
+                              && m_settings.languages.size() > 1 ? m_pressed : -1;
     if (m_swiping) {
         if (up && m_controller) {
             m_controller->onSwipe(m_swipeX, m_swipeY, capsNow());
@@ -1701,11 +1707,13 @@ void KeyboardView::lift(bool up)
     m_extended.clear();
     m_extendedFrame = QRectF();
     m_cursorMode = false;
+    m_cursorMoved = false;
     m_held = false;
     m_spent = false;
     m_pressed = -1;
     m_preview = -1;
     if (hadPopup) updatePopupRect();
+    if (languagesFrom >= 0) showMenu(languagesFrom);
     update();
 }
 

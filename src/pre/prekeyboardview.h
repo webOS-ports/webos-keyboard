@@ -217,8 +217,8 @@ private:
     void startCursor(qreal x, qreal y);
     void moveCursor(qreal x, qreal y);
 
-    // The globe's menu: the keyboards, and the languages checked.
-    void showMenu();
+    // The globe's menu: the languages checked. Over [anchor]'s key (the globe's when -1).
+    void showMenu(int anchor = -1);
     int menuAt(qreal x, qreal y) const;
     QRectF menuRow(int i) const;
 
@@ -279,8 +279,9 @@ private:
     QRectF m_extendedFrame;
     int m_extendedIndex = 0;
 
-    // Press and hold: space moves the cursor.
+    // Press and hold: space moves the cursor; held still and let go, the languages.
     bool m_cursorMode = false;
+    bool m_cursorMoved = false;
     qreal m_cursorX = 0, m_cursorY = 0;
 
     // The suggestion bar.
