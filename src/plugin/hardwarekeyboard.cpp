@@ -234,6 +234,18 @@ bool HardwareKeyboard::InputDevice::advertises(quint32 scanCode) const
     return (keyBits.at(word) >> bit) & 1;
 }
 
+//! Letter keys, not a name: the same rule the framework's own detection uses,
+//! so the two layers cannot describe the hardware differently.
+bool HardwareKeyboard::InputDevice::isKeyboard() const
+{
+    return advertises(KEY_A) and advertises(KEY_Q) and advertises(KEY_M);
+}
+
+bool HardwareKeyboard::InputDevice::repeats() const
+{
+    return (eventBits >> EV_REP) & 1;
+}
+
 //! \brief Every input device the kernel knows about, with its EV_KEY bitmask.
 //!
 //! /proc/bus/input/devices rather than the evdev nodes: it is world readable,
@@ -269,6 +281,7 @@ QList<HardwareKeyboard::InputDevice> HardwareKeyboard::readInputDevices()
 
     static const QRegularExpression name_line("^N: Name=\"(.*)\"$");
     static const QRegularExpression key_line("^B: KEY=(.*)$");
+    static const QRegularExpression ev_line("^B: EV=([0-9a-fA-F]+)$");
 
     // Read the whole file up front rather than streaming it. procfs reports a
     // size of 0, and QFileDevice::atEnd() is size() == pos(), so it answers
@@ -285,6 +298,12 @@ QList<HardwareKeyboard::InputDevice> HardwareKeyboard::readInputDevices()
             InputDevice device;
             device.name = name.captured(1);
             devices.append(device);
+            continue;
+        }
+
+        const QRegularExpressionMatch events(ev_line.match(line));
+        if (events.hasMatch() and not devices.isEmpty()) {
+            devices.last().eventBits = events.captured(1).toULongLong(nullptr, 16);
             continue;
         }
 
@@ -320,6 +339,19 @@ void HardwareKeyboard::selectProfile()
     const int previous = m_activeProfile;
     m_activeProfile = -1;
 
+    const QList<InputDevice> present(readInputDevices());
+
+    // Read whatever the profile choice below turns out to be: a forced
+    // profile, or none at all, does not change which keyboard is attached
+    // or what its driver does with a held key.
+    m_kernelRepeats = false;
+    for (const InputDevice &device : present) {
+        if (device.isKeyboard() and device.repeats())
+            m_kernelRepeats = true;
+    }
+    qCInfo(lcHwKeyboard) << "a held key is repeated by"
+                         << (m_kernelRepeats ? "the kernel" : "this plugin");
+
     //! Names of the attached keyboards, for the log when none of them matched.
     QStringList keyboards;
 
@@ -345,8 +377,6 @@ void HardwareKeyboard::selectProfile()
                        << "profile" << wanted << "but no such profile is installed";
         }
     } else {
-        const QList<InputDevice> present(readInputDevices());
-
         // Of the profiles that match, the most specific wins: one that names
         // the keys it needs knows something about this keyboard that a
         // name-only profile does not.
@@ -402,8 +432,7 @@ void HardwareKeyboard::selectProfile()
             // Which of them is a keyboard, for the log line below. The same rule
             // the framework's own detection uses - letter keys, not a name - so
             // the two layers cannot describe the hardware differently.
-            if (device.advertises(KEY_A) and device.advertises(KEY_Q)
-                and device.advertises(KEY_M)) {
+            if (device.isKeyboard()) {
                 keyboards.append(device.name);
             }
         }
@@ -514,6 +543,11 @@ bool HardwareKeyboard::isSymLocked() const
 bool HardwareKeyboard::hasTelephoneKeypad() const
 {
     return m_telephoneKeypad;
+}
+
+bool HardwareKeyboard::kernelRepeats() const
+{
+    return m_kernelRepeats;
 }
 
 bool HardwareKeyboard::shiftLatchActive() const
