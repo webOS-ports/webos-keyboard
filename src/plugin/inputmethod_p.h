@@ -343,6 +343,15 @@ public:
             host->sendKeyEvent(QKeyEvent(QEvent::KeyRelease, key, Qt::ShiftModifier));
         };
         b.autoCaps = [this] { return editor.atAutoCapsPosition(); };
+        b.before = [this](int n) {
+            const Model::Text *t = editor.text();
+            return t ? (t->surroundingLeft() + t->preedit()).right(n) : QString();
+        };
+        b.after = [this](int n) {
+            const Model::Text *t = editor.text();
+            return t ? t->surroundingRight().left(n) : QString();
+        };
+        b.prose = [this] { return contentType == InputMethod::FreeTextContentType && !hiddenText; };
         b.canAdd = [this](const QString &word) { return editor.wordEngine()->isMisspelled(word); };
         b.addWord = [this](const QString &word) { editor.addToUserDictionary(word); };
         b.removeWord = [this](const QString &word) {

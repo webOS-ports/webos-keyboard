@@ -72,6 +72,8 @@ struct Settings
      * language's words are loaded.
      */
     bool swipe = true;
+    //! Two quick spaces after a word type ". ".
+    bool doubleSpacePeriod = true;
 
     // From the LuneOS keyboard's settings.
     //! Prediction or spell checking is on: the suggestion bar shows.

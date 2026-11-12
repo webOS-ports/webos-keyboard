@@ -68,6 +68,11 @@ struct Bridge
     std::function<void(int dx, int dy, bool select)> cursor;
     //! Whether the next letter starts a sentence.
     std::function<bool()> autoCaps;
+    //! The last [n] characters before the cursor, the word being typed included; and the next [n] after it.
+    std::function<QString(int n)> before;
+    std::function<QString(int n)> after;
+    //! The field is for prose (free text, not hidden): a period brings its own space there.
+    std::function<bool()> prose;
     //! Whether [word] could be added to the owner's dictionary: it is not known.
     std::function<bool(const QString &word)> canAdd;
     std::function<void(const QString &word)> addWord;
@@ -175,7 +180,33 @@ Q_SIGNALS:
     //! The language's words to swipe are in (or it has none).
     void swipeWordsLoaded();
 
+public:
+    //! Where the time comes from, in ms: the tests set their own.
+    void setClock(const std::function<qint64()> &clock) { m_clock = clock; }
+
+    //! Two spaces at most this far apart (ms) after a word are a period.
+    static constexpr qint64 DOUBLE_SPACE_MS = 1000;
+
 private:
+    /*!
+     * The Pre's punctuation, between the keys and the editor: a double space
+     * after a word is ". ", a period brings its own space (which a space typed
+     * on top of is absorbed by), and sentence punctuation typed after a space
+     * goes against the word ("word ," is "word, "). True when it typed [text]
+     * itself; false leaves [text] to be typed as it is.
+     */
+    bool punctuate(const QString &text);
+    //! A character or a space, through the event handler, as a key of LuneOS's own.
+    void key(const QString &text);
+    void backspaceKey();
+    //! Whether text ending in [before] wants a space after the period that ends it.
+    static bool periodWantsSpace(const QString &before, const QString &after);
+    //! The keyboard's own space ([m_autoTail]) is still the last thing typed.
+    bool autoSpaced() const;
+    //! A space typed after a word is the last thing typed; [digit]: after a number.
+    bool spaceAfterWord(bool *digit = nullptr) const;
+    qint64 now() const;
+
     void applySettings();
     //! The settings as the view has them: swiping only once there are words to swipe.
     Settings shown() const;
@@ -207,6 +238,14 @@ private:
     QStringList m_bar = { QString(), QString(), QString() };
     bool m_deleting = false;
     QString m_clipDone;
+
+    // Punctuation (see punctuate()).
+    std::function<qint64()> m_clock;
+    qint64 m_lastSpaceAt;
+    //! The text the keyboard's own space ends (". "), while it is the last thing typed.
+    QString m_autoTail;
+    //! A space typed after a word is the last thing typed.
+    bool m_spaceIsLast = false;
 
     // Swipe to type.
     QString m_libDir;

@@ -136,7 +136,9 @@ private:
     void sendCommitString(const QString &s) override { committed += s; preedit.clear(); }
     void sendKeyEvent(const QKeyEvent &ev) override
     {
-        if (ev.type() == QEvent::KeyPress && ev.key() == Qt::Key_Backspace) committed.chop(1);
+        if (ev.type() != QEvent::KeyPress) return;
+        if (ev.key() == Qt::Key_Backspace) committed.chop(1);
+        else if (ev.key() == Qt::Key_Return) committed += QStringLiteral("\r");
     }
     void invokeAction(const QString &, const QKeySequence &) override {}
 };
@@ -349,7 +351,7 @@ private Q_SLOTS:
         QCOMPARE(QSet<QString>(keys.begin(), keys.end()),
                  (QSet<QString>{ QStringLiteral("style"), QStringLiteral("height"), QStringLiteral("holdForMore"),
                                  QStringLiteral("vibrate"), QStringLiteral("vibrateLevel"),
-                                 QStringLiteral("followShift"),
+                                 QStringLiteral("followShift"), QStringLiteral("doubleSpacePeriod"),
                                  QStringLiteral("swipe"), QStringLiteral("recentEmoji") }));
         const Pre::Settings back = Pre::Settings::fromJson(pre);
         QCOMPARE(back.style, Pre::Style::White);
@@ -721,6 +723,73 @@ private Q_SLOTS:
         editor.committed.clear();
         type(QStringLiteral(" teh?"));
         QCOMPARE(editor.committed, QStringLiteral("don't teh?"));
+    }
+
+    /*
+     * The Pre's punctuation, through the event handler and the editor into a
+     * string standing for the application: each case is what was typed, and
+     * what the field holds after. "_" is a pause long enough that two spaces
+     * are not a double space.
+     */
+    void punctuation_data()
+    {
+        QTest::addColumn<QString>("typed");
+        QTest::addColumn<QString>("field");
+        QTest::addColumn<bool>("prose");
+        QTest::addColumn<bool>("doubleSpace");
+        QTest::newRow("double space") << "hi  " << "hi. " << true << true;
+        QTest::newRow("double space, slow") << "hi _ " << "hi  " << true << true;
+        QTest::newRow("double space off") << "hi  " << "hi  " << true << false;
+        QTest::newRow("double space after nothing") << "  " << "  " << true << true;
+        QTest::newRow("period brings a space") << "hi.yo" << "hi. yo" << true << true;
+        QTest::newRow("space on the period's") << "hi. yo" << "hi. yo" << true << true;
+        QTest::newRow("no space in a number") << "3.14" << "3.14" << true << true;
+        QTest::newRow("no space in an address") << "a@b.com" << "a@b.com" << true << true;
+        QTest::newRow("no space in www") << "www.x" << "www.x" << true << true;
+        QTest::newRow("no space outside prose") << "hi.yo" << "hi.yo" << false << true;
+        QTest::newRow("comma after a space") << "hi ,yo" << "hi, yo" << true << true;
+        QTest::newRow("question after a space") << "hi ?" << "hi? " << true << true;
+        QTest::newRow("ellipsis") << "hi..." << "hi... " << true << true;
+        // Against the period, as on Android: the owner typed no space to move after it.
+        QTest::newRow("question on the period") << "hi.?" << "hi.?" << true << true;
+        QTest::newRow("a number's period stays") << "3 .5" << "3 .5" << true << true;
+        QTest::newRow("double space, then a comma") << "hi  ," << "hi.," << true << true;
+        QTest::newRow("backspace takes the period's space") << "hi.<x" << "hi.x" << true << true;
+        QTest::newRow("return drops the period's space") << "hi.>" << "hi.\r" << true << true;
+    }
+
+    void punctuation()
+    {
+        QFETCH(QString, typed);
+        QFETCH(QString, field);
+        QFETCH(bool, prose);
+        QFETCH(bool, doubleSpace);
+        SetWords *words = new SetWords;
+        StringEditor editor(words);
+        Logic::EventHandler handler;
+        QObject::connect(&handler, &Logic::EventHandler::keyPressed, &editor, &AbstractTextEditor::onKeyPressed);
+        QObject::connect(&handler, &Logic::EventHandler::keyReleased, &editor, &AbstractTextEditor::onKeyReleased);
+        Pre::Bridge b;
+        b.press = [&](const QString &l, const QString &a) { handler.onKeyPressed(l, a); };
+        b.release = [&](const QString &l, const QString &a) { handler.onKeyReleased(l, a); };
+        b.before = [&](int n) { return (editor.committed + editor.preedit).right(n); };
+        b.after = [](int) { return QString(); };
+        b.prose = [&] { return prose; };
+        qint64 clock = 0;
+        Pre::Controller c;
+        c.setBridge(b);
+        c.setClock([&] { return clock; });
+        c.setPrefs(QJsonObject{ { QStringLiteral("doubleSpacePeriod"), doubleSpace } });
+        c.startInput();
+        for (const QChar ch : typed) {
+            clock += 150;
+            if (ch == QLatin1Char('_')) clock += 2 * Pre::Controller::DOUBLE_SPACE_MS;
+            else if (ch == QLatin1Char('<')) c.onBackspace(false);
+            else if (ch == QLatin1Char('>')) c.onEnter();
+            else c.onText(QString(ch));
+        }
+        // Whatever is still being typed, as the field shows it.
+        QCOMPARE(editor.committed + editor.preedit, field);
     }
 
     void wordsAreAddedToLuneOSsDictionary()

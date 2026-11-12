@@ -31,6 +31,7 @@
 #include <QLoggingCategory>
 
 #include <algorithm>
+#include <limits>
 
 Q_LOGGING_CATEGORY(lcPre, "luneos.keyboard.pre", QtInfoMsg)
 
@@ -44,6 +45,17 @@ const QString BACKSPACE = QStringLiteral("backspace");
 const int KEEP_WORDS = 2;
 //! What a word the owner adds is worth to the swipe decoder: a fairly common word.
 const int LEARNED_SCORE = 14;
+//! Long before any space: no double space with it.
+const qint64 NEVER = std::numeric_limits<qint64>::min() / 2;
+//! Punctuation that goes against the word before it, never after a space.
+const QString SENTENCE = QStringLiteral(".,?!:;");
+//! What may close a word, for a space after it to be the word's.
+const QString CLOSERS = QStringLiteral(")\"']}”’");
+//! How far back to look for the address a period may be in.
+const int MAX_TOKEN = 64;
+
+//! [c] ends a word: a space after it is a word's.
+bool endsWord(QChar c) { return c.isLetterOrNumber() || CLOSERS.contains(c); }
 
 QString sha1(const QString &t)
 {
@@ -54,6 +66,7 @@ QString sha1(const QString &t)
 
 Controller::Controller(QObject *parent)
     : QObject(parent)
+    , m_lastSpaceAt(NEVER)
 {
     m_pool.setMaxThreadCount(1);
 }
@@ -171,6 +184,9 @@ void Controller::writePrefs(const QJsonObject &pre)
 void Controller::startInput()
 {
     m_deleting = false;
+    m_lastSpaceAt = NEVER;
+    m_autoTail.clear();
+    m_spaceIsLast = false;
     m_swiped.clear();
     m_swipeGuesses.clear();
     m_live.clear();
@@ -256,6 +272,11 @@ void Controller::onPick(int i, int caps)
     if (caps == KeyboardView::CAPS_ALL) w = QLocale(m_settings.language.id).toUpper(w);
     else if (caps == KeyboardView::CAPS_FIRST) w = w.left(1).toUpper() + w.mid(1);
     m_bridge.pick(w);
+    // It goes in with a space after it: the first of a double space, and a
+    // space a comma goes in front of.
+    m_autoTail.clear();
+    m_spaceIsLast = true;
+    m_lastSpaceAt = now();
 }
 
 bool Controller::canAdd(const QString &word)
@@ -308,21 +329,134 @@ void Controller::onText(const QString &text)
     if (text == QLatin1String(" ") && !m_swiped.isEmpty() && m_typed == m_swiped && m_bridge.pick) {
         // A swiped word goes in as it was swiped: autocorrect is for letters tapped wrong.
         m_bridge.pick(m_swiped);
-    } else if (text == QLatin1String(" ")) {
-        if (m_bridge.press) m_bridge.press(text, SPACE);
-        if (m_bridge.release) m_bridge.release(text, SPACE);
+        m_autoTail.clear();
+        m_spaceIsLast = true;
+        m_lastSpaceAt = now();
     } else if (text.length() == 1) {
-        if (m_bridge.press) m_bridge.press(text, QString());
-        if (m_bridge.release) m_bridge.release(text, QString());
-    } else if (m_bridge.commit) {
-        m_bridge.commit(text);
+        if (!punctuate(text)) key(text);
+    } else {
+        m_autoTail.clear();
+        m_spaceIsLast = false;
+        m_lastSpaceAt = NEVER;
+        if (m_bridge.commit) m_bridge.commit(text);
     }
+}
+
+void Controller::key(const QString &text)
+{
+    const QString action = text == QLatin1String(" ") ? SPACE : QString();
+    if (m_bridge.press) m_bridge.press(text, action);
+    if (m_bridge.release) m_bridge.release(text, action);
+}
+
+void Controller::backspaceKey()
+{
+    if (m_bridge.press) m_bridge.press(QString(), BACKSPACE);
+    if (m_bridge.release) m_bridge.release(QString(), BACKSPACE);
+}
+
+qint64 Controller::now() const
+{
+    if (m_clock) return m_clock();
+    static QElapsedTimer started;
+    if (!started.isValid()) started.start();
+    return started.elapsed();
+}
+
+bool Controller::autoSpaced() const
+{
+    return !m_autoTail.isEmpty() && m_bridge.before && m_bridge.before(int(m_autoTail.size())) == m_autoTail;
+}
+
+bool Controller::spaceAfterWord(bool *digit) const
+{
+    if (!m_spaceIsLast || !m_bridge.before) return false;
+    const QString b = m_bridge.before(2);
+    const bool is = b.size() == 2 && b.at(1) == QLatin1Char(' ') && endsWord(b.at(0));
+    if (digit) *digit = is && b.at(0).isDigit();
+    return is;
+}
+
+bool Controller::periodWantsSpace(const QString &before, const QString &after)
+{
+    // [before] ends in the period itself.
+    if (before.size() < 2) return false;
+    const QChar prev = before.at(before.size() - 2);
+    if (prev.isSpace() || prev.isDigit()) return false;
+    QString token = before.left(before.size() - 1);
+    token = token.mid(token.lastIndexOf(QLatin1Char(' ')) + 1);
+    token = token.mid(token.lastIndexOf(QLatin1Char('\n')) + 1);
+    if (token.contains(QLatin1Char('@')) || token.contains(QLatin1Char('/'))
+        || token.startsWith(QLatin1String("www"), Qt::CaseInsensitive))
+        return false;
+    return after.isEmpty() || !after.at(0).isSpace();
+}
+
+bool Controller::punctuate(const QString &text)
+{
+    const qint64 t = now();
+    const bool space = text == QLatin1String(" ");
+    const bool spaceAgain = space && t - m_lastSpaceAt < DOUBLE_SPACE_MS;
+    const bool spaced = autoSpaced();
+    bool afterDigit = false;
+    const bool typedSpace = spaceAfterWord(&afterDigit);
+    m_autoTail.clear();
+    m_spaceIsLast = false;
+    m_lastSpaceAt = NEVER;
+    const bool prose = m_bridge.prose ? m_bridge.prose() : m_wordsAllowed;
+    if (!prose || !m_bridge.before) {
+        if (space) m_lastSpaceAt = t;
+        return false;
+    }
+
+    // A space on top of the keyboard's own: already there. It still counts toward a double space.
+    if (space && spaced) {
+        m_lastSpaceAt = t;
+        return true;
+    }
+    if (space && m_settings.doubleSpacePeriod && spaceAgain && typedSpace) {
+        backspaceKey();
+        key(QStringLiteral("."));
+        key(QStringLiteral(" "));
+        m_autoTail = QStringLiteral(". ");
+        return true;
+    }
+    if (space) {
+        key(text);
+        m_spaceIsLast = true;
+        m_lastSpaceAt = t;
+        return true;
+    }
+
+    // A period after a number and a space starts something (3 .5); after a word, it ends it.
+    const bool snap = SENTENCE.contains(text.at(0))
+                      && (spaced || (typedSpace && !(afterDigit && text == QLatin1String("."))));
+    // What the text will be once [text] is in, to tell whether the period wants its space.
+    QString before = m_bridge.before(MAX_TOKEN);
+    if (snap) {
+        backspaceKey();
+        before.chop(1);
+    }
+    key(text);
+    before += text;
+    if (text == QLatin1String(".") && periodWantsSpace(before, m_bridge.after ? m_bridge.after(1) : QString())) {
+        key(QStringLiteral(" "));
+        m_autoTail = QStringLiteral(". ");
+    } else if (snap && typedSpace) {
+        // The owner's space moves to after the punctuation, where it belongs.
+        key(QStringLiteral(" "));
+        m_autoTail = text + QLatin1Char(' ');
+    }
+    return true;
 }
 
 void Controller::onBackspace(bool)
 {
-    if (m_bridge.press) m_bridge.press(QString(), BACKSPACE);
-    if (m_bridge.release) m_bridge.release(QString(), BACKSPACE);
+    // Straight after a period, it takes just the period's space.
+    m_autoTail.clear();
+    m_spaceIsLast = false;
+    m_lastSpaceAt = NEVER;
+    backspaceKey();
 }
 
 void Controller::onBackspaceHeld(bool held, bool lifted)
@@ -330,6 +464,9 @@ void Controller::onBackspaceHeld(bool held, bool lifted)
     // The editor repeats a held backspace, and goes over to whole words, as it
     // does for LuneOS's own keys.
     if (held) {
+        m_autoTail.clear();
+        m_spaceIsLast = false;
+        m_lastSpaceAt = NEVER;
         m_deleting = true;
         if (m_bridge.press) m_bridge.press(QString(), BACKSPACE);
         return;
@@ -345,6 +482,11 @@ void Controller::onBackspaceHeld(bool held, bool lifted)
 
 void Controller::onEnter()
 {
+    // The keyboard's own space is not left at the end of the line.
+    if (autoSpaced()) backspaceKey();
+    m_autoTail.clear();
+    m_spaceIsLast = false;
+    m_lastSpaceAt = NEVER;
     if (m_bridge.press) m_bridge.press(QString(), RETURN);
     if (m_bridge.release) m_bridge.release(QString(), RETURN);
 }

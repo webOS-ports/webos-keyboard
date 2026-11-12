@@ -46,6 +46,7 @@ Settings Settings::fromJson(const QJsonObject &pre, Settings into)
     s.vibrateLevel = std::clamp(pre.value(QLatin1String("vibrateLevel")).toInt(1), 1, VIBRATE_LEVELS);
     s.followShift = flag(pre, "followShift", false);
     s.swipe = flag(pre, "swipe", true);
+    s.doubleSpacePeriod = flag(pre, "doubleSpacePeriod", true);
     return s;
 }
 
@@ -64,6 +65,7 @@ QJsonObject Settings::toJson(QJsonObject pre) const
     pre.insert(QLatin1String("vibrateLevel"), vibrateLevel);
     pre.insert(QLatin1String("followShift"), followShift);
     pre.insert(QLatin1String("swipe"), swipe);
+    pre.insert(QLatin1String("doubleSpacePeriod"), doubleSpacePeriod);
     return pre;
 }
 
@@ -72,6 +74,7 @@ bool Settings::operator==(const Settings &o) const
     return style == o.style && height == o.height && holdForMore == o.holdForMore && vibrate == o.vibrate &&
            vibrateLevel == o.vibrateLevel &&
            followShift == o.followShift && suggestions == o.suggestions && sound == o.sound && swipe == o.swipe &&
+           doubleSpacePeriod == o.doubleSpacePeriod &&
            languages == o.languages && language == o.language;
 }
 
