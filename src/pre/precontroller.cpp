@@ -168,6 +168,14 @@ void Controller::setKeyboardState(bool suggestions, bool sound, const QStringLis
     }
 }
 
+void Controller::setKeyboardSize(const QString &size)
+{
+    const Settings::Height h = Settings::forSize(size);
+    if (h == m_settings.height) return;
+    m_settings.height = h;
+    applySettings();
+}
+
 Settings Controller::shown() const
 {
     Settings s = m_settings;

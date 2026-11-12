@@ -139,6 +139,8 @@ public:
     void setActive(bool active);
     //! The "pre" object of the keyboard preference: the Pre Keyboard's look.
     void setPrefs(const QJsonObject &pre);
+    //! LuneOS's keyboard size ("XS", "S", "M", "L"): the Pre Keyboard's height.
+    void setKeyboardSize(const QString &size);
     //! LuneOS's keyboard settings the Pre Keyboard follows.
     void setKeyboardState(bool suggestions, bool sound, const QStringList &enabledLanguages,
                           const QString &activeLanguage);

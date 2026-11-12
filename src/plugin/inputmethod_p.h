@@ -423,6 +423,9 @@ public:
         QObject::connect(q, &InputMethod::enabledLanguagesChanged, &pre, sync);
         QObject::connect(q, &InputMethod::activeLanguageChanged, &pre, sync);
         sync();
+        // Its height is the keyboard's size, Text Assist's Keyboard Size.
+        QObject::connect(q, &InputMethod::keyboardSizeChanged, &pre, &Pre::Controller::setKeyboardSize);
+        pre.setKeyboardSize(q->keyboardSize());
     }
 
 

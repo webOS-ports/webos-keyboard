@@ -397,18 +397,53 @@ private Q_SLOTS:
         const QJsonObject pre = s.toJson(QJsonObject{ { QStringLiteral("recentEmoji"), QJsonArray{ QStringLiteral("🙂") } } });
         const QStringList keys = pre.keys();
         QCOMPARE(QSet<QString>(keys.begin(), keys.end()),
-                 (QSet<QString>{ QStringLiteral("style"), QStringLiteral("height"), QStringLiteral("holdForMore"),
+                 (QSet<QString>{ QStringLiteral("style"), QStringLiteral("holdForMore"),
                                  QStringLiteral("vibrate"), QStringLiteral("vibrateLevel"),
                                  QStringLiteral("followShift"), QStringLiteral("doubleSpacePeriod"),
                                  QStringLiteral("emojiSuggestions"),
                                  QStringLiteral("swipe"), QStringLiteral("recentEmoji") }));
         const Pre::Settings back = Pre::Settings::fromJson(pre);
         QCOMPARE(back.style, Pre::Style::White);
-        QCOMPARE(back.height, Pre::Settings::Height::Large);
+        // The height is the keyboard's size, not the "pre" object's.
+        QCOMPARE(back.height, Pre::Settings::Height::Medium);
+        QCOMPARE(Pre::Settings::fromJson(QJsonObject{ { QStringLiteral("height"), QStringLiteral("large") } }).height,
+                 Pre::Settings::Height::Medium);
         QVERIFY(back.holdForMore && back.vibrate && back.followShift && !back.swipe);
         // Swiping is on till the owner turns it off.
         QVERIFY(Pre::Settings::fromJson(QJsonObject()).swipe);
         QVERIFY(!back.suggestions);
+    }
+
+    // Text Assist's Keyboard Size is the Pre Keyboard's height: XS and S Small, M Medium, L Large.
+    void heightFollowsKeyboardSize()
+    {
+        using H = Pre::Settings::Height;
+        QCOMPARE(Pre::Settings::forSize(QStringLiteral("XS")), H::Small);
+        QCOMPARE(Pre::Settings::forSize(QStringLiteral("S")), H::Small);
+        QCOMPARE(Pre::Settings::forSize(QStringLiteral("M")), H::Medium);
+        QCOMPARE(Pre::Settings::forSize(QStringLiteral("L")), H::Large);
+        QCOMPARE(Pre::Settings::forSize(QString()), H::Medium);
+        QCOMPARE(Pre::Settings::forSize(QStringLiteral("XL")), H::Medium);
+
+        Pre::Controller c;
+        Pre::KeyboardView view;
+        showKeys(view, Pre::Language::byId(QStringLiteral("en")), 1080, 1080, false, H::Medium);
+        c.setView(&view);
+        c.setKeyboardState(true, false, { QStringLiteral("en") }, QStringLiteral("en"));
+        QSignalSpy resized(&view, &Pre::KeyboardView::geometryChanged);
+        const qreal medium = view.keysHeight();
+        c.setKeyboardSize(QStringLiteral("L"));
+        QCOMPARE(view.settings().height, H::Large);
+        QVERIFY(view.keysHeight() > medium);
+        QCOMPARE(resized.size(), 1);
+        c.setKeyboardSize(QStringLiteral("XS"));
+        QCOMPARE(view.settings().height, H::Small);
+        QVERIFY(view.keysHeight() < medium);
+        // The "pre" object changing leaves it be.
+        c.setPrefs(QJsonObject{ { QStringLiteral("style"), QStringLiteral("white") } });
+        QCOMPARE(view.settings().height, H::Small);
+        c.setKeyboardSize(QStringLiteral("M"));
+        QCOMPARE(view.keysHeight(), medium);
     }
 
     void recentEmojiAreCapped()

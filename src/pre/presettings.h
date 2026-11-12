@@ -34,7 +34,7 @@ namespace Pre {
  * system "keyboard" preference (Text Assist writes it, and the keys switch the
  * style and Hold for More):
  *
- *   "keyboard": { ..., "pre": { "style": "orange", "height": "medium",
+ *   "keyboard": { ..., "pre": { "style": "orange",
  *                               "holdForMore": false, "vibrate": false,
  *                               "followShift": false, "swipe": true,
  *                               "doubleSpacePeriod": true, "emojiSuggestions": false,
@@ -50,6 +50,7 @@ struct Settings
 
     // From the "pre" object.
     Style style = Style::Orange;
+    //! From the keyboard's own size (keyboardSize, Text Assist's Keyboard Size): see forSize().
     Height height = Height::Medium;
     //! Press and hold a key for its extra characters (accents, more symbols), each such key dotted.
     bool holdForMore = false;
@@ -87,6 +88,9 @@ struct Settings
     QList<Language> languages;
     //! The one typed in now, always one of [languages].
     Language language;
+
+    //! The height for LuneOS's keyboardSize: "XS" and "S" are Small, "L" Large, anything else Medium.
+    static Height forSize(const QString &size);
 
     bool showsBar() const { return suggestions || swipe || emojiSuggestions; }
     //! Row heights in dp. Medium is close to a Pre key's proportions on a modern phone.

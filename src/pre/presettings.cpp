@@ -39,8 +39,6 @@ Settings Settings::fromJson(const QJsonObject &pre, Settings into)
     Settings &s = into;
     const QString style = pre.value(QLatin1String("style")).toString();
     s.style = style == QLatin1String("white") ? Style::White : Style::Orange;
-    const QString h = pre.value(QLatin1String("height")).toString();
-    s.height = h == QLatin1String("small") ? Height::Small : h == QLatin1String("large") ? Height::Large : Height::Medium;
     s.holdForMore = flag(pre, "holdForMore", false);
     s.vibrate = flag(pre, "vibrate", false);
     s.vibrateLevel = std::clamp(pre.value(QLatin1String("vibrateLevel")).toInt(1), 1, VIBRATE_LEVELS);
@@ -59,8 +57,6 @@ Settings Settings::fromJson(const QJsonObject &pre)
 QJsonObject Settings::toJson(QJsonObject pre) const
 {
     pre.insert(QLatin1String("style"), style == Style::White ? QLatin1String("white") : QLatin1String("orange"));
-    pre.insert(QLatin1String("height"), height == Height::Small ? QLatin1String("small")
-               : height == Height::Large ? QLatin1String("large") : QLatin1String("medium"));
     pre.insert(QLatin1String("holdForMore"), holdForMore);
     pre.insert(QLatin1String("vibrate"), vibrate);
     pre.insert(QLatin1String("vibrateLevel"), vibrateLevel);
@@ -78,6 +74,13 @@ bool Settings::operator==(const Settings &o) const
            followShift == o.followShift && suggestions == o.suggestions && sound == o.sound && swipe == o.swipe &&
            doubleSpacePeriod == o.doubleSpacePeriod && emojiSuggestions == o.emojiSuggestions &&
            languages == o.languages && language == o.language;
+}
+
+Settings::Height Settings::forSize(const QString &size)
+{
+    if (size == QLatin1String("XS") || size == QLatin1String("S")) return Height::Small;
+    if (size == QLatin1String("L")) return Height::Large;
+    return Height::Medium;
 }
 
 int Settings::keyBuzzMs() const
