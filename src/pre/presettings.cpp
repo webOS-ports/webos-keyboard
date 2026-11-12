@@ -47,6 +47,7 @@ Settings Settings::fromJson(const QJsonObject &pre, Settings into)
     s.followShift = flag(pre, "followShift", false);
     s.swipe = flag(pre, "swipe", true);
     s.doubleSpacePeriod = flag(pre, "doubleSpacePeriod", true);
+    s.emojiSuggestions = flag(pre, "emojiSuggestions", false);
     return s;
 }
 
@@ -66,6 +67,7 @@ QJsonObject Settings::toJson(QJsonObject pre) const
     pre.insert(QLatin1String("followShift"), followShift);
     pre.insert(QLatin1String("swipe"), swipe);
     pre.insert(QLatin1String("doubleSpacePeriod"), doubleSpacePeriod);
+    pre.insert(QLatin1String("emojiSuggestions"), emojiSuggestions);
     return pre;
 }
 
@@ -74,7 +76,7 @@ bool Settings::operator==(const Settings &o) const
     return style == o.style && height == o.height && holdForMore == o.holdForMore && vibrate == o.vibrate &&
            vibrateLevel == o.vibrateLevel &&
            followShift == o.followShift && suggestions == o.suggestions && sound == o.sound && swipe == o.swipe &&
-           doubleSpacePeriod == o.doubleSpacePeriod &&
+           doubleSpacePeriod == o.doubleSpacePeriod && emojiSuggestions == o.emojiSuggestions &&
            languages == o.languages && language == o.language;
 }
 

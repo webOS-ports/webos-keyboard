@@ -10,7 +10,7 @@ styles.files = styles
 hwkeyboard.path = $${LUNEOS_KEYBOARD_DATA_DIR}
 hwkeyboard.files = hwkeyboard
 
-# The Pre Keyboard's emoji page.
+# The Pre Keyboard's emoji page, and the emoji it offers for words.
 # See pre/README.md for where it comes from and its licence.
 pre.path = $${LUNEOS_KEYBOARD_DATA_DIR}
 pre.files = pre

@@ -85,8 +85,11 @@ public:
     // What the controller tells the view.
     void applySettings(const Settings &s);
     const Settings &settings() const { return m_settings; }
-    //! Three words, left to right; the middle one is the likeliest. "" leaves a place empty.
-    void setSuggestions(const QStringList &words);
+    /*!
+     * Three words, left to right; the middle one is the likeliest. "" leaves a
+     * place empty. [emoji]: the right-hand one is an emoji for the middle word.
+     */
+    void setSuggestions(const QStringList &words, bool emoji = false);
     void setPasteOffered(bool offered);
     bool pasteOffered() const { return m_pasteOffered; }
     //! Swiping may happen here: switched on, and a field for words (not a password, say).
@@ -287,6 +290,7 @@ private:
     // The suggestion bar.
     QStringList m_words = { QString(), QString(), QString() };
     int m_barPressed = -1;
+    bool m_barEmoji = false;
     bool m_pasteOffered = false;
     bool m_wordsAllowed = true;
     //! What the field takes, when it takes only that (see setDigits).

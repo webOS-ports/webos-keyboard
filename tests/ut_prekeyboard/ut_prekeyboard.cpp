@@ -20,6 +20,7 @@
 // letters, and its keys handed to the same editor as every LuneOS layout's.
 
 #include "precontroller.h"
+#include "preemojiwords.h"
 #include "prekeyboardview.h"
 #include "prekeymap.h"
 #include "prelanguage.h"
@@ -357,6 +358,7 @@ private Q_SLOTS:
                  (QSet<QString>{ QStringLiteral("style"), QStringLiteral("height"), QStringLiteral("holdForMore"),
                                  QStringLiteral("vibrate"), QStringLiteral("vibrateLevel"),
                                  QStringLiteral("followShift"), QStringLiteral("doubleSpacePeriod"),
+                                 QStringLiteral("emojiSuggestions"),
                                  QStringLiteral("swipe"), QStringLiteral("recentEmoji") }));
         const Pre::Settings back = Pre::Settings::fromJson(pre);
         QCOMPARE(back.style, Pre::Style::White);
@@ -867,6 +869,101 @@ private Q_SLOTS:
         QCOMPARE(words.nextWords(QStringLiteral("I "), 3),
                  (QStringList{ QStringLiteral("think"), QStringLiteral("know"), QStringLiteral("am") }));
         QCOMPARE(words.nextWords(QStringLiteral("I "), 1), QStringList{ QStringLiteral("think") });
+    }
+
+    // A word's emoji: the first the emoji page has, for the word or what it is the plural or possessive of.
+    void emojiForAWord()
+    {
+        const QString pizza = QStringLiteral("🍕"), box = QStringLiteral("📦"), ab = QStringLiteral("🆎");
+        const QString a = QStringLiteral("🅰"), cat = QStringLiteral("🐈"), catFace = QStringLiteral("🐱");
+        const Pre::EmojiWords words(
+            QStringLiteral("# made up\npizza\t%1\nbox\t%2\nab\tX %3\nnone\tX\n\tY\na\t%4\ncat\t%5 %6\n")
+                .arg(pizza, box, ab, a, cat, catFace),
+            { pizza, box, ab, a, cat, catFace });
+        QCOMPARE(words.size(), 5);
+        QCOMPARE(words.forWord(QStringLiteral("cat")), cat);
+        QCOMPARE(words.forWord(QStringLiteral("a")), a);
+        QVERIFY(words.forWord(QStringLiteral("as")).isEmpty()); // too little left to be a plural
+        QCOMPARE(words.forWord(QStringLiteral("Pizza")), pizza);
+        QCOMPARE(words.forWord(QStringLiteral("pizzas")), pizza);
+        QCOMPARE(words.forWord(QStringLiteral("pizza's")), pizza);
+        QCOMPARE(words.forWord(QStringLiteral("pizza\u2019s")), pizza);
+        QCOMPARE(words.forWord(QStringLiteral("pizzas'")), pizza);
+        QCOMPARE(words.forWord(QStringLiteral("pizzas\u2019")), pizza);
+        QCOMPARE(words.forWord(QStringLiteral("boxes")), box);
+        QCOMPARE(words.forWord(QStringLiteral("ab")), ab);
+        QCOMPARE(words.forWord(QStringLiteral("abs")), ab);
+        QVERIFY(words.forWord(QStringLiteral("none")).isEmpty());
+        QVERIFY(words.forWord(QStringLiteral("piz")).isEmpty());
+        QVERIFY(words.forWord(QStringLiteral("'")).isEmpty());
+
+        // Each language's file, against the emoji page's emoji.
+        QSet<QString> page;
+        QFile f(QStringLiteral(PRE_DATA_DIR "/emoji.txt"));
+        QVERIFY(f.open(QIODevice::ReadOnly));
+        for (const QString &line : QString::fromUtf8(f.readAll()).split(QLatin1Char('\n'))) {
+            const QStringList parts = line.split(QLatin1Char('\t'));
+            if (parts.size() == 3) page.insert(parts.at(2));
+        }
+        for (const char *id : { "en", "de", "es", "fr", "it" }) {
+            const Pre::EmojiWords lang =
+                Pre::EmojiWords::load(QStringLiteral(PRE_DATA_DIR "/%1/emoji_words.txt").arg(QLatin1String(id)), page);
+            QVERIFY2(lang.size() > 2500, id);
+        }
+        const Pre::EmojiWords en = Pre::EmojiWords::load(QStringLiteral(PRE_DATA_DIR "/en/emoji_words.txt"), page);
+        QCOMPARE(en.forWord(QStringLiteral("pizza")), pizza);
+    }
+
+    /*
+     * Emoji suggestions on: the word being typed, or swiped, has its emoji in
+     * the bar's right-hand place; tapping it puts the emoji in for the word,
+     * as it is whatever shift says, and it is a recent emoji. Not for the next
+     * words, nor with the setting off.
+     */
+    void emojiSuggestionsInTheBar()
+    {
+        Recorder rec;
+        Pre::Controller c;
+        c.setBridge(rec.bridge());
+        c.setDataDir(QStringLiteral(PRE_DATA_DIR));
+        c.setKeyboardState(true, false, { QStringLiteral("en") }, QStringLiteral("en"));
+        const QString pizza = QStringLiteral("🍕");
+        c.setCandidates(QStringLiteral("pizza"), QString(), { QStringLiteral("pizza"), QStringLiteral("pizzas") });
+        QCOMPARE(c.m_bar, (QStringList{ QStringLiteral("pizzas"), QStringLiteral("pizza"), QString() }));
+        c.setPrefs(QJsonObject{ { QStringLiteral("emojiSuggestions"), true } });
+        c.setCandidates(QStringLiteral("pizza"), QString(), { QStringLiteral("pizza"), QStringLiteral("pizzas") });
+        QCOMPARE(c.m_bar, (QStringList{ QStringLiteral("pizzas"), QStringLiteral("pizza"), pizza }));
+        c.onPick(2, Pre::KeyboardView::CAPS_ALL);
+        QCOMPARE(rec.calls.value(rec.calls.size() - 2), QStringLiteral("pick ") + pizza);
+        QCOMPARE(Pre::Settings::recentEmoji(rec.saved).value(0), pizza);
+        // The correction's emoji, the one space would put in.
+        c.setCandidates(QStringLiteral("piza"), QStringLiteral("pizza"), { QStringLiteral("pizza") });
+        QCOMPARE(c.m_bar, (QStringList{ QStringLiteral("piza"), QStringLiteral("pizza"), pizza }));
+        // Picking a word is as before.
+        rec.calls.clear();
+        c.onPick(1, Pre::KeyboardView::CAPS_FIRST);
+        QCOMPARE(rec.calls, QStringList{ QStringLiteral("pick Pizza") });
+        // None for a word without one.
+        c.setCandidates(QStringLiteral("the"), QString(), { QStringLiteral("the"), QStringLiteral("then") });
+        QCOMPARE(c.m_bar.value(2), QString());
+        // Nor for the words that might come next.
+        Pre::Bridge b = rec.bridge();
+        b.before = [](int) { return QStringLiteral("I like "); };
+        b.nextWords = [] { return QStringList{ QStringLiteral("pizza"), QStringLiteral("it") }; };
+        c.setBridge(b);
+        c.setCandidates(QString(), QString(), {});
+        QCOMPARE(c.m_bar.value(1), QStringLiteral("pizza"));
+        QCOMPARE(c.m_bar.value(2), QString());
+        // A language without them.
+        c.setKeyboardState(true, false, { QStringLiteral("nl") }, QStringLiteral("nl"));
+        c.setCandidates(QStringLiteral("pizza"), QString(), { QStringLiteral("pizza") });
+        QCOMPARE(c.m_bar.value(2), QString());
+        // The bar is up for them with suggestions off; not in a field without words.
+        c.setKeyboardState(false, false, { QStringLiteral("en") }, QStringLiteral("en"));
+        c.setCandidates(QStringLiteral("pizza"), QString(), {});
+        QCOMPARE(c.m_bar, (QStringList{ QString(), QStringLiteral("pizza"), pizza }));
+        c.setWordsAllowed(false);
+        QCOMPARE(c.m_bar, (QStringList{ QString(), QString(), QString() }));
     }
 
     void wordsAreAddedToLuneOSsDictionary()
@@ -1540,6 +1637,19 @@ private Q_SLOTS:
             save(view, QStringLiteral("en-number"));
             view.setDigits(QStringLiteral("0123456789*#+"));
             save(view, QStringLiteral("en-phone"));
+            // The bar: the next words before a word, and a word with its emoji.
+            {
+                Pre::KeyboardView bar;
+                showKeys(bar, en, sc.shortSide, sc.width, sc.landscape, Pre::Settings::Height::Medium);
+                Pre::Settings bs = bar.settings();
+                bs.suggestions = true;
+                bs.emojiSuggestions = true;
+                bar.applySettings(bs);
+                bar.setSuggestions({ QStringLiteral("don't"), QStringLiteral("think"), QStringLiteral("know") });
+                save(bar, QStringLiteral("en-bar-next"));
+                bar.setSuggestions({ QStringLiteral("pizzas"), QStringLiteral("pizza"), QStringLiteral("🍕") }, true);
+                save(bar, QStringLiteral("en-bar-emoji"));
+            }
         }
     }
 

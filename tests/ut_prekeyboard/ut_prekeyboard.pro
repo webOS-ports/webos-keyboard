@@ -8,12 +8,14 @@ include(../tests.pri)
 QT += gui qml quick network sql
 
 DEFINES += PLUGINS_DIR=\\\"$$PWD/../../plugins\\\"
+DEFINES += PRE_DATA_DIR=\\\"$$PWD/../../data/pre\\\"
 INCLUDEPATH += $$PWD/../../src/pre $$PWD/../../src/view
 
 SOURCES += \
     ut_prekeyboard.cpp \
     $$PWD/../../src/pre/precontroller.cpp \
     $$PWD/../../src/pre/preemojipanel.cpp \
+    $$PWD/../../src/pre/preemojiwords.cpp \
     $$PWD/../../src/pre/prekeyboardview.cpp \
     $$PWD/../../src/pre/prekeymap.cpp \
     $$PWD/../../src/pre/preklipy.cpp \

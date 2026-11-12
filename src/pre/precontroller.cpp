@@ -26,6 +26,7 @@
 #include <QCryptographicHash>
 #include <QDir>
 #include <QElapsedTimer>
+#include <QFile>
 #include <QGuiApplication>
 #include <QLocale>
 #include <QLoggingCategory>
@@ -284,17 +285,54 @@ void Controller::showBar()
         else
             bar = { others.value(0), best, others.value(1) };
     }
+    // An emoji for the word being typed or swiped (not for the next words).
+    m_barEmoji = false;
+    if (m_settings.emojiSuggestions && m_wordsAllowed && !bar.value(1).isEmpty()
+        && (!m_typed.isEmpty() || !guesses.isEmpty())) {
+        const QString e = emojiWords().forWord(bar.value(1));
+        if (!e.isEmpty()) {
+            bar = { bar.value(0), bar.value(1), e };
+            m_barEmoji = true;
+        }
+    }
     m_bar = { bar.value(0), bar.value(1), bar.value(2) };
-    if (m_view) m_view->setSuggestions(m_bar);
+    if (m_view) m_view->setSuggestions(m_bar, m_barEmoji);
+}
+
+const EmojiWords &Controller::emojiWords()
+{
+    const QString id = m_settings.language.id;
+    if (id != m_emojiFor) {
+        m_emojiFor = id;
+        // Only the emoji the emoji page has (emoji.txt: category, version, emoji).
+        QSet<QString> drawable;
+        QFile f(emojiFile());
+        if (f.open(QIODevice::ReadOnly)) {
+            for (const QString &line : QString::fromUtf8(f.readAll()).split(QLatin1Char('\n'))) {
+                const QStringList parts = line.split(QLatin1Char('\t'));
+                if (parts.size() == 3 && !line.startsWith(QLatin1Char('#'))) drawable.insert(parts.at(2).trimmed());
+            }
+        }
+        m_emojiWords = drawable.isEmpty() ? EmojiWords()
+                     : EmojiWords::load(m_dataDir + QLatin1Char('/') + id + QStringLiteral("/emoji_words.txt"), drawable);
+        qCInfo(lcPre, "emoji for %d words in %s", m_emojiWords.size(), qPrintable(id));
+    }
+    return m_emojiWords;
 }
 
 void Controller::onPick(int i, int caps)
 {
     QString w = m_bar.value(i);
     if (w.isEmpty() || !m_bridge.pick) return;
-    if (caps == KeyboardView::CAPS_ALL) w = QLocale(m_settings.language.id).toUpper(w);
-    else if (caps == KeyboardView::CAPS_FIRST) w = w.left(1).toUpper() + w.mid(1);
-    m_bridge.pick(w);
+    if (i == 2 && m_barEmoji) {
+        // In place of the word, as it is: shift is nothing to an emoji.
+        m_bridge.pick(w);
+        addRecentEmoji(w);
+    } else {
+        if (caps == KeyboardView::CAPS_ALL) w = QLocale(m_settings.language.id).toUpper(w);
+        else if (caps == KeyboardView::CAPS_FIRST) w = w.left(1).toUpper() + w.mid(1);
+        m_bridge.pick(w);
+    }
     // It goes in with a space after it: the first of a double space, and a
     // space a comma goes in front of.
     m_autoTail.clear();

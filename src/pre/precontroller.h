@@ -20,6 +20,7 @@
 #ifndef PRE_CONTROLLER_H
 #define PRE_CONTROLLER_H
 
+#include "preemojiwords.h"
 #include "presettings.h"
 #include "preswipedecoder.h"
 
@@ -108,7 +109,7 @@ public:
     // --- From the input method ---------------------------------------------------------
 
     void setBridge(const Bridge &bridge) { m_bridge = bridge; }
-    //! Where emoji.txt is.
+    //! Where emoji.txt is, and each language's emoji_words.txt (<dir>/<language>/).
     void setDataDir(const QString &dir) { m_dataDir = dir; }
     //! Where KLIPY keeps its state (its call count and customer id).
     void setStateDir(const QString &dir);
@@ -253,6 +254,13 @@ private:
     QString m_autoTail;
     //! A space typed after a word is the last thing typed.
     bool m_spaceIsLast = false;
+
+    //! The bar's right-hand place holds an emoji for the middle word, not a word.
+    bool m_barEmoji = false;
+    //! The emoji for words in [m_emojiFor], read the first time it is wanted.
+    EmojiWords m_emojiWords;
+    QString m_emojiFor;
+    const EmojiWords &emojiWords();
 
     // Swipe to type.
     QString m_libDir;

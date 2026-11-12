@@ -1002,11 +1002,11 @@ void KeyboardView::moveCursor(qreal x, qreal y)
 
 // --- The suggestion bar -----------------------------------------------------------------
 
-void KeyboardView::setSuggestions(const QStringList &w)
+void KeyboardView::setSuggestions(const QStringList &w, bool emoji)
 {
     QStringList next;
     for (int i = 0; i < 3; ++i) next << w.value(i);
-    if (next != m_words) { m_words = next; update(); }
+    if (next != m_words || emoji != m_barEmoji) { m_words = next; m_barEmoji = emoji; update(); }
 }
 
 void KeyboardView::setPasteOffered(bool offered)
@@ -1034,6 +1034,14 @@ void KeyboardView::drawBar(QPainter &p, const QRectF &r)
             p.fillRect(QRectF(cellRect.left(), r.top() + r.height() * 0.25, std::max<qreal>(1, m_dp), r.height() * 0.5), BAR_RULE);
         if (paste) {
             m_painter.icon(p, Painter::Icon::Paste, cellRect.center().x(), cellRect.center().y(), r.height() * 0.56, Qt::white);
+            continue;
+        }
+        if (i == 2 && m_barEmoji && !m_words[i].isEmpty()) {
+            QFont ef(QStringLiteral("Noto Color Emoji"));
+            ef.setPixelSize(std::max(1, int(r.height() * 0.5)));
+            p.setFont(ef);
+            p.setPen(Qt::white);
+            p.drawText(cellRect, Qt::AlignCenter, m_words[i]);
             continue;
         }
         // Shown as shift will put it in: a capital first, or all capitals when locked.
@@ -1168,7 +1176,8 @@ void KeyboardView::drawSearch(QPainter &p, const QRectF &r)
 void KeyboardView::onBarHold()
 {
     const int i = m_barPressed;
-    if (i < 0 || (i == 2 && m_pasteOffered)) return;
+    // Nothing to add or delete in the paste icon or an emoji.
+    if (i < 0 || (i == 2 && (m_pasteOffered || m_barEmoji))) return;
     const QString w = m_words.value(i);
     if (w.isEmpty() || !m_controller) return;
     // A word the dictionary lacks may be added; one it has (a typo it knows: "yest"), deleted.

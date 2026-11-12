@@ -37,6 +37,7 @@ namespace Pre {
  *   "keyboard": { ..., "pre": { "style": "orange", "height": "medium",
  *                               "holdForMore": false, "vibrate": false,
  *                               "followShift": false, "swipe": true,
+ *                               "doubleSpacePeriod": true, "emojiSuggestions": false,
  *                               "recentEmoji": ["🙂"] } }
  *
  * Everything about words - suggestions, autocorrect, the owner's dictionary -
@@ -74,6 +75,8 @@ struct Settings
     bool swipe = true;
     //! Two quick spaces after a word type ". ".
     bool doubleSpacePeriod = true;
+    //! An emoji for the word in the bar's right-hand place ("pizza" -> 🍕), for a language that has them.
+    bool emojiSuggestions = false;
 
     // From the LuneOS keyboard's settings.
     //! Prediction or spell checking is on: the suggestion bar shows.
@@ -85,7 +88,7 @@ struct Settings
     //! The one typed in now, always one of [languages].
     Language language;
 
-    bool showsBar() const { return suggestions || swipe; }
+    bool showsBar() const { return suggestions || swipe || emojiSuggestions; }
     //! Row heights in dp. Medium is close to a Pre key's proportions on a modern phone.
     int heightDp() const { return height == Height::Small ? 46 : height == Height::Large ? 62 : 54; }
 
