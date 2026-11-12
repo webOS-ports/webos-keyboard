@@ -1010,6 +1010,10 @@ void InputMethod::handleFocusChange(bool focusIn)
         d->autoCorrectedOriginal.clear();
         d->autoCorrectedLeft.clear();
         d->autocapUndoLetter.clear();
+        // Nor is a word still being typed this field's: an application moving
+        // from field to field may say only that the new one has the focus, and
+        // the next key would send that word into it.
+        d->dropPreedit();
         d->panel.setFocused(true);
         Q_EMIT keysCollapsedChanged();
 

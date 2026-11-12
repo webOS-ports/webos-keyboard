@@ -71,6 +71,9 @@ Controller::Controller(QObject *parent)
     , m_ownEditAt(NEVER)
 {
     m_pool.setMaxThreadCount(1);
+    // Something copied or cut while the keys are up: offered at once, not at the next keystroke.
+    if (QClipboard *cb = QGuiApplication::clipboard())
+        connect(cb, &QClipboard::dataChanged, this, &Controller::offerPaste);
 }
 
 void Controller::setBridge(const Bridge &bridge)

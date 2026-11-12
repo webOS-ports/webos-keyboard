@@ -47,6 +47,7 @@
 #include <QSqlQuery>
 #include <QTemporaryDir>
 #include <QtTest>
+#include <QClipboard>
 
 #include <cmath>
 
@@ -1196,6 +1197,35 @@ private Q_SLOTS:
         field.set(QStringLiteral("I atthe "));
         c.onBackspace(false);
         QCOMPARE(field.text, QStringLiteral("I atthe"));
+    }
+
+    /*
+     * Something copied while the keys are up is offered in the bar straight
+     * away; once pasted, not again, till something new is copied.
+     */
+    void pasteOfferedWhenCopied()
+    {
+        QClipboard *cb = QGuiApplication::clipboard();
+        cb->clear();
+        Recorder rec;
+        Pre::Controller c;
+        c.setBridge(rec.bridge());
+        Pre::KeyboardView view;
+        showKeys(view, Pre::Language::byId(QStringLiteral("en")), 1080, 1080, false, Pre::Settings::Height::Medium);
+        c.setView(&view);
+        c.setKeyboardState(true, false, { QStringLiteral("en") }, QStringLiteral("en"));
+        c.startInput();
+        QVERIFY(!view.pasteOffered());
+        cb->setText(QStringLiteral("copied"));
+        QTRY_VERIFY(view.pasteOffered());
+        c.onPaste();
+        QVERIFY(rec.calls.contains(QStringLiteral("commit copied")));
+        QVERIFY(!view.pasteOffered());
+        c.update();
+        QVERIFY(!view.pasteOffered());
+        cb->setText(QStringLiteral("again"));
+        QTRY_VERIFY(view.pasteOffered());
+        cb->clear();
     }
 
     void wordsAreAddedToLuneOSsDictionary()
