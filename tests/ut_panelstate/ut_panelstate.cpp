@@ -60,6 +60,8 @@ private Q_SLOTS:
     void testAFieldWithItsOwnKeypadGetsNoKeys();
     void testAFieldWithItsOwnKeypadKeepsTheCandidateBar();
     void testSayingNothingLeavesTheKeyboardAlone();
+    void testPanelWindowGeometry_data();
+    void testPanelWindowGeometry();
 };
 
 void ut_panelstate::testNothingWantedWithoutFocus()
@@ -270,6 +272,33 @@ void ut_panelstate::testSayingNothingLeavesTheKeyboardAlone()
     QVERIFY(!s.panelWanted());
     s.setOnScreenKeyboardAllowed(true);
     QVERIFY(s.panelWanted());
+}
+
+void ut_panelstate::testPanelWindowGeometry_data()
+{
+    QTest::addColumn<QRect>("window");
+    QTest::addColumn<bool>("kept");
+
+    // A sargo: 1080x2220, portrait as far as the output is concerned.
+    QTest::newRow("the screen") << QRect(0, 0, 1080, 2220) << true;
+    // Shrunk in portrait by a status bar or an inset: never shown, put back.
+    QTest::newRow("portrait 2145") << QRect(0, 0, 1080, 2145) << false;
+    QTest::newRow("portrait 2045") << QRect(0, 0, 1080, 2045) << false;
+    // The shell in landscape: the strip between its bars, as measured.
+    QTest::newRow("landscape strip") << QRect(0, 0, 2220, 905) << true;
+    QTest::newRow("screen on its side") << QRect(0, 0, 2220, 1080) << true;
+    // Not landscape, or not the shell's: put back.
+    QTest::newRow("too tall on its side") << QRect(0, 0, 2220, 1081) << false;
+    QTest::newRow("narrower than the screen is long") << QRect(0, 0, 2000, 905) << false;
+    QTest::newRow("moved") << QRect(0, 50, 2220, 905) << false;
+    QTest::newRow("no height") << QRect(0, 0, 2220, 0) << false;
+}
+
+void ut_panelstate::testPanelWindowGeometry()
+{
+    QFETCH(QRect, window);
+    QFETCH(bool, kept);
+    QCOMPARE(panelWindowKeepsGeometry(window, QRect(0, 0, 1080, 2220)), kept);
 }
 
 QTEST_GUILESS_MAIN(ut_panelstate)

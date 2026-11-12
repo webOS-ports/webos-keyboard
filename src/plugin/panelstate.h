@@ -19,7 +19,27 @@
 #ifndef MALIIT_KEYBOARD_PANELSTATE_H
 #define MALIIT_KEYBOARD_PANELSTATE_H
 
+#include <QRect>
+
 namespace MaliitKeyboard {
+
+/*! \brief Whether the panel window can keep the geometry it was configured to.
+ *
+ * The window is meant to be screen-sized: the keys are drawn along its bottom
+ * and the rest is masked away. A window the shell shrank in portrait - 2220 to
+ * 2145 to 2045 on a sargo, as a status bar or an inset arrived - stopped being
+ * shown, so anything else is put back to [screen] (InputMethod's
+ * syncPanelWindowToScreen()).
+ *
+ * Except in landscape. The shell turns its own interface on its side rather
+ * than the output, so the screen stays portrait, and configures the panel to
+ * the strip between its status bar and gesture area as that now stands: 2220
+ * by 905 on a sargo. Put back to portrait, the window was stretched by the
+ * shell across that strip, every key twice as wide and half as tall. So a
+ * window as wide as the screen is long, and no taller than it is wide, is
+ * kept: the keyboard then lays itself out for landscape, 1:1.
+ */
+bool panelWindowKeepsGeometry(const QRect &window, const QRect &screen);
 
 /*! \brief Whether the panel is wanted, and what of it.
  *

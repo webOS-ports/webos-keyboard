@@ -20,6 +20,18 @@
 
 namespace MaliitKeyboard {
 
+bool panelWindowKeepsGeometry(const QRect &window, const QRect &screen)
+{
+    if (window == screen)
+        return true;
+
+    // On its side: the screen's long side across, at most its short side down.
+    const bool portraitScreen = screen.height() > screen.width();
+    return portraitScreen and window.topLeft() == screen.topLeft()
+        and window.width() == screen.height()
+        and window.height() > 0 and window.height() <= screen.width();
+}
+
 void PanelState::setFocused(bool focused)
 {
     m_focused = focused;
