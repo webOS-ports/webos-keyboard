@@ -5,7 +5,10 @@ include(../tests.pri)
 # its look settings, and the controller that hands its keys to LuneOS's editor -
 # down to the editor itself, for backspace. The controller talks to the view, so
 # the view and what it draws with are built in too: QtQuick and QtNetwork.
-QT += gui qml quick network sql
+QT += gui qml quick network
+
+# Swipe reads presage's databases with SQLite itself, and the tests write them with it.
+LIBS += -lsqlite3
 
 DEFINES += PLUGINS_DIR=\\\"$$PWD/../../plugins\\\"
 DEFINES += PRE_DATA_DIR=\\\"$$PWD/../../data/pre\\\"

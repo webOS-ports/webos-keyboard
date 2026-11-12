@@ -14,7 +14,7 @@ DEFINES += MALIIT_DEFAULT_PROFILE=\\\"$$MALIIT_DEFAULT_PROFILE\\\"
 contains(QT_MAJOR_VERSION, 4) {
     QT = core gui
 } else {
-    QT = core gui widgets quick qml network sql
+    QT = core gui widgets quick qml network
 }
 
 # The Pre Keyboard swipes the words hunspell knows (see src/pre/preswipewords.h).
@@ -27,6 +27,9 @@ isEmpty(KLIPY_KEY): KLIPY_KEY = $$(KLIPY_KEY)
 !isEmpty(KLIPY_KEY): DEFINES += PRE_KLIPY_KEY=\\\"$$KLIPY_KEY\\\"
 
 LIBS += -lluna-service2
+
+# The Pre Keyboard's swipe reads presage's word databases with SQLite itself (preswipewords.cpp).
+LIBS += -lsqlite3
 
 CONFIG += \
     plugin \

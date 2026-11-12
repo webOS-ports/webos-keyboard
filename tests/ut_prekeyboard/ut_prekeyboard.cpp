@@ -43,13 +43,13 @@
 #include <QPainter>
 #include <QPainterPath>
 #include <QRandomGenerator>
-#include <QSqlDatabase>
-#include <QSqlQuery>
 #include <QTemporaryDir>
 #include <QtTest>
 #include <QClipboard>
 
 #include <cmath>
+
+#include <sqlite3.h>
 
 using namespace MaliitKeyboard;
 
@@ -2003,21 +2003,21 @@ private:
     static void writePresage(const QString &path, const QList<QPair<QString, int>> &words)
     {
         QDir().mkpath(QFileInfo(path).path());
-        {
-            QSqlDatabase db = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), QStringLiteral("writer"));
-            db.setDatabaseName(path);
-            QVERIFY(db.open());
-            QSqlQuery q(db);
-            QVERIFY(q.exec(QStringLiteral("CREATE TABLE _1_gram (word TEXT, count INTEGER, UNIQUE(word))")));
-            for (const auto &w : words) {
-                q.prepare(QStringLiteral("INSERT INTO _1_gram VALUES (?, ?)"));
-                q.addBindValue(w.first);
-                q.addBindValue(w.second);
-                QVERIFY(q.exec());
-            }
-            db.close();
+        sqlite3 *db = nullptr;
+        QCOMPARE(sqlite3_open(path.toUtf8().constData(), &db), SQLITE_OK);
+        QCOMPARE(sqlite3_exec(db, "CREATE TABLE _1_gram (word TEXT, count INTEGER, UNIQUE(word))",
+                              nullptr, nullptr, nullptr), SQLITE_OK);
+        sqlite3_stmt *q = nullptr;
+        QCOMPARE(sqlite3_prepare_v2(db, "INSERT INTO _1_gram VALUES (?, ?)", -1, &q, nullptr), SQLITE_OK);
+        for (const auto &w : words) {
+            const QByteArray word = w.first.toUtf8();
+            sqlite3_bind_text(q, 1, word.constData(), int(word.size()), SQLITE_TRANSIENT);
+            sqlite3_bind_int(q, 2, w.second);
+            QCOMPARE(sqlite3_step(q), SQLITE_DONE);
+            sqlite3_reset(q);
         }
-        QSqlDatabase::removeDatabase(QStringLiteral("writer"));
+        sqlite3_finalize(q);
+        QCOMPARE(sqlite3_close(db), SQLITE_OK);
     }
 
     //! What is wrong with the printing on [view]'s keys now, each line starting [where].

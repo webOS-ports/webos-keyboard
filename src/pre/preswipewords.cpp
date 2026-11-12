@@ -18,14 +18,13 @@
 
 #include "preswipewords.h"
 
-#include <QAtomicInteger>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
 #include <QHash>
-#include <QSqlDatabase>
-#include <QSqlQuery>
 #include <QStringDecoder>
+
+#include <sqlite3.h>
 
 #include <algorithm>
 #include <cmath>
@@ -66,30 +65,31 @@ Entries fromPresage(const QString &dbFile)
 {
     Entries out;
     if (!QFileInfo::exists(dbFile)) return out;
-    // A connection is the thread's that opens it: a name of its own each time.
-    static QAtomicInteger<int> serial;
-    const QString name = QStringLiteral("preswipe-%1").arg(serial.fetchAndAddRelaxed(1));
-    {
-        QSqlDatabase db = QSqlDatabase::addDatabase(QStringLiteral("QSQLITE"), name);
-        db.setDatabaseName(dbFile);
-        db.setConnectOptions(QStringLiteral("QSQLITE_OPEN_READONLY"));
-        if (db.open()) {
-            QVector<QPair<QString, qint64>> rows;
-            qint64 max = 0;
-            QSqlQuery q(db);
-            if (q.exec(QStringLiteral("SELECT word, count FROM _1_gram"))) {
-                while (q.next()) {
-                    const qint64 count = q.value(1).toLongLong();
-                    rows.append({ q.value(0).toString(), count });
-                    max = std::max(max, count);
-                }
-            }
-            out.reserve(rows.size());
-            for (const auto &r : rows) out.append({ r.first, presageScore(r.second, max) });
-            db.close();
-        }
+    // SQLite itself, as presage uses it: on every device that has presage's
+    // databases, with no Qt driver plugin to go missing. Read-only, so a
+    // database that is not there is never made empty instead.
+    sqlite3 *db = nullptr;
+    if (sqlite3_open_v2(dbFile.toUtf8().constData(), &db, SQLITE_OPEN_READONLY, nullptr) != SQLITE_OK) {
+        sqlite3_close(db);   // open hands back a handle even when it fails
+        return out;
     }
-    QSqlDatabase::removeDatabase(name);
+    sqlite3_stmt *q = nullptr;
+    if (sqlite3_prepare_v2(db, "SELECT word, count FROM _1_gram", -1, &q, nullptr) == SQLITE_OK) {
+        QVector<QPair<QString, qint64>> rows;
+        qint64 max = 0;
+        while (sqlite3_step(q) == SQLITE_ROW) {
+            // The text first, then its length: the length is of that text.
+            const auto *word = reinterpret_cast<const char *>(sqlite3_column_text(q, 0));
+            const int bytes = sqlite3_column_bytes(q, 0);
+            const qint64 count = sqlite3_column_int64(q, 1);
+            rows.append({ QString::fromUtf8(word, bytes), count });
+            max = std::max(max, count);
+        }
+        out.reserve(rows.size());
+        for (const auto &r : rows) out.append({ r.first, presageScore(r.second, max) });
+    }
+    sqlite3_finalize(q);
+    sqlite3_close(db);
     return out;
 }
 
