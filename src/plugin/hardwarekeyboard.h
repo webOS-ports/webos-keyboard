@@ -100,7 +100,7 @@ struct HardwareKeyboardProfile
     //! level -> (evdev scancode -> the text that key produces at that level).
     QHash<int, QHash<quint32, QString> > levels;
 
-    bool isValid() const { return not name.isEmpty(); }
+    bool isValid() const { return !name.isEmpty(); }
     QString lookup(HardwareKeyboardLevel level, quint32 scanCode) const;
 };
 

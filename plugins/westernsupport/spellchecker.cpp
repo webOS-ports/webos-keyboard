@@ -144,7 +144,7 @@ SpellCheckerPrivate::~SpellCheckerPrivate()
 //! to whichever Hunspell instance is currently active.
 void SpellCheckerPrivate::applyUserWords()
 {
-    if (not hunspell)
+    if (!hunspell)
         return;
 
     for (const QString &word : userWords)
@@ -194,7 +194,7 @@ bool SpellChecker::setEnabled(bool on)
     delete(d->hunspell);
     d->hunspell = nullptr;
 
-    if (not on) {
+    if (!on) {
         return true;
     }
 
@@ -207,7 +207,7 @@ bool SpellChecker::setEnabled(bool on)
                                d->dic_file.toUtf8().constData());
 
     d->codec = QTextCodec::codecForName(d->hunspell->get_dic_encoding());
-    if (not d->codec) {
+    if (!d->codec) {
         qWarning () << Q_FUNC_INFO << ":Could not find codec for" << d->hunspell->get_dic_encoding() << "- turning off spellchecking";
         d->clear();
         return false;
@@ -376,7 +376,7 @@ bool SpellChecker::spell(const QString &word)
 {
     Q_D(SpellChecker);
 
-    if (not enabled() or d->ignored_words.contains(word)) {
+    if (!enabled() || d->ignored_words.contains(word)) {
         return true;
     }
 
@@ -393,7 +393,7 @@ QStringList SpellChecker::suggest(const QString &word,
 {
     Q_D(SpellChecker);
 
-    if (not enabled()) {
+    if (!enabled()) {
         return QStringList();
     }
 
@@ -423,7 +423,7 @@ void SpellChecker::ignoreWord(const QString &word)
 {
     Q_D(SpellChecker);
 
-    if (not enabled()) {
+    if (!enabled()) {
         return;
     }
 
@@ -437,7 +437,7 @@ void SpellChecker::addToUserWordlist(const QString &word)
 {
     Q_D(SpellChecker);
 
-    if (not enabled()) {
+    if (!enabled()) {
         return;
     }
 

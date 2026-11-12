@@ -41,7 +41,7 @@ KeyArea::KeyArea()
 
 bool KeyArea::hasKeys() const
 {
-    return (not m_keys.isEmpty());
+    return (!m_keys.isEmpty());
 }
 
 QRect KeyArea::rect() const
@@ -99,7 +99,7 @@ bool operator==(const KeyArea &lhs,
 bool operator!=(const KeyArea &lhs,
                 const KeyArea &rhs)
 {
-    return (not (lhs == rhs));
+    return (!(lhs == rhs));
 }
 
 } // namespace MaliitKeyboard

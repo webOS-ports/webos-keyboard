@@ -210,7 +210,7 @@ void InputMethod::syncPanelWindowToScreen()
 
     const QScreen *screen = qGuiApp->primaryScreen();
 
-    if (not screen)
+    if (!screen)
         return;
 
     const QRect want = screen->geometry();
@@ -412,7 +412,7 @@ void InputMethod::applyPanelVisibility()
            int(d->panel.keysCollapsed()), int(d->panel.dismissed()),
            int(d->panel.onScreenKeyboardAllowed()));
 
-    if (not wanted) {
+    if (!wanted) {
         d->closeOskWindow();
         return;
     }
@@ -459,7 +459,7 @@ void InputMethod::applyPanelVisibility()
     // A window that is not really up must not be announced as up: shown is
     // change-gated, so claiming it now would make every later attempt a no-op
     // and Keyboard.qml would never re-run its transition.
-    if (not d->view->isVisible()) {
+    if (!d->view->isVisible()) {
         return;
     }
 
@@ -749,9 +749,9 @@ void InputMethod::processKeyEvent(QEvent::Type keyType, Qt::Key keyCode,
             QString label(text);
             const bool shiftLatched = d->hardwareKeyboard.shiftLatchActive();
             const bool atAutoCaps = d->editor.atAutoCapsPosition();
-            if (shiftLatched or atAutoCaps) {
+            if (shiftLatched || atAutoCaps) {
                 label = text.toUpper();
-                if (shiftLatched and keyType == QEvent::KeyRelease)
+                if (shiftLatched && keyType == QEvent::KeyRelease)
                     d->hardwareKeyboard.consumeShiftLatch();
             }
 
@@ -760,7 +760,7 @@ void InputMethod::processKeyEvent(QEvent::Type keyType, Qt::Key keyCode,
             // A capital nobody asked for - not Shift, not a latch, only auto-caps -
             // can be taken back by the backspace that follows it; see below.
             if (keyType == QEvent::KeyRelease)
-                autocapLetter = (atAutoCaps and not shiftLatched and label != text)
+                autocapLetter = (atAutoCaps && !shiftLatched && label != text)
                                 ? text : QString();
         } else {
             key.setAction(Key::NumActions);
@@ -819,17 +819,17 @@ void InputMethod::processKeyEvent(QEvent::Type keyType, Qt::Key keyCode,
     // trusted to repeat it, holding backspace deleted one character. Those
     // keyboards get the editor's timer, as the on-screen keys do.
     const bool repeat_is_the_kernels = d->panel.hardware()
-        and d->hardwareKeyboard.kernelRepeats();
+        && d->hardwareKeyboard.kernelRepeats();
 
     const bool plainBackspace = key.action() == Key::ActionBackspace;
 
     if (keyType == QEvent::KeyPress) {
         // Anything but a backspace, or a backspace held down until it repeats,
         // and the capital stays: the chance to take it back has passed.
-        if (not plainBackspace or nativeScanCode == d->heldScanCode)
+        if (!plainBackspace || nativeScanCode == d->heldScanCode)
             d->autocapUndoLetter.clear();
 
-        if (not repeat_is_the_kernels) {
+        if (!repeat_is_the_kernels) {
             d->editor.onKeyPressed(key);
         } else if (nativeScanCode == d->heldScanCode) {
             // A press for a key that is already down: the kernel repeating it.
@@ -845,7 +845,7 @@ void InputMethod::processKeyEvent(QEvent::Type keyType, Qt::Key keyCode,
         d->editor.onKeyReleased(key);
         d->heldScanCode = 0;
 
-        if (plainBackspace and not d->autocapUndoLetter.isEmpty()) {
+        if (plainBackspace && !d->autocapUndoLetter.isEmpty()) {
             // The backspace has just removed the capital; put the letter back as
             // it was typed. Straight into the editor, so auto-caps - which still
             // holds at this position - does not capitalise it a second time.
@@ -880,7 +880,7 @@ void InputMethod::setState(const QSet<Maliit::HandlerState> &state)
     // exclusive with Hardware, and if both ever arrive together the on-screen
     // keyboard is the one that was asked for.
     const bool hardware = state.contains(Maliit::Hardware)
-        and not state.contains(Maliit::OnScreen);
+        && !state.contains(Maliit::OnScreen);
 
     if (d->panel.hardware() == hardware)
         return;
@@ -1045,7 +1045,7 @@ void InputMethod::handleClientChange()
 
 bool InputMethod::imExtensionEvent(MImExtensionEvent *event)
 {
-    if (not event or event->type() != MImExtensionEvent::Update) {
+    if (!event || event->type() != MImExtensionEvent::Update) {
         return false;
     }
     return true;
@@ -1076,7 +1076,7 @@ void InputMethod::updateAutoCaps()
     // that settles it before the fallback below gets a say.
     bool lowercaseValid = true;
     const bool lowercase = d->host->lowercasePreferred(lowercaseValid);
-    if (lowercaseValid and lowercase) {
+    if (lowercaseValid && lowercase) {
         qCInfo(lcKeys, "autocaps: field prefers lowercase -> off");
         autocap = false;
     }
@@ -1086,10 +1086,10 @@ void InputMethod::updateAutoCaps()
     // application - which is most of what runs here. Where the host has no
     // opinion, decide from the field itself: free text (tested above) and not a
     // password. The user setting still gates all of it.
-    else if (not autocap) {
+    else if (!autocap) {
         bool hiddenValid = true;
         const bool hidden = d->host->hiddenText(hiddenValid);
-        autocap = not hidden;
+        autocap = !hidden;
         qCInfo(lcKeys, "autocaps: host gave no hint (valid=%d); hidden=%d -> %d",
                int(valid), int(hidden), int(autocap));
     }
@@ -1163,7 +1163,7 @@ void InputMethod::updateKey(const QString &key_id,
         overrides_update.insert(key_id, override_key);
 
         if (key_id == QLatin1String(CoreUtils::actionKeyId())
-            and override_key.label() != d->actionKeyLabel) {
+            && override_key.label() != d->actionKeyLabel) {
             d->actionKeyLabel = override_key.label();
             Q_EMIT actionKeyLabelChanged(d->actionKeyLabel);
         }
@@ -1229,7 +1229,7 @@ void InputMethod::onKeyboardClosed()
     // back short of focusing another field. Unless a physical keyboard is what
     // the field will be typed on, in which case the dismissal belongs to the
     // framework's switch instead; see releaseForcedOnScreenKeyboard().
-    if (not releaseForcedOnScreenKeyboard()) {
+    if (!releaseForcedOnScreenKeyboard()) {
         d->panel.dismiss();
         applyPanelVisibility();
     }
@@ -1301,7 +1301,7 @@ void InputMethod::update()
      */
     bool panelValid = false;
     const bool onScreenKeyboardAllowed = inputMethodHost()->onScreenKeyboardAllowed(panelValid);
-    d->panel.setOnScreenKeyboardAllowed(!panelValid or onScreenKeyboardAllowed);
+    d->panel.setOnScreenKeyboardAllowed(!panelValid || onScreenKeyboardAllowed);
 
     if (d->panel.wordEngine() != newPredictionEnabled) {
         d->panel.setWordEngine(newPredictionEnabled);
@@ -1331,7 +1331,7 @@ void InputMethod::update()
     // from the show() the framework is about to call anyway. A panel already on
     // screen is another matter - there is no gap to fall into, and whatever
     // changed about the field still has to reach it.
-    if (not d->panel.panelWanted() or d->view->isVisible()) {
+    if (!d->panel.panelWanted() || d->view->isVisible()) {
         applyPanelVisibility();
     }
 
@@ -1750,7 +1750,7 @@ void InputMethod::maskPanelStrip()
 {
     Q_D(InputMethod);
 
-    if (not d->view)
+    if (!d->view)
         return;
 
     const int height = d->m_geometry->visibleRect().toRect().height();
@@ -1783,7 +1783,7 @@ void InputMethod::maskPanelStrip()
      * turns predictions off). Then the height stays 0 for good, and the whole
      * window would be reported as a keyboard covering the application.
      */
-    if (height == 0 and d->panel.keysHidden() and d->m_geometry->popoverRect().isEmpty()) {
+    if (height == 0 && d->panel.keysHidden() && d->m_geometry->popoverRect().isEmpty()) {
         d->view->setMask(nothingOnScreenMask(d->view));
         return;
     }

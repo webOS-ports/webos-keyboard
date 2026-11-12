@@ -95,7 +95,7 @@ public:
      */
     bool keysHidden() const
     {
-        return m_hardware or m_keysCollapsed or not m_onScreenKeyboardAllowed;
+        return m_hardware || m_keysCollapsed || !m_onScreenKeyboardAllowed;
     }
 
     /*! \brief Whether any panel at all should be on screen.

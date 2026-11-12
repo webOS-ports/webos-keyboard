@@ -163,7 +163,7 @@ int main(int argc,
     bool found_keyboard_id = false;
 
     Q_FOREACH (const QString &arg, QApplication::arguments()) {
-        if (found_keyboard_id && not arg.isEmpty()) {
+        if (found_keyboard_id && !arg.isEmpty()) {
             keyboard_id = arg;
         }
 

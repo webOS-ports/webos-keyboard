@@ -52,7 +52,7 @@ Key modifyKey(const Key &key,
               KeyDescription::State state,
               const StyleAttributes *attributes)
 {
-    if (not attributes) {
+    if (!attributes) {
         return key;
     }
 
@@ -80,7 +80,7 @@ void applyStyleToWordRibbon(WordRibbon *ribbon,
                             const SharedStyle &style,
                             LayoutHelper::Orientation orientation)
 {
-    if (not ribbon || style.isNull()) {
+    if (!ribbon || style.isNull()) {
         return;
     }
 
@@ -177,7 +177,7 @@ public:
 
     bool areSymbolsShown() const
     {
-        return arePrimarySymbolsShown() or areSecondarySymbolsShown();
+        return arePrimarySymbolsShown() || areSecondarySymbolsShown();
     }
 
     bool inDeadkeyState() const
@@ -238,7 +238,7 @@ void LayoutUpdater::setLayout(LayoutHelper *layout)
     Q_D(LayoutUpdater);
     d->layout = layout;
 
-    if (not d->initialized) {
+    if (!d->initialized) {
         init();
         d->initialized = true;
     }
@@ -274,7 +274,7 @@ void LayoutUpdater::onKeyPressed(const Key &key)
 {
     Q_D(LayoutUpdater);
 
-    if (not d->layout) {
+    if (!d->layout) {
         return;
     }
 
@@ -314,7 +314,7 @@ void LayoutUpdater::onKeyAreaPressed(LayoutHelper::Panel panel)
 {
     Q_D(LayoutUpdater);
 
-    if (not d->layout) {
+    if (!d->layout) {
         return;
     }
 
@@ -327,7 +327,7 @@ void LayoutUpdater::onKeyAreaReleased(LayoutHelper::Panel panel)
 {
     Q_D(LayoutUpdater);
 
-    if (not d->layout) {
+    if (!d->layout) {
         return;
     }
 
@@ -343,7 +343,7 @@ void LayoutUpdater::onKeyEntered(const Key &key)
 {
     Q_D(const LayoutUpdater);
 
-    if (not d->layout) {
+    if (!d->layout) {
         return;
     }
 
@@ -360,7 +360,7 @@ void LayoutUpdater::onKeyExited(const Key &key)
 {
     Q_D(const LayoutUpdater);
 
-    if (not d->layout) {
+    if (!d->layout) {
         return;
     }
 
@@ -372,7 +372,7 @@ void LayoutUpdater::clearActiveKeysAndMagnifier()
 {
     Q_D(const LayoutUpdater);
 
-    if (not d->layout) {
+    if (!d->layout) {
         qCritical() << __PRETTY_FUNCTION__
                     << "No layout specified.";
         return;
@@ -400,7 +400,7 @@ void LayoutUpdater::syncLayoutToView()
 {
     Q_D(const LayoutUpdater);
 
-    if (not d->layout) {
+    if (!d->layout) {
         return;
     }
 

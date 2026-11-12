@@ -66,7 +66,7 @@ QPixmap loadPixmap(const QByteArray &id)
 
     const QPixmap &result(g_pixmap_cache.value(id));
 
-    if (not result.isNull()) {
+    if (!result.isNull()) {
         return result;
     }
 
@@ -102,11 +102,11 @@ void renderKey(QPainter *painter,
     const QRect &text_rect(key_label.rect().isEmpty() ? key_rect : key_label.rect());
     const QPixmap &icon(Utils::loadPixmap(key.icon()));
 
-    if (not icon.isNull()) {
+    if (!icon.isNull()) {
         const QPoint &c(key_rect.center());
         const QPoint tl(c.x() - icon.width() / 2, c.y() - icon.height() / 2);
         painter->drawPixmap(tl, icon);
-    } else if (not text.isEmpty()) {
+    } else if (!text.isEmpty()) {
         painter->drawText(text_rect, Qt::AlignCenter, text);
     }
 }
@@ -127,7 +127,7 @@ void renderWordCandidate(QPainter *painter,
 
     const QString &text(label.text());
 
-    if (not text.isEmpty()) {
+    if (!text.isEmpty()) {
         painter->drawText(candidate_rect, Qt::AlignCenter, text);
     }
 }
@@ -143,10 +143,10 @@ Key applyOverride(const Key &original_key,
         const QString &text_override(override.label().text());
         const QByteArray &icon_override(override.icon());
 
-        if (not text_override.isEmpty()) {
+        if (!text_override.isEmpty()) {
             overriden_key.rLabel().setText(text_override);
         }
-        if (not icon_override.isEmpty()) {
+        if (!icon_override.isEmpty()) {
             overriden_key.setIcon(icon_override);
         }
     }
