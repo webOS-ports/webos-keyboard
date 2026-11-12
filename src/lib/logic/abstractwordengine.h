@@ -85,6 +85,13 @@ public:
     //! ("webos" for "webOS") is put in as saved. None here.
     virtual QStringList userWords();
 
+    //! \brief The likeliest next words after \a left, before any of the next is
+    //! typed: at most \a limit, best first, none the owner deleted. None here.
+    QStringList nextWords(const QString &left, int limit);
+protected:
+    virtual QStringList predictNext(const QString &left);
+public:
+
     //! \brief Whether \a word is spelled wrongly. False when nothing can say.
     virtual bool isMisspelled(const QString &word);
 

@@ -84,6 +84,11 @@ public:
     //! The words spelt wrong.
     QStringList misspelled;
     bool isMisspelled(const QString &w) override { return misspelled.contains(w) || isBlocked(w); }
+    //! What follows anything.
+    QStringList next;
+
+protected:
+    QStringList predictNext(const QString &) override { return next; }
 
 private:
     WordCandidateList fetchCandidates(Model::Text *text) override
@@ -790,6 +795,78 @@ private Q_SLOTS:
         }
         // Whatever is still being typed, as the field shows it.
         QCOMPARE(editor.committed + editor.preedit, field);
+    }
+
+    /*
+     * Before a word is started - after a space, or at the start - the bar
+     * offers the likeliest next words, the likeliest in the middle; tapping
+     * one puts it in. Not inside or right after a word, nor with suggestions
+     * off, nor in a field that isn't for prose.
+     */
+    void nextWordsBeforeAWord()
+    {
+        Recorder rec;
+        QString before = QStringLiteral("I ");
+        bool prose = true;
+        int asked = 0;
+        Pre::Bridge b = rec.bridge();
+        b.before = [&](int n) { return before.right(n); };
+        b.prose = [&] { return prose; };
+        b.nextWords = [&] { ++asked; return QStringList{ QStringLiteral("think"), QStringLiteral("don't"),
+                                                         QStringLiteral("know") }; };
+        Pre::Controller c;
+        c.setBridge(b);
+        c.setKeyboardState(true, false, { QStringLiteral("en") }, QStringLiteral("en"));
+        c.setCandidates(QString(), QString(), {});
+        QCOMPARE(c.m_bar, (QStringList{ QStringLiteral("don't"), QStringLiteral("think"), QStringLiteral("know") }));
+        c.onPick(1, Pre::KeyboardView::CAPS_NONE);
+        QVERIFY(rec.calls.contains(QStringLiteral("pick think")));
+        // Asked once for the same text.
+        c.setCandidates(QString(), QString(), {});
+        c.update();
+        QCOMPARE(asked, 1);
+        // The start of the field.
+        before.clear();
+        c.setCandidates(QString(), QString(), {});
+        QCOMPARE(c.m_bar.value(1), QStringLiteral("think"));
+        // Right after a word: that word is the one being typed.
+        before = QStringLiteral("I");
+        c.setCandidates(QString(), QString(), {});
+        QCOMPARE(c.m_bar, (QStringList{ QString(), QString(), QString() }));
+        // A word being typed has its own candidates.
+        before = QStringLiteral("I th");
+        c.setCandidates(QStringLiteral("th"), QString(), { QStringLiteral("the") });
+        QCOMPARE(c.m_bar.value(1), QStringLiteral("th"));
+        // Not for an address, nor with suggestions off.
+        before = QStringLiteral("I ");
+        prose = false;
+        c.setCandidates(QString(), QString(), {});
+        QVERIFY(c.m_bar.value(1).isEmpty());
+        prose = true;
+        // Swipe keeps the bar up with suggestions off: still no next words.
+        QTemporaryDir dir;
+        writePresage(dir.filePath(QStringLiteral("lib/en/database_en.db")), { { QStringLiteral("the"), 400 } });
+        QSignalSpy loaded(&c, &Pre::Controller::swipeWordsLoaded);
+        c.setWordDirs(dir.filePath(QStringLiteral("lib")), dir.filePath(QStringLiteral("dict")));
+        QVERIFY(loaded.wait(5000));
+        c.setKeyboardState(false, false, { QStringLiteral("en") }, QStringLiteral("en"));
+        QVERIFY(c.shown().showsBar());
+        c.setCandidates(QString(), QString(), {});
+        QVERIFY(c.m_bar.value(1).isEmpty());
+    }
+
+    // The engine's next words: at most the number asked, none deleted, none while it is off.
+    void nextWordsFromTheEngine()
+    {
+        SetWords words;
+        words.next = { QStringLiteral("think"), QStringLiteral("yest"), QStringLiteral("think"),
+                       QStringLiteral("know"), QStringLiteral("am") };
+        QVERIFY(words.nextWords(QStringLiteral("I "), 3).isEmpty());
+        words.setEnabled(true);
+        words.setBlockedWords({ QStringLiteral("yest") });
+        QCOMPARE(words.nextWords(QStringLiteral("I "), 3),
+                 (QStringList{ QStringLiteral("think"), QStringLiteral("know"), QStringLiteral("am") }));
+        QCOMPARE(words.nextWords(QStringLiteral("I "), 1), QStringList{ QStringLiteral("think") });
     }
 
     void wordsAreAddedToLuneOSsDictionary()

@@ -303,6 +303,16 @@ void WordEngine::removeFromUserDictionary(const QString &word)
         d->languagePlugin->removeFromSpellCheckerUserWordList(word);
 }
 
+//! Presage, asked with the text before the cursor and nothing typed of the next word.
+QStringList WordEngine::predictNext(const QString &left)
+{
+    Q_D(WordEngine);
+    if (!d->use_predictive_text || !d->languagePlugin)
+        return QStringList();
+    d->languagePlugin->parse(left, QString());
+    return d->languagePlugin->getWordCandidates();
+}
+
 QStringList WordEngine::userWords()
 {
     Q_D(WordEngine);

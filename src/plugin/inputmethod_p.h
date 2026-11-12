@@ -352,6 +352,10 @@ public:
             return t ? t->surroundingRight().left(n) : QString();
         };
         b.prose = [this] { return contentType == InputMethod::FreeTextContentType && !hiddenText; };
+        b.nextWords = [this] {
+            const Model::Text *t = editor.text();
+            return t ? editor.wordEngine()->nextWords(t->surroundingLeft(), 3) : QStringList();
+        };
         b.canAdd = [this](const QString &word) { return editor.wordEngine()->isMisspelled(word); };
         b.addWord = [this](const QString &word) { editor.addToUserDictionary(word); };
         b.removeWord = [this](const QString &word) {

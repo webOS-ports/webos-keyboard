@@ -71,6 +71,9 @@ public:
 
     AbstractLanguageFeatures* languageFeature() override;
 
+protected:
+    QStringList predictNext(const QString &left) override;
+
 private:
     //! \reimp
     WordCandidateList fetchCandidates(Model::Text *text) override;

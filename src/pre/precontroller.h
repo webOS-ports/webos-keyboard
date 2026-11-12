@@ -73,6 +73,8 @@ struct Bridge
     std::function<QString(int n)> after;
     //! The field is for prose (free text, not hidden): a period brings its own space there.
     std::function<bool()> prose;
+    //! The likeliest next words before any of the next is typed, best first.
+    std::function<QStringList()> nextWords;
     //! Whether [word] could be added to the owner's dictionary: it is not known.
     std::function<bool(const QString &word)> canAdd;
     std::function<void(const QString &word)> addWord;
@@ -219,6 +221,8 @@ private:
     //! The guesses for a swipe still going on, if they are still the latest.
     void liveGuesses(quint64 generation, const QStringList &found);
     void showBar();
+    //! With no word typed, after a space or at the start: the likeliest next words for the bar.
+    QStringList nextWords();
     void offerPaste();
     void writePrefs(const QJsonObject &pre);
     void vibrate(int ms);
@@ -235,6 +239,9 @@ private:
     QString m_typed;
     QString m_primary;
     QStringList m_candidates;
+    //! The next words, and the text before the cursor they were asked for.
+    QStringList m_next;
+    QString m_nextFor;
     QStringList m_bar = { QString(), QString(), QString() };
     bool m_deleting = false;
     QString m_clipDone;

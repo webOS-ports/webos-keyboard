@@ -211,6 +211,14 @@ void Controller::update()
 {
     if (m_view) m_view->updateCaps();
     offerPaste();
+    // The application told where its cursor is: the next words follow it.
+    if (m_typed.isEmpty() && m_swiped.isEmpty()) {
+        const QStringList next = nextWords();
+        if (next != m_candidates) {
+            m_candidates = next;
+            showBar();
+        }
+    }
 }
 
 bool Controller::wantsCaps()
@@ -229,8 +237,23 @@ void Controller::setCandidates(const QString &typed, const QString &primary, con
     }
     m_typed = typed;
     m_primary = primary;
-    m_candidates = words;
+    m_candidates = words.isEmpty() && typed.isEmpty() ? nextWords() : words;
     showBar();
+}
+
+QStringList Controller::nextWords()
+{
+    if (!m_settings.suggestions || !m_wordsAllowed || !m_bridge.nextWords || !m_bridge.before
+        || (m_bridge.prose && !m_bridge.prose()))
+        return QStringList();
+    const QString before = m_bridge.before(MAX_TOKEN);
+    // Right after a word, or in one, it is that word that is being typed.
+    if (!before.isEmpty() && !before.at(before.size() - 1).isSpace()) return QStringList();
+    if (before != m_nextFor || m_next.isEmpty()) {
+        m_nextFor = before;
+        m_next = m_bridge.nextWords();
+    }
+    return m_next;
 }
 
 /*!

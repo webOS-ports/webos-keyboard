@@ -190,6 +190,23 @@ QStringList AbstractWordEngine::userWords()
     return QStringList();
 }
 
+QStringList AbstractWordEngine::nextWords(const QString &left, int limit)
+{
+    QStringList out;
+    if (!isEnabled()) return out;
+    for (const QString &w : predictNext(left)) {
+        if (out.size() >= limit) break;
+        if (!w.isEmpty() && !isBlocked(w) && !out.contains(w)) out << w;
+    }
+    return out;
+}
+
+QStringList AbstractWordEngine::predictNext(const QString &left)
+{
+    Q_UNUSED(left);
+    return QStringList();
+}
+
 void AbstractWordEngine::setBlockedWords(const QStringList &words)
 {
     Q_D(AbstractWordEngine);
