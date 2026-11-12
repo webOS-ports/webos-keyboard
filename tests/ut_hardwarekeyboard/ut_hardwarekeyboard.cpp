@@ -77,6 +77,16 @@ QByteArray deviceBlock(const QString &name, const char *keys)
         .toUtf8();
 }
 
+//! The same, with the event types line the kernel prints above the keys:
+//! EV=120013 is SYN, KEY, MSC, LED and REP - a keyboard that repeats - and
+//! EV=3 only SYN and KEY, as the Titan's aw9523 reports.
+QByteArray deviceBlock(const QString &name, const char *events, const char *keys)
+{
+    return QStringLiteral("N: Name=\"%1\"\nH: Handlers=kbd event1 \nB: EV=%2\n%3\n\n")
+        .arg(name, QString::fromLatin1(events), QString::fromLatin1(keys))
+        .toUtf8();
+}
+
 } // namespace
 
 class Ut_HardwareKeyboard : public QObject
@@ -112,6 +122,13 @@ private Q_SLOTS:
 
     void testTelephoneKeypadDetected();
     void testQwertyIsNotATelephoneKeypad();
+
+    // Whether a held key arrives repeated, or has to be repeated here.
+    void testKernelRepeatsWithEvRep();
+    void testNoKernelRepeatWithoutEvRep();
+    void testNoKernelRepeatWithoutAnEvLine();
+    void testRepeatingNonKeyboardDoesNotCount();
+    void testKernelRepeatDoesNotNeedAProfile();
 
     // Key resolution and the level state machine.
     void testUnmappedKeyIsNotHandled();
@@ -542,6 +559,59 @@ void Ut_HardwareKeyboard::testQwertyIsNotATelephoneKeypad()
 
     QVERIFY(keyboard.isPresent());
     QVERIFY(!keyboard.hasTelephoneKeypad());
+}
+
+void Ut_HardwareKeyboard::testKernelRepeatsWithEvRep()
+{
+    writeDevices(deviceBlock(QStringLiteral("bbqX0kbd"), "120013", QwertyKeys));
+
+    const HardwareKeyboard keyboard;
+
+    QVERIFY(keyboard.kernelRepeats());
+}
+
+void Ut_HardwareKeyboard::testNoKernelRepeatWithoutEvRep()
+{
+    // The Titan: holding backspace deleted one character while this said yes.
+    writeProfile(QStringLiteral("titan.json"), titanProfile());
+    writeDevices(deviceBlock(QStringLiteral("aw9523-key"), "3", QwertyKeys));
+
+    const HardwareKeyboard keyboard;
+
+    QVERIFY(keyboard.isPresent());
+    QVERIFY(!keyboard.kernelRepeats());
+}
+
+void Ut_HardwareKeyboard::testNoKernelRepeatWithoutAnEvLine()
+{
+    writeDevices(deviceBlock(QStringLiteral("aw9523-key"), QwertyKeys));
+
+    const HardwareKeyboard keyboard;
+
+    QVERIFY(!keyboard.kernelRepeats());
+}
+
+void Ut_HardwareKeyboard::testRepeatingNonKeyboardDoesNotCount()
+{
+    // A power button or a keypad that repeats says nothing about the keyboard.
+    writeDevices(deviceBlock(QStringLiteral("mtk-kpd"), "100003", KeypadKeys)
+                 + deviceBlock(QStringLiteral("aw9523-key"), "3", QwertyKeys));
+
+    const HardwareKeyboard keyboard;
+
+    QVERIFY(!keyboard.kernelRepeats());
+}
+
+void Ut_HardwareKeyboard::testKernelRepeatDoesNotNeedAProfile()
+{
+    // The Q25 has no profile and never will; its repeat is still its own.
+    qputenv("LUNEOS_KEYBOARD_HW_LAYOUT", "none");
+    writeDevices(deviceBlock(QStringLiteral("bbqX0kbd"), "120013", QwertyKeys));
+
+    const HardwareKeyboard keyboard;
+
+    QVERIFY(!keyboard.isPresent());
+    QVERIFY(keyboard.kernelRepeats());
 }
 
 void Ut_HardwareKeyboard::testUnmappedKeyIsNotHandled()

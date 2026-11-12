@@ -205,6 +205,13 @@ public:
     //! a keyboard with a number row wants 2 to be a 2.
     bool hasTelephoneKeypad() const;
 
+    //! True when an attached keyboard repeats a held key itself: it
+    //! advertises EV_REP, so the kernel sends press after press until the
+    //! release. Without it a held key is one press and one release however
+    //! long it is held, and any repeating has to be done here. The Q25's
+    //! driver repeats; the Titan's and Titan Pocket's aw9523 do not.
+    bool kernelRepeats() const;
+
     bool ownsAltModifier() const;
 
     //! True while a tap or double tap of a Shift key is waiting to be spent.
@@ -290,8 +297,12 @@ private:
         //! first, and the width in bits of each word.
         QList<quint64> keyBits;
         int wordBits = 0;
+        //! The device's event types (B: EV=), one bit per EV_* type.
+        quint64 eventBits = 0;
 
         bool advertises(quint32 scanCode) const;
+        bool isKeyboard() const;
+        bool repeats() const;
     };
 
     //! \brief The Alt legend for this key, when a numeric field wants it.
@@ -321,6 +332,7 @@ private:
     LevelKeyState m_sym;
     LevelKeyState m_shift;
     bool m_telephoneKeypad = false;
+    bool m_kernelRepeats = false;
 
     //! What setDigitsPreferred() was last given: the characters the focused
     //! field will take off the Alt level unasked. Empty for an ordinary field.

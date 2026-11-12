@@ -802,17 +802,24 @@ void InputMethod::processKeyEvent(QEvent::Type keyType, Qt::Key keyCode,
     // Q25's kernel after 400ms, so letting the timer start as well would race it
     // and delete at two speeds at once.
     //
-    // So with a physical keyboard the kernel is the only source of repeat, and
-    // each event it sends becomes exactly one complete action - a press and a
-    // release together. The first press deliberately does nothing: the action
-    // happens on release, which is where a tap has always produced it, and
-    // starting the timer there is what has to be avoided.
+    // So with a physical keyboard that repeats, the kernel is the only source
+    // of repeat, and each event it sends becomes exactly one complete action -
+    // a press and a release together. The first press deliberately does
+    // nothing: the action happens on release, which is where a tap has always
+    // produced it, and starting the timer there is what has to be avoided.
     //
     // The cost is the editor's escalation from letters to whole words after
     // 1850ms of holding backspace, which lives in that timer. Alt+Backspace
     // deletes a word outright and is the way to ask for it on a keyboard that has
     // an Alt level printed on its keys.
-    const bool repeat_is_the_kernels = d->panel.hardware();
+    //
+    // Not every physical keyboard repeats, though. The Titan's and the Titan
+    // Pocket's aw9523 driver leave EV_REP off, so a held key there is one press
+    // and one release, exactly like a key held on screen - and with the kernel
+    // trusted to repeat it, holding backspace deleted one character. Those
+    // keyboards get the editor's timer, as the on-screen keys do.
+    const bool repeat_is_the_kernels = d->panel.hardware()
+        and d->hardwareKeyboard.kernelRepeats();
 
     const bool plainBackspace = key.action() == Key::ActionBackspace;
 
