@@ -2047,6 +2047,53 @@ private Q_SLOTS:
         QCOMPARE(problems.size(), 0);
     }
 
+    /*
+     * The letters page's alternates, the digits the orange key types among
+     * them, are where the Pre prints them in every language: each on the key
+     * over the middle of its column of the Pre's grid, once, even where a
+     * language's own rows have more keys (Russian, Hungarian, Arabic). Each is
+     * on the side of its key the Pre prints it on.
+     */
+    void alternatesStayInTheirColumns()
+    {
+        Pre::KeyboardView english;
+        showKeys(english, Pre::Language::byId(QStringLiteral("en")), 1080, 1080, false, Pre::Settings::Height::Medium);
+        QMap<QString, QPair<qreal, Pre::AltPos>> preAt;
+        QMap<QString, int> preRow;
+        for (const auto &z : english.m_zones)
+            if (z.slot.drawn && z.slot.key->kind == Pre::Kind::Char && !z.slot.key->alt.isEmpty()) {
+                preAt.insert(z.slot.key->alt, { z.rect.center().x(), z.slot.key->altPos });
+                preRow.insert(z.slot.key->alt, int(z.rect.top()));
+            }
+        QCOMPARE(preAt.size(), 28);
+        QStringList problems;
+        int own = 0;
+        for (const Pre::Language &l : Pre::Language::all()) {
+            own += l.layout == Pre::Layout::Own;
+            Pre::KeyboardView view;
+            showKeys(view, l, 1080, 1080, false, Pre::Settings::Height::Medium);
+            QMap<QString, int> seen;
+            for (const auto &z : view.m_zones) {
+                if (!z.slot.drawn || z.slot.key->kind != Pre::Kind::Char || z.slot.key->alt.isEmpty()) continue;
+                const QString a = z.slot.key->alt;
+                ++seen[a];
+                if (!preAt.contains(a)) continue;
+                const QString where = l.id + QStringLiteral(" ") + a + QStringLiteral(": ");
+                if (int(z.rect.top()) != preRow.value(a)) problems << where + QStringLiteral("on another row");
+                const qreal x = preAt.value(a).first;
+                if (x < z.rect.left() || x >= z.rect.right())
+                    problems << where + QStringLiteral("not over its column (%1 not in %2-%3)").arg(x).arg(z.rect.left()).arg(z.rect.right());
+                if (z.slot.key->altPos != preAt.value(a).second) problems << where + QStringLiteral("on the other side");
+            }
+            for (auto it = preAt.cbegin(); it != preAt.cend(); ++it)
+                if (seen.value(it.key()) != 1)
+                    problems << l.id + QStringLiteral(" ") + it.key() + QStringLiteral(": printed %1 times").arg(seen.value(it.key()));
+        }
+        QVERIFY(own >= 12);
+        if (!problems.isEmpty()) qWarning().noquote() << problems.mid(0, 40).join(QLatin1Char('\n'));
+        QCOMPARE(problems.size(), 0);
+    }
+
     void numberFields_data()
     {
         QTest::addColumn<QString>("allowed");

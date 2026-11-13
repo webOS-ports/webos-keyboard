@@ -134,17 +134,42 @@ Slot letter(QChar letter, int row, int col, const Language &lang)
     return slot(1.0f, makeKey(Kind::Char, QString(letter), alt, leftHalf ? AltPos::Left : AltPos::Right, ext));
 }
 
-//! A letter of a language with its own rows: its phone layout's key, with the Pre's alternate in [row], [col].
-Slot ownLetter(const LetterKey &lk, int row, int col, int rowLength)
+/*!
+ * For a language's own letter row [row] of [n] keys: which of the Pre's
+ * alternates for the row each key prints (an index into alts()[row]; -1 for
+ * none). Each goes on the key over the middle of its column on the Pre's grid,
+ * as the keys are laid out (each one wide, the orange key before the bottom
+ * row's letters, backspace after the middle row's, comma and return after the
+ * bottom row's), so the digits stand where they do in every other language. A
+ * row with more keys than the Pre's has a few without; none has fewer.
+ */
+QVector<int> altColumns(int row, int n)
+{
+    const int lead = row == 2 ? 1 : 0;
+    const int trail = row == 0 ? 0 : row == 1 ? 1 : 2;
+    const int pre = int(alts()[row].size());
+    const int preUnits = lead + pre + trail, ownUnits = lead + n + trail;
+    QVector<int> out(n, -1);
+    for (int col = 0; col < pre; ++col) {
+        // The column's middle, in the own row's keys: centre * ownUnits / preUnits, in whole keys.
+        const int at = (2 * (lead + col) + 1) * ownUnits / (2 * preUnits) - lead;
+        if (at >= 0 && at < n && out[at] < 0) out[at] = col;
+    }
+    return out;
+}
+
+//! A letter of a language with its own rows, place [index] of [rowLength]: its phone layout's key, with
+//! the Pre's alternate [col] of [row] (-1: none).
+Slot ownLetter(const LetterKey &lk, int row, int col, int index, int rowLength)
 {
     const QStringList &a = alts()[row];
-    const QString alt = col < a.size() ? a[col] : QString();
+    const QString alt = col >= 0 && col < a.size() ? a[col] : QString();
     QSharedPointer<Key> k(new Key);
     k->kind = Kind::Char;
     k->text = lk.text;
     k->shifted = lk.shifted.isEmpty() || lk.shifted == lk.text.toUpper() ? QString() : lk.shifted;
     k->alt = alt;
-    k->altPos = col < (rowLength + 1) / 2 ? AltPos::Left : AltPos::Right;
+    k->altPos = index < (rowLength + 1) / 2 ? AltPos::Left : AltPos::Right;
     k->extended = lk.extended.size() > 1 ? lk.extended : QStringList();
     if (!k->extended.isEmpty()) {
         QStringList upper;
@@ -162,11 +187,14 @@ Rows lettersOf(const Language &lang)
     QList<Slot> top, middle, bottom, last;
     if (lang.layout == Layout::Own && lang.letters.size() == 3) {
         const LetterRows &r = lang.letters;
-        for (int i = 0; i < r[0].size(); ++i) top << ownLetter(r[0][i], 0, i, r[0].size());
-        for (int i = 0; i < r[1].size(); ++i) middle << ownLetter(r[1][i], 1, i, r[1].size());
-        middle << f(Kind::Backspace);
-        bottom << f(Kind::Orange);
-        for (int i = 0; i < r[2].size(); ++i) bottom << ownLetter(r[2][i], 2, i, r[2].size());
+        QList<Slot> *const out[3] = { &top, &middle, &bottom };
+        for (int row = 0; row < 3; ++row) {
+            const int n = int(r[row].size());
+            const QVector<int> cols = altColumns(row, n);
+            if (row == 2) bottom << f(Kind::Orange);
+            for (int i = 0; i < n; ++i) *out[row] << ownLetter(r[row][i], row, cols[i], i, n);
+            if (row == 1) middle << f(Kind::Backspace);
+        }
     } else {
         const QStringList rows = layoutRows(lang.layout == Layout::Own ? Layout::Qwerty : lang.layout);
         for (int i = 0; i < rows[0].length(); ++i) top << letter(rows[0][i], 0, i, lang);
