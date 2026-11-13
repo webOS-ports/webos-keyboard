@@ -322,7 +322,8 @@ WordCandidateList WordEngine::fetchCandidates(Model::Text *text)
     const bool correct_spelling(!isBlocked(preedit)
                                 && (d->languagePlugin ? d->languagePlugin->spell(preedit) : true));
 
-    if (candidates.isEmpty() && !correct_spelling) {
+    // A word the owner deleted is wrong without a plugin too, with nothing to suggest.
+    if (candidates.isEmpty() && !correct_spelling && d->languagePlugin) {
         Q_FOREACH(const QString &correction, d->languagePlugin->spellCheckerSuggest(preedit, 5)) {
             appendToCandidates(&candidates, WordCandidate::SourceSpellChecking, correction, is_preedit_capitalized);
         }

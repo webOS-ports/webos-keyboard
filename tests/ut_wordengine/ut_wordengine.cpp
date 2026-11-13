@@ -104,6 +104,8 @@ private:
 class Engine : public Logic::WordEngine
 {
 public:
+    using Logic::WordEngine::useLanguagePlugin;
+
     explicit Engine(FakePlugin *plugin)
     {
         // No plugin can be loaded here: the language is set first, then the
@@ -415,6 +417,24 @@ private Q_SLOTS:
         text.setPreedit(QStringLiteral("cant"));
         engine.computeCandidates(&text);
         QCOMPARE(text.primaryCandidate(), QStringLiteral("can't"));
+    }
+
+    // A language whose plugin did not load leaves none, with prediction still
+    // on: a deleted word typed then has nothing to ask for suggestions.
+    void deletedWordWithoutAPlugin()
+    {
+        FakePlugin plugin;
+        Engine engine(&plugin);
+        engine.setEnabled(true);
+        engine.setWordPredictionEnabled(true);
+        engine.useLanguagePlugin(nullptr);
+        engine.setBlockedWords({ QStringLiteral("teh") });
+        QVERIFY(engine.isEnabled());
+
+        Model::Text text;
+        text.setPreedit(QStringLiteral("teh"));
+        engine.computeCandidates(&text);
+        QVERIFY(text.primaryCandidate().isEmpty());
     }
 };
 
