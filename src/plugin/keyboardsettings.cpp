@@ -48,6 +48,8 @@ const QLatin1String SPELL_CHECKING_KEY = QLatin1String("spellChecking");
 const QLatin1String KEY_PRESS_FEEDBACK_KEY = QLatin1String("keyPressFeedback");
 const QLatin1String KEYBOARD_SIZE_KEY = QLatin1String("keyboardSize");
 const QLatin1String KEYBOARD_LAYOUT_KEY = QLatin1String("keyboardLayout");
+//! The Pre Keyboard's own object: what Text Assist shows for it, and the owner's words.
+const QLatin1String PRE_KEY = QLatin1String("pre");
 
 /*!
  * \brief KeyboardSettings::KeyboardSettings class to load the settings, and
@@ -155,6 +157,52 @@ void KeyboardSettings::preferenceServiceIsAvailable()
         qWarning("Setting up subscription for keyboard preferences failed: %s", error.message);
         LSErrorFree(&error);
     }
+
+    // The country, for which dictionary spells a language (en_GB or en_US).
+    if (!LSCall(mServiceHandle, "palm://com.palm.systemservice/getPreferences",
+              "{\"subscribe\":true,\"keys\":[\"region\",\"locale\"]}",
+              countryChangedCallback, this, nullptr, &error)) {
+        qWarning("Setting up subscription for the region failed: %s", error.message);
+        LSErrorFree(&error);
+    }
+}
+
+void KeyboardSettings::countryFrom(const QJsonObject &root, QString *region, QString *locale)
+{
+    const auto code = [](const QJsonValue &v) {
+        return v.toObject().value(QStringLiteral("countryCode")).toString().trimmed().toLower();
+    };
+    if (root.value(QStringLiteral("region")).isObject())
+        *region = code(root.value(QStringLiteral("region")));
+    if (root.value(QStringLiteral("locale")).isObject())
+        *locale = code(root.value(QStringLiteral("locale")));
+}
+
+QString KeyboardSettings::country() const
+{
+    return mRegionCountry.isEmpty() ? mLocaleCountry : mRegionCountry;
+}
+
+bool KeyboardSettings::countryChangedCallback(LSHandle *handle, LSMessage *message, void *user_data)
+{
+    Q_UNUSED(handle);
+
+    if (!message)
+        return true;
+    const char *payload = LSMessageGetPayload(message);
+    if (!payload)
+        return true;
+
+    KeyboardSettings *settings = static_cast<KeyboardSettings*>(user_data);
+    const QString before = settings->country();
+    countryFrom(QJsonDocument::fromJson(QByteArray(payload)).object(),
+                &settings->mRegionCountry, &settings->mLocaleCountry);
+    const QString now = settings->country();
+    if (now != before) {
+        g_message("country: %s", qPrintable(now));
+        Q_EMIT settings->countryChanged(now);
+    }
+    return true;
 }
 
 
@@ -269,7 +317,49 @@ void KeyboardSettings::preferencesChanged(const QByteArray &data)
         }
     }
 
+    if (keyboardPref.value(PRE_KEY).isObject()
+            && keyboardPref.value(PRE_KEY) != mSavedKeyboardPrefs.value(PRE_KEY))
+        Q_EMIT preChanged(keyboardPref.value(PRE_KEY).toObject());
+
     mSavedKeyboardPrefs = keyboardPref;
+}
+
+QJsonObject KeyboardSettings::pre() const
+{
+    return mSavedKeyboardPrefs.value(PRE_KEY).toObject();
+}
+
+void KeyboardSettings::savePre(const QJsonObject &pre)
+{
+    QJsonObject keyboardObj = mSavedKeyboardPrefs;
+    keyboardObj.insert(PRE_KEY, pre);
+    if (keyboardObj == mSavedKeyboardPrefs)
+        return;
+    // Remembered now, so the next save of the rest doesn't take it back out
+    // before the preference service has echoed it.
+    mSavedKeyboardPrefs = keyboardObj;
+
+    QJsonObject prefObj;
+    prefObj.insert("keyboard", keyboardObj);
+    const QByteArray payload = QJsonDocument(prefObj).toJson(QJsonDocument::Compact);
+    LSError error;
+    LSErrorInit(&error);
+    if (!LSCallOneReply(mServiceHandle, "palm://com.palm.systemservice/setPreferences",
+                        payload.constData(), nullptr, this, nullptr, &error)) {
+        qWarning("Failed to save the Pre Keyboard's preferences: %s", error.message);
+        LSErrorFree(&error);
+    }
+}
+
+void KeyboardSettings::call(const QString &uri, const QString &payload)
+{
+    LSError error;
+    LSErrorInit(&error);
+    if (!LSCallOneReply(mServiceHandle, uri.toUtf8().constData(), payload.toUtf8().constData(),
+                        nullptr, this, nullptr, &error)) {
+        qWarning("Failed to call %s: %s", qPrintable(uri), error.message);
+        LSErrorFree(&error);
+    }
 }
 
 /*!
@@ -364,7 +454,9 @@ QString KeyboardSettings::keyboardLayout() const
 
 void KeyboardSettings::savePreferences(InputMethod *q)
 {
-    QJsonObject keyboardObj;
+    // The whole object is written back, so whatever is in it besides what is set
+    // here - the Pre Keyboard's look and recent emoji - goes back in as it was.
+    QJsonObject keyboardObj = mSavedKeyboardPrefs;
 
     keyboardObj.insert(ACTIVE_LANGUAGE_KEY, QJsonValue(q->activeLanguage()));
     keyboardObj.insert(ENABLED_LANGUAGES_KEY, QJsonValue(QJsonArray::fromStringList(q->enabledLanguages())));
@@ -378,6 +470,9 @@ void KeyboardSettings::savePreferences(InputMethod *q)
 
     if (keyboardObj == mSavedKeyboardPrefs)
         return;
+    // Remembered now, as savePre() does, so a save of the Pre Keyboard's object
+    // before the preference service echoes this one does not put the old values back.
+    mSavedKeyboardPrefs = keyboardObj;
 
     QJsonObject prefObj;
     prefObj.insert("keyboard", keyboardObj);

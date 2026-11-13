@@ -1,0 +1,20 @@
+// The one codec SpellChecker asks for with the stand-in hunspell: UTF-8.
+#ifndef UT_SPELLCHECKER_QTEXTCODEC_STUB_H
+#define UT_SPELLCHECKER_QTEXTCODEC_STUB_H
+
+#include <QByteArray>
+#include <QString>
+
+class QTextCodec
+{
+public:
+    static QTextCodec *codecForName(const char *)
+    {
+        static QTextCodec utf8;
+        return &utf8;
+    }
+    QByteArray fromUnicode(const QString &s) const { return s.toUtf8(); }
+    QString toUnicode(const char *s) const { return QString::fromUtf8(s); }
+};
+
+#endif

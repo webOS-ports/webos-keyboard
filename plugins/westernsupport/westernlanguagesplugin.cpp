@@ -83,6 +83,16 @@ bool WesternLanguagesPlugin::setSpellCheckerLanguage(const QString& languageId)
     return m_spellChecker.setLanguage(languageId);
 }
 
+void WesternLanguagesPlugin::removeFromSpellCheckerUserWordList(const QString& word)
+{
+    m_spellChecker.removeFromUserWordlist(word);
+}
+
+QStringList WesternLanguagesPlugin::spellCheckerUserWords()
+{
+    return m_spellChecker.userWords();
+}
+
 void WesternLanguagesPlugin::_useDatabase(const QString &locale)
 {
     const QString dbFileName = "database_"+locale+".db";

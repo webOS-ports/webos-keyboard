@@ -3,6 +3,7 @@
 
 #include "editor.h"
 #include "hardwarekeyboard.h"
+#include "periodhold.h"
 #include "keyboardgeometry.h"
 #include "keyboardsettings.h"
 #include "panelstate.h"
@@ -13,12 +14,18 @@
 #include "logic/wordengine.h"
 
 #include "luneosapplicationapiwrapper.h"
+#include "pre/precontroller.h"
+#ifdef PRE_DICTATION
+#include "pre/prevosk.h"
+#endif
+
 
 #include <maliit/plugins/abstractinputmethodhost.h>
 #include <maliit/plugins/abstractpluginsetting.h>
 
 #include <QtQuick>
 #include <QStringList>
+#include <QDir>
 #include <QTimer>
 #include <qglobal.h>
 #include <QDebug>
@@ -74,6 +81,8 @@ public:
     //! to visibleChanged in the constructor.
     bool panelForcedHidden = false;
     KeyboardSettings m_settings;
+    //! The Pre Keyboard: the phone keyboard (Keyboard.qml sets it active on a phone).
+    Pre::Controller pre;
     //! Resolves the Alt and Sym levels of a physical keyboard, if this device
     //! has one we have a profile for. Inert otherwise.
     HardwareKeyboard hardwareKeyboard;
@@ -96,6 +105,8 @@ public:
     //! the connection passes autoRepeat as a hardcoded false, and the compositor
     //! clears the flag before that to get the event delivered at all.
     quint32 heldScanCode = 0;
+    //! A physical keyboard's period, held, dictates; see InputMethod::processKeyEvent().
+    PeriodHold periodHold;
     //! The letter as typed, when the last one inserted from a physical keyboard
     //! was capitalised by auto-caps alone. A backspace straight after takes the
     //! capital back and puts this in its place, as legacy webOS did
@@ -123,6 +134,9 @@ public:
     //! hides what is typed, or in the preedit until it is done, elsewhere.
     T9Multitap t9;
     bool t9Commits;
+    //! What was in the preedit, typed on the screen keys, when the character
+    //! being cycled was begun: the character goes on the end of it.
+    QString t9Before;
     QTimer *t9Timer;
     //! The focused field hides what is typed in it (a password), from the
     //! last update().
@@ -290,8 +304,158 @@ public:
         qml_context->setContextProperty("maliit_wordribbon", wordRibbon);
         qml_context->setContextProperty("maliit_word_engine", editor.wordEngine());
         qml_context->setContextProperty("maliit_hw_keyboard", &hardwareKeyboard);
+        qml_context->setContextProperty("pre_keyboard", &pre);
     }
 
+    /*!
+     * The Pre Keyboard's connections. Its keys go through the event handler and
+     * the editor as LuneOS's own keys do, so its words - the bar, autocorrect,
+     * auto-capitals, the owner's dictionary - are the word engine's, and its
+     * languages are the keyboard's.
+     */
+    void setUpPreKeyboard()
+    {
+        pre.setDataDir(QStringLiteral(LUNEOS_KEYBOARD_DATA_DIR "/pre"));
+        pre.setStateDir(QDir::homePath() + QStringLiteral("/prekeyboard"));
+#ifdef PRE_DICTATION
+        // The period's microphone: Vosk, with the models installed under VOSK_MODEL_DIR.
+        pre.setDictation(new Pre::VoskDictation(QStringLiteral(VOSK_MODEL_DIR)));
+#endif
+        // Swiped words come from what the word engine reads: presage's databases and hunspell's dictionaries.
+        pre.setWordDirs(QStringLiteral(MALIIT_PLUGINS_DATA_DIR "/org/luneos/lib"), QStringLiteral(HUNSPELL_DICT_PATH));
+
+        Pre::Bridge b;
+        b.press = [this](const QString &label, const QString &action) { event_handler.onKeyPressed(label, action); };
+        b.release = [this](const QString &label, const QString &action) { event_handler.onKeyReleased(label, action); };
+        b.cancelRepeat = [this] { editor.cancelRepeat(); };
+        b.pick = [this](const QString &word) { event_handler.onWordCandidateReleased(word); };
+        b.commit = [this](const QString &text) { q->commitEmoji(text); };
+        b.setWord = [this](const QString &word) { editor.replacePreedit(word); };
+        b.atWordEnd = [this] {
+            const Model::Text *t = editor.text();
+            if (!t || !t->preedit().isEmpty()) return false;
+            const QString left = t->surroundingLeft();
+            return !left.isEmpty() && left.at(left.size() - 1).isLetterOrNumber();
+        };
+        b.cursor = [this](int dx, int dy, bool select) {
+            if (!select) {
+                const QString action = dx > 0 ? QStringLiteral("keyRight") : dx < 0 ? QStringLiteral("keyLeft")
+                                     : dy > 0 ? QStringLiteral("keyDown") : QStringLiteral("keyUp");
+                event_handler.onKeyPressed(QString(), action);
+                event_handler.onKeyReleased(QString(), action);
+                return;
+            }
+            // The editor's arrows don't select: the word being typed goes in
+            // first, then the application gets shift and the arrow.
+            editor.commit();
+            const int key = dx > 0 ? Qt::Key_Right : dx < 0 ? Qt::Key_Left : dy > 0 ? Qt::Key_Down : Qt::Key_Up;
+            host->sendKeyEvent(QKeyEvent(QEvent::KeyPress, key, Qt::ShiftModifier));
+            host->sendKeyEvent(QKeyEvent(QEvent::KeyRelease, key, Qt::ShiftModifier));
+        };
+        b.autoCaps = [this] { return editor.atAutoCapsPosition(); };
+        b.before = [this](int n) {
+            const Model::Text *t = editor.text();
+            return t ? (t->surroundingLeft() + t->preedit()).right(n) : QString();
+        };
+        b.after = [this](int n) {
+            const Model::Text *t = editor.text();
+            return t ? t->surroundingRight().left(n) : QString();
+        };
+        b.prose = [this] { return contentType == InputMethod::FreeTextContentType && !hiddenText; };
+        // As InputMethod::update() decides the word engine for the field, asked of the field now.
+        b.wordsWanted = [this] {
+            bool typeValid = false, askedValid = false, hiddenValid = false;
+            const int type = host->contentType(typeValid);
+            const bool asked = host->predictionEnabled(askedValid);
+            const bool hidden = host->hiddenText(hiddenValid) && hiddenValid;
+            return predictionWanted(asked, askedValid, hidden, !typeValid || type == InputMethod::FreeTextContentType);
+        };
+        b.nextWords = [this] {
+            const Model::Text *t = editor.text();
+            return t ? editor.wordEngine()->nextWords(t->surroundingLeft(), 3) : QStringList();
+        };
+        b.replace = [this](int before, int after, const QString &text) {
+            host->sendCommitString(text, -before, before + after);
+        };
+        b.position = [this] {
+            const Model::Text *t = editor.text();
+            return t ? int(t->surroundingOffset()) : -1;
+        };
+        b.alternatives = [this](const QString &word, const QString &left) {
+            QStringList out;
+            // The word the space key put in place of another, still where it was put: that one first.
+            if (!autoCorrectedWord.isEmpty() && word == autoCorrectedWord && left.endsWith(autoCorrectedLeft))
+                out << autoCorrectedOriginal;
+            // Spellings offered for a word only with spell checking on: with
+            // autocorrect alone the checker is there, but not to be shown.
+            if (editor.wordEngine()->marksMisspellings())
+                out << editor.wordEngine()->spellingSuggestions(word, 4);
+            return out;
+        };
+        b.canAdd = [this](const QString &word) {
+            return editor.wordEngine()->marksMisspellings() && editor.wordEngine()->isMisspelled(word);
+        };
+        b.addWord = [this](const QString &word) { editor.addToUserDictionary(word); };
+        b.removeWord = [this](const QString &word) {
+            editor.wordEngine()->removeFromUserDictionary(word);
+            blockRemovedWords();
+            editor.refreshCandidates();
+        };
+        b.useLanguage = [this](const QString &id) { q->setActiveLanguage(id); };
+        b.luna = [this](const QString &uri, const QString &payload) { m_settings.call(uri, payload); };
+        b.savePrefs = [this](const QJsonObject &obj) { m_settings.savePre(obj); };
+        b.hide = [this] { host->notifyImInitiatedHiding(); };
+        pre.setBridge(b);
+        QObject::connect(&editor, &AbstractTextEditor::autoCorrected, &pre,
+                         [this](const QString &typed, const QString &fixed) { pre.corrected(typed, fixed); });
+
+        QObject::connect(&m_settings, &KeyboardSettings::preChanged, &pre, &Pre::Controller::setPrefs);
+        pre.setPrefs(m_settings.pre());
+        // The words deleted from the Pre Keyboard's bar (or put back in Text
+        // Assist), for the language typed in: the word engine neither offers
+        // nor corrects to them, whichever keys are typed on.
+        // Asked again after: the bar may hold one just deleted, or the old
+        // language's list (refreshCandidates() is connected before this).
+        const auto reblock = [this] { blockRemovedWords(); editor.refreshCandidates(); };
+        QObject::connect(&m_settings, &KeyboardSettings::preChanged, q, reblock);
+        QObject::connect(q, &InputMethod::activeLanguageChanged, q, reblock);
+        blockRemovedWords();
+
+        // The bar: the word engine's candidates, and what space would put in.
+        QObject::connect(&editor, &AbstractTextEditor::wordCandidatesChanged, &pre,
+                         [this](const WordCandidateList &candidates) {
+            QStringList words;
+            for (const WordCandidate &c : candidates)
+                if (c.source() != WordCandidate::SourceUser) words << c.word();
+            Model::Text *t = editor.text();
+            const QString primary = editor.isAutoCorrectEnabled() && t ? t->primaryCandidate() : QString();
+            pre.setCandidates(t ? t->preedit() : QString(), primary, words);
+        });
+        // Words for a field that takes them: the editor's preedit is on for one.
+        QObject::connect(&editor, &AbstractTextEditor::preeditEnabledChanged, &pre, &Pre::Controller::setWordsAllowed);
+        pre.setWordsAllowed(editor.isPreeditEnabled());
+        QObject::connect(&editor, &AbstractTextEditor::autoCapsActivated, &pre, &Pre::Controller::update);
+
+        // The settings it follows: suggestions on, the key click, the languages.
+        const auto sync = [this] {
+            pre.setKeyboardState(editor.wordEngine()->isEnabled(), q->useAudioFeedback(),
+                                 q->enabledLanguages(), q->activeLanguage());
+        };
+        QObject::connect(editor.wordEngine(), &Logic::AbstractWordEngine::enabledChanged, &pre, sync);
+        QObject::connect(q, &InputMethod::useAudioFeedbackChanged, &pre, sync);
+        QObject::connect(q, &InputMethod::enabledLanguagesChanged, &pre, sync);
+        QObject::connect(q, &InputMethod::activeLanguageChanged, &pre, sync);
+        sync();
+        // Its height is the keyboard's size, Text Assist's Keyboard Size.
+        QObject::connect(q, &InputMethod::keyboardSizeChanged, &pre, &Pre::Controller::setKeyboardSize);
+        pre.setKeyboardSize(q->keyboardSize());
+    }
+
+
+    void blockRemovedWords()
+    {
+        editor.wordEngine()->setBlockedWords(Pre::Settings::removed(m_settings.pre(), q->activeLanguage()));
+    }
 
     /*
      * register settings
@@ -321,9 +485,27 @@ public:
                          editor.wordEngine(), SLOT(setWordPredictionEnabled(bool)));
         editor.wordEngine()->setWordPredictionEnabled(m_settings.predictiveText());
 
+        // The checker is loaded for either setting (WordEngine): autocorrect
+        // has to know a word is wrong to correct it, with spell checking off.
         QObject::connect(&m_settings, SIGNAL(spellCheckingChanged(bool)),
                          editor.wordEngine(), SLOT(setSpellcheckerEnabled(bool)));
         editor.wordEngine()->setSpellcheckerEnabled(m_settings.spellchecking());
+        QObject::connect(&m_settings, SIGNAL(autoCorrectionChanged(bool)),
+                         editor.wordEngine(), SLOT(setAutoCorrectEnabled(bool)));
+        editor.wordEngine()->setAutoCorrectEnabled(m_settings.autoCorrection());
+    }
+
+    /*!
+     * The phone's country, which picks a language's dictionary: English is
+     * spelled the American or the British way by it (hunspellDictionary()).
+     * It comes after the first language has loaded, which then reloads its
+     * dictionary once.
+     */
+    void registerCountry()
+    {
+        QObject::connect(&m_settings, SIGNAL(countryChanged(QString)),
+                         editor.wordEngine(), SLOT(setCountry(QString)));
+        QObject::connect(&m_settings, &KeyboardSettings::countryChanged, &pre, &Pre::Controller::setCountry);
     }
 
     void registerActiveLanguage()
@@ -410,6 +592,7 @@ public:
             t9Timer->stop();
         t9.end();
         t9Commits = false;
+        t9Before.clear();
     }
 
     void truncateEnabledLanguageLocales(const QStringList& locales)

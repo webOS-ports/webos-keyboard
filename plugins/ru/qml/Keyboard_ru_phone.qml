@@ -46,7 +46,7 @@ KeyPad {
 
             CharKey { label: "й"; shifted: "Й" }
             CharKey { label: "ц"; shifted: "Ц" }
-            CharKey { label: "у"; shifted: "Y" }
+            CharKey { label: "у"; shifted: "У" }
             CharKey { label: "к"; shifted: "К" }
             CharKey { label: "е"; shifted: "Е"; extended: ["е", "ё"]; extendedShifted: ["Е", "Ё"] }
             CharKey { label: "н"; shifted: "Н" }

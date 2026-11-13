@@ -159,9 +159,12 @@ Item {
         GridView {
             id: grid
             width: parent.width
-            height: parent.height - tabRow.height
+            // Never below nothing: the panel is laid out before it has a
+            // height of its own, and a negative cache buffer is refused with
+            // a warning at every start.
+            height: Math.max(0, parent.height - tabRow.height)
             clip: true
-            cacheBuffer: height
+            cacheBuffer: Math.max(0, height)
 
             cellWidth: emojiPanel.cellSize
             cellHeight: emojiPanel.cellSize

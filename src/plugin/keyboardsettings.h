@@ -30,6 +30,7 @@
 #ifndef KEYBOARDSETTINGS_H
 #define KEYBOARDSETTINGS_H
 
+#include <QJsonObject>
 #include <QObject>
 #include <QStringList>
 
@@ -54,13 +55,28 @@ public:
     bool keyPressFeedback() const;
     QString keyboardSize() const;
     QString keyboardLayout() const;
+    //! The phone's country, lower case ("nl"): Regional Settings' region, else
+    //! the locale's country; empty till the preference service has said.
+    QString country() const;
+    //! Reads the countries in the preference service's answer [root] into
+    //! [region] and [locale]. An answer can hold only the key that changed;
+    //! the other is left as it was.
+    static void countryFrom(const QJsonObject &root, QString *region, QString *locale);
 
     static bool systemServiceStatusCallback(LSHandle *handle, LSMessage *message, void *user_data);
     static bool preferencesChangedCallback(LSHandle *handle, LSMessage *message, void *user_data);
+    static bool countryChangedCallback(LSHandle *handle, LSMessage *message, void *user_data);
 
     void preferenceServiceIsAvailable();
     void preferencesChanged(const QByteArray &data);
     void savePreferences(InputMethod *q);
+
+    //! The Pre Keyboard's object in the preference: its settings and the owner's words.
+    QJsonObject pre() const;
+    //! Writes [pre] back, the rest of the preference as it was.
+    void savePre(const QJsonObject &pre);
+    //! Calls a Luna method on the keyboard's own handle, no reply wanted.
+    void call(const QString &uri, const QString &payload);
 
 Q_SIGNALS:
     void activeLanguageChanged(QString);
@@ -72,6 +88,8 @@ Q_SIGNALS:
     void keyPressFeedbackChanged(bool);
     void keyboardSizeChanged(QString);
     void keyboardLayoutChanged(QString);
+    void preChanged(const QJsonObject &pre);
+    void countryChanged(QString);
 
 private:
     LSHandle *mServiceHandle;
@@ -86,6 +104,8 @@ private:
     bool mKeyPressFeedback;
     QString mKeyboardSize;
     QString mKeyboardLayout;
+    QString mRegionCountry;
+    QString mLocaleCountry;
     QJsonObject mSavedKeyboardPrefs;
 };
 

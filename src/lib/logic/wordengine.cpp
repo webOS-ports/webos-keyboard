@@ -30,6 +30,7 @@
  */
 
 #include "wordengine.h"
+#include "correction.h"
 
 #include <utility>
 #include "logic/abstractlanguagefeatures.h"
@@ -95,7 +96,17 @@ public:
 
     bool use_predictive_text;
 
+    //! The "Spell checking" setting: a word spelt wrong is marked and offered
+    //! to be added (marksMisspellings()).
     bool use_spell_checker;
+    //! The "Autocorrect" setting: what space puts in for a word spelt wrong.
+    bool use_auto_correct;
+
+    //! Hunspell is loaded for either: autocorrect needs to know a word is
+    //! wrong, and what for, as much as marking it does.
+    bool checkerWanted() const { return use_spell_checker || use_auto_correct; }
+    //! Whether the plugin's checker is loaded and can say a word is wrong.
+    bool checking() const { return checkerWanted() && languagePlugin && languagePlugin->spellCheckerEnabled(); }
 
     LanguagePluginInterface* languagePlugin;
 
@@ -104,6 +115,19 @@ public:
     explicit WordEnginePrivate();
 
     QString currentPlugin;
+    //! The language typed in ("en"), for what space corrects a word to (Correction).
+    QString language;
+    //! The phone's country ("nl"), for which of a language's dictionaries spells it.
+    QString country;
+    //! Hands the plugin its dictionary: the language, and where it is typed.
+    void setSpellCheckerLanguage()
+    {
+        if (!languagePlugin || language.isEmpty())
+            return;
+        const QString spelled = country.isEmpty() ? language : language + QLatin1Char('_') + country;
+        if (languagePlugin->setSpellCheckerLanguage(spelled))
+            languagePlugin->setSpellCheckerEnabled(checkerWanted());
+    }
     void loadPlugin(const QString& pluginName, const QString& subfolder="en")
     {
         if (pluginName == currentPlugin)
@@ -152,6 +176,7 @@ public:
 WordEnginePrivate::WordEnginePrivate()
     : use_predictive_text(false)
     , use_spell_checker(false)
+    , use_auto_correct(false)
     , languagePlugin(nullptr)
 {
     loadPlugin(DEFAULT_PLUGIN);
@@ -202,8 +227,9 @@ void WordEngine::setWordPredictionEnabled(bool enabled)
         Q_EMIT enabledChanged(isEnabled());
 }
 
-//! \brief WordEngine::enableSpellcheker turns on/off the usage of the spellchecker
-//! \param enabled
+//! \brief WordEngine::setSpellcheckerEnabled follows the "Spell checking"
+//! setting: whether a word spelt wrong is marked and offered to be added. The
+//! checker itself stays loaded while autocorrect is on (setAutoCorrectEnabled).
 void WordEngine::setSpellcheckerEnabled(bool enabled)
 {
     Q_D(WordEngine);
@@ -212,28 +238,56 @@ void WordEngine::setSpellcheckerEnabled(bool enabled)
     d->use_spell_checker = enabled;
 
     if (d->languagePlugin)
-        d->languagePlugin->setSpellCheckerEnabled(d->use_spell_checker);
+        d->languagePlugin->setSpellCheckerEnabled(d->checkerWanted());
     if(totalEnabled != isEnabled())
         Q_EMIT enabledChanged(isEnabled());
+}
+
+//! \brief WordEngine::setAutoCorrectEnabled follows the "Autocorrect" setting,
+//! which needs the checker loaded as much as spell checking does: without it no
+//! word is wrong, so none is corrected, and no word of the owner's is saved.
+void WordEngine::setAutoCorrectEnabled(bool enabled)
+{
+    Q_D(WordEngine);
+    const bool totalEnabled = isEnabled();
+
+    d->use_auto_correct = enabled;
+
+    if (d->languagePlugin)
+        d->languagePlugin->setSpellCheckerEnabled(d->checkerWanted());
+    if(totalEnabled != isEnabled())
+        Q_EMIT enabledChanged(isEnabled());
+}
+
+bool WordEngine::marksMisspellings() const
+{
+    Q_D(const WordEngine);
+    return d->use_spell_checker && d->checking();
 }
 
 bool WordEngine::isMisspelled(const QString &word)
 {
     Q_D(WordEngine);
 
-    // The spell checker being off is the setting saying nothing is to be marked
-    // wrong, not a reason to mark everything.
-    return d->use_spell_checker && d->languagePlugin && !d->languagePlugin->spell(word);
+    // Both settings off is nothing to be marked or corrected, not a reason to
+    // call everything wrong. Whether it is shown is marksMisspellings().
+    if (!d->checking())
+        return false;
+    return isBlocked(word) || !d->languagePlugin->spell(word);
 }
 
 QStringList WordEngine::spellingSuggestions(const QString &word, int limit)
 {
     Q_D(WordEngine);
 
-    if (!d->use_spell_checker || !d->languagePlugin)
+    if (!d->checking())
         return QStringList();
 
-    return d->languagePlugin->spellCheckerSuggest(word, limit);
+    QStringList out;
+    // Asked for a few more, as a deleted word among them is dropped.
+    for (const QString &w : d->languagePlugin->spellCheckerSuggest(word, limit < 0 ? limit : limit + 3))
+        if (!isBlocked(w) && (limit < 0 || out.size() < limit)) out << w;
+    return out;
 }
 
 void WordEngine::onWordCandidateSelected(QString word)
@@ -251,33 +305,74 @@ WordCandidateList WordEngine::fetchCandidates(Model::Text *text)
     WordCandidateList candidates;
     const QString &preedit(text->preedit());
     const bool is_preedit_capitalized(!preedit.isEmpty() && preedit.at(0).isUpper());
+    QStringList predictions;
 
     if (d->use_predictive_text && d->languagePlugin) {
 
         d->languagePlugin->parse(text->surroundingLeft(), preedit);
         const QStringList suggestions = d->languagePlugin->getWordCandidates();
+        predictions = suggestions;
 
         Q_FOREACH(const QString &suggestion, suggestions) {
             appendToCandidates(&candidates, WordCandidate::SourcePrediction, suggestion, is_preedit_capitalized);
         }
     }
 
-    // spell checking
-    const bool correct_spelling(d->languagePlugin ? d->languagePlugin->spell(preedit)
-                                                  : true);
+    // spell checking; a word the owner deleted is spelt wrong, to be corrected
+    const bool correct_spelling(!isBlocked(preedit)
+                                && (d->languagePlugin ? d->languagePlugin->spell(preedit) : true));
 
-    if (candidates.isEmpty() && !correct_spelling) {
+    // A word the owner deleted is wrong without a plugin too, with nothing to suggest.
+    if (candidates.isEmpty() && !correct_spelling && d->languagePlugin) {
         Q_FOREACH(const QString &correction, d->languagePlugin->spellCheckerSuggest(preedit, 5)) {
             appendToCandidates(&candidates, WordCandidate::SourceSpellChecking, correction, is_preedit_capitalized);
         }
     }
 
-    text->setPreeditFace(candidates.isEmpty() ? (correct_spelling ? Model::Text::PreeditDefault
-                                                                  : Model::Text::PreeditNoCandidates)
+    // Marked wrong only with spell checking on: autocorrect alone corrects it
+    // quietly, as space goes.
+    text->setPreeditFace(candidates.isEmpty() ? (correct_spelling || !d->use_spell_checker
+                                                     ? Model::Text::PreeditDefault
+                                                     : Model::Text::PreeditNoCandidates)
                                               : Model::Text::PreeditActive);
 
-    text->setPrimaryCandidate(candidates.isEmpty() ? QString()
-                                                   : candidates.first().label());
+    /*
+     * What space puts in: the word as typed when the dictionary knows it, else
+     * its best correction (see Correction), not presage's first guess, which
+     * only goes by the letters typed so far ("hund" was "hundert"). Asked
+     * whatever presage and the checker said: the language's own corrections
+     * ("cant" -> "can't", "i" -> "I") are of words a dictionary knows.
+     */
+    QString primary = candidates.isEmpty() ? QString() : candidates.first().label();
+    if (d->languagePlugin) {
+        QHash<QString, QStringList> asked;
+        Correction::Dictionary dictionary;
+        dictionary.spell = [this, d](const QString &w) { return !isBlocked(w) && d->languagePlugin->spell(w); };
+        dictionary.suggest = [this, d, &asked](const QString &w) {
+            const auto it = asked.constFind(w);
+            if (it != asked.constEnd()) return it.value();
+            QStringList out;
+            for (const QString &s : d->languagePlugin->spellCheckerSuggest(w, 8))
+                if (!isBlocked(s)) out << s;
+            asked.insert(w, out);
+            return out;
+        };
+        const QString chosen = Correction::choose(preedit, d->language, dictionary, predictions);
+        // A word the dictionary knows, that presage has nothing for and the
+        // language nothing to change in, is left without a candidate, as before.
+        if (!candidates.isEmpty() || !correct_spelling || chosen != preedit)
+            primary = chosen;
+        // In the list, first, as it will go in.
+        if (!primary.isEmpty()) {
+            candidates.erase(std::remove_if(candidates.begin(), candidates.end(),
+                                            [&primary](const WordCandidate &c) { return c.word() == primary; }),
+                             candidates.end());
+            candidates.prepend(WordCandidate(primary == preedit ? WordCandidate::SourcePrediction
+                                                                : WordCandidate::SourceSpellChecking,
+                                             primary));
+        }
+    }
+    text->setPrimaryCandidate(primary);
 
 
     return candidates;
@@ -290,9 +385,33 @@ void WordEngine::addToUserDictionary(const QString &word)
         d->languagePlugin->addToSpellCheckerUserWordList(word);
 }
 
+void WordEngine::removeFromUserDictionary(const QString &word)
+{
+    Q_D(WordEngine);
+    if (d->languagePlugin)
+        d->languagePlugin->removeFromSpellCheckerUserWordList(word);
+}
+
+//! Presage, asked with the text before the cursor and nothing typed of the next word.
+QStringList WordEngine::predictNext(const QString &left)
+{
+    Q_D(WordEngine);
+    if (!d->use_predictive_text || !d->languagePlugin)
+        return QStringList();
+    d->languagePlugin->parse(left, QString());
+    return d->languagePlugin->getWordCandidates();
+}
+
+QStringList WordEngine::userWords()
+{
+    Q_D(WordEngine);
+    return d->languagePlugin && d->checkerWanted() ? d->languagePlugin->spellCheckerUserWords() : QStringList();
+}
+
 void WordEngine::onLanguageChanged(const QString &languageId)
 {
     Q_D(WordEngine);
+    d->language = languageId;
 
     if (languageId == "ar")
         d->loadPlugin("libarabicplugin.so", "ar");
@@ -335,12 +454,31 @@ void WordEngine::onLanguageChanged(const QString &languageId)
     else
         d->loadPlugin(DEFAULT_PLUGIN);
 
-    if (!d->languagePlugin)
-        return;
+    d->setSpellCheckerLanguage();
+}
 
-    const bool ok = d->languagePlugin->setSpellCheckerLanguage(languageId);
-    if (ok)
-        d->languagePlugin->setSpellCheckerEnabled(d->use_spell_checker);
+//! \brief The phone's country (an ISO 3166 code, "nl"): English is spelled the
+//! American or the British way by it, and a language that has a dictionary for
+//! the country (de_CH, pt_BR) is spelled with that one.
+void WordEngine::setCountry(const QString &country)
+{
+    Q_D(WordEngine);
+    const QString cc = country.toLower();
+    if (cc == d->country)
+        return;
+    d->country = cc;
+    d->setSpellCheckerLanguage();
+}
+
+void WordEngine::useLanguagePlugin(LanguagePluginInterface *plugin)
+{
+    Q_D(WordEngine);
+    d->pluginLoader.unload();
+    d->currentPlugin.clear();
+    d->languagePlugin = plugin;
+    if (plugin)
+        plugin->setSpellCheckerEnabled(d->checkerWanted());
+    d->setSpellCheckerLanguage();
 }
 
 AbstractLanguageFeatures* WordEngine::languageFeature()

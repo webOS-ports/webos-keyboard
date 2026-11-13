@@ -57,6 +57,7 @@ public Q_SLOTS:
             "maliit_word_engine",
             "maliit_wordribbon",
             "audioFeedback",
+            "pre_keyboard",
         };
         for (const char *name : names)
             engine->rootContext()->setContextProperty(QLatin1String(name), stubs->property(name));

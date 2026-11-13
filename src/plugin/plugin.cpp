@@ -31,6 +31,7 @@
 
 #include "plugin.h"
 #include "inputmethod.h"
+#include "pre/prekeyboardview.h"
 
 #include <QtQml>
 
@@ -40,6 +41,7 @@ MaliitKeyboardPlugin::MaliitKeyboardPlugin(QObject *parent)
 {
     qmlRegisterUncreatableType<InputMethod>("LuneOSKeyboard", 1, 0, "InputMethod",
                                             QString("InputMethod can't be created in QML"));
+    qmlRegisterType<Pre::KeyboardView>("LuneOSKeyboard", 1, 0, "PreKeyboardView");
 }
 
 QString MaliitKeyboardPlugin::name() const

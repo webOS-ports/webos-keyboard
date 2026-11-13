@@ -32,6 +32,8 @@
  */
 
 #include "spellchecker.h"
+#include "hunspelldictionary.h"
+#include "userwords.h"
 
 #ifdef HAVE_HUNSPELL
 #include "hunspell/hunspell.hxx"
@@ -96,6 +98,9 @@ public:
     guint pollSourceId;  //!< The db8 poll timer, 0 when not registered.
 
     QStringList userWords;
+    //! The user words the live Hunspell instance has been given, to take back
+    //! out the ones that leave db8 (deleted in Text Assist, or from the keys).
+    QStringList appliedWords;
 
     explicit SpellCheckerPrivate(const QString &user_dictionary_kind);
     ~SpellCheckerPrivate();
@@ -147,8 +152,12 @@ void SpellCheckerPrivate::applyUserWords()
     if (!hunspell)
         return;
 
+    for (const QString &word : appliedWords)
+        if (!userWords.contains(word))
+            hunspell->remove(codec->fromUnicode(word).toStdString());
     for (const QString &word : userWords)
         hunspell->add(codec->fromUnicode(word).toStdString());
+    appliedWords = userWords;
 }
 
 //! \brief SpellCheckerPrivate::clear cleans up all memory and does reset
@@ -157,6 +166,7 @@ void SpellCheckerPrivate::clear()
 {
     delete(hunspell);
     hunspell = nullptr;
+    appliedWords.clear();
     aff_file.clear();
     dic_file.clear();
 }
@@ -448,14 +458,20 @@ void SpellChecker::addToUserWordlist(const QString &word)
     // subscription in the constructor will reconfirm it a moment later.
     if (!d->userWords.contains(word)) {
         d->userWords.append(word);
-        if (d->hunspell)
+        if (d->hunspell) {
             d->hunspell->add(d->codec->fromUnicode(word).toStdString());
+            d->appliedWords.append(word);
+        }
     }
 
     LSError error;
     LSErrorInit(&error);
-    const QByteArray payload = "{\"objects\":[{\"_kind\":\"" + d->user_dictionary_kind.toUtf8() +
-                         "\",\"word\":\"" + word.toUtf8() + "\"}]}";
+    // Built as JSON rather than pasted in: a word with a quote or a backslash
+    // in it made the put unparseable.
+    const QJsonObject object{ { QStringLiteral("_kind"), d->user_dictionary_kind },
+                              { QStringLiteral("word"), word } };
+    const QByteArray payload = QJsonDocument(QJsonObject{ { QStringLiteral("objects"), QJsonArray{ object } } })
+                                   .toJson(QJsonDocument::Compact);
     if (!LSCall(d->serviceHandle, "luna://com.palm.db/put", payload.constData(),
               SpellChecker::putCallback, this, nullptr, &error)) {
         qWarning("Failed to add '%s' to user dictionary: %s", qPrintable(word), error.message);
@@ -463,37 +479,82 @@ void SpellChecker::addToUserWordlist(const QString &word)
     }
 }
 
+//! \brief Takes a word out of the user dictionary, if it is there in any case:
+//! out of the live Hunspell instance at once, and out of db8, where Text Assist
+//! and presage see it go too. What is taken out is the word as it was saved
+//! ("webOS" for "webos"), as db8 matches the spelling exactly.
+void SpellChecker::removeFromUserWordlist(const QString &word)
+{
+    Q_D(SpellChecker);
+
+    const QStringList saved = MaliitKeyboard::Logic::savedSpellings(d->userWords, word);
+    for (const QString &spelling : saved) {
+        d->userWords.removeAll(spelling);
+        if (d->hunspell && d->appliedWords.contains(spelling)) {
+            d->hunspell->remove(d->codec->fromUnicode(spelling).toStdString());
+            d->appliedWords.removeAll(spelling);
+        }
+
+        const QJsonObject query{
+            { QStringLiteral("from"), d->user_dictionary_kind },
+            { QStringLiteral("where"), QJsonArray{ QJsonObject{ { QStringLiteral("prop"), QStringLiteral("word") },
+                                                                { QStringLiteral("op"), QStringLiteral("=") },
+                                                                { QStringLiteral("val"), spelling } } } } };
+        const QByteArray payload = QJsonDocument(QJsonObject{ { QStringLiteral("query"), query } })
+                                       .toJson(QJsonDocument::Compact);
+        LSError error;
+        LSErrorInit(&error);
+        if (!LSCall(d->serviceHandle, "luna://com.palm.db/del", payload.constData(),
+                    SpellChecker::delCallback, this, nullptr, &error)) {
+            qWarning("Failed to take '%s' out of the user dictionary: %s", qPrintable(spelling), error.message);
+            LSErrorFree(&error);
+        }
+    }
+}
+
+QStringList SpellChecker::userWords() const
+{
+    Q_D(const SpellChecker);
+    return d->userWords;
+}
+
+bool SpellChecker::delCallback(LSHandle *handle, LSMessage *message, void *user_data)
+{
+    Q_UNUSED(handle);
+    Q_UNUSED(user_data);
+
+    const char *payload = message ? LSMessageGetPayload(message) : nullptr;
+    if (payload && !QJsonDocument::fromJson(QByteArray(payload)).object().value(QStringLiteral("returnValue")).toBool())
+        qWarning() << "com.palm.db/del failed:" << payload;
+    return true;
+}
+
 //! \brief SpellChecker::setLanguage switches to the given language if possible
-//! \param language The new language use "en" or "en_US". If more than one
-//! exists, the first one in the directory listing is used
+//! \param language The keyboard's language ("en"), or it and the country it is
+//! typed in ("en_NL"): see hunspellDictionary() for which dictionary that is.
 //! \return true if switching the language succeded
 bool SpellChecker::setLanguage(const QString &language)
 {
     Q_D(SpellChecker);
 
-    qDebug() << "spellechecker.cpp in setLanguage() lang=" << language << "dictPath=" << dictPath();
+    const int sep = language.indexOf(QLatin1Char('_'));
+    const QString id = sep < 0 ? language : language.left(sep);
+    const QString country = sep < 0 ? QString() : language.mid(sep + 1);
 
     const QDir dictDir(dictPath());
-    QStringList affMatches = dictDir.entryList(QStringList(language+"*.aff"));
-    QStringList dicMatches = dictDir.entryList(QStringList(language+"*.dic"));
+    const QString name = MaliitKeyboard::Logic::hunspellDictionary(
+        id, country, MaliitKeyboard::Logic::hunspellDictionaries(dictDir.entryList(QDir::Files)));
 
-    if (affMatches.isEmpty() || dicMatches.isEmpty()) {
-        QString lang = language;
-        lang.truncate(2);
-        qWarning() << "Did not find a dictionary for" << language << " - checking for " << lang;
-        if (language.length() > 2) {
-            return setLanguage(lang);
-        }
-
+    if (name.isEmpty()) {
         qWarning() << "No dictionary found for" << language << "turning off spellchecking";
         d->clear();
         return false;
     }
 
-    d->aff_file = dictPath() + "/" + affMatches[0];
-    d->dic_file = dictPath() + "/" + dicMatches[0];
+    d->aff_file = dictDir.filePath(name + QStringLiteral(".aff"));
+    d->dic_file = dictDir.filePath(name + QStringLiteral(".dic"));
 
-    qDebug() << "spellechecker.cpp in setLanguage() aff_file=" << d->aff_file << "dic_file=" << d->dic_file;
+    qInfo("spellchecker: %s is spelled with %s", qPrintable(language), qPrintable(name));
 
     if (enabled()) {
         setEnabled(false);

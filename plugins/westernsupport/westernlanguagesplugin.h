@@ -35,6 +35,8 @@ public:
     QStringList spellCheckerSuggest(const QString& word, int limit) override;
     void addToSpellCheckerUserWordList(const QString& word) override;
     bool setSpellCheckerLanguage(const QString& languageId) override;
+    void removeFromSpellCheckerUserWordList(const QString& word) override;
+    QStringList spellCheckerUserWords() override;
 
 signals:
 

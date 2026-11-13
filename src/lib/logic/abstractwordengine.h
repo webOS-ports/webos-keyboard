@@ -63,16 +63,45 @@ public:
     Q_SIGNAL void enabledChanged(bool enabled);
 
     Q_SLOT virtual void setWordPredictionEnabled(bool on);
+    //! The "Spell checking" setting: a word spelt wrong is marked and offered to be added.
     Q_SLOT virtual void setSpellcheckerEnabled(bool on);
+    //! The "Autocorrect" setting, which needs to know a word is wrong as much.
+    Q_SLOT virtual void setAutoCorrectEnabled(bool on);
 
     void clearCandidates();
     void computeCandidates(Model::Text *text);
     Q_SIGNAL void candidatesChanged(const WordCandidateList &candidates);
 
     virtual void addToUserDictionary(const QString &word);
+    //! \brief Takes \a word out of the owner's dictionary, if it is there. This does nothing.
+    virtual void removeFromUserDictionary(const QString &word);
+
+    /*!
+     * \brief Words never to offer or correct to, whatever the dictionaries
+     * say: the ones the owner deleted (the Pre Keyboard's "removed"), for the
+     * language typed in. Matched without regard to case.
+     */
+    void setBlockedWords(const QStringList &words);
+    bool isBlocked(const QString &word) const;
+
+    //! \brief The owner's own words, as saved: one typed in another case
+    //! ("webos" for "webOS") is put in as saved. None here.
+    virtual QStringList userWords();
+
+    //! \brief The likeliest next words after \a left, before any of the next is
+    //! typed: at most \a limit, best first, none the owner deleted. None here.
+    QStringList nextWords(const QString &left, int limit);
+protected:
+    virtual QStringList predictNext(const QString &left);
+public:
 
     //! \brief Whether \a word is spelled wrongly. False when nothing can say.
+    //! Known with autocorrect on alone too; whether to show it is marksMisspellings().
     virtual bool isMisspelled(const QString &word);
+
+    //! \brief Whether a word spelt wrong is to be marked, and offered to be
+    //! added to the owner's words: the "Spell checking" setting. None here.
+    virtual bool marksMisspellings() const;
 
     //! \brief What could replace \a word, best first, at most \a limit of them.
     virtual QStringList spellingSuggestions(const QString &word, int limit);

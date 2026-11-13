@@ -93,6 +93,24 @@ Qt::ScreenOrientation rotationAngleToScreenOrientation(int angle)
 
 const QString g_maliit_keyboard_qml(LUNEOS_KEYBOARD_DATA_DIR "/Keyboard.qml");
 
+//! A key held to change what the next one does, not one that does anything itself.
+bool isModifierKey(Qt::Key key)
+{
+    switch (key) {
+    case Qt::Key_Shift:
+    case Qt::Key_Control:
+    case Qt::Key_Alt:
+    case Qt::Key_AltGr:
+    case Qt::Key_Meta:
+    case Qt::Key_Super_L:
+    case Qt::Key_Super_R:
+    case Qt::Key_CapsLock:
+        return true;
+    default:
+        return false;
+    }
+}
+
 Key overrideToKey(const SharedOverride &override)
 {
     Key key;
@@ -129,6 +147,8 @@ InputMethod::InputMethod(MAbstractInputMethodHost *host)
 	connect(this, SIGNAL(keyboardSizeChanged(QString)), this, SLOT(setKeyboardSize(QString)));
     connect(this, SIGNAL(keyboardLayoutChanged(QString)), this, SLOT(setKeyboardLayout(QString)));
     connect(this, SIGNAL(activeLanguageChanged(QString)), d->editor.wordEngine(), SLOT(onLanguageChanged(QString)));
+    // After the word engine has its new language: the bar was the old one's.
+    connect(this, SIGNAL(activeLanguageChanged(QString)), &d->editor, SLOT(refreshCandidates()));
     connect(d->m_geometry, SIGNAL(visibleRectChanged()), this, SLOT(onVisibleRectChanged()));
     connect(d->m_geometry, SIGNAL(popoverRectChanged()), this, SLOT(updateWindowMask()));
 
@@ -147,13 +167,31 @@ InputMethod::InputMethod(MAbstractInputMethodHost *host)
             this, &InputMethod::onHardwareProfileChanged);
     onHardwareProfileChanged();
 
+    // A physical keyboard's period held long enough listens, as the Pre
+    // Keyboard's own does; see processKeyEvent().
+    connect(&d->periodHold, &PeriodHold::held, this, [d] {
+        qCInfo(lcKeys, "period held: dictating");
+        d->pre.hapticLongPress();
+        d->pre.onVoice();
+    });
+    // With the keys hidden, the candidate bar is where listening shows; it has
+    // to be up for that whether the word engine is on or not.
+    connect(&d->pre, &Pre::Controller::voiceChanged, this, [this, d] {
+        const bool shown = !d->pre.voiceLine().isEmpty();
+        if (shown == d->panel.voice()) return;
+        d->panel.setVoice(shown);
+        applyPanelVisibility();
+    });
+
     d->registerFeedbackSetting();
     d->registerAutoCorrectSetting();
     d->registerAutoCapsSetting();
     d->registerWordEngineSetting();
+    d->registerCountry();
     d->registerActiveLanguage();
     d->registerEnabledLanguages();
     d->registerKeyboardSize();
+    d->setUpPreKeyboard();
     d->registerKeyboardLayout();
 	
     //fire signal so all listeners know what active language is
@@ -171,6 +209,23 @@ InputMethod::InputMethod(MAbstractInputMethodHost *host)
 
     d->view->setSource(QUrl::fromLocalFile(g_maliit_keyboard_qml));
     syncPanelWindowToScreen();
+
+    /*
+     * The mask follows the window's size, at once.
+     *
+     * The compositor takes the panel's rectangle from the mask, and scales it
+     * by the window it is on. When the window changes size - the shell turned
+     * between portrait and landscape, often while the panel was hidden behind
+     * an application that does not turn - the mask still held the rectangle
+     * for the old size until QML had laid out again, and the next show sent
+     * that to the application scaled into the new one: on a sargo, landscape's
+     * 2220x552 strip at 353 became 1080x1247 at 798 in portrait, and Memos
+     * shrank to make room for a keyboard twice the real one's height and did
+     * not grow back. So the strip is put back on the bottom of the window as
+     * soon as the window changes, and QML corrects its height a moment later.
+     */
+    connect(d->view, &QWindow::widthChanged, this, [this](int) { maskPanelStrip(); });
+    connect(d->view, &QWindow::heightChanged, this, [this](int) { maskPanelStrip(); });
 
     // The panel window has to keep following the screen, not just start on it.
     // See syncPanelWindowToScreen() for what goes wrong when it does not.
@@ -215,7 +270,10 @@ void InputMethod::syncPanelWindowToScreen()
 
     const QRect want = screen->geometry();
 
-    if (d->view->geometry() == want)
+    // The screen itself, or the shell's landscape strip: see
+    // panelWindowKeepsGeometry() for why the second is not the shrinking this
+    // guards against.
+    if (panelWindowKeepsGeometry(d->view->geometry(), want))
         return;
 
     qCInfo(lcHwKeyboard, "panel window: geometry %dx%d -> %dx%d (screen)",
@@ -234,6 +292,9 @@ void InputMethod::show()
 
     d->panel.setFocused(true);
 
+    if (d->pre.active())
+        d->pre.startInput();
+
     // After what is already queued. A field that refuses the panel says so
     // right behind the activation that brought us here, and showing the window
     // takes long enough on a slow device to be seen before that is read.
@@ -248,6 +309,12 @@ void InputMethod::hide()
     // is already down.
     d->editor.cancelRepeat();
     d->panel.setFocused(false);
+    // Listening started from a physical keyboard needs no Pre Keyboard to be
+    // active; what it heard has nowhere to go now.
+    d->periodHold.reset();
+    d->pre.endDictation(false);
+    if (d->pre.active())
+        d->pre.finishInput();
     applyPanelVisibility();
 }
 
@@ -438,6 +505,9 @@ void InputMethod::applyPanelVisibility()
     // Before the window is shown, because a window at a stale size is not shown
     // at all - see syncPanelWindowToScreen().
     syncPanelWindowToScreen();
+    // And its mask on the window as it now is: the compositor reports it to the
+    // application the moment the window maps, before QML has said anything.
+    maskPanelStrip();
 
     d->showingPanel = true;
     d->view->setVisible(true);
@@ -542,8 +612,14 @@ bool InputMethod::t9HandleKey(QEvent::Type keyType, Qt::Key keyCode, bool autoRe
             return false;
         }
         if (keyType == QEvent::KeyPress) {
+            // Only the character being cycled: a word typed on the screen
+            // before it stays.
+            const QString before = d->t9Before;
             d->resetT9();
-            d->editor.clearPreedit();
+            if (before.isEmpty())
+                d->editor.clearPreedit();
+            else
+                d->editor.replacePreedit(before);
         }
         return true;
     }
@@ -568,6 +644,12 @@ bool InputMethod::t9HandleKey(QEvent::Type keyType, Qt::Key keyCode, bool autoRe
     if (!sameCharacter) {
         finalizeT9();
         d->t9Commits = d->hiddenText;
+        // A word typed on the screen keys is in the preedit too: the character
+        // goes on the end of it rather than in its place ("the", then 2-2, was
+        // "b"), and the word goes in whole when the character is done.
+        // Committing it here instead had the application's answer to that
+        // commit come back mid-cycle and end it.
+        d->t9Before = d->t9Commits ? QString() : d->editor.text()->preedit();
     }
     const T9Multitap::Step step = d->t9.press(keyCode, sameCharacter);
     const QString character(step.character);
@@ -586,7 +668,7 @@ bool InputMethod::t9HandleKey(QEvent::Type keyType, Qt::Key keyCode, bool autoRe
         inputMethodHost()->sendCommitString(character, step.replacesPrevious ? -1 : 0,
                                             step.replacesPrevious ? 1 : 0);
     } else {
-        d->editor.replacePreedit(character);
+        d->editor.replacePreedit(d->t9Before + character);
     }
     d->t9Timer->start();
     return true;
@@ -766,6 +848,39 @@ void InputMethod::processKeyEvent(QEvent::Type keyType, Qt::Key keyCode,
             key.setAction(Key::NumActions);
         }
         break;
+    }
+
+    // A period held dictates, on any physical keyboard: kept back until it is
+    // known whether it was held. And while listening a key stops it, as one
+    // does on the Pre Keyboard: backspace takes back what was being said, any
+    // other keeps it and goes on to do what it does, after it.
+    {
+        const bool period = key.action() == Key::ActionInsert && key.label() == QLatin1String(".");
+        const PeriodHold::Verdict verdict = keyType == QEvent::KeyPress
+            ? d->periodHold.press(nativeScanCode, period,
+                                  period && !isShortcut && d->pre.dictationReady())
+            : d->periodHold.release(nativeScanCode);
+        if (verdict == PeriodHold::Swallow)
+            return;
+        if (verdict == PeriodHold::TypePeriod || verdict == PeriodHold::TypePeriodFirst) {
+            Key dot;
+            dot.setAction(Key::ActionInsert);
+            dot.setLabel(QStringLiteral("."));
+            d->autocapUndoLetter.clear();
+            d->editor.onKeyPressed(dot);
+            d->editor.onKeyReleased(dot);
+            if (verdict == PeriodHold::TypePeriod)
+                return;
+        }
+        if (keyType == QEvent::KeyPress && d->pre.listening() && !isModifierKey(keyCode)) {
+            const bool takeBack = key.action() == Key::ActionBackspace
+                || key.action() == Key::ActionBackspaceWord;
+            d->pre.endDictation(!takeBack);
+            if (takeBack) {
+                d->periodHold.swallow(nativeScanCode);
+                return;
+            }
+        }
     }
 
     if (key.action() == Key::NumActions) {
@@ -967,8 +1082,17 @@ void InputMethod::handleFocusChange(bool focusIn)
         d->autoCorrectedOriginal.clear();
         d->autoCorrectedLeft.clear();
         d->autocapUndoLetter.clear();
+        // Nor is a word still being typed this field's: an application moving
+        // from field to field may say only that the new one has the focus, and
+        // the next key would send that word into it.
+        d->dropPreedit();
+        d->periodHold.reset();
+        d->pre.endDictation(false);
         d->panel.setFocused(true);
         Q_EMIT keysCollapsedChanged();
+
+        if (d->pre.active())
+            d->pre.startInput();
 
         checkInitialAutocaps();
     } else {
@@ -1268,6 +1392,11 @@ void InputMethod::update()
         newContentType = FreeTextContentType;
     }
 
+    // The Pre Keyboard's bar follows the editor (preeditEnabled), as the word
+    // ribbon does; here it only checks for a capital and offers a paste.
+    if (d->pre.active())
+        d->pre.update();
+
     bool predictionValid = false;
     const bool predictionAsked = inputMethodHost()->predictionEnabled(predictionValid);
 
@@ -1315,6 +1444,8 @@ void InputMethod::update()
     // last one had, and it would then be the only one on the device that still
     // wanted a chord for its digits.
     d->hardwareKeyboard.setDigitsPreferred(digitsForContentType(newContentType));
+    // The Pre Keyboard shows a number field only the keys it takes, for the same reason.
+    d->pre.setDigits(digitsForContentType(newContentType));
 
     // Declining the panel is this method's business; putting it up is not.
     //
@@ -1436,7 +1567,8 @@ void InputMethod::updateSpellingSuggestions(const QString &text, int position)
         if (autoCorrected) {
             misspelled = word;
             suggestions = QStringList(d->autoCorrectedOriginal);
-        } else if (lookup && d->editor.wordEngine()->isMisspelled(word)) {
+        } else if (lookup && d->editor.wordEngine()->marksMisspellings()
+                   && d->editor.wordEngine()->isMisspelled(word)) {
             misspelled = word;
             suggestions = d->editor.wordEngine()->spellingSuggestions(word, kMaxSpellingSuggestions);
             // A misspelling can be taught to the dictionary; a word the keyboard

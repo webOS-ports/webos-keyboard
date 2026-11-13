@@ -59,15 +59,27 @@ public:
     void setWordPredictionEnabled(bool enabled) override;
 
     void addToUserDictionary(const QString &word) override;
+    void removeFromUserDictionary(const QString &word) override;
+    QStringList userWords() override;
     void setSpellcheckerEnabled(bool enabled) override;
+    void setAutoCorrectEnabled(bool enabled) override;
+    bool marksMisspellings() const override;
     bool isMisspelled(const QString &word) override;
     QStringList spellingSuggestions(const QString &word, int limit) override;
     //! \reimp_end
 
     Q_SLOT void onWordCandidateSelected(QString word);
     Q_SLOT void onLanguageChanged(const QString& languageId);
+    Q_SLOT void setCountry(const QString& country);
 
     AbstractLanguageFeatures* languageFeature() override;
+
+protected:
+    QStringList predictNext(const QString &left) override;
+
+    //! Uses \a plugin, not loaded from the plugin directory and not owned, in
+    //! place of the language's: for the unit tests, which have no plugins.
+    void useLanguagePlugin(LanguagePluginInterface *plugin);
 
 private:
     //! \reimp

@@ -1,2 +1,3 @@
 module LuneOSKeyboard
 Dummy 1.0 Dummy.qml
+PreKeyboardView 1.0 PreKeyboardView.qml

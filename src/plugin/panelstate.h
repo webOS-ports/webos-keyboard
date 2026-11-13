@@ -19,7 +19,27 @@
 #ifndef MALIIT_KEYBOARD_PANELSTATE_H
 #define MALIIT_KEYBOARD_PANELSTATE_H
 
+#include <QRect>
+
 namespace MaliitKeyboard {
+
+/*! \brief Whether the panel window can keep the geometry it was configured to.
+ *
+ * The window is meant to be screen-sized: the keys are drawn along its bottom
+ * and the rest is masked away. A window the shell shrank in portrait - 2220 to
+ * 2145 to 2045 on a sargo, as a status bar or an inset arrived - stopped being
+ * shown, so anything else is put back to [screen] (InputMethod's
+ * syncPanelWindowToScreen()).
+ *
+ * Except in landscape. The shell turns its own interface on its side rather
+ * than the output, so the screen stays portrait, and configures the panel to
+ * the strip between its status bar and gesture area as that now stands: 2220
+ * by 905 on a sargo. Put back to portrait, the window was stretched by the
+ * shell across that strip, every key twice as wide and half as tall. So a
+ * window as wide as the screen is long, and no taller than it is wide, is
+ * kept: the keyboard then lays itself out for landscape, 1:1.
+ */
+bool panelWindowKeepsGeometry(const QRect &window, const QRect &screen);
 
 /*! \brief Whether the panel is wanted, and what of it.
  *
@@ -69,6 +89,16 @@ public:
      */
     void setOnScreenKeyboardAllowed(bool allowed);
 
+    /*! \brief Whether dictation has something to say: it is listening, or
+     *         why it stopped.
+     *
+     * With a physical keyboard a held period dictates, and the candidate bar is
+     * where "Listening..." and the words heard so far are shown. That has to be
+     * on screen even with the word engine off, or listening would start with
+     * nothing to say so and nowhere to tap to stop it.
+     */
+    void setVoice(bool shown);
+
     //! \brief The user dragged the keys away.
     //!
     //! Keeps the candidate bar where there is one to keep, and takes the whole
@@ -87,6 +117,7 @@ public:
     bool keysCollapsed() const { return m_keysCollapsed; }
     bool dismissed() const { return m_dismissed; }
     bool onScreenKeyboardAllowed() const { return m_onScreenKeyboardAllowed; }
+    bool voice() const { return m_voice; }
 
     /*! \brief Whether the keys are off screen.
      *
@@ -101,7 +132,7 @@ public:
     /*! \brief Whether any panel at all should be on screen.
      *
      * With the keys hidden the panel is just the candidate bar, which is only
-     * worth putting up if there is one.
+     * worth putting up if there is one, or while dictation is showing there.
      */
     bool panelWanted() const;
 
@@ -109,6 +140,7 @@ private:
     bool m_focused = false;
     bool m_hardware = false;
     bool m_wordEngine = false;
+    bool m_voice = false;
     //! The user dragged the keys off; the bar stays.
     bool m_keysCollapsed = false;
     //! The user took the whole panel away.

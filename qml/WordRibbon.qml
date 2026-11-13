@@ -101,6 +101,40 @@ Rectangle {
         }
     }
 
+    /*!
+     * \brief Listening, from a physical keyboard's period held.
+     *
+     * Over the candidates while there is something to say: "Listening...", the
+     * words heard so far, or for a moment why it stopped. A tap stops it with
+     * what was being said put in, as a tap on the Pre Keyboard's bar does.
+     */
+    Rectangle {
+        id: voiceLine
+        objectName: "voiceLine"
+        anchors.fill: listView
+        visible: pre_keyboard.voiceLine !== ""
+        color: UI.preStyle ? "#2b3034" : "#f1f1f1"
+
+        Text {
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.leftMargin: Units.gu(1)
+            anchors.rightMargin: Units.gu(1)
+            font.pixelSize: Units.gu(2)
+            font.family: "Prelude"
+            color: UI.preStyle ? "#d8dde0" : "#666666"
+            // The latest words are the ones worth seeing.
+            elide: Text.ElideLeft
+            text: pre_keyboard.voiceLine
+        }
+
+        MouseArea {
+            anchors.fill: parent
+            onClicked: pre_keyboard.onVoice()
+        }
+    }
+
     states: [
         State {
             name: "NORMAL"

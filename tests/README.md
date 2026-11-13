@@ -117,6 +117,73 @@ its exit status can be non-zero while clang-tidy's was not.
 | Test | Covers |
 | --- | --- |
 | `ut_hardwarekeyboard` | Loading the per-device JSON profiles (truncated, nameless, wrong shape, unknown level names, non-numeric scancodes — none of which may take MaliitServer down); selecting one, including the most-specific-wins rule that tells a Titan from a Titan Pocket when both register `aw9523-key`; the Alt and Sym level state machine — held, tapped to latch, double-tapped to lock, third tap to unlock — and that a release replays what its own press decided; the Shift latch; `reset()` on focus leaving a field; and that the six profiles this package ships all parse and load. |
+| `ut_klipy` | The Pre Keyboard's GIFs and stickers, with no network and no key: KLIPY's answers read as pages (an ad or an item with no files is not a picture; 16-digit ids kept exact), its refusals shown in its own words, the link a GIF goes in as, the hourly limit on calls (kept on disk, forgetting calls older than an hour or stamped in the future), answers used again for an hour and not after, and the grid not fetching a picture it could not show with every paint. |
+| `ut_prekeyboard` | The Pre Keyboard: a layout for every language plugin, its settings, the controller that hands its keys to LuneOS's editor and word engine, the suggestion bar, swipe to type (see Swipe), and its printing on every phone's screen (see Screens). |
+| `ut_spellchecker` | Taking a word out of the owner's dictionary in db8 (luna-service2 and hunspell are stand-ins): found in any case and deleted, from the checker and from db8, by the spelling it was saved with ("webos" takes out "webOS"), every spelling of it if it was saved twice. Built where glib is installed. |
+| `ut_wordengine` | The word engine between Text Assist's Autocorrect and Spell checking settings and the language plugin's checker (a stand-in here): the checker loaded for either setting, a misspelling only marked or offered to be added with spell checking on, the owner's words saved and used with autocorrect alone; and what the editor puts in when a word is finished by a space or by a period ("teh." is "the."), and the language's own corrections ("cant" is "can't", "i" is "I") when presage has no word and the dictionary knows the one typed. |
+
+## Screens
+
+`ut_prekeyboard` lays the Pre Keyboard out for every LuneOS phone, in every
+language, on the letters and the symbols, at each of its three heights, and
+checks what a screenshot would show: that the keys tile the keyboard, that a
+row's letters stand on one line, that every letter and printed alternate stays
+inside its key's rounded face and clear of the other, and that the letters are
+as large as that allows. It needs no device and no display.
+
+The phones are not listed here. They come from luneos-components, whose
+`test/imports/LunaNext/Common/SettingsStub.js` names each device with the
+screen its `luna-platform.conf` gives, and which its own tests walk the same
+way. Every profile without `tabletUi` is used (a tablet keeps the LuneOS
+keys), each way up, since the keyboard turns with the phone: a device added
+there is tested here on the next run. The test finds the checkout from
+`$LUNEOS_COMPONENTS`, or beside this one; `devicesAreKnown` skips, and says
+so, when there is none.
+
+A sweep runs as well, for screens no device has yet: short sides from 240 to
+1440 px, in portrait and in landscape at 4:3, 16:9 and 2:1. It steps 120 px by
+default; for the odd sizes and fractional dp in between,
+
+```sh
+PRE_SCREENS=full QT_QPA_PLATFORM=offscreen ./ut_prekeyboard/ut_prekeyboard keysFitEveryScreen
+```
+
+steps 8 px and takes a few minutes.
+
+What fits depends on the glyphs, so run it with the phone's fonts: Prelude for
+the Latin and Cyrillic letters, Droid Sans Arabic and Hebrew, Droid Sans
+Fallback for the rest. Copy a device's `/usr/share/fonts` and `/etc/fonts`,
+point the copy's `<dir>` at the fonts, and set `FONTCONFIG_FILE` to it. With
+the host's own fonts the test still runs, but answers for those.
+
+To look rather than check, `PRE_SHOTS=<dir>` makes `shots` save every
+language's letters and symbols on each device as a picture.
+
+`firstLayoutCost` is a benchmark: what fitting a page's letters costs the
+first time that page is shown (a page is cached after that), on the slowest
+case, Russian on a Sargo. Run it on a device to see what a phone pays.
+
+## Swipe
+
+The swipe tests draw a finger's path through a word's keys on a real layout
+and check what comes out. Most bring their own few words. One,
+`swipeOnTheLanguagesWords`, uses the language plugins' own: presage's
+databases and hunspell's dictionaries, from the device's paths unless
+`PRE_SWIPE_LIB` (the directory holding `<id>/database_<id>.db`) and
+`PRE_SWIPE_DICT` (hunspell's) say otherwise; a language without them is
+skipped. It swipes common words a little off their keys and prints how
+often each came out first, how long the slowest took and how long the words
+took to load:
+
+```sh
+PRE_SWIPE_LIB=<image>/usr/share/maliit/plugins/org/luneos/lib \
+PRE_SWIPE_DICT=<image>/usr/share/hunspell \
+QT_QPA_PLATFORM=offscreen ./ut_prekeyboard/ut_prekeyboard swipeOnTheLanguagesWords
+```
+
+Under valgrind, set `QT_ENABLE_REGEXP_JIT=0`: Qt's regular expressions (a
+directory listing's name filter) run JIT code that memcheck reports as
+reading uninitialised memory.
 
 ## Not part of the suite
 

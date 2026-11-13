@@ -31,6 +31,8 @@
 
 #include "abstractwordengine.h"
 
+#include <algorithm>
+
 namespace MaliitKeyboard {
 namespace Logic {
 
@@ -63,6 +65,8 @@ class AbstractWordEnginePrivate
 {
 public:
     bool enabled;
+    //! The blocked words, in lower case.
+    QSet<QString> blocked;
 
     explicit AbstractWordEnginePrivate();
 };
@@ -135,9 +139,15 @@ void AbstractWordEngine::computeCandidates(Model::Text *text)
     // with that we probably will want to turn off preedit styling at
     // all.
 
+    // A word backspaced away: its candidates go too, rather than staying up
+    // for a word that is no longer there.
+    if (text && text->preedit().isEmpty()) {
+        clearCandidates();
+        return;
+    }
+
     if (!isEnabled()
         || !text
-        || text->preedit().isEmpty()
         || !text->preedit().at(text->preedit().length() - 1).isLetterOrNumber()) {
         // FIXME: We should here set some special preedit face in text
         // model (say Disabled or None) which would be interpreted by
@@ -147,7 +157,68 @@ void AbstractWordEngine::computeCandidates(Model::Text *text)
         return;
     }
 
-    Q_EMIT candidatesChanged(fetchCandidates(text));
+    WordCandidateList candidates = fetchCandidates(text);
+    Q_D(AbstractWordEngine);
+    if (!d->blocked.isEmpty()) {
+        // A deleted word is neither offered nor what space puts in.
+        candidates.erase(std::remove_if(candidates.begin(), candidates.end(),
+                                        [this](const WordCandidate &c) { return isBlocked(c.word()); }),
+                         candidates.end());
+        if (isBlocked(text->primaryCandidate()))
+            text->setPrimaryCandidate(candidates.isEmpty() ? QString() : candidates.first().label());
+    }
+    // A word of the owner's typed in another case is theirs as they saved it
+    // ("webos" is "webOS"): first, and what space puts in.
+    const QString preedit = text->preedit();
+    for (const QString &own : userWords()) {
+        if (own == preedit || own.compare(preedit, Qt::CaseInsensitive) != 0 || isBlocked(own))
+            continue;
+        candidates.erase(std::remove_if(candidates.begin(), candidates.end(),
+                                        [&own](const WordCandidate &c) {
+                                            return c.word().compare(own, Qt::CaseInsensitive) == 0;
+                                        }),
+                         candidates.end());
+        candidates.prepend(WordCandidate(WordCandidate::SourceSpellChecking, own));
+        text->setPrimaryCandidate(own);
+        break;
+    }
+    Q_EMIT candidatesChanged(candidates);
+}
+
+QStringList AbstractWordEngine::userWords()
+{
+    return QStringList();
+}
+
+QStringList AbstractWordEngine::nextWords(const QString &left, int limit)
+{
+    QStringList out;
+    if (!isEnabled()) return out;
+    for (const QString &w : predictNext(left)) {
+        if (out.size() >= limit) break;
+        if (!w.isEmpty() && !isBlocked(w) && !out.contains(w)) out << w;
+    }
+    return out;
+}
+
+QStringList AbstractWordEngine::predictNext(const QString &left)
+{
+    Q_UNUSED(left);
+    return QStringList();
+}
+
+void AbstractWordEngine::setBlockedWords(const QStringList &words)
+{
+    Q_D(AbstractWordEngine);
+    d->blocked.clear();
+    for (const QString &w : words)
+        if (!w.isEmpty()) d->blocked.insert(w.toLower());
+}
+
+bool AbstractWordEngine::isBlocked(const QString &word) const
+{
+    Q_D(const AbstractWordEngine);
+    return !word.isEmpty() && d->blocked.contains(word.toLower());
 }
 
 //! \brief Adds a word to user dictionary.
@@ -159,9 +230,19 @@ void AbstractWordEngine::addToUserDictionary(const QString &word)
     Q_UNUSED(word);
 }
 
+void AbstractWordEngine::removeFromUserDictionary(const QString &word)
+{
+    Q_UNUSED(word);
+}
+
 bool AbstractWordEngine::isMisspelled(const QString &word)
 {
     Q_UNUSED(word);
+    return false;
+}
+
+bool AbstractWordEngine::marksMisspellings() const
+{
     return false;
 }
 
@@ -185,6 +266,12 @@ void AbstractWordEngine::setSpellcheckerEnabled(bool on)
     Q_UNUSED(on);
     qDebug() << Q_FUNC_INFO << "should be implemented by inherited class";
 }
+//!
+void AbstractWordEngine::setAutoCorrectEnabled(bool on)
+{
+    Q_UNUSED(on);
+}
+
 /*
 AbstractLanguageFeature* AbstractWordEngine::languageFeature()
 {
