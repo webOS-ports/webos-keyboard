@@ -56,13 +56,15 @@ struct Settings
     bool holdForMore = false;
     //! A vibration as each key goes down...
     bool vibrate = false;
-    //! ...this strong: 1 (Light, the tap it always was), 2 (Firmer) or 3 (Strong).
+    //! ...this strong: 1 (Light), 2 (Firmer) or 3 (Strong).
     int vibrateLevel = 1;
     static constexpr int VIBRATE_LEVELS = 3;
     /*!
-     * A key's buzz at the chosen strength, in ms. LuneOS's vibrator
-     * (com.palm.vibrate) takes a length but no strength, so a firmer buzz is
-     * a longer one.
+     * A key's buzz at the chosen strength, in ms: 20, 40 or 70. LuneOS's
+     * vibrator (com.palm.vibrate) takes a length but no strength, so a firmer
+     * buzz is a longer one. The steps are wide apart for the phones whose
+     * motor is an on/off ERM (a Brax3's regulator-vibrator): it barely spins
+     * up in 12 to 30 ms, and those could not be told apart.
      */
     int keyBuzzMs() const;
     //! The letters on the keys follow Shift (small till it is on); off, they are capitals, as printed on the Pre.

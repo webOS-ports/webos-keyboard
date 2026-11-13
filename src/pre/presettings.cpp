@@ -85,7 +85,7 @@ Settings::Height Settings::forSize(const QString &size)
 
 int Settings::keyBuzzMs() const
 {
-    static const int ms[VIBRATE_LEVELS] = { 12, 20, 30 };
+    static const int ms[VIBRATE_LEVELS] = { 20, 40, 70 };
     return ms[std::clamp(vibrateLevel, 1, VIBRATE_LEVELS) - 1];
 }
 

@@ -653,13 +653,14 @@ private Q_SLOTS:
         c.setPrefs(QJsonObject{ { QStringLiteral("vibrate"), true } });
         c.hapticLongPress();
         QCOMPARE(rec.calls.size(), 1);
-        QVERIFY(rec.calls.first().contains(QStringLiteral("\"duration\":20")));
+        QVERIFY(rec.calls.first().contains(QStringLiteral("\"duration\":45")));
     }
 
     /*
      * Light, Firmer and Strong: each a longer buzz than the one before (the
-     * vibrator takes no strength), Light the 12 ms it always was, and a long
-     * press a little more than a key. Anything else read is Light or Strong.
+     * vibrator takes no strength), far enough apart to be felt on an on/off
+     * motor that hardly spins up in 30 ms, and a long press 25 ms more than a
+     * key. Anything else read is Light or Strong.
      */
     void vibrationHasThreeStrengths()
     {
@@ -677,9 +678,8 @@ private Q_SLOTS:
             key << ms.match(rec.calls[0]).captured(1).toInt();
             hold << ms.match(rec.calls[1]).captured(1).toInt();
         }
-        QCOMPARE(key.first(), 12);
-        for (int i = 1; i < key.size(); ++i) QVERIFY2(key[i] > key[i - 1], "a level no firmer than the one before");
-        for (int i = 0; i < key.size(); ++i) QVERIFY(hold[i] > key[i]);
+        QCOMPARE(key, (QList<int>{ 20, 40, 70 }));
+        QCOMPARE(hold, (QList<int>{ 45, 65, 95 }));
         QCOMPARE(Pre::Settings::fromJson(QJsonObject{ { QStringLiteral("vibrateLevel"), 0 } }).vibrateLevel, 1);
         QCOMPARE(Pre::Settings::fromJson(QJsonObject{ { QStringLiteral("vibrateLevel"), 9 } }).vibrateLevel, 3);
         QCOMPARE(Pre::Settings::fromJson(QJsonObject()).vibrateLevel, 1);
@@ -1312,7 +1312,7 @@ private Q_SLOTS:
         field.set(QStringLiteral("I teh"));
         c.onText(QStringLiteral(" "));
         QCOMPARE(field.text, QStringLiteral("I the "));
-        QVERIFY(rec.calls.contains(QStringLiteral("luna palm://com.palm.vibrate/vibrate {\"period\":0,\"duration\":28}")));
+        QVERIFY(rec.calls.contains(QStringLiteral("luna palm://com.palm.vibrate/vibrate {\"period\":0,\"duration\":45}")));
         c.onBackspace(false);
         QCOMPARE(field.text, QStringLiteral("I teh "));
         QCOMPARE(rec.calls.last(), QStringLiteral("replace 4 0 teh "));

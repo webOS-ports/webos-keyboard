@@ -1153,7 +1153,7 @@ void Controller::vibrate(int ms)
 void Controller::hapticKey() { vibrate(m_settings.keyBuzzMs()); }
 
 //! A long press: a little more than a key, at the same strength.
-void Controller::hapticLongPress() { vibrate(m_settings.keyBuzzMs() + 8); }
+void Controller::hapticLongPress() { vibrate(m_settings.keyBuzzMs() + LONG_PRESS_EXTRA_MS); }
 
 // --- Emoji, paste and GIFs ------------------------------------------------------------------
 

@@ -250,8 +250,10 @@ public:
     static constexpr qint64 DOUBLE_SPACE_MS = 1000;
     //! The cursor moving this long (ms) after the keyboard's last change to the text is the owner's doing.
     static constexpr qint64 OWN_EDIT_MS = 400;
-    //! The buzz for a word autocorrected, with vibration on (ms).
-    static constexpr int CORRECTED_MS = 28;
+    //! The buzz for a word autocorrected, with vibration on (ms): firmer than a key at Light or Firmer.
+    static constexpr int CORRECTED_MS = 45;
+    //! A long press buzzes this much longer (ms) than a key at the same strength.
+    static constexpr int LONG_PRESS_EXTRA_MS = 25;
     //! Why listening stopped shows in the bar this long (ms).
     static constexpr int VOICE_PROBLEM_MS = 2500;
 
