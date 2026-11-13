@@ -154,7 +154,11 @@ void Controller::setActive(bool active)
 
 void Controller::setPrefs(const QJsonObject &pre)
 {
+    const bool removedChanged = pre.value(QLatin1String("removed")) != m_prefs.value(QLatin1String("removed"));
     m_prefs = pre;
+    // Words deleted elsewhere (or before these prefs came in) are not swiped either.
+    if (removedChanged)
+        for (auto it = m_decoders.cbegin(); it != m_decoders.cend(); ++it) forgetRemoved(it.key(), *it);
     const Settings s = Settings::fromJson(pre, m_settings);
     if (s != m_settings) {
         m_settings = s;
@@ -800,9 +804,17 @@ void Controller::loadWords()
     });
 }
 
+void Controller::forgetRemoved(const QString &id, const QSharedPointer<SwipeDecoder> &words) const
+{
+    if (!words) return;
+    for (const QString &w : Settings::removed(m_prefs, id)) words->forget(w);
+}
+
 void Controller::wordsLoaded(const QString &id, const QSharedPointer<SwipeDecoder> &words)
 {
     if (m_loading == id) m_loading.clear();
+    // Loaded afresh from the dictionaries: the words the owner deleted are taken out again.
+    forgetRemoved(id, words);
     m_decoders.insert(id, words);
     m_decoderOrder.removeAll(id);
     m_decoderOrder << id;

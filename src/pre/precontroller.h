@@ -281,6 +281,8 @@ private:
     Settings shown() const;
     void loadWords();
     void wordsLoaded(const QString &id, const QSharedPointer<SwipeDecoder> &words);
+    //! The words the owner deleted from [id]'s dictionary (Settings::removed()) taken out of [words].
+    void forgetRemoved(const QString &id, const QSharedPointer<SwipeDecoder> &words) const;
     //! [word] as shift typed it.
     QString cased(const QString &word, int caps) const;
     //! A swipe's words, best first, as shift typed them ([caps]): they go in.

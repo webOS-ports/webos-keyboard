@@ -1594,6 +1594,59 @@ private Q_SLOTS:
         QCOMPARE(c.swipeWords(), before);
     }
 
+    /*
+     * A word deleted from the dictionary is not swiped either, also once the
+     * words are loaded again from the dictionaries (the keyboard restarted,
+     * or the language dropped out of the few kept), and when the deletion
+     * comes in with the prefs after the words were loaded.
+     */
+    void deletedWordsAreNotSwiped()
+    {
+        QTemporaryDir dir;
+        writePresage(dir.filePath(QStringLiteral("lib/en/database_en.db")),
+                     { { QStringLiteral("hello"), 50 }, { QStringLiteral("hell"), 40 },
+                       { QStringLiteral("world"), 50 }, { QStringLiteral("would"), 60 } });
+        Recorder rec;
+        Pre::Controller c;
+        c.setBridge(rec.bridge());
+        Pre::KeyboardView view;
+        showKeys(view, Pre::Language::byId(QStringLiteral("en")), 1080, 1080, false, Pre::Settings::Height::Medium);
+        c.setView(&view);
+        c.setKeyboardState(true, false, { QStringLiteral("en") }, QStringLiteral("en"));
+        c.setPrefs(Pre::Settings::withRemoved(QJsonObject(), QStringLiteral("en"), { QStringLiteral("Hello") }));
+        Pre::SwipeDecoder::Layout layout;
+        QVERIFY(view.swipeLayout(layout));
+        const auto knows = [&](const QString &w) {
+            const QSharedPointer<Pre::SwipeDecoder> d = c.swipeWords();
+            if (!d) return false;
+            QVector<float> xs, ys;
+            for (const QPointF &p : swipePath(layout, w, 0, 1)) { xs << float(p.x()); ys << float(p.y()); }
+            return d->decode(xs, ys, layout, 4).contains(w);
+        };
+        QSignalSpy loaded(&c, &Pre::Controller::swipeWordsLoaded);
+        c.setWordDirs(dir.filePath(QStringLiteral("lib")), dir.filePath(QStringLiteral("dict")));
+        QVERIFY(loaded.wait(5000));
+        QVERIFY(knows(QStringLiteral("hell")));
+        QVERIFY(!knows(QStringLiteral("hello")));
+        // Deleted here: gone at once, and still gone once loaded again.
+        c.onRemoveWord(QStringLiteral("world"));
+        QVERIFY(!knows(QStringLiteral("world")));
+        c.setPrefs(rec.saved);
+        c.setWordDirs(dir.filePath(QStringLiteral("lib")), dir.filePath(QStringLiteral("dict")));
+        QVERIFY(loaded.wait(5000));
+        QVERIFY(knows(QStringLiteral("would")));
+        QVERIFY(!knows(QStringLiteral("world")));
+        QVERIFY(!knows(QStringLiteral("hello")));
+        // Deleted elsewhere, the prefs coming in after the words.
+        QVERIFY(knows(QStringLiteral("hell")));
+        c.setPrefs(Pre::Settings::withRemoved(rec.saved, QStringLiteral("en"),
+                                              { QStringLiteral("Hello"), QStringLiteral("world"), QStringLiteral("hell") }));
+        QVERIFY(!knows(QStringLiteral("hell")));
+        // Added again: swiped again.
+        c.onAddWord(QStringLiteral("hell"));
+        QVERIFY(knows(QStringLiteral("hell")));
+    }
+
     void swipeThroughTheController()
     {
         QTemporaryDir dir;
