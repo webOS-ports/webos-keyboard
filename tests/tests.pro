@@ -16,6 +16,8 @@ SUBDIRS = \
 
 # Dictation listens through PulseAudio; without its headers it isn't built.
 packagesExist(libpulse-simple): SUBDIRS += ut_dictation
+# The user dictionary's checker runs its db8 calls on glib's main loop.
+packagesExist(glib-2.0): SUBDIRS += ut_spellchecker
 
 # "make check" recurses into every subdirectory.
 QMAKE_EXTRA_TARGETS += check

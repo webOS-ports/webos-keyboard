@@ -33,6 +33,7 @@
 
 #include "spellchecker.h"
 #include "hunspelldictionary.h"
+#include "userwords.h"
 
 #ifdef HAVE_HUNSPELL
 #include "hunspell/hunspell.hxx"
@@ -478,35 +479,36 @@ void SpellChecker::addToUserWordlist(const QString &word)
     }
 }
 
-//! \brief Takes a word out of the user dictionary, if it is there: out of
-//! the live Hunspell instance at once, and out of db8, where Text Assist and
-//! presage see it go too.
+//! \brief Takes a word out of the user dictionary, if it is there in any case:
+//! out of the live Hunspell instance at once, and out of db8, where Text Assist
+//! and presage see it go too. What is taken out is the word as it was saved
+//! ("webOS" for "webos"), as db8 matches the spelling exactly.
 void SpellChecker::removeFromUserWordlist(const QString &word)
 {
     Q_D(SpellChecker);
 
-    if (!d->userWords.contains(word))
-        return;
+    const QStringList saved = MaliitKeyboard::Logic::savedSpellings(d->userWords, word);
+    for (const QString &spelling : saved) {
+        d->userWords.removeAll(spelling);
+        if (d->hunspell && d->appliedWords.contains(spelling)) {
+            d->hunspell->remove(d->codec->fromUnicode(spelling).toStdString());
+            d->appliedWords.removeAll(spelling);
+        }
 
-    d->userWords.removeAll(word);
-    if (d->hunspell && d->appliedWords.contains(word)) {
-        d->hunspell->remove(d->codec->fromUnicode(word).toStdString());
-        d->appliedWords.removeAll(word);
-    }
-
-    const QJsonObject query{
-        { QStringLiteral("from"), d->user_dictionary_kind },
-        { QStringLiteral("where"), QJsonArray{ QJsonObject{ { QStringLiteral("prop"), QStringLiteral("word") },
-                                                            { QStringLiteral("op"), QStringLiteral("=") },
-                                                            { QStringLiteral("val"), word } } } } };
-    const QByteArray payload = QJsonDocument(QJsonObject{ { QStringLiteral("query"), query } })
-                                   .toJson(QJsonDocument::Compact);
-    LSError error;
-    LSErrorInit(&error);
-    if (!LSCall(d->serviceHandle, "luna://com.palm.db/del", payload.constData(),
-                SpellChecker::delCallback, this, nullptr, &error)) {
-        qWarning("Failed to take '%s' out of the user dictionary: %s", qPrintable(word), error.message);
-        LSErrorFree(&error);
+        const QJsonObject query{
+            { QStringLiteral("from"), d->user_dictionary_kind },
+            { QStringLiteral("where"), QJsonArray{ QJsonObject{ { QStringLiteral("prop"), QStringLiteral("word") },
+                                                                { QStringLiteral("op"), QStringLiteral("=") },
+                                                                { QStringLiteral("val"), spelling } } } } };
+        const QByteArray payload = QJsonDocument(QJsonObject{ { QStringLiteral("query"), query } })
+                                       .toJson(QJsonDocument::Compact);
+        LSError error;
+        LSErrorInit(&error);
+        if (!LSCall(d->serviceHandle, "luna://com.palm.db/del", payload.constData(),
+                    SpellChecker::delCallback, this, nullptr, &error)) {
+            qWarning("Failed to take '%s' out of the user dictionary: %s", qPrintable(spelling), error.message);
+            LSErrorFree(&error);
+        }
     }
 }
 
