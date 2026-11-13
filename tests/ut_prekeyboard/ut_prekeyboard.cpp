@@ -1714,6 +1714,19 @@ private Q_SLOTS:
         swipe(QStringLiteral("world"), Pre::KeyboardView::CAPS_NONE);
         QCOMPARE(rec.calls, (QStringList{ QStringLiteral("press  |space"), QStringLiteral("release  |space"),
                                           QStringLiteral("set world") }));
+        // Another language: the other guesses were the last one's, and go, with any for a swipe
+        // still going on. The word swiped stays, and goes in as it was.
+        swipe(QStringLiteral("hello"), Pre::KeyboardView::CAPS_NONE);
+        QVERIFY(view.m_words.contains(QStringLiteral("hell")));
+        c.m_live = QStringList{ QStringLiteral("hell"), QStringLiteral("hello") };
+        c.setKeyboardState(true, false, { QStringLiteral("en"), QStringLiteral("de") }, QStringLiteral("de"));
+        QVERIFY(c.m_live.isEmpty());
+        QCOMPARE(view.m_words, (QStringList{ QString(), QStringLiteral("hello"), QString() }));
+        rec.calls.clear();
+        c.onText(QStringLiteral(" "));
+        QCOMPARE(rec.calls, QStringList{ QStringLiteral("pick hello") });
+        c.setKeyboardState(true, false, { QStringLiteral("en"), QStringLiteral("de") }, QStringLiteral("en"));
+        QVERIFY(view.m_settings.swipe);
         // Swiping turned off: off in the view too.
         c.setPrefs(QJsonObject{ { QStringLiteral("swipe"), false } });
         QVERIFY(!view.m_settings.swipe);

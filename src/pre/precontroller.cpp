@@ -182,8 +182,16 @@ void Controller::setKeyboardState(bool suggestions, bool sound, const QStringLis
     if (!s.languages.contains(now)) s.languages.prepend(now);
     s.language = now;
     if (s != m_settings) {
-        // Listening was for the language before.
-        if (s.language != m_settings.language) endDictation(true);
+        if (s.language != m_settings.language) {
+            // Listening was for the language before.
+            endDictation(true);
+            // So were the other guesses for a swipe, and those for one still going on: the bar
+            // offers what the word engine has for the word now. The word swiped stays as it is and
+            // still goes in as swiped.
+            m_liveGeneration->fetch_add(1);
+            m_swipeGuesses.clear();
+            m_live.clear();
+        }
         m_settings = s;
         loadWords();
         applySettings();
