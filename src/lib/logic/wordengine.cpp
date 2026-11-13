@@ -338,10 +338,12 @@ WordCandidateList WordEngine::fetchCandidates(Model::Text *text)
     /*
      * What space puts in: the word as typed when the dictionary knows it, else
      * its best correction (see Correction), not presage's first guess, which
-     * only goes by the letters typed so far ("hund" was "hundert").
+     * only goes by the letters typed so far ("hund" was "hundert"). Asked
+     * whatever presage and the checker said: the language's own corrections
+     * ("cant" -> "can't", "i" -> "I") are of words a dictionary knows.
      */
     QString primary = candidates.isEmpty() ? QString() : candidates.first().label();
-    if (d->languagePlugin && (!candidates.isEmpty() || !correct_spelling)) {
+    if (d->languagePlugin) {
         QHash<QString, QStringList> asked;
         Correction::Dictionary dictionary;
         dictionary.spell = [this, d](const QString &w) { return !isBlocked(w) && d->languagePlugin->spell(w); };
@@ -354,7 +356,11 @@ WordCandidateList WordEngine::fetchCandidates(Model::Text *text)
             asked.insert(w, out);
             return out;
         };
-        primary = Correction::choose(preedit, d->language, dictionary, predictions);
+        const QString chosen = Correction::choose(preedit, d->language, dictionary, predictions);
+        // A word the dictionary knows, that presage has nothing for and the
+        // language nothing to change in, is left without a candidate, as before.
+        if (!candidates.isEmpty() || !correct_spelling || chosen != preedit)
+            primary = chosen;
         // In the list, first, as it will go in.
         if (!primary.isEmpty()) {
             candidates.erase(std::remove_if(candidates.begin(), candidates.end(),

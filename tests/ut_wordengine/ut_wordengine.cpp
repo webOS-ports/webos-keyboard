@@ -22,7 +22,9 @@
 // "Autocorrect" and "Spell checking" are two settings, but the checker used to
 // be loaded for spell checking alone: with autocorrect on and spell checking
 // off no word was ever wrong, so none was corrected and no word of the owner's
-// could be saved.
+// could be saved. And the language's correction (dont -> don't, i -> I) only
+// ran when presage had a word or the checker said the word was wrong, which a
+// dictionary that knows "cant" and "i" never does.
 //
 // The plugin here stands in for the western plugins' SpellChecker: spell() is
 // true for everything and suggest() empty while it is not loaded, and a word
@@ -345,6 +347,74 @@ private Q_SLOTS:
         text.setPreedit(QStringLiteral("xqzv"));
         engine.computeCandidates(&text);
         QCOMPARE(int(text.preeditFace()), face);
+    }
+
+    // ---- The language's correction without a word from presage ----
+
+    void contractionWithoutPredictions_data()
+    {
+        QTest::addColumn<Settings>("settings");
+        QTest::addColumn<QString>("typed");
+        QTest::addColumn<QString>("committed");
+
+        // The dictionary knows "cant", "wont" and "i": the checker has nothing to say.
+        QTest::newRow("cant") << Settings{ true, true } << "cant " << "can't ";
+        QTest::newRow("wont") << Settings{ true, true } << "wont " << "won't ";
+        QTest::newRow("i") << Settings{ true, true } << "i " << "I ";
+        QTest::newRow("Cant") << Settings{ true, true } << "Cant " << "Can't ";
+        // Not in the dictionary at all.
+        QTest::newRow("dont") << Settings{ true, true } << "dont " << "don't ";
+        QTest::newRow("im, autocorrect only") << Settings{ false, true } << "im " << "I'm ";
+        QTest::newRow("cant, autocorrect only") << Settings{ false, true } << "cant " << "can't ";
+        // Autocorrect off: as typed.
+        QTest::newRow("cant, spell checking only") << Settings{ true, false } << "cant " << "cant ";
+        // A word of the dictionary's own with nothing to change: as typed.
+        QTest::newRow("the") << Settings{ true, true } << "the " << "the ";
+    }
+
+    void contractionWithoutPredictions()
+    {
+        QFETCH(Settings, settings);
+        QFETCH(QString, typed);
+        QFETCH(QString, committed);
+
+        FakePlugin plugin;
+        englishWords(&plugin);
+        Engine *engine = new Engine(&plugin);
+        Editor editor(engine);
+        engine->setEnabled(true);
+        engine->setWordPredictionEnabled(true);
+        apply(engine, &editor, settings);
+
+        editor.type(typed);
+        QCOMPARE(editor.committed, committed);
+    }
+
+    // A word the dictionary knows and presage has nothing for is offered as
+    // nothing, as before: no candidate of its own.
+    void knownWordWithoutPredictionsHasNoCandidate()
+    {
+        FakePlugin plugin;
+        englishWords(&plugin);
+        Engine engine(&plugin);
+        engine.setEnabled(true);
+        engine.setWordPredictionEnabled(true);
+        apply(&engine, nullptr, Settings{ true, true });
+
+        Model::Text text;
+        text.setPreedit(QStringLiteral("the"));
+        int changes = 0;
+        WordCandidateList offered;
+        connect(&engine, &Logic::AbstractWordEngine::candidatesChanged, this,
+                [&](const WordCandidateList &candidates) { ++changes; offered = candidates; });
+        engine.computeCandidates(&text);
+        QCOMPARE(changes, 1);
+        QVERIFY(offered.isEmpty());
+        QVERIFY(text.primaryCandidate().isEmpty());
+
+        text.setPreedit(QStringLiteral("cant"));
+        engine.computeCandidates(&text);
+        QCOMPARE(text.primaryCandidate(), QStringLiteral("can't"));
     }
 };
 
