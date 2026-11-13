@@ -2352,6 +2352,94 @@ private Q_SLOTS:
         QCOMPARE(field.text, QStringLiteral("zoe"));
     }
 
+    /*
+     * With a physical keyboard there are no keys on screen, so no view: its
+     * period starts dictation through the controller, and the candidate bar
+     * shows what the controller says about it (voiceLine).
+     */
+    void dictationWithNoKeysOnScreen()
+    {
+        Recorder rec;
+        Field field;
+        bool prose = true;
+        Pre::Bridge b = field.bridge(rec);
+        b.prose = [&] { return prose; };
+        b.commit = [&](const QString &t) { rec.calls << QStringLiteral("commit ") + t; field.insert(t); };
+        Pre::Controller c;
+        c.setBridge(b);
+        c.setKeyboardState(true, false, { QStringLiteral("en"), QStringLiteral("de") }, QStringLiteral("en"));
+        QSignalSpy changed(&c, &Pre::Controller::voiceChanged);
+
+        // No dictation, a field not for prose, no model for the language: it could not start.
+        QVERIFY(!c.dictationReady());
+        auto *d = new FakeDictation;
+        c.setDictation(d);
+        QVERIFY(c.dictationReady());
+        // Another field, which says nothing else about itself.
+        prose = false;
+        QVERIFY(!c.dictationReady());
+        prose = true;
+        c.setDigits(QStringLiteral("0123456789"));
+        QVERIFY(!c.dictationReady());
+        c.setDigits(QString());
+        c.setKeyboardState(true, false, { QStringLiteral("en"), QStringLiteral("de") }, QStringLiteral("de"));
+        QVERIFY(!c.dictationReady());
+        c.setKeyboardState(true, false, { QStringLiteral("en"), QStringLiteral("de") }, QStringLiteral("en"));
+        QVERIFY(c.dictationReady());
+        QCOMPARE(changed.count(), 0);
+        QVERIFY(c.voiceLine().isEmpty());
+
+        // Held: it listens, and says so.
+        c.onVoice();
+        QVERIFY(c.listening());
+        QCOMPARE(c.voiceLine(), QStringLiteral("Listening… tap here to stop"));
+        QCOMPARE(changed.count(), 1);
+        QVERIFY2(!c.dictationReady(), "listening already");
+        QCOMPARE(changed.count(), 1);
+
+        // The words heard so far; a key keeps them, with the capital due.
+        rec.autoCaps = true;
+        d->hear(QStringLiteral("hello there"));
+        QCOMPARE(c.voiceLine(), QStringLiteral("hello there"));
+        QCOMPARE(changed.count(), 2);
+        c.endDictation(true);
+        QVERIFY(!c.listening());
+        QCOMPARE(field.text, QStringLiteral("Hello there"));
+        QVERIFY(c.voiceLine().isEmpty());
+        QCOMPARE(changed.count(), 3);
+        rec.autoCaps = false;
+
+        // A backspace takes them back.
+        c.onVoice();
+        d->hear(QStringLiteral("never mind"));
+        c.endDictation(false);
+        QCOMPARE(field.text, QStringLiteral("Hello there"));
+        QVERIFY(c.voiceLine().isEmpty());
+        QVERIFY(!c.listening());
+        // Not listening, nothing to end.
+        const int before = changed.count();
+        c.endDictation(true);
+        QCOMPARE(changed.count(), before);
+        QCOMPARE(field.text, QStringLiteral("Hello there"));
+
+        // Why it stopped shows for a moment, and a tap on it tries again.
+        c.onVoice();
+        d->end(QStringLiteral("Didn't catch that"));
+        QVERIFY(!c.listening());
+        QCOMPARE(c.voiceLine(), QStringLiteral("Didn't catch that"));
+        QTRY_VERIFY_WITH_TIMEOUT(c.voiceLine().isEmpty(), Pre::Controller::VOICE_PROBLEM_MS + 2000);
+
+        // A tap while listening stops it, what was being said still to come.
+        c.onVoice();
+        d->calls.clear();
+        c.onVoice();
+        QCOMPARE(d->calls, QStringList{ QStringLiteral("stop") });
+        d->say(QStringLiteral("done"));
+        d->end();
+        QCOMPARE(field.text, QStringLiteral("Hello there done"));
+        QVERIFY(c.voiceLine().isEmpty());
+    }
+
     // Changing language while listening stops it, keeping the words heard so far.
     void anotherLanguageEndsListening()
     {

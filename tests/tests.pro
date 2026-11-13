@@ -8,6 +8,7 @@ SUBDIRS = \
     ut_keyrepeat \
     ut_klipy \
     ut_panelstate \
+    ut_periodhold \
     ut_prekeyboard \
     ut_symbolpage \
     ut_t9multitap \

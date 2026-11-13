@@ -114,6 +114,13 @@ class Controller : public QObject
     friend class ::TestPreKeyboard;
     //! The Pre Keyboard is the keyboard: set by Keyboard.qml on a phone; a tablet keeps LuneOS's own.
     Q_PROPERTY(bool active READ active WRITE setActive NOTIFY activeChanged)
+    /*!
+     * What the bar says about listening: "Listening...", the words heard so far,
+     * or for a moment why it stopped; empty otherwise. For the candidate bar,
+     * which is where it shows with a physical keyboard's period held.
+     */
+    Q_PROPERTY(QString voiceLine READ voiceLine NOTIFY voiceChanged)
+    Q_PROPERTY(bool listening READ listening NOTIFY voiceChanged)
 
 public:
     explicit Controller(QObject *parent = nullptr);
@@ -158,6 +165,18 @@ public:
     void setWordsAllowed(bool allowed);
     //! The field takes only these characters (a number, a phone number), or anything when empty.
     void setDigits(const QString &allowed);
+
+    // --- Dictation from a physical keyboard ---------------------------------------------
+
+    //! Whether dictation could start now: a model for the language, in a field for prose, not listening already.
+    bool dictationReady();
+    bool listening() const;
+    QString voiceLine() const { return m_voiceLine; }
+    /*!
+     * A key, or another field, while listening: it stops at once, the words
+     * heard so far put in when [keep].
+     */
+    void endDictation(bool keep);
 
     //! A field took the focus, or the keyboard came up for one.
     void startInput();
@@ -204,7 +223,7 @@ public:
      * The period held, or the bar tapped while it says something about
      * listening: dictation starts, or stops with what was being said put in.
      */
-    void onVoice();
+    Q_INVOKABLE void onVoice();
     void hapticKey();
     void hapticLongPress();
     QString emojiFile() const;
@@ -213,6 +232,7 @@ public:
 
 Q_SIGNALS:
     void activeChanged();
+    void voiceChanged();
     //! The language's words to swipe are in (or it has none).
     void swipeWordsLoaded();
 
@@ -283,8 +303,6 @@ private:
     bool canDictate() const;
     //! The period's microphone, and what the bar says about listening, to the view.
     void showVoice();
-    //! A key, or another field, while listening: it stops at once, the words heard so far put in when [keep].
-    void endDictation(bool keep);
     void dictationPartial(const QString &text);
     void dictationFinal(const QString &text);
     void dictationStopped(const QString &problem);
@@ -352,6 +370,9 @@ private:
     qint64 m_voiceProblemAt = 0;
     //! Whether the period has its microphone, and for which field and language that was worked out.
     bool m_voiceMic = false;
+    //! What voiceLine() says, and whether it was listening, as last told.
+    QString m_voiceLine;
+    bool m_voiceListening = false;
     QString m_voiceFor;
 
     // Swipe to type.

@@ -54,6 +54,11 @@ void PanelState::setWordEngine(bool enabled)
     m_wordEngine = enabled;
 }
 
+void PanelState::setVoice(bool shown)
+{
+    m_voice = shown;
+}
+
 void PanelState::collapseKeys()
 {
     if (m_wordEngine) {
@@ -83,7 +88,7 @@ void PanelState::setOnScreenKeyboardAllowed(bool allowed)
 
 bool PanelState::panelWanted() const
 {
-    return m_focused && !m_dismissed && (!keysHidden() || m_wordEngine);
+    return m_focused && !m_dismissed && (!keysHidden() || m_wordEngine || m_voice);
 }
 
 } // namespace MaliitKeyboard

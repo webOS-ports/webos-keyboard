@@ -153,7 +153,10 @@ Item {
                     //! And while the emoji panel is up, whether or not the
                     //! word engine is on: the bar carries the button that puts
                     //! the panel away again.
+                    //! And while dictation started from a physical keyboard has
+                    //! something to say, which it says here.
                     visible: maliit_word_engine.enabled || wordRibbon.emojiShown
+                             || pre_keyboard.voiceLine !== ""
 
                     anchors.bottom: keyboardComp.top
                     width: parent.width;

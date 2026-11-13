@@ -3,6 +3,7 @@
 
 #include "editor.h"
 #include "hardwarekeyboard.h"
+#include "periodhold.h"
 #include "keyboardgeometry.h"
 #include "keyboardsettings.h"
 #include "panelstate.h"
@@ -104,6 +105,8 @@ public:
     //! the connection passes autoRepeat as a hardcoded false, and the compositor
     //! clears the flag before that to get the event delivered at all.
     quint32 heldScanCode = 0;
+    //! A physical keyboard's period, held, dictates; see InputMethod::processKeyEvent().
+    PeriodHold periodHold;
     //! The letter as typed, when the last one inserted from a physical keyboard
     //! was capitalised by auto-caps alone. A backspace straight after takes the
     //! capital back and puts this in its place, as legacy webOS did

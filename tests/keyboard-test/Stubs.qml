@@ -142,5 +142,9 @@ QtObject {
     property QtObject pre_keyboard: QtObject {
         property bool active: false
         onActiveChanged: if (active && !stubs.preKeyboard) active = false
+        //! What the candidate bar says about listening; empty, never listening.
+        property string voiceLine: ""
+        property bool listening: false
+        function onVoice() { }
     }
 }

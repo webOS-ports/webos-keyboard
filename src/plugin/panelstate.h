@@ -89,6 +89,16 @@ public:
      */
     void setOnScreenKeyboardAllowed(bool allowed);
 
+    /*! \brief Whether dictation has something to say: it is listening, or
+     *         why it stopped.
+     *
+     * With a physical keyboard a held period dictates, and the candidate bar is
+     * where "Listening..." and the words heard so far are shown. That has to be
+     * on screen even with the word engine off, or listening would start with
+     * nothing to say so and nowhere to tap to stop it.
+     */
+    void setVoice(bool shown);
+
     //! \brief The user dragged the keys away.
     //!
     //! Keeps the candidate bar where there is one to keep, and takes the whole
@@ -107,6 +117,7 @@ public:
     bool keysCollapsed() const { return m_keysCollapsed; }
     bool dismissed() const { return m_dismissed; }
     bool onScreenKeyboardAllowed() const { return m_onScreenKeyboardAllowed; }
+    bool voice() const { return m_voice; }
 
     /*! \brief Whether the keys are off screen.
      *
@@ -121,7 +132,7 @@ public:
     /*! \brief Whether any panel at all should be on screen.
      *
      * With the keys hidden the panel is just the candidate bar, which is only
-     * worth putting up if there is one.
+     * worth putting up if there is one, or while dictation is showing there.
      */
     bool panelWanted() const;
 
@@ -129,6 +140,7 @@ private:
     bool m_focused = false;
     bool m_hardware = false;
     bool m_wordEngine = false;
+    bool m_voice = false;
     //! The user dragged the keys off; the bar stays.
     bool m_keysCollapsed = false;
     //! The user took the whole panel away.

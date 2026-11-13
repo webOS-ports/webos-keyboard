@@ -56,6 +56,7 @@ private Q_SLOTS:
     void testSameInputSourceIsNotAFreshIntent();
     void testDismissalSurvivesLosingFocus();
     void testWordEngineArrivingRevealsTheBar();
+    void testDictationShowsTheBarWithNoSuggestions();
 
     void testAFieldWithItsOwnKeypadGetsNoKeys();
     void testAFieldWithItsOwnKeypadKeepsTheCandidateBar();
@@ -204,6 +205,29 @@ void ut_panelstate::testDismissalSurvivesLosingFocus()
     s.setFocused(false);
 
     QVERIFY(s.dismissed());
+}
+
+void ut_panelstate::testDictationShowsTheBarWithNoSuggestions()
+{
+    // A held period on a physical keyboard listens, and says so in the bar,
+    // with the word engine off as much as on.
+    PanelState s;
+    s.setHardware(true);
+    s.setFocused(true);
+    QVERIFY(!s.panelWanted());
+
+    s.setVoice(true);
+    QVERIFY2(s.panelWanted(), "listening with nowhere to say so");
+
+    s.setVoice(false);
+    QVERIFY2(!s.panelWanted(), "the bar stayed after listening stopped");
+
+    // Not for a field that has lost focus, or a panel the user took away.
+    s.setVoice(true);
+    s.dismiss();
+    QVERIFY(!s.panelWanted());
+    s.setFocused(false);
+    QVERIFY(!s.panelWanted());
 }
 
 void ut_panelstate::testWordEngineArrivingRevealsTheBar()

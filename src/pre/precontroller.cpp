@@ -977,7 +977,7 @@ bool Controller::canDictate() const
  */
 void Controller::showVoice()
 {
-    const bool listening = m_dictation && m_dictation->listening();
+    const bool on = listening();
     // Worked out again only for another field or language: a model is looked for on disk.
     const QString key = m_settings.language.id + QLatin1Char('|') + m_digits + QLatin1Char('|')
                         + QString::number(m_wordsAllowed) + QString::number(m_bridge.prose && m_bridge.prose())
@@ -987,11 +987,28 @@ void Controller::showVoice()
         m_voiceMic = canDictate();
     }
     QString line;
-    if (listening)
+    if (on)
         line = m_voicePartial.isEmpty() ? QStringLiteral("Listening\u2026 tap here to stop") : m_voicePartial;
     else
         line = m_voiceProblem;
-    if (m_view) m_view->setVoice(m_voiceMic || listening, listening, line);
+    if (m_view) m_view->setVoice(m_voiceMic || on, on, line);
+    if (line != m_voiceLine || on != m_voiceListening) {
+        m_voiceLine = line;
+        m_voiceListening = on;
+        Q_EMIT voiceChanged();
+    }
+}
+
+bool Controller::dictationReady()
+{
+    if (listening()) return false;
+    showVoice();
+    return m_voiceMic;
+}
+
+bool Controller::listening() const
+{
+    return m_dictation && m_dictation->listening();
 }
 
 void Controller::onVoice()

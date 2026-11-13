@@ -93,6 +93,24 @@ Qt::ScreenOrientation rotationAngleToScreenOrientation(int angle)
 
 const QString g_maliit_keyboard_qml(LUNEOS_KEYBOARD_DATA_DIR "/Keyboard.qml");
 
+//! A key held to change what the next one does, not one that does anything itself.
+bool isModifierKey(Qt::Key key)
+{
+    switch (key) {
+    case Qt::Key_Shift:
+    case Qt::Key_Control:
+    case Qt::Key_Alt:
+    case Qt::Key_AltGr:
+    case Qt::Key_Meta:
+    case Qt::Key_Super_L:
+    case Qt::Key_Super_R:
+    case Qt::Key_CapsLock:
+        return true;
+    default:
+        return false;
+    }
+}
+
 Key overrideToKey(const SharedOverride &override)
 {
     Key key;
@@ -148,6 +166,22 @@ InputMethod::InputMethod(MAbstractInputMethodHost *host)
     connect(&d->hardwareKeyboard, &HardwareKeyboard::profileChanged,
             this, &InputMethod::onHardwareProfileChanged);
     onHardwareProfileChanged();
+
+    // A physical keyboard's period held long enough listens, as the Pre
+    // Keyboard's own does; see processKeyEvent().
+    connect(&d->periodHold, &PeriodHold::held, this, [d] {
+        qCInfo(lcKeys, "period held: dictating");
+        d->pre.hapticLongPress();
+        d->pre.onVoice();
+    });
+    // With the keys hidden, the candidate bar is where listening shows; it has
+    // to be up for that whether the word engine is on or not.
+    connect(&d->pre, &Pre::Controller::voiceChanged, this, [this, d] {
+        const bool shown = !d->pre.voiceLine().isEmpty();
+        if (shown == d->panel.voice()) return;
+        d->panel.setVoice(shown);
+        applyPanelVisibility();
+    });
 
     d->registerFeedbackSetting();
     d->registerAutoCorrectSetting();
@@ -275,6 +309,10 @@ void InputMethod::hide()
     // is already down.
     d->editor.cancelRepeat();
     d->panel.setFocused(false);
+    // Listening started from a physical keyboard needs no Pre Keyboard to be
+    // active; what it heard has nowhere to go now.
+    d->periodHold.reset();
+    d->pre.endDictation(false);
     if (d->pre.active())
         d->pre.finishInput();
     applyPanelVisibility();
@@ -812,6 +850,39 @@ void InputMethod::processKeyEvent(QEvent::Type keyType, Qt::Key keyCode,
         break;
     }
 
+    // A period held dictates, on any physical keyboard: kept back until it is
+    // known whether it was held. And while listening a key stops it, as one
+    // does on the Pre Keyboard: backspace takes back what was being said, any
+    // other keeps it and goes on to do what it does, after it.
+    {
+        const bool period = key.action() == Key::ActionInsert && key.label() == QLatin1String(".");
+        const PeriodHold::Verdict verdict = keyType == QEvent::KeyPress
+            ? d->periodHold.press(nativeScanCode, period,
+                                  period && !isShortcut && d->pre.dictationReady())
+            : d->periodHold.release(nativeScanCode);
+        if (verdict == PeriodHold::Swallow)
+            return;
+        if (verdict == PeriodHold::TypePeriod || verdict == PeriodHold::TypePeriodFirst) {
+            Key dot;
+            dot.setAction(Key::ActionInsert);
+            dot.setLabel(QStringLiteral("."));
+            d->autocapUndoLetter.clear();
+            d->editor.onKeyPressed(dot);
+            d->editor.onKeyReleased(dot);
+            if (verdict == PeriodHold::TypePeriod)
+                return;
+        }
+        if (keyType == QEvent::KeyPress && d->pre.listening() && !isModifierKey(keyCode)) {
+            const bool takeBack = key.action() == Key::ActionBackspace
+                || key.action() == Key::ActionBackspaceWord;
+            d->pre.endDictation(!takeBack);
+            if (takeBack) {
+                d->periodHold.swallow(nativeScanCode);
+                return;
+            }
+        }
+    }
+
     if (key.action() == Key::NumActions) {
         // Not ours: cursor keys, Home/End, Delete, function keys, shortcuts.
         // Commit first -- otherwise the application moves its cursor away from
@@ -1015,6 +1086,8 @@ void InputMethod::handleFocusChange(bool focusIn)
         // from field to field may say only that the new one has the focus, and
         // the next key would send that word into it.
         d->dropPreedit();
+        d->periodHold.reset();
+        d->pre.endDictation(false);
         d->panel.setFocused(true);
         Q_EMIT keysCollapsedChanged();
 
