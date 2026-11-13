@@ -695,6 +695,13 @@ bool Controller::periodWantsSpace(const QString &before, const QString &after)
     if (token.contains(QLatin1Char('@')) || token.contains(QLatin1Char('/'))
         || token.startsWith(QLatin1String("www"), Qt::CaseInsensitive))
         return false;
+    // A small letter on its own starts an abbreviation (e.g., i.e., z.B., d.h.): its period gets no
+    // space, and the abbreviation's last period does ("e.g" is not a letter on its own). A capital
+    // on its own keeps the space, in every language: "I." ends a sentence, "J. Smith" is an initial.
+    const QChar ahead = token.size() >= 2 ? token.at(token.size() - 2) : QChar();
+    if (prev.isLower() && !ahead.isLetterOrNumber() && !ahead.isMark() && ahead != QLatin1Char('.')
+        && ahead != QLatin1Char('\'') && ahead != QChar(0x2019))
+        return false;
     return after.isEmpty() || !after.at(0).isSpace();
 }
 

@@ -860,6 +860,18 @@ private Q_SLOTS:
         QTest::newRow("no space in a number") << "3.14" << "3.14" << true << true;
         QTest::newRow("no space in an address") << "a@b.com" << "a@b.com" << true << true;
         QTest::newRow("no space in www") << "www.x" << "www.x" << true << true;
+        // An abbreviation's first letter gets no space, its end does.
+        QTest::newRow("e.g.") << "see e.g.this" << "see e.g. this" << true << true;
+        QTest::newRow("i.e. typed with a space") << "i.e. so" << "i.e. so" << true << true;
+        QTest::newRow("z.B.") << "z.B.so" << "z.B. so" << true << true;
+        QTest::newRow("(e.g.") << "(e.g.x" << "(e.g. x" << true << true;
+        QTest::newRow("a small letter on its own") << "plan b.so" << "plan b.so" << true << true;
+        // A capital on its own is a sentence's end or an initial.
+        QTest::newRow("I.") << "it was I.so" << "it was I. so" << true << true;
+        QTest::newRow("an initial") << "J.Smith" << "J. Smith" << true << true;
+        // A word ending in a letter after an apostrophe is a word.
+        QTest::newRow("it's.") << "it's.so" << "it's. so" << true << true;
+        QTest::newRow("it’s.") << "it’s.so" << "it’s. so" << true << true;
         QTest::newRow("no space outside prose") << "hi.yo" << "hi.yo" << false << true;
         QTest::newRow("comma after a space") << "hi ,yo" << "hi, yo" << true << true;
         QTest::newRow("question after a space") << "hi ?" << "hi? " << true << true;
