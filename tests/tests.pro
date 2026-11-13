@@ -12,6 +12,7 @@ SUBDIRS = \
     ut_prekeyboard \
     ut_symbolpage \
     ut_t9multitap \
+    ut_wordengine \
 
 # Dictation listens through PulseAudio; without its headers it isn't built.
 packagesExist(libpulse-simple): SUBDIRS += ut_dictation

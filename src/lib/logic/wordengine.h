@@ -62,6 +62,8 @@ public:
     void removeFromUserDictionary(const QString &word) override;
     QStringList userWords() override;
     void setSpellcheckerEnabled(bool enabled) override;
+    void setAutoCorrectEnabled(bool enabled) override;
+    bool marksMisspellings() const override;
     bool isMisspelled(const QString &word) override;
     QStringList spellingSuggestions(const QString &word, int limit) override;
     //! \reimp_end
@@ -74,6 +76,10 @@ public:
 
 protected:
     QStringList predictNext(const QString &left) override;
+
+    //! Uses \a plugin, not loaded from the plugin directory and not owned, in
+    //! place of the language's: for the unit tests, which have no plugins.
+    void useLanguagePlugin(LanguagePluginInterface *plugin);
 
 private:
     //! \reimp

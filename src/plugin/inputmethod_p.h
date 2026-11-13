@@ -378,10 +378,15 @@ public:
             // The word the space key put in place of another, still where it was put: that one first.
             if (!autoCorrectedWord.isEmpty() && word == autoCorrectedWord && left.endsWith(autoCorrectedLeft))
                 out << autoCorrectedOriginal;
-            out << editor.wordEngine()->spellingSuggestions(word, 4);
+            // Spellings offered for a word only with spell checking on: with
+            // autocorrect alone the checker is there, but not to be shown.
+            if (editor.wordEngine()->marksMisspellings())
+                out << editor.wordEngine()->spellingSuggestions(word, 4);
             return out;
         };
-        b.canAdd = [this](const QString &word) { return editor.wordEngine()->isMisspelled(word); };
+        b.canAdd = [this](const QString &word) {
+            return editor.wordEngine()->marksMisspellings() && editor.wordEngine()->isMisspelled(word);
+        };
         b.addWord = [this](const QString &word) { editor.addToUserDictionary(word); };
         b.removeWord = [this](const QString &word) {
             editor.wordEngine()->removeFromUserDictionary(word);
@@ -472,9 +477,14 @@ public:
                          editor.wordEngine(), SLOT(setWordPredictionEnabled(bool)));
         editor.wordEngine()->setWordPredictionEnabled(m_settings.predictiveText());
 
+        // The checker is loaded for either setting (WordEngine): autocorrect
+        // has to know a word is wrong to correct it, with spell checking off.
         QObject::connect(&m_settings, SIGNAL(spellCheckingChanged(bool)),
                          editor.wordEngine(), SLOT(setSpellcheckerEnabled(bool)));
         editor.wordEngine()->setSpellcheckerEnabled(m_settings.spellchecking());
+        QObject::connect(&m_settings, SIGNAL(autoCorrectionChanged(bool)),
+                         editor.wordEngine(), SLOT(setAutoCorrectEnabled(bool)));
+        editor.wordEngine()->setAutoCorrectEnabled(m_settings.autoCorrection());
     }
 
     /*!

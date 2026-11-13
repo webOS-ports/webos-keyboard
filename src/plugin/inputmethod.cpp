@@ -1567,7 +1567,8 @@ void InputMethod::updateSpellingSuggestions(const QString &text, int position)
         if (autoCorrected) {
             misspelled = word;
             suggestions = QStringList(d->autoCorrectedOriginal);
-        } else if (lookup && d->editor.wordEngine()->isMisspelled(word)) {
+        } else if (lookup && d->editor.wordEngine()->marksMisspellings()
+                   && d->editor.wordEngine()->isMisspelled(word)) {
             misspelled = word;
             suggestions = d->editor.wordEngine()->spellingSuggestions(word, kMaxSpellingSuggestions);
             // A misspelling can be taught to the dictionary; a word the keyboard

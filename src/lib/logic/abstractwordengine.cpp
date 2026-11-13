@@ -241,6 +241,11 @@ bool AbstractWordEngine::isMisspelled(const QString &word)
     return false;
 }
 
+bool AbstractWordEngine::marksMisspellings() const
+{
+    return false;
+}
+
 QStringList AbstractWordEngine::spellingSuggestions(const QString &word, int limit)
 {
     Q_UNUSED(word);
@@ -261,6 +266,12 @@ void AbstractWordEngine::setSpellcheckerEnabled(bool on)
     Q_UNUSED(on);
     qDebug() << Q_FUNC_INFO << "should be implemented by inherited class";
 }
+//!
+void AbstractWordEngine::setAutoCorrectEnabled(bool on)
+{
+    Q_UNUSED(on);
+}
+
 /*
 AbstractLanguageFeature* AbstractWordEngine::languageFeature()
 {

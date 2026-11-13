@@ -63,7 +63,10 @@ public:
     Q_SIGNAL void enabledChanged(bool enabled);
 
     Q_SLOT virtual void setWordPredictionEnabled(bool on);
+    //! The "Spell checking" setting: a word spelt wrong is marked and offered to be added.
     Q_SLOT virtual void setSpellcheckerEnabled(bool on);
+    //! The "Autocorrect" setting, which needs to know a word is wrong as much.
+    Q_SLOT virtual void setAutoCorrectEnabled(bool on);
 
     void clearCandidates();
     void computeCandidates(Model::Text *text);
@@ -93,7 +96,12 @@ protected:
 public:
 
     //! \brief Whether \a word is spelled wrongly. False when nothing can say.
+    //! Known with autocorrect on alone too; whether to show it is marksMisspellings().
     virtual bool isMisspelled(const QString &word);
+
+    //! \brief Whether a word spelt wrong is to be marked, and offered to be
+    //! added to the owner's words: the "Spell checking" setting. None here.
+    virtual bool marksMisspellings() const;
 
     //! \brief What could replace \a word, best first, at most \a limit of them.
     virtual QStringList spellingSuggestions(const QString &word, int limit);

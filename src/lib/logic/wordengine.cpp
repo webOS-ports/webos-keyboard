@@ -96,7 +96,17 @@ public:
 
     bool use_predictive_text;
 
+    //! The "Spell checking" setting: a word spelt wrong is marked and offered
+    //! to be added (marksMisspellings()).
     bool use_spell_checker;
+    //! The "Autocorrect" setting: what space puts in for a word spelt wrong.
+    bool use_auto_correct;
+
+    //! Hunspell is loaded for either: autocorrect needs to know a word is
+    //! wrong, and what for, as much as marking it does.
+    bool checkerWanted() const { return use_spell_checker || use_auto_correct; }
+    //! Whether the plugin's checker is loaded and can say a word is wrong.
+    bool checking() const { return checkerWanted() && languagePlugin && languagePlugin->spellCheckerEnabled(); }
 
     LanguagePluginInterface* languagePlugin;
 
@@ -116,7 +126,7 @@ public:
             return;
         const QString spelled = country.isEmpty() ? language : language + QLatin1Char('_') + country;
         if (languagePlugin->setSpellCheckerLanguage(spelled))
-            languagePlugin->setSpellCheckerEnabled(use_spell_checker);
+            languagePlugin->setSpellCheckerEnabled(checkerWanted());
     }
     void loadPlugin(const QString& pluginName, const QString& subfolder="en")
     {
@@ -166,6 +176,7 @@ public:
 WordEnginePrivate::WordEnginePrivate()
     : use_predictive_text(false)
     , use_spell_checker(false)
+    , use_auto_correct(false)
     , languagePlugin(nullptr)
 {
     loadPlugin(DEFAULT_PLUGIN);
@@ -216,8 +227,9 @@ void WordEngine::setWordPredictionEnabled(bool enabled)
         Q_EMIT enabledChanged(isEnabled());
 }
 
-//! \brief WordEngine::enableSpellcheker turns on/off the usage of the spellchecker
-//! \param enabled
+//! \brief WordEngine::setSpellcheckerEnabled follows the "Spell checking"
+//! setting: whether a word spelt wrong is marked and offered to be added. The
+//! checker itself stays loaded while autocorrect is on (setAutoCorrectEnabled).
 void WordEngine::setSpellcheckerEnabled(bool enabled)
 {
     Q_D(WordEngine);
@@ -226,27 +238,49 @@ void WordEngine::setSpellcheckerEnabled(bool enabled)
     d->use_spell_checker = enabled;
 
     if (d->languagePlugin)
-        d->languagePlugin->setSpellCheckerEnabled(d->use_spell_checker);
+        d->languagePlugin->setSpellCheckerEnabled(d->checkerWanted());
     if(totalEnabled != isEnabled())
         Q_EMIT enabledChanged(isEnabled());
+}
+
+//! \brief WordEngine::setAutoCorrectEnabled follows the "Autocorrect" setting,
+//! which needs the checker loaded as much as spell checking does: without it no
+//! word is wrong, so none is corrected, and no word of the owner's is saved.
+void WordEngine::setAutoCorrectEnabled(bool enabled)
+{
+    Q_D(WordEngine);
+    const bool totalEnabled = isEnabled();
+
+    d->use_auto_correct = enabled;
+
+    if (d->languagePlugin)
+        d->languagePlugin->setSpellCheckerEnabled(d->checkerWanted());
+    if(totalEnabled != isEnabled())
+        Q_EMIT enabledChanged(isEnabled());
+}
+
+bool WordEngine::marksMisspellings() const
+{
+    Q_D(const WordEngine);
+    return d->use_spell_checker && d->checking();
 }
 
 bool WordEngine::isMisspelled(const QString &word)
 {
     Q_D(WordEngine);
 
-    // The spell checker being off is the setting saying nothing is to be marked
-    // wrong, not a reason to mark everything.
-    if (d->use_spell_checker && isBlocked(word))
-        return true;
-    return d->use_spell_checker && d->languagePlugin && !d->languagePlugin->spell(word);
+    // Both settings off is nothing to be marked or corrected, not a reason to
+    // call everything wrong. Whether it is shown is marksMisspellings().
+    if (!d->checking())
+        return false;
+    return isBlocked(word) || !d->languagePlugin->spell(word);
 }
 
 QStringList WordEngine::spellingSuggestions(const QString &word, int limit)
 {
     Q_D(WordEngine);
 
-    if (!d->use_spell_checker || !d->languagePlugin)
+    if (!d->checking())
         return QStringList();
 
     QStringList out;
@@ -294,8 +328,11 @@ WordCandidateList WordEngine::fetchCandidates(Model::Text *text)
         }
     }
 
-    text->setPreeditFace(candidates.isEmpty() ? (correct_spelling ? Model::Text::PreeditDefault
-                                                                  : Model::Text::PreeditNoCandidates)
+    // Marked wrong only with spell checking on: autocorrect alone corrects it
+    // quietly, as space goes.
+    text->setPreeditFace(candidates.isEmpty() ? (correct_spelling || !d->use_spell_checker
+                                                     ? Model::Text::PreeditDefault
+                                                     : Model::Text::PreeditNoCandidates)
                                               : Model::Text::PreeditActive);
 
     /*
@@ -361,7 +398,7 @@ QStringList WordEngine::predictNext(const QString &left)
 QStringList WordEngine::userWords()
 {
     Q_D(WordEngine);
-    return d->languagePlugin && d->use_spell_checker ? d->languagePlugin->spellCheckerUserWords() : QStringList();
+    return d->languagePlugin && d->checkerWanted() ? d->languagePlugin->spellCheckerUserWords() : QStringList();
 }
 
 void WordEngine::onLanguageChanged(const QString &languageId)
@@ -423,6 +460,17 @@ void WordEngine::setCountry(const QString &country)
     if (cc == d->country)
         return;
     d->country = cc;
+    d->setSpellCheckerLanguage();
+}
+
+void WordEngine::useLanguagePlugin(LanguagePluginInterface *plugin)
+{
+    Q_D(WordEngine);
+    d->pluginLoader.unload();
+    d->currentPlugin.clear();
+    d->languagePlugin = plugin;
+    if (plugin)
+        plugin->setSpellCheckerEnabled(d->checkerWanted());
     d->setSpellCheckerLanguage();
 }
 
