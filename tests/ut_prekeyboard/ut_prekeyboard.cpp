@@ -1074,6 +1074,97 @@ private Q_SLOTS:
     }
 
     /*
+     * With prediction and the spelling checker both off, the word engine is
+     * off and letters go straight into the field: no word is being typed. The
+     * word the cursor is at the end of has its emoji all the same, and
+     * tapping it puts the emoji in place of the word in the field. Not in a
+     * field that takes no suggestions (a password, a number), nor with the
+     * setting off.
+     */
+    void emojiSuggestionsWithoutTheWordEngine()
+    {
+        Recorder rec;
+        Field field;
+        Pre::Controller c;
+        bool wanted = true, prose = true;
+        Pre::Bridge b = field.bridge(rec);
+        b.wordsWanted = [&] { return wanted; };
+        b.prose = [&] { return prose; };
+        c.setBridge(b);
+        c.setDataDir(QStringLiteral(PRE_DATA_DIR));
+        c.setKeyboardState(false, false, { QStringLiteral("en") }, QStringLiteral("en"));
+        c.setWordsAllowed(false);
+        const QString pizza = QStringLiteral("🍕");
+        const QStringList none{ QString(), QString(), QString() };
+        field.set(QStringLiteral("I like pizza"));
+        c.update();
+        QCOMPARE(c.m_bar, none);
+        c.setPrefs(QJsonObject{ { QStringLiteral("emojiSuggestions"), true } });
+        c.update();
+        QCOMPARE(c.m_bar, (QStringList{ QString(), QStringLiteral("pizza"), pizza }));
+        // Typed on: the bar follows the field.
+        c.onText(QStringLiteral("s"));
+        c.update();
+        QCOMPARE(field.text, QStringLiteral("I like pizzas"));
+        QCOMPARE(c.m_bar, (QStringList{ QString(), QStringLiteral("pizzas"), pizza }));
+        c.onPick(2, Pre::KeyboardView::CAPS_ALL);
+        QCOMPARE(field.text, QStringLiteral("I like ") + pizza + QLatin1Char(' '));
+        QCOMPARE(Pre::Settings::recentEmoji(rec.saved).value(0), pizza);
+        QCOMPARE(c.m_bar, none);
+        // The word itself: it stays, with a space.
+        field.set(QStringLiteral("pizza"));
+        c.update();
+        c.onPick(1, Pre::KeyboardView::CAPS_ALL);
+        QCOMPARE(field.text, QStringLiteral("pizza "));
+        // Not when the word in the field is no longer the one the bar was for.
+        field.set(QStringLiteral("pizza"));
+        c.update();
+        field.set(QStringLiteral("pizza x"));
+        c.onPick(2, Pre::KeyboardView::CAPS_NONE);
+        QCOMPARE(field.text, QStringLiteral("pizza x"));
+        field.set(QStringLiteral("pizza"));
+        c.update();
+        field.cursor = 3;
+        c.onPick(2, Pre::KeyboardView::CAPS_NONE);
+        QCOMPARE(field.text, QStringLiteral("pizza"));
+        // Nor for a word the cursor is inside, nor for none, nor a word without one.
+        field.set(QStringLiteral("pizza"), 3);
+        c.update();
+        QCOMPARE(c.m_bar, none);
+        field.set(QStringLiteral("pizza "));
+        c.update();
+        QCOMPARE(c.m_bar, none);
+        field.set(QStringLiteral("the"));
+        c.update();
+        QCOMPARE(c.m_bar, none);
+        // A password or a field that declines suggestions; a number field; a field not for prose.
+        field.set(QStringLiteral("pizza"));
+        wanted = false;
+        c.update();
+        QCOMPARE(c.m_bar, none);
+        wanted = true;
+        c.setDigits(QStringLiteral("0123456789"));
+        c.update();
+        QCOMPARE(c.m_bar, none);
+        c.setDigits(QString());
+        prose = false;
+        c.update();
+        QCOMPARE(c.m_bar, none);
+        prose = true;
+        c.update();
+        QCOMPARE(c.m_bar.value(2), pizza);
+        c.setPrefs(QJsonObject{ { QStringLiteral("emojiSuggestions"), false } });
+        c.update();
+        QCOMPARE(c.m_bar, none);
+        // With the word engine on, it is the word being typed that has one, as before.
+        c.setPrefs(QJsonObject{ { QStringLiteral("emojiSuggestions"), true } });
+        c.setWordsAllowed(true);
+        c.setKeyboardState(true, false, { QStringLiteral("en") }, QStringLiteral("en"));
+        c.update();
+        QCOMPARE(c.m_bar.value(2), QString());
+    }
+
+    /*
      * A word tapped in the text: the bar offers what else it might be, the
      * likeliest in the middle, and tapping one puts it in its place, with the
      * capital the word had. The cursor inside a word offers them too; just

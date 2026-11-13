@@ -87,6 +87,12 @@ struct Bridge
     std::function<QString(int n)> after;
     //! The field is for prose (free text, not hidden): a period brings its own space there.
     std::function<bool()> prose;
+    /*!
+     * The field takes suggestions: free text, nothing hidden, and the field
+     * did not decline them - whether or not the word engine is on for it.
+     * Asked of the field each time, not of what the input method last saw.
+     */
+    std::function<bool()> wordsWanted;
     //! The likeliest next words before any of the next is typed, best first.
     std::function<QStringList()> nextWords;
     //! Whether [word] could be added to the owner's dictionary: it is not known.
@@ -296,6 +302,12 @@ private:
     QStringList idleWords();
     //! The word at the cursor was tapped, or the cursor is inside it: what else it might be.
     QStringList wordFixes();
+    /*!
+     * Emoji suggestions with no word being typed: the word engine is off (no
+     * prediction and no spelling checker), so letters go straight into the
+     * field, in one that would take suggestions.
+     */
+    bool emojiWithoutWords() const;
     //! A backspace straight after an autocorrection: what was typed is put back. False if it wasn't.
     bool undoCorrection();
     void offerPaste();
@@ -342,6 +354,9 @@ private:
 
     //! The bar's right-hand place holds an emoji for the middle word, not a word.
     bool m_barEmoji = false;
+    //! With the word engine off (emojiWithoutWords()): the word in the field, ending at the
+    //! cursor, the bar's emoji is for.
+    QString m_bareWord;
 
     // Fixing words.
     //! When the keyboard last changed the text; and the cursor moved since by the owner's hand.

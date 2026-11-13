@@ -362,6 +362,14 @@ public:
             return t ? t->surroundingRight().left(n) : QString();
         };
         b.prose = [this] { return contentType == InputMethod::FreeTextContentType && !hiddenText; };
+        // As InputMethod::update() decides the word engine for the field, asked of the field now.
+        b.wordsWanted = [this] {
+            bool typeValid = false, askedValid = false, hiddenValid = false;
+            const int type = host->contentType(typeValid);
+            const bool asked = host->predictionEnabled(askedValid);
+            const bool hidden = host->hiddenText(hiddenValid) && hiddenValid;
+            return predictionWanted(asked, askedValid, hidden, !typeValid || type == InputMethod::FreeTextContentType);
+        };
         b.nextWords = [this] {
             const Model::Text *t = editor.text();
             return t ? editor.wordEngine()->nextWords(t->surroundingLeft(), 3) : QStringList();

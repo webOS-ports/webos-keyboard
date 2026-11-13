@@ -293,7 +293,8 @@ void Controller::update()
     // The application told where its cursor is: the next words, or the tapped word's fixes, follow it.
     if (m_typed.isEmpty() && m_swiped.isEmpty()) {
         const QStringList next = idleWords();
-        if (next != m_candidates) {
+        // Or a letter went straight into the field (the word engine off): the emoji follows the word it ends.
+        if (next != m_candidates || emojiWithoutWords() || !m_bareWord.isEmpty()) {
             m_candidates = next;
             showBar();
         }
@@ -425,6 +426,13 @@ bool Controller::undoCorrection()
     return true;
 }
 
+bool Controller::emojiWithoutWords() const
+{
+    return m_settings.emojiSuggestions && !m_wordsAllowed && m_typed.isEmpty() && m_digits.isEmpty()
+           && m_bridge.wordsWanted && m_bridge.wordsWanted() && m_bridge.prose && m_bridge.prose()
+           && m_bridge.before && m_bridge.after && m_bridge.replace;
+}
+
 QStringList Controller::nextWords()
 {
     if (!m_settings.suggestions || !m_wordsAllowed || !m_bridge.nextWords || !m_bridge.before
@@ -478,6 +486,19 @@ void Controller::showBar()
             m_barEmoji = true;
         }
     }
+    // With the word engine off there is no word being typed: the word in the field the cursor is
+    // at the end of has its emoji, the same way. As space would, the word itself stays as it is.
+    m_bareWord.clear();
+    if (!m_barEmoji && bar.value(1).isEmpty() && emojiWithoutWords()) {
+        int nb = 0, na = 0;
+        const QString word = wordAround(m_bridge.before(MAX_TOKEN), m_bridge.after(MAX_TOKEN), &nb, &na);
+        const QString e = word.isEmpty() || na > 0 ? QString() : emojiWords().forWord(word);
+        if (!e.isEmpty()) {
+            bar = { QString(), word, e };
+            m_barEmoji = true;
+            m_bareWord = word;
+        }
+    }
     m_bar = { bar.value(0), bar.value(1), bar.value(2) };
     if (m_view) m_view->setSuggestions(m_bar, m_barEmoji);
 }
@@ -522,6 +543,25 @@ void Controller::onPick(int i, int caps)
             m_tapped = true;
         }
         m_candidates = idleWords();
+        showBar();
+        return;
+    }
+    if (!m_bareWord.isEmpty()) {
+        // No word being typed (the word engine is off): the word in the field gives way to the
+        // emoji, or keeps itself, if it is still the one at the cursor; a space after either, as
+        // the editor puts a word from the bar in.
+        int nb = 0, na = 0;
+        const QString word = m_bridge.before && m_bridge.after && m_bridge.replace
+                           ? wordAround(m_bridge.before(MAX_TOKEN), m_bridge.after(MAX_TOKEN), &nb, &na) : QString();
+        const bool same = !word.isEmpty() && word == m_bareWord && na == 0;
+        m_bareWord.clear();
+        if (same) {
+            m_bridge.replace(nb, 0, (i == 2 && m_barEmoji ? w : word) + QLatin1Char(' '));
+            if (i == 2 && m_barEmoji) addRecentEmoji(w);
+            m_autoTail.clear();
+            m_spaceIsLast = true;
+            m_lastSpaceAt = now();
+        }
         showBar();
         return;
     }
