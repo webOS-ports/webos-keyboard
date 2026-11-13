@@ -290,7 +290,12 @@ QRectF KeyboardView::rowRect(int i) const
 
 const Rows &KeyboardView::rows() const
 {
-    return m_page == Page::Symbols ? Keymap::symbols() : Keymap::letters(m_settings.language);
+    if (m_page == Page::Symbols) return Keymap::symbols();
+    // A number field shows only the digits, which are the alternates of the Pre's grid: on its
+    // grid whatever the language, so they stand in the same columns in every one. A language's
+    // own rows (more keys to a row, Russian, Arabic) would move them about.
+    if (digitMode()) return Keymap::letters(Language::orEnglish(QStringLiteral("en")));
+    return Keymap::letters(m_settings.language);
 }
 
 void KeyboardView::geometryChange(const QRectF &newGeometry, const QRectF &oldGeometry)

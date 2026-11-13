@@ -2058,16 +2058,28 @@ private Q_SLOTS:
     /*
      * A number field, on every phone either way up: the keys show only what it
      * takes, each alone and big, and type just that; every digit is there, in
-     * every language; the rest are blank and type nothing; the Sym page is
-     * as it was.
+     * every language, and in the same place in every one, the Pre's grid; the
+     * rest are blank and type nothing; the Sym page is as it was.
      */
     void numberFields()
     {
         QFETCH(QString, allowed);
         QStringList problems;
+        // Where each key's character is in English, as the field shows it.
+        const auto placed = [](const Pre::KeyboardView &view) {
+            QMap<QString, QRectF> at;
+            for (const auto &z : view.m_zones)
+                if (z.slot.drawn && z.slot.key->kind == Pre::Kind::Char && !view.capText(*z.slot.key).isEmpty())
+                    at.insert(view.capText(*z.slot.key), z.rect);
+            return at;
+        };
         for (const Screen &sc : screens())
         for (const Pre::Language &l : Pre::Language::all()) {
             if (!sc.measured) continue;
+            Pre::KeyboardView english;
+            showKeys(english, Pre::Language::byId(QStringLiteral("en")), sc.shortSide, sc.width, sc.landscape,
+                     Pre::Settings::Height::Medium);
+            english.setDigits(allowed);
             Pre::KeyboardView view;
             showKeys(view, l, sc.shortSide, sc.width, sc.landscape, Pre::Settings::Height::Medium);
             qreal letters = 0;
@@ -2096,6 +2108,7 @@ private Q_SLOTS:
             }
             for (QChar d : QStringLiteral("0123456789"))
                 if (!shown.contains(d)) problems << where + QStringLiteral("no ") + d;
+            if (placed(view) != placed(english)) problems << where + QStringLiteral("the keys are not where English has them");
             if (!blank) problems << where + QStringLiteral("no key went blank");
             problems << printingProblems(view, where) << centringProblems(view, where);
             view.show(Pre::KeyboardView::Page::Symbols);
