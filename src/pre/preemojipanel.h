@@ -92,12 +92,20 @@ public:
     //! Whether the device's emoji font draws [emoji]: every code point in it, joiners and selectors aside.
     static bool canDraw(const QString &emoji);
     /*!
+     * The emoji font at the Android Pre Keyboard's text size [size]: drawn as
+     * big as Android draws it. Noto Color Emoji is a font of pictures, and the
+     * two scale them differently: Android draws 😀 1.06 times its text size
+     * tall, Qt 0.84 times on a mako. So the same sizes as Android's gave emoji a
+     * fifth smaller; this works out the pixel size that draws them as tall.
+     */
+    static QFont emojiFont(qreal size);
+    /*!
      * [top] is where the page starts (the suggestion bar's place, if it shows),
      * [rows] the top three rows of keys, [bar] the bottom row.
      */
     //! [rowHeight]: a row of keys, as laid out before rounding to whole pixels: what the strip and emoji are sized from.
     void layout(qreal top, const QRectF &rows, const QRectF &bar, qreal rowHeight);
-    void draw(QPainter &p, Painter &painter, Style style, const std::function<void(QPainter &, const QString &, const QRectF &)> &label);
+    void draw(QPainter &p, Painter &painter, Style style);
 
     void down(qreal x, qreal y);
     void move(qreal x, qreal y);
@@ -112,6 +120,8 @@ private:
     struct Category { QString id; QString icon; QStringList emoji; };
 
     void relayout();
+    //! ABC's letters: as big as its key allows, as on Android.
+    qreal abcTextSize() const;
     qreal cellHeight() const;
     qreal maxScroll() const;
     MediaPanel *media() const;

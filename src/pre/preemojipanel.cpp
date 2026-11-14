@@ -25,6 +25,7 @@
 #include <QFontMetricsF>
 #include <QMutex>
 #include <QHash>
+#include <QImage>
 #include <QPainter>
 
 #include <algorithm>
@@ -36,16 +37,54 @@ namespace {
 const qreal SLOP_DP = 8;
 //! A fling slows by this share of its speed every millisecond.
 const qreal FRICTION = 0.0028;
+//! How tall Android draws 😀 for its text size: 71 px at 67 (the Android Pre Keyboard's own
+//! emoji page, docs/emoji.png: a line of 108 px, emoji at 0.62 of it).
+const qreal ANDROID_EMOJI_INK = 71.0 / 67.0;
 
-QFont emojiFont(qreal px)
+QFont fontAtPixels(qreal px)
 {
     QFont f(QStringLiteral("Noto Color Emoji"));
-    f.setPixelSize(std::max(1, int(px)));
+    f.setPixelSize(std::max(1, int(std::round(px))));
     f.setStyleStrategy(QFont::NoFontMerging);
     return f;
 }
 
+//! How tall this device's font draws 😀, for its pixel size: drawn once, and measured.
+qreal qtEmojiInk()
+{
+    static const qreal ink = [] {
+        const int px = 100;
+        QImage img(2 * px, 2 * px, QImage::Format_ARGB32_Premultiplied);
+        img.fill(Qt::transparent);
+        {
+            QPainter p(&img);
+            p.setFont(fontAtPixels(px));
+            p.setPen(Qt::white);
+            p.drawText(img.rect(), Qt::AlignCenter, QStringLiteral("😀"));
+        }
+        int top = -1, bottom = -1;
+        for (int y = 0; y < img.height(); ++y) {
+            const QRgb *line = reinterpret_cast<const QRgb *>(img.constScanLine(y));
+            for (int x = 0; x < img.width(); ++x) {
+                if (qAlpha(line[x]) > 32) {
+                    if (top < 0) top = y;
+                    bottom = y;
+                    break;
+                }
+            }
+        }
+        // No emoji font (a desktop without one): sized as asked.
+        return top < 0 ? ANDROID_EMOJI_INK : qreal(bottom - top + 1) / px;
+    }();
+    return ink;
+}
+
 } // namespace
+
+QFont EmojiPanel::emojiFont(qreal size)
+{
+    return fontAtPixels(size * ANDROID_EMOJI_INK / qtEmojiInk());
+}
 
 EmojiPanel::Tab EmojiPanel::s_lastTab = EmojiPanel::Tab::Emoji;
 
@@ -165,7 +204,7 @@ bool EmojiPanel::canDraw(const QString &emoji)
     // One font, so one QFontMetrics for every thread that asks.
     static QMutex lock;
     QMutexLocker locker(&lock);
-    static const QFontMetrics metrics(emojiFont(32));
+    static const QFontMetrics metrics(fontAtPixels(32));
     for (const uint cp : emoji.toUcs4()) {
         // Joiners, variation selectors, skin tones and keycaps: not glyphs of their own.
         if (cp == 0x200D || cp == 0xFE0F || cp == 0xFE0E || cp == 0x20E3 || (cp >= 0x1F3FB && cp <= 0x1F3FF)
@@ -207,6 +246,12 @@ void EmojiPanel::relayout()
     }
     m_contentHeight = y;
     m_scrollY = std::max<qreal>(0, std::min(m_scrollY, maxScroll()));
+}
+
+qreal EmojiPanel::abcTextSize() const
+{
+    const QRectF abc = abcRect();
+    return std::min(abc.height() * 0.46, abc.width() * 0.3);
 }
 
 qreal EmojiPanel::cellHeight() const { return std::min(m_cell, m_grid.height() / 3); }
@@ -270,12 +315,20 @@ QRectF EmojiPanel::tabRect(int i) const
     return QRectF(l + i * w, m_bar.top(), w, m_bar.height());
 }
 
-void EmojiPanel::draw(QPainter &p, Painter &painter, Style style,
-                      const std::function<void(QPainter &, const QString &, const QRectF &)> &label)
+void EmojiPanel::draw(QPainter &p, Painter &painter, Style style)
 {
     const QRectF abc = abcRect();
-    p.drawImage(abc.topLeft(), painter.cap(int(abc.width()), int(abc.height()), m_pressed == Abc));
-    label(p, QStringLiteral("ABC"), abc);
+    const bool abcDown = m_pressed == Abc;
+    p.drawImage(abc.topLeft(), painter.cap(int(abc.width()), int(abc.height()), abcDown));
+    // Sized to its own key, as on Android: a function key's label (0.34 of a row) came out a
+    // quarter bigger than Android's in the strip's smaller key.
+    QFont abcFont = m_font;
+    abcFont.setPixelSize(std::max(1, int(abcTextSize())));
+    p.setFont(abcFont);
+    p.setPen(Qt::white);
+    const QString abcText = QStringLiteral("ABC");
+    p.drawText(QPointF(abc.center().x() - QFontMetricsF(abcFont).horizontalAdvance(abcText) / 2,
+                       abc.center().y() + abcTextSize() * 0.36 + (abcDown ? m_dp : 0)), abcText);
     drawStrip(p, painter, style);
     if (MediaPanel *m = media()) {
         m->draw(p, m_font);

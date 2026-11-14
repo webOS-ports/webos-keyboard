@@ -374,8 +374,7 @@ void KeyboardView::paint(QPainter *pp)
     m_painter.deck(p, QRectF(0, deckTop, width(), height() - deckTop));
     if (barShown() && !emojiPage) drawBar(p, QRectF(0, top, width(), barHeight()));
     if (m_page == Page::Emoji) {
-        m_emoji.draw(p, m_painter, m_settings.style,
-                     [this](QPainter &cp, const QString &s, const QRectF &r) { functionLabel(cp, s, r); });
+        m_emoji.draw(p, m_painter, m_settings.style);
         drawMenu(p);
         return;
     }
@@ -1094,9 +1093,7 @@ void KeyboardView::drawBar(QPainter &p, const QRectF &r)
             continue;
         }
         if (i == 2 && m_barEmoji && !m_words[i].isEmpty()) {
-            QFont ef(QStringLiteral("Noto Color Emoji"));
-            ef.setPixelSize(std::max(1, int(r.height() * 0.5)));
-            p.setFont(ef);
+            p.setFont(EmojiPanel::emojiFont(r.height() * 0.5));
             p.setPen(Qt::white);
             p.drawText(cellRect, Qt::AlignCenter, m_words[i]);
             continue;

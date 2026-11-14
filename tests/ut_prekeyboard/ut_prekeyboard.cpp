@@ -35,6 +35,9 @@
 #include "models/text.h"
 
 #include <QDir>
+#include <QFontDatabase>
+#include <QImage>
+#include <QPainter>
 #include <QFileInfo>
 #include <QJSEngine>
 #include <QJSValueIterator>
@@ -2425,6 +2428,43 @@ private Q_SLOTS:
      * are sized from the row, so the number row's taller page shows more of
      * them, not bigger ones.
      */
+    /*
+     * The emoji page drawn the size of the Android Pre Keyboard's 1.4.0: ABC
+     * sized to its key, and emoji as tall as Android draws them for the same
+     * text size (1.06 times it: Qt draws Noto Color Emoji smaller for its size,
+     * a fifth smaller on a mako, so the same numbers gave smaller emoji). With
+     * the device's fonts (FONTCONFIG_FILE, as for the shots); skipped without.
+     */
+    void emojiPageSizedAsAndroid()
+    {
+        Pre::KeyboardView view;
+        showKeys(view, Pre::Language::byId(QStringLiteral("en")), 768, 768, false, Pre::Settings::Height::Medium);
+        view.show(Pre::KeyboardView::Page::Emoji);
+        const Pre::EmojiPanel &e = view.m_emoji;
+        const QRectF abc = e.abcRect();
+        QCOMPARE(e.abcTextSize(), std::min(abc.height() * 0.46, abc.width() * 0.3));
+
+        if (!QFontDatabase::families().contains(QStringLiteral("Noto Color Emoji")))
+            QSKIP("no Noto Color Emoji: set FONTCONFIG_FILE to the device's fonts");
+        for (const qreal size : { 20.0, 47.6, 66.8 }) {
+            QImage img(int(size * 3), int(size * 3), QImage::Format_ARGB32_Premultiplied);
+            img.fill(Qt::transparent);
+            {
+                QPainter p(&img);
+                p.setFont(Pre::EmojiPanel::emojiFont(size));
+                p.drawText(img.rect(), Qt::AlignCenter, QStringLiteral("😀"));
+            }
+            int top = -1, bottom = -1;
+            for (int y = 0; y < img.height(); ++y)
+                for (int x = 0; x < img.width(); ++x)
+                    if (qAlpha(img.pixel(x, y)) > 32) { if (top < 0) top = y; bottom = y; break; }
+            QVERIFY2(top >= 0, "nothing drawn");
+            const qreal ink = bottom - top + 1;
+            QVERIFY2(std::abs(ink - size * 71.0 / 67.0) <= std::max(2.0, size * 0.04),
+                     qPrintable(QStringLiteral("😀 at %1: %2 px tall, Android %3").arg(size).arg(ink).arg(size * 71.0 / 67.0)));
+        }
+    }
+
     void emojiPageStrip()
     {
         for (bool klipy : { false, true }) {
