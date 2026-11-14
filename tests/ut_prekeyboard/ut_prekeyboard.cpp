@@ -2344,6 +2344,62 @@ private Q_SLOTS:
     }
 
     /*
+     * The emoji page's strip, as the Android Pre Keyboard's 1.4.0 has it: two
+     * thirds of a row high, ABC, the tabs and the search field on one centre
+     * line, the tabs as wide as their labels, and the search field filling
+     * the rest to as far from the right edge as ABC is from the left. Emoji
+     * are sized from the row, so the number row's taller page shows more of
+     * them, not bigger ones.
+     */
+    void emojiPageStrip()
+    {
+        for (bool klipy : { false, true }) {
+            Pre::Klipy::instance().setKey(klipy ? QStringLiteral("test") : QString());
+            for (const Screen &sc : screens()) {
+                if (!sc.measured) continue;
+                const QString where = sc.name + (klipy ? QStringLiteral(" (KLIPY): ") : QStringLiteral(": "));
+                Pre::KeyboardView view;
+                showKeys(view, Pre::Language::byId(QStringLiteral("en")), sc.shortSide, sc.width, sc.landscape,
+                         Pre::Settings::Height::Medium);
+                view.show(Pre::KeyboardView::Page::Emoji);
+                const Pre::EmojiPanel &e = view.m_emoji;
+                QCOMPARE(e.m_strip.height(), std::round(e.m_bar.height() * 0.68));
+                const qreal middle = e.m_strip.center().y();
+                QVERIFY2(std::abs(e.abcRect().center().y() - middle) < 0.5, qPrintable(where));
+                QCOMPARE(e.tabCount(), klipy ? 3 : 1);
+                qreal right = e.abcRect().right();
+                for (int i = 0; i < e.tabCount(); ++i) {
+                    const QRectF r = e.topTab(i);
+                    QVERIFY2(std::abs(r.center().y() - middle) < 0.5, qPrintable(where));
+                    QVERIFY2(r.left() >= right, qPrintable(where + QStringLiteral("tab %1 overlaps").arg(i)));
+                    right = r.right();
+                }
+                if (klipy) {
+                    const QRectF s = e.searchRect();
+                    QVERIFY2(std::abs(s.center().y() - middle) < 0.5, qPrintable(where));
+                    QVERIFY2(s.left() >= right, qPrintable(where));
+                    QVERIFY2(std::abs((e.m_strip.right() - s.right()) - (e.abcRect().left() - e.m_strip.left())) < 0.5,
+                             qPrintable(where));
+                    QVERIFY2(s.width() > e.m_strip.width() * 0.3, qPrintable(where + QStringLiteral("search too narrow")));
+                }
+                // The number row: the same emoji, more of them.
+                const int cols = e.m_cols;
+                const qreal cell = e.cellHeight(), grid = e.m_grid.height();
+                Pre::Settings s = view.settings();
+                s.numberRow = true;
+                view.applySettings(s);
+                view.setHeight(view.headroom() + view.keysHeight());
+                view.show(Pre::KeyboardView::Page::Emoji);
+                QCOMPARE(view.m_emoji.m_cols, cols);
+                QCOMPARE(view.m_emoji.cellHeight(), cell);
+                QVERIFY2(view.m_emoji.m_grid.height() > grid + view.rowHeight() - 2,
+                         qPrintable(where + QStringLiteral("grid %1 then %2, row %3").arg(grid).arg(view.m_emoji.m_grid.height()).arg(view.rowHeight())));
+            }
+        }
+        Pre::Klipy::instance().setKey(QString());
+    }
+
+    /*
      * Letters that follow Shift: small with it off, capitals with it on, and
      * in the same place at the same size either way, on every phone and in
      * every language, with nothing out of its key in either.
@@ -2654,6 +2710,16 @@ private Q_SLOTS:
             save(view, QStringLiteral("en-number"));
             view.setDigits(QStringLiteral("0123456789*#+"));
             save(view, QStringLiteral("en-phone"));
+            // The emoji page, with and without KLIPY's tabs and search.
+            for (bool klipy : { false, true }) {
+                Pre::Klipy::instance().setKey(klipy ? QStringLiteral("test") : QString());
+                Pre::KeyboardView emoji;
+                showKeys(emoji, en, sc.shortSide, sc.width, sc.landscape, Pre::Settings::Height::Medium);
+                emoji.show(Pre::KeyboardView::Page::Emoji);
+                if (klipy) emoji.m_emoji.select(Pre::EmojiPanel::Tab::Gif);
+                save(emoji, klipy ? QStringLiteral("en-emoji-gif") : QStringLiteral("en-emoji"));
+            }
+            Pre::Klipy::instance().setKey(QString());
             // The bar: the next words before a word, and a word with its emoji.
             {
                 Pre::KeyboardView bar;

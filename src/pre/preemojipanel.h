@@ -35,6 +35,8 @@
 
 class QPainter;
 
+class TestPreKeyboard;
+
 namespace Pre {
 
 class MediaPanel;
@@ -54,6 +56,8 @@ class MediaPanel;
  */
 class EmojiPanel
 {
+    friend class ::TestPreKeyboard;
+
 public:
     struct Actions
     {
@@ -116,7 +120,11 @@ private:
     void setScroll(qreal y);
     qreal maxScrollNow() const;
     void drawStrip(QPainter &p, Painter &painter, Style style);
-    qreal tabWidth() const;
+    qreal edge() const;
+    qreal gap() const;
+    QRectF item() const;
+    qreal tabText() const;
+    qreal tabWidth(int i) const;
     QRectF topTab(int i) const;
     //! The tabs above the grid: Emoji, and GIFs and stickers when KLIPY has a key.
     int tabCount() const;
