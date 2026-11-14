@@ -1341,7 +1341,7 @@ void KeyboardView::showMenu(int anchor)
         m_menu << l.name;
     int globe = anchor >= 0 && anchor < m_zones.size() ? anchor : -1;
     for (int i = 0; globe < 0 && i < m_zones.size(); ++i)
-        if (m_zones[i].slot.key->kind == Kind::Globe) { globe = i; break; }
+        if (m_zones[i].slot.drawn && m_zones[i].slot.key->kind == Kind::Globe) { globe = i; break; }
     const qreal rowH = cellH();
     const qreal pad = popupPad();
     QFont f = m_bold;

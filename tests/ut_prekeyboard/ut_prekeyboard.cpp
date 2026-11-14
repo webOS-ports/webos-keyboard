@@ -368,6 +368,62 @@ private Q_SLOTS:
     }
 
     /*
+     * Every key on both pages is in the same place on both, in every language:
+     * backspace, Return, the space bar, the period, and the key that changes
+     * page (Sym there, ABC back) at the bottom right. Switching page never
+     * moves one from under the thumb. Where shift is, the Sym page has the
+     * globe.
+     */
+    void keysOnBothPagesSitInTheSamePlace()
+    {
+        const auto place = [](const Pre::KeyboardView &view, Pre::Kind kind, const QString &text = QString()) {
+            for (const auto &z : view.m_zones)
+                if (z.slot.drawn && z.slot.key->kind == kind && (text.isEmpty() || z.slot.key->text == text))
+                    return z.rect;
+            return QRectF();
+        };
+        QStringList problems;
+        for (const Pre::Language &l : Pre::Language::all()) {
+            Pre::KeyboardView view;
+            showKeys(view, l, 1080, 1080, false, Pre::Settings::Height::Medium);
+            QList<QRectF> letters;
+            const QList<QPair<Pre::Kind, QString>> keys = {
+                { Pre::Kind::Backspace, QString() }, { Pre::Kind::Return, QString() },
+                { Pre::Kind::Space, QString() }, { Pre::Kind::Char, QStringLiteral(".") },
+                { Pre::Kind::Sym, QString() } };
+            for (const auto &k : keys) letters << place(view, k.first, k.second);
+            const QRectF shift = place(view, Pre::Kind::Shift);
+            view.show(Pre::KeyboardView::Page::Symbols);
+            for (int i = 0; i < keys.size(); ++i) {
+                const QRectF there = place(view, keys[i].first, keys[i].second);
+                if (letters[i].isEmpty() || there != letters[i])
+                    problems << QStringLiteral("%1: key %2 at %3,%4 on the letters, %5,%6 on Sym")
+                                    .arg(l.id).arg(i).arg(letters[i].x()).arg(letters[i].y()).arg(there.x()).arg(there.y());
+            }
+            if (place(view, Pre::Kind::Globe) != shift) problems << l.id + QStringLiteral(": the globe is not where shift is");
+        }
+        if (!problems.isEmpty()) qWarning().noquote() << problems.mid(0, 40).join(QLatin1Char('\n'));
+        QCOMPARE(problems.size(), 0);
+    }
+
+    // The Sym page's labels: ABC on the key that goes back, and the gear on its Return (Text Assist).
+    void symPageKeys()
+    {
+        const Pre::Rows &sym = Pre::Keymap::symbols();
+        QCOMPARE(sym.size(), 4);
+        QCOMPARE(sym[1].last().key->kind, Pre::Kind::Backspace);
+        QCOMPARE(sym[2].last().key->kind, Pre::Kind::Return);
+        QCOMPARE(sym[2].last().key->corner, Pre::Corner::Gear);
+        QCOMPARE(sym[3][1].key->kind, Pre::Kind::Globe);
+        QCOMPARE(sym[3][5].key->label, QStringLiteral("ABC"));
+        // Still the ASCII symbols the letters page lacks.
+        QString typed;
+        for (const auto &row : sym)
+            for (const Pre::Slot &s : row) typed += s.key->text;
+        for (QChar ch : QStringLiteral("^~`|\\<>[]{}")) QVERIFY2(typed.contains(ch), qPrintable(QString(ch)));
+    }
+
+    /*
      * Backspace, Return, the orange key and the whole bottom row are the same
      * size and in the same place in every language: a row with more letters
      * than the Pre's (Russian's twelve, Hungarian's) shares the Pre's room

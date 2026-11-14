@@ -259,12 +259,19 @@ Slot s(const QString &t, const QString &ext = QString())
                               ext.isEmpty() ? QStringList() : words(t + QLatin1Char(' ') + ext)));
 }
 
+/*
+ * The Sym page: digits in the accent colour, then the symbols the letters page
+ * does not type. Every key that is on both pages is in the same place on both,
+ * so switching never moves one from under the thumb: backspace at the end of
+ * the second row, Return at the end of the third (held, Text Assist), the
+ * space bar and the period where they are, and the key that changes page (Sym,
+ * ABC) at the bottom right, so the same spot goes there and back.
+ */
 Rows symbolsOf()
 {
-    const KeyPtr back = makeKey(Kind::Backspace);
     const KeyPtr abc = makeKey(Kind::Sym, QString(), QString(), AltPos::Right, {}, false, QStringLiteral("ABC"));
-    // Hold Return here for Text Assist, where the Pre Keyboard is set up.
-    const KeyPtr ret = makeKey(Kind::Return, QString(), QString(), AltPos::Right, {}, false, QString(), Corner::Gear);
+    // The globe, where shift is on the letters: the languages, held the style.
+    const KeyPtr globe = makeKey(Kind::Globe);
     return {
         { digit(QLatin1Char('1'), QStringLiteral("¹ ½ ⅓ ¼ ⅛")), digit(QLatin1Char('2'), QStringLiteral("² ⅔")),
           digit(QLatin1Char('3'), QStringLiteral("³ ¾ ⅜")), digit(QLatin1Char('4'), QStringLiteral("⁴")),
@@ -274,9 +281,10 @@ Rows symbolsOf()
         { s(QStringLiteral("[")), s(QStringLiteral("]")), s(QStringLiteral("{")), s(QStringLiteral("}")),
           s(QStringLiteral("<"), QStringLiteral("‹ « ≤")), s(QStringLiteral(">"), QStringLiteral("› » ≥")),
           s(QStringLiteral("^")), s(QStringLiteral("~"), QStringLiteral("≈")),
-          s(QStringLiteral("|"), QStringLiteral("¦ ‖ ¬")), s(QStringLiteral("\\")) },
-        // The globe, where LuneOS's own keyboard has its language key: the keyboards and languages.
-        { f(Kind::Globe),
+          s(QStringLiteral("|"), QStringLiteral("¦ ‖ ¬")),
+          // Backspace where it is on the letters page, at the end of A to L's row.
+          f(Kind::Backspace) },
+        { s(QStringLiteral("\\")),
           s(QStringLiteral("`"), QStringLiteral("´ ‘ ’ “ ” ‚ „")),
           s(QStringLiteral("°"), QStringLiteral("′ ″ ‰")),
           s(QStringLiteral("£"), QStringLiteral("₹ ₩ ₽ ₺ ₪ ₱ ₿ ¤ ƒ")),
@@ -285,20 +293,22 @@ Rows symbolsOf()
           s(QStringLiteral("±"), QStringLiteral("∓")),
           s(QStringLiteral("≠"), QStringLiteral("≡")),
           s(QStringLiteral("¡"), QStringLiteral("‽")),
-          slot(1.0f, back) },
-        // Key for key the letters page's bottom row (ABC where shift is, emoji
-        // where @ is, the period where the period is, Return where Sym is), so
-        // nothing on it moves when the page changes.
-        { slot(EDGE, abc, false),
-          slot(WIDE, abc),
+          // Return where it is on the letters page, under backspace. Hold it for
+          // Text Assist, where the Pre Keyboard is set up.
+          slot(1.0f, makeKey(Kind::Return, QString(), QString(), AltPos::Right, {}, false, QString(), Corner::Gear)) },
+        // Key for key the letters page's bottom row (the globe where shift is,
+        // emoji where @ is, the period where the period is, ABC where Sym is),
+        // so nothing on it moves when the page changes.
+        { slot(EDGE, globe, false),
+          slot(WIDE, globe),
           // Tap for the emoji page; hold for LuneOS's text emoticons.
           slot(1.0f, makeKey(Kind::Emoji, QString(), QString(), AltPos::Right,
                              words(QStringLiteral(":-) ;-) :-( :'( :-P :-O <3")))),
           slot(4.0f, makeKey(Kind::Space, QStringLiteral(" "))),
           slot(1.0f, makeKey(Kind::Char, QStringLiteral("."), QString(), AltPos::Right, {}, false,
                              QString(), Corner::Mic)),
-          slot(WIDE, ret),
-          slot(EDGE, ret, false) },
+          slot(WIDE, abc),
+          slot(EDGE, abc, false) },
     };
 }
 
