@@ -60,6 +60,8 @@ const QStringList SCHEMES = { QStringLiteral("http"), QStringLiteral("https"), Q
 const QString CLOSERS = QStringLiteral(")\"']}”’");
 //! How far back to look for the address a period may be in.
 const int MAX_TOKEN = 64;
+//! How much of the text before the cursor the next words are asked with.
+const int MAX_CONTEXT = 256;
 
 //! [c] ends a word: a space after it is a word's.
 bool endsWord(QChar c) { return c.isLetterOrNumber() || CLOSERS.contains(c); }
@@ -443,12 +445,30 @@ QStringList Controller::nextWords()
     if (!m_settings.suggestions || !m_wordsAllowed || !m_bridge.nextWords || !m_bridge.before
         || (m_bridge.prose && !m_bridge.prose()))
         return QStringList();
-    const QString before = m_bridge.before(MAX_TOKEN);
+    const QString before = m_bridge.before(MAX_CONTEXT);
     // Right after a word, or in one, it is that word that is being typed.
     if (!before.isEmpty() && !before.at(before.size() - 1).isSpace()) return QStringList();
-    if (before != m_nextFor || m_next.isEmpty()) {
-        m_nextFor = before;
-        m_next = m_bridge.nextWords();
+    return nextFor(before);
+}
+
+/*!
+ * As the Android Pre Keyboard's 1.4.1: after a swipe the bar predicts what
+ * comes next, as after a word and a space. The swiped word is still the word
+ * being typed, so it is asked for as if it had gone in.
+ */
+QStringList Controller::nextAfterSwipe()
+{
+    if (!m_settings.suggestions || !m_wordsAllowed || !m_bridge.nextWords || !m_bridge.before
+        || m_swiped.isEmpty() || m_typed != m_swiped || (m_bridge.prose && !m_bridge.prose()))
+        return QStringList();
+    return nextFor(m_bridge.before(MAX_CONTEXT) + QLatin1Char(' '));
+}
+
+QStringList Controller::nextFor(const QString &left)
+{
+    if (left != m_nextFor || m_next.isEmpty()) {
+        m_nextFor = left;
+        m_next = m_bridge.nextWords(left);
     }
     return m_next;
 }
@@ -462,7 +482,17 @@ void Controller::showBar()
 {
     QStringList bar;
     const QStringList &guesses = !m_live.isEmpty() ? m_live : m_swipeGuesses;
-    if (shown().showsBar() && m_wordsAllowed && !guesses.isEmpty()) {
+    m_barAfterSwipe = false;
+    const QStringList afterSwipe = m_live.isEmpty() && !guesses.isEmpty() ? nextAfterSwipe() : QStringList();
+    if (shown().showsBar() && m_wordsAllowed && !afterSwipe.isEmpty()) {
+        // After a swipe: on the left, its likeliest other word (Choose, where it took Course),
+        // to swap in for it; in the middle and on the right, what may come next.
+        QString other;
+        for (const QString &w : m_swipeGuesses)
+            if (w.compare(m_swiped, Qt::CaseInsensitive) != 0) { other = w; break; }
+        bar = { other, afterSwipe.value(0), afterSwipe.value(1) };
+        m_barAfterSwipe = true;
+    } else if (shown().showsBar() && m_wordsAllowed && !guesses.isEmpty()) {
         // A swipe: the word it typed (or would, lifted now) in the middle, the next guesses either side.
         const QString best = m_live.isEmpty() ? m_swiped : m_live.value(0);
         QStringList others;
@@ -483,7 +513,7 @@ void Controller::showBar()
     }
     // An emoji for the word being typed or swiped (not for the next words).
     m_barEmoji = false;
-    if (m_settings.emojiSuggestions && m_wordsAllowed && !bar.value(1).isEmpty()
+    if (m_settings.emojiSuggestions && m_wordsAllowed && !m_barAfterSwipe && !bar.value(1).isEmpty()
         && (!m_typed.isEmpty() || !guesses.isEmpty())) {
         const QString e = emojiWords().forWord(bar.value(1));
         if (!e.isEmpty()) {
@@ -569,6 +599,17 @@ void Controller::onPick(int i, int caps)
         }
         showBar();
         return;
+    }
+    if (m_barAfterSwipe && !m_swiped.isEmpty() && m_typed == m_swiped) {
+        if (i == 0) {
+            // The swipe's other word in place of the one it took; that one is offered back.
+            m_swiped = w;
+            m_bridge.setWord(w);
+            showBar();
+            return;
+        }
+        // A next word: after the swiped one, which goes in as it was swiped.
+        m_bridge.pick(m_swiped);
     }
     if (i == 2 && m_barEmoji) {
         // In place of the word, as it is: shift is nothing to an emoji.

@@ -93,8 +93,8 @@ struct Bridge
      * Asked of the field each time, not of what the input method last saw.
      */
     std::function<bool()> wordsWanted;
-    //! The likeliest next words before any of the next is typed, best first.
-    std::function<QStringList()> nextWords;
+    //! The likeliest words to come after [left] (the text before the cursor, or that and a swiped word), best first.
+    std::function<QStringList(const QString &left)> nextWords;
     //! Whether [word] could be added to the owner's dictionary: it is not known.
     std::function<bool(const QString &word)> canAdd;
     std::function<void(const QString &word)> addWord;
@@ -301,6 +301,10 @@ private:
     void showBar();
     //! With no word typed, after a space or at the start: the likeliest next words for the bar.
     QStringList nextWords();
+    //! After a swipe: the likeliest words to come after the swiped one.
+    QStringList nextAfterSwipe();
+    //! The likeliest next words after [left], asked once for the same text.
+    QStringList nextFor(const QString &left);
     //! With no word typed: what the word at the cursor might be, if it was tapped; else the next words.
     QStringList idleWords();
     //! The word at the cursor was tapped, or the cursor is inside it: what else it might be.
@@ -407,6 +411,12 @@ private:
     //! The swiped word standing as the word being typed, and the other guesses for it.
     QString m_swiped;
     QStringList m_swipeGuesses;
+    /*!
+     * The bar after a swipe holds the next words: its left place is the
+     * swipe's other guess, to swap in, and the middle and right go after the
+     * swiped word.
+     */
+    bool m_barAfterSwipe = false;
     //! The guesses while the finger is still moving.
     QStringList m_live;
     //! Which swipe the guesses being worked out are for: any newer one makes them moot.

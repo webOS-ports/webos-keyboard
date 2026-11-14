@@ -1078,7 +1078,7 @@ private Q_SLOTS:
         Pre::Bridge b = rec.bridge();
         b.before = [&](int n) { return before.right(n); };
         b.prose = [&] { return prose; };
-        b.nextWords = [&] { ++asked; return QStringList{ QStringLiteral("think"), QStringLiteral("don't"),
+        b.nextWords = [&](const QString &) { ++asked; return QStringList{ QStringLiteral("think"), QStringLiteral("don't"),
                                                          QStringLiteral("know") }; };
         Pre::Controller c;
         c.setBridge(b);
@@ -1213,7 +1213,7 @@ private Q_SLOTS:
         // Nor for the words that might come next.
         Pre::Bridge b = rec.bridge();
         b.before = [](int) { return QStringLiteral("I like "); };
-        b.nextWords = [] { return QStringList{ QStringLiteral("pizza"), QStringLiteral("it") }; };
+        b.nextWords = [](const QString &) { return QStringList{ QStringLiteral("pizza"), QStringLiteral("it") }; };
         c.setBridge(b);
         c.setCandidates(QString(), QString(), {});
         QCOMPARE(c.m_bar.value(1), QStringLiteral("pizza"));
@@ -1978,6 +1978,90 @@ private Q_SLOTS:
         // Swiping turned off: off in the view too.
         c.setPrefs(QJsonObject{ { QStringLiteral("swipe"), false } });
         QVERIFY(!view.m_settings.swipe);
+    }
+
+    /*
+     * After a swipe, with suggestions on, as the Android Pre Keyboard's 1.4.1:
+     * the bar's left place holds the swipe's likeliest other word (Choose,
+     * where it took Course), and tapping it swaps it in, the word it replaced
+     * offered there in its turn; the middle and right hold the likeliest next
+     * words after the swiped one, and tapping one types it after the swiped
+     * word. No emoji then: the right is a word. Space still puts the swiped
+     * word in as it was.
+     */
+    void swipeBarPredictsTheNextWord()
+    {
+        QTemporaryDir dir;
+        writePresage(dir.filePath(QStringLiteral("lib/en/database_en.db")),
+                     { { QStringLiteral("course"), 60 }, { QStringLiteral("choose"), 40 }, { QStringLiteral("chose"), 20 },
+                       { QStringLiteral("the"), 400 } });
+        Recorder rec;
+        Pre::Controller c;
+        Pre::Bridge b = rec.bridge();
+        QString text = QStringLiteral("I ");
+        QString preedit;
+        QStringList askedWith;
+        b.setWord = [&](const QString &w) { rec.calls << QStringLiteral("set ") + w; preedit = w; c.setCandidates(w, QString(), { w }); };
+        b.pick = [&](const QString &w) {
+            rec.calls << QStringLiteral("pick ") + w;
+            text += w + QLatin1Char(' ');
+            preedit.clear();
+            c.setCandidates(QString(), QString(), {});
+        };
+        b.before = [&](int n) { return (text + preedit).right(n); };
+        b.prose = [] { return true; };
+        b.nextWords = [&](const QString &left) {
+            askedWith << left;
+            if (left.endsWith(QLatin1String("Course ")) || left.endsWith(QLatin1String("Choose ")))
+                return QStringList{ QStringLiteral("the"), QStringLiteral("a"), QStringLiteral("to") };
+            return QStringList{ QStringLiteral("think"), QStringLiteral("know") };
+        };
+        c.setBridge(b);
+        Pre::KeyboardView view;
+        showKeys(view, Pre::Language::byId(QStringLiteral("en")), 1080, 1080, false, Pre::Settings::Height::Medium);
+        c.setView(&view);
+        c.setPrefs(QJsonObject{ { QStringLiteral("emojiSuggestions"), true } });
+        c.setKeyboardState(true, false, { QStringLiteral("en") }, QStringLiteral("en"));
+        QSignalSpy loaded(&c, &Pre::Controller::swipeWordsLoaded);
+        c.setWordDirs(dir.filePath(QStringLiteral("lib")), dir.filePath(QStringLiteral("dict")));
+        QVERIFY(loaded.wait(5000));
+        Pre::SwipeDecoder::Layout layout;
+        QVERIFY(view.swipeLayout(layout));
+        QVector<float> xs, ys;
+        for (const QPointF &p : swipePath(layout, QStringLiteral("course"), 0, 1)) { xs << float(p.x()); ys << float(p.y()); }
+        c.onSwipe(xs, ys, Pre::KeyboardView::CAPS_FIRST);
+        QTRY_VERIFY(!rec.calls.isEmpty());
+        QCOMPARE(rec.calls, QStringList{ QStringLiteral("set Course") });
+        // The swiped word asked for as if it had gone in, and no emoji in the right place.
+        QCOMPARE(askedWith.last(), QStringLiteral("I Course "));
+        QCOMPARE(view.m_words, (QStringList{ QStringLiteral("Choose"), QStringLiteral("the"), QStringLiteral("a") }));
+        QVERIFY(!view.m_barEmoji);
+        // The left swaps: Choose in, Course offered back.
+        rec.calls.clear();
+        c.onPick(0, Pre::KeyboardView::CAPS_NONE);
+        QCOMPARE(rec.calls, QStringList{ QStringLiteral("set Choose") });
+        QCOMPARE(view.m_words, (QStringList{ QStringLiteral("Course"), QStringLiteral("the"), QStringLiteral("a") }));
+        // A next word goes in after the swiped one.
+        rec.calls.clear();
+        c.onPick(1, Pre::KeyboardView::CAPS_NONE);
+        QCOMPARE(rec.calls, (QStringList{ QStringLiteral("pick Choose"), QStringLiteral("pick the") }));
+        QCOMPARE(text, QStringLiteral("I Choose the "));
+        // Space after a swipe still puts it in as swiped.
+        rec.calls.clear();
+        xs.clear();
+        ys.clear();
+        for (const QPointF &p : swipePath(layout, QStringLiteral("course"), 0, 1)) { xs << float(p.x()); ys << float(p.y()); }
+        c.onSwipe(xs, ys, Pre::KeyboardView::CAPS_NONE);
+        QTRY_VERIFY(!rec.calls.isEmpty());
+        c.onText(QStringLiteral(" "));
+        QCOMPARE(rec.calls, (QStringList{ QStringLiteral("set course"), QStringLiteral("pick course") }));
+        // With suggestions off there are no next words: the swipe's guesses either side, as before.
+        rec.calls.clear();
+        c.setKeyboardState(false, false, { QStringLiteral("en") }, QStringLiteral("en"));
+        c.onSwipe(xs, ys, Pre::KeyboardView::CAPS_NONE);
+        QTRY_VERIFY(!rec.calls.isEmpty());
+        QCOMPARE(view.m_words.value(1), QStringLiteral("course"));
+        QVERIFY(view.m_words.contains(QStringLiteral("choose")));
     }
 
     /*
