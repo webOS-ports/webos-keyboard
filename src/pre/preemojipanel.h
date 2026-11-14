@@ -95,7 +95,8 @@ public:
      * [top] is where the page starts (the suggestion bar's place, if it shows),
      * [rows] the top three rows of keys, [bar] the bottom row.
      */
-    void layout(qreal top, const QRectF &rows, const QRectF &bar);
+    //! [rowHeight]: a row of keys, as laid out before rounding to whole pixels: what the strip and emoji are sized from.
+    void layout(qreal top, const QRectF &rows, const QRectF &bar, qreal rowHeight);
     void draw(QPainter &p, Painter &painter, Style style, const std::function<void(QPainter &, const QString &, const QRectF &)> &label);
 
     void down(qreal x, qreal y);
@@ -152,6 +153,7 @@ private:
     QRectF m_mediaGrid;
     //! The tabs (and on KLIPY's, the search field) above the grid.
     QRectF m_strip;
+    qreal m_rowHeight = 0;
     int m_cols = 8;
     qreal m_cell = 48;
     QVector<qreal> m_starts;

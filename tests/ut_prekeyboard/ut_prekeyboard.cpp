@@ -2372,7 +2372,7 @@ private Q_SLOTS:
                          Pre::Settings::Height::Medium);
                 view.show(Pre::KeyboardView::Page::Emoji);
                 const Pre::EmojiPanel &e = view.m_emoji;
-                QCOMPARE(e.m_strip.height(), std::round(e.m_bar.height() * 0.68));
+                QCOMPARE(e.m_strip.height(), std::round(view.rowHeight() * 0.68));
                 const qreal middle = e.m_strip.center().y();
                 QVERIFY2(std::abs(e.abcRect().center().y() - middle) < 0.5, qPrintable(where));
                 QCOMPARE(e.tabCount(), klipy ? 3 : 1);

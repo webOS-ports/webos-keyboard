@@ -177,10 +177,11 @@ bool EmojiPanel::canDraw(const QString &emoji)
     return true;
 }
 
-void EmojiPanel::layout(qreal top, const QRectF &rows, const QRectF &bar)
+void EmojiPanel::layout(qreal top, const QRectF &rows, const QRectF &bar, qreal rowHeight)
 {
+    m_rowHeight = rowHeight > 0 ? rowHeight : bar.height();
     // A little taller than two thirds of a row: room for a search field big enough to read.
-    const qreal h = std::round(bar.height() * 0.68);
+    const qreal h = std::round(m_rowHeight * 0.68);
     m_strip = QRectF(rows.left(), top, rows.width(), h);
     m_grid = QRectF(rows.left(), m_strip.bottom(), rows.width(), rows.bottom() - m_strip.bottom());
     m_mediaGrid = QRectF(rows.left(), m_strip.bottom(), rows.width(), bar.bottom() - m_strip.bottom());
@@ -195,7 +196,7 @@ void EmojiPanel::relayout()
     if (m_grid.width() <= 0) return;
     // Emoji about three quarters of a row high, however many rows the page has (five with the
     // number row): a taller page shows more lines, not bigger emoji.
-    m_cols = std::max(6, int(m_grid.width() / (m_bar.height() * 0.75)));
+    m_cols = std::max(6, int(m_grid.width() / (m_rowHeight * 0.75)));
     m_cell = m_grid.width() / m_cols;
     const qreal lineH = cellHeight();
     m_starts.resize(m_categories.size());

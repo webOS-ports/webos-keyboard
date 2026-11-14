@@ -328,7 +328,8 @@ void KeyboardView::layoutKeys()
         // The grid over every row but the last, which has the categories: as tall as the letters.
         const int last = keyRows() - 1;
         const QRectF top = rowRect(0), bottom = rowRect(last - 1);
-        m_emoji.layout(keyboardTop() + topBorder(), QRectF(0, top.top(), width(), bottom.bottom() - top.top()), rowRect(last));
+        m_emoji.layout(keyboardTop() + topBorder(), QRectF(0, top.top(), width(), bottom.bottom() - top.top()), rowRect(last),
+                       rowHeight());
         return;
     }
     const Rows &rs = rows();
