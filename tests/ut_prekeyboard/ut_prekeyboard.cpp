@@ -367,6 +367,32 @@ private Q_SLOTS:
         QCOMPARE(charKeys(de, 1).first()->extended.value(1), QStringLiteral("ä"));
     }
 
+    /*
+     * Backspace, Return, the orange key and the whole bottom row are the same
+     * size and in the same place in every language: a row with more letters
+     * than the Pre's (Russian's twelve, Hungarian's) shares the Pre's room
+     * among them rather than squeezing the keys at its ends.
+     */
+    void functionKeysKeepTheirPlace()
+    {
+        const auto functions = [](const Pre::KeyboardView &view) {
+            QList<QRectF> out;
+            for (const auto &z : view.m_zones)
+                if (z.slot.key->kind != Pre::Kind::Char || z.rect.top() == view.m_zones.last().rect.top())
+                    out << z.rect;
+            return out;
+        };
+        Pre::KeyboardView english;
+        showKeys(english, Pre::Language::byId(QStringLiteral("en")), 1080, 1080, false, Pre::Settings::Height::Medium);
+        const QList<QRectF> want = functions(english);
+        QCOMPARE(want.size(), 3 + 7);
+        for (const Pre::Language &l : Pre::Language::all()) {
+            Pre::KeyboardView view;
+            showKeys(view, l, 1080, 1080, false, Pre::Settings::Height::Medium);
+            QVERIFY2(functions(view) == want, qPrintable(l.id));
+        }
+    }
+
     // Shift is not always a capital: Arabic shifts to other letters, Hebrew to
     // Latin ones. Those come from the layout; a capital is left to the view.
     void shiftComesFromTheLayout()
@@ -2921,9 +2947,10 @@ private:
                     && r.intersected(view.m_zones[j].rect).height() > 0.5)
                     out << where + key + QStringLiteral(": on top of another key");
             // In landscape the screen is twice as wide as ten keys of the
-            // portrait shape: a key may be a little wider, not stretched.
+            // portrait shape: a key may be a little wider, not stretched. Its
+            // share of ten such keys, rounded to whole pixels as the keys are.
             if (view.m_zones[i].slot.key->kind == Pre::Kind::Char
-                && r.width() > view.m_zones[i].slot.weight * 1.35 * view.rowHeight() + 1)
+                && r.width() > view.m_zones[i].slot.weight * std::round(10 * 1.35 * view.rowHeight()) / 10 + 1)
                 out << where + key + QStringLiteral(": stretched, %1 wide in a row %2 tall")
                                          .arg(r.width()).arg(view.rowHeight());
         }

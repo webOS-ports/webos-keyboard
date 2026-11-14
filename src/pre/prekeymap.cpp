@@ -21,6 +21,9 @@
 #include <QHash>
 #include <QMutex>
 
+#include <algorithm>
+#include <cmath>
+
 #include <map>
 
 namespace Pre {
@@ -116,11 +119,14 @@ const QList<QStringList> &alts()
     return a;
 }
 
+//! Whether the Pre prints alternate [col] of [row] top left: the left half of the top three rows.
+bool printedLeft(int row, int col) { return row == 2 ? col < 4 : col < 5; }
+
 //! [letter]'s key in row [row], place [col] (on the bottom letter row, counted after the orange key).
 Slot letter(QChar letter, int row, int col, const Language &lang)
 {
     const QString alt = alts()[row][col];
-    const bool leftHalf = (row == 2) ? col < 4 : col < 5;
+    const bool leftHalf = printedLeft(row, col);
     QStringList own;
     for (QChar a : lang.accentsOf(letter))
         own << QString(a);
@@ -135,24 +141,35 @@ Slot letter(QChar letter, int row, int col, const Language &lang)
 }
 
 /*!
+ * The room a language's own letter row [row] of [n] keys has on the Pre's
+ * grid: ten keys across the top, nine beside backspace, eight (the comma's
+ * included) between the orange key and Return. A row with more letters than
+ * the Pre's shares that room among them, so backspace, Return, the orange key
+ * and the bottom row keep their size and place in every language, and stay
+ * where the Sym page has its own backspace and Return.
+ */
+int rowRoom(int row) { return row == 0 ? 10 : row == 1 ? 9 : 8; }
+//! The keys sharing [row]'s room: its [n] letters, and on the bottom row the comma.
+int rowKeys(int row, int n) { return row == 2 ? n + 1 : n; }
+//! A letter's width in [row] of [n]: one key, or less where there are more of them than the Pre's.
+float letterWeight(int row, int n) { return float(rowRoom(row)) / float(std::max(rowRoom(row), rowKeys(row, n))); }
+
+/*!
  * For a language's own letter row [row] of [n] keys: which of the Pre's
  * alternates for the row each key prints (an index into alts()[row]; -1 for
  * none). Each goes on the key over the middle of its column on the Pre's grid,
- * as the keys are laid out (each one wide, the orange key before the bottom
- * row's letters, backspace after the middle row's, comma and return after the
- * bottom row's), so the digits stand where they do in every other language. A
- * row with more keys than the Pre's has a few without; none has fewer.
+ * as the keys are laid out (see rowRoom), so the digits stand where they do in
+ * every other language. A row with more keys than the Pre's has a few
+ * without; none has fewer.
  */
 QVector<int> altColumns(int row, int n)
 {
-    const int lead = row == 2 ? 1 : 0;
-    const int trail = row == 0 ? 0 : row == 1 ? 1 : 2;
     const int pre = int(alts()[row].size());
-    const int preUnits = lead + pre + trail, ownUnits = lead + n + trail;
+    const float w = letterWeight(row, n);
     QVector<int> out(n, -1);
     for (int col = 0; col < pre; ++col) {
-        // The column's middle, in the own row's keys: centre * ownUnits / preUnits, in whole keys.
-        const int at = (2 * (lead + col) + 1) * ownUnits / (2 * preUnits) - lead;
+        // The column's middle, from where the row's letters start, in this row's keys.
+        const int at = int(std::floor((col + 0.5f) / w));
         if (at >= 0 && at < n && out[at] < 0) out[at] = col;
     }
     return out;
@@ -169,7 +186,8 @@ Slot ownLetter(const LetterKey &lk, int row, int col, int index, int rowLength)
     k->text = lk.text;
     k->shifted = lk.shifted.isEmpty() || lk.shifted == lk.text.toUpper() ? QString() : lk.shifted;
     k->alt = alt;
-    k->altPos = index < (rowLength + 1) / 2 ? AltPos::Left : AltPos::Right;
+    // On the side the Pre prints it; a key without one by its half of the row.
+    k->altPos = (col >= 0 ? printedLeft(row, col) : index < (rowLength + 1) / 2) ? AltPos::Left : AltPos::Right;
     k->extended = lk.extended.size() > 1 ? lk.extended : QStringList();
     if (!k->extended.isEmpty()) {
         QStringList upper;
@@ -177,7 +195,7 @@ Slot ownLetter(const LetterKey &lk, int row, int col, int index, int rowLength)
         if (lk.extendedShifted.size() == k->extended.size() && lk.extendedShifted != upper)
             k->extendedShifted = lk.extendedShifted;
     }
-    return slot(1.0f, k);
+    return slot(letterWeight(row, rowLength), k);
 }
 
 Rows lettersOf(const Language &lang)
@@ -185,6 +203,8 @@ Rows lettersOf(const Language &lang)
     static const KeyPtr shift = makeKey(Kind::Shift);
     static const KeyPtr sym = makeKey(Kind::Sym, QString(), QString(), AltPos::Right, {}, false, QStringLiteral("Sym"));
     QList<Slot> top, middle, bottom, last;
+    // The comma, as wide as the bottom row's letters.
+    float commaWeight = 1.0f;
     if (lang.layout == Layout::Own && lang.letters.size() == 3) {
         const LetterRows &r = lang.letters;
         QList<Slot> *const out[3] = { &top, &middle, &bottom };
@@ -195,6 +215,7 @@ Rows lettersOf(const Language &lang)
             for (int i = 0; i < n; ++i) *out[row] << ownLetter(r[row][i], row, cols[i], i, n);
             if (row == 1) middle << f(Kind::Backspace);
         }
+        commaWeight = letterWeight(2, int(r[2].size()));
     } else {
         const QStringList rows = layoutRows(lang.layout == Layout::Own ? Layout::Qwerty : lang.layout);
         for (int i = 0; i < rows[0].length(); ++i) top << letter(rows[0][i], 0, i, lang);
@@ -204,7 +225,9 @@ Rows lettersOf(const Language &lang)
         for (int i = 0; i < rows[2].length(); ++i) bottom << letter(rows[2][i], 2, i, lang);
     }
     // The comma holds what the Pre's period did.
-    bottom << c(QStringLiteral(","), QStringLiteral("_"), AltPos::Right, QStringLiteral(", … • ¿"));
+    Slot comma = c(QStringLiteral(","), QStringLiteral("_"), AltPos::Right, QStringLiteral(", … • ¿"));
+    comma.weight = commaWeight;
+    bottom << comma;
     bottom << f(Kind::Return);
     // The Pre's bottom row, inset at each end. On the column grid above: shift
     // and Sym take two columns each (the same size, inset alike), @ is one key
