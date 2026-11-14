@@ -2429,6 +2429,51 @@ private Q_SLOTS:
      * them, not bigger ones.
      */
     /*
+     * As on Android: a row of letters keeps room under its line for g, j, p,
+     * q and y's tails, shown or not, so the capitals sit where Android's do
+     * (a capital Q's tail alone left them lower), and the period with its
+     * microphone is printed left of centre, away from it, as I, K and M are.
+     */
+    void lettersAndPeriodAsAndroid()
+    {
+        for (const Screen &sc : screens()) {
+            if (!sc.measured) continue;
+            Pre::KeyboardView view;
+            showKeys(view, Pre::Language::byId(QStringLiteral("en")), sc.shortSide, sc.width, sc.landscape,
+                     Pre::Settings::Height::Medium);
+            int e = -1, period = -1;
+            for (int k = 0; k < view.m_zones.size(); ++k) {
+                const QString t = view.m_zones[k].slot.key->text;
+                if (t == QLatin1String("e")) e = k;
+                if (t == QLatin1String(".")) period = k;
+            }
+            QVERIFY(e >= 0 && period >= 0);
+            const Pre::KeyboardView::Zone &ez = view.m_zones[e];
+            QFont f = view.m_bold;
+            f.setPixelSize(std::max(1, int(ez.letterPx)));
+            const QFontMetricsF fm(f);
+            const QRectF local(0, 0, ez.rect.width(), ez.rect.height());
+            const qreal floor = view.m_painter.capFace(local).bottom() - 1 * view.m_dp;
+            QVERIFY2(ez.baseline + fm.tightBoundingRect(QStringLiteral("gjpqy")).bottom() <= floor + 0.5,
+                     qPrintable(sc.name + QStringLiteral(": no room for a tail under E's line")));
+
+            const Pre::KeyboardView::Zone &pz = view.m_zones[period];
+            const QRectF box(0, 0, pz.rect.width(), pz.rect.height());
+            QFont pf = view.m_bold;
+            pf.setPixelSize(std::max(1, int(pz.letterPx)));
+            const QFontMetricsF pm(pf);
+            auto inkCentre = [&] {
+                const QRectF ink = pm.tightBoundingRect(QStringLiteral("."));
+                return view.letterAt(pz, box, pm).x() + (ink.left() + ink.right()) / 2;
+            };
+            QVERIFY2(std::abs(inkCentre() - box.center().x()) <= 1, qPrintable(sc.name + QStringLiteral(": no microphone, not centred")));
+            view.setVoice(true, false, QString());
+            QVERIFY2(inkCentre() < box.center().x() - box.width() * 0.04,
+                     qPrintable(sc.name + QStringLiteral(": the period not left of its microphone")));
+        }
+    }
+
+    /*
      * The emoji page drawn the size of the Android Pre Keyboard's 1.4.0: ABC
      * sized to its key, and emoji as tall as Android draws them for the same
      * text size (1.06 times it: Qt draws Noto Color Emoji smaller for its size,

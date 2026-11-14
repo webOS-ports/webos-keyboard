@@ -600,6 +600,8 @@ void KeyboardView::fitLetters()
                      .arg(width()).arg(rowHeight()).arg(m_dp).arg(m_landscape)
                      .arg(m_settings.followShift).arg(m_page == Page::Pad ? m_digits : QString())
                      .arg(int(m_settings.numberRow) + 2 * int(m_settings.hideKeyDigits));
+    // The period moves aside for its microphone (letterAt).
+    id += m_voiceMic ? QStringLiteral("|mic") : QString();
     // The keys as laid out, whole pixels each: two rows of the same nominal
     // height can come out a pixel apart.
     for (const Zone &z : std::as_const(m_zones))
@@ -673,6 +675,11 @@ bool KeyboardView::placeLetters(qreal px)
     af.setPixelSize(std::max(1, int(px * ALT_SCALE)));
     const QFontMetricsF am(af);
     const QRectF capital = fm.tightBoundingRect(QStringLiteral("H"));
+    // As on Android, a row of letters keeps room under its line for g, j, p, q and y's tails
+    // whether or not they show, so its letters sit where Android's do and stay there as shift
+    // or the small letters come and go. Made room for only by the letters showing (a capital
+    // Q's short tail), they sat lower in their keys than Android's, the period most of all.
+    const qreal tails = fm.tightBoundingRect(QStringLiteral("gjpqy")).bottom();
     const qreal margin = INK_MARGIN * m_dp;
 
     auto isChar = [](const Zone &z) { return z.slot.drawn && z.slot.key->kind == Kind::Char; };
@@ -751,7 +758,7 @@ bool KeyboardView::placeLetters(qreal px)
         // Centred on the face, not the key: the key's shadow is below it.
         const qreal middle = rowFace.center().y();
         qreal line = low ? h - i - capital.bottom() : middle - (capital.top() + capital.bottom()) / 2;
-        line = std::min(line, floor - hangs);
+        line = std::min(line, floor - (low ? std::max(hangs, tails) : hangs));
 
         for (int k = a; k < b; ++k) {
             Zone &z = m_zones[k];
@@ -813,7 +820,11 @@ QPointF KeyboardView::letterAt(const Zone &z, const QRectF &box, const QFontMetr
     const Key &key = *z.slot.key;
     const QRectF ink = fm.tightBoundingRect(s);
     qreal x;
-    if (!hasAlt(key)) {
+    if (key.corner == Corner::Mic && m_voiceMic && !hasAlt(key)) {
+        // The period with its microphone: as on Android, printed as I, K and M are, a little
+        // left of centre, away from the corner icon.
+        x = box.center().x() - box.width() * LETTER_NUDGE - fm.horizontalAdvance(s) / 2;
+    } else if (!hasAlt(key)) {
         x = box.center().x() - (ink.left() + ink.right()) / 2;
     } else {
         const qreal nudge = box.width() * LETTER_NUDGE * (key.altPos == AltPos::Left ? 1 : -1);
@@ -1051,7 +1062,9 @@ void KeyboardView::setPasteOffered(bool offered)
 void KeyboardView::setVoice(bool mic, bool listening, const QString &line)
 {
     if (mic == m_voiceMic && listening == m_listening && line == m_voiceLine) return;
+    const bool micChanged = mic != m_voiceMic;
     m_voiceMic = mic;
+    if (micChanged) fitLetters();
     m_listening = listening;
     if (line != m_voiceLine) barChange([&] { m_voiceLine = line; });
     update();
