@@ -374,6 +374,30 @@ const Rows &Keymap::letters(const Language &lang, bool numberRow, bool hideDigit
     return numbered->second;
 }
 
+const Rows &Keymap::pad(const QString &extra)
+{
+    static QMutex lock;
+    static std::map<QString, Rows> built;
+    QMutexLocker locker(&lock);
+    auto it = built.find(extra);
+    if (it != built.end()) return it->second;
+    // A digit, big and in the accent colour; the 0 holds what else the field takes.
+    const auto key = [](QChar d, const QStringList &held = {}) {
+        return slot(1.0f, makeKey(Kind::Char, QString(d), QString(), AltPos::Right,
+                                  held.isEmpty() ? QStringList() : QStringList(QString(d)) + held, true));
+    };
+    QStringList held;
+    for (QChar c : extra)
+        if (!c.isDigit() && !held.contains(QString(c))) held << QString(c);
+    const Rows rows = {
+        { key(QLatin1Char('1')), key(QLatin1Char('2')), key(QLatin1Char('3')) },
+        { key(QLatin1Char('4')), key(QLatin1Char('5')), key(QLatin1Char('6')) },
+        { key(QLatin1Char('7')), key(QLatin1Char('8')), key(QLatin1Char('9')) },
+        { f(Kind::Backspace), key(QLatin1Char('0'), held), f(Kind::Return) },
+    };
+    return built.emplace(extra, rows).first->second;
+}
+
 const Rows &Keymap::symbols(bool numberRow)
 {
     static const Rows plain = symbolsOf();

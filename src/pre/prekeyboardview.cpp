@@ -261,15 +261,20 @@ qreal KeyboardView::rowHeight() const
 qreal KeyboardView::topBorder() const { return 3 * std::max<qreal>(1, std::round(m_dp)) + 1 * m_dp; }
 qreal KeyboardView::bottomPad() const { return 2 * m_dp; }
 //! The suggestion bar, above the keys, when it is switched on.
-bool KeyboardView::barShown() const { return m_settings.showsBar() || m_searching || !m_voiceLine.isEmpty(); }
+//! The number pad has none: its field takes no words.
+bool KeyboardView::barShown() const
+{
+    return (m_settings.showsBar() && m_page != Page::Pad) || m_searching || !m_voiceLine.isEmpty();
+}
 qreal KeyboardView::barHeight() const { return barShown() ? std::round(rowHeight() * 0.72) : 0; }
 qreal KeyboardView::keysHeight() const { return barHeight() + rowHeight() * keyRows() + topBorder() + bottomPad(); }
 
 /*!
  * Rows of keys: four, or five with the number row over the letters (the Sym
- * and emoji pages then have five as well, so the keyboard keeps its height).
+ * and emoji pages then have five as well, so the keyboard keeps its height);
+ * the number pad, four.
  */
-int KeyboardView::keyRows() const { return digitMode() ? 4 : m_settings.keyRows(); }
+int KeyboardView::keyRows() const { return m_page == Page::Pad ? 4 : m_settings.keyRows(); }
 qreal KeyboardView::cellH() const { return rowHeight() * 0.85; }
 qreal KeyboardView::popupPad() const { return 5 * m_dp; }
 //! Room above the keys for the tallest popup: two lines of accents.
@@ -299,10 +304,8 @@ QRectF KeyboardView::rowRect(int i) const
 const Rows &KeyboardView::rows() const
 {
     if (m_page == Page::Symbols) return Keymap::symbols(m_settings.numberRow);
-    // A number field shows only the digits, which are the alternates of the Pre's grid: on its
-    // grid whatever the language, so they stand in the same columns in every one. A language's
-    // own rows (more keys to a row, Russian, Arabic) would move them about.
-    if (digitMode()) return Keymap::letters(Language::orEnglish(QStringLiteral("en")));
+    // A number field's pad is the same in every language.
+    if (m_page == Page::Pad) return Keymap::pad(m_digits);
     return Keymap::letters(m_settings.language, m_settings.numberRow, m_settings.hideKeyDigits);
 }
 
@@ -402,8 +405,6 @@ void KeyboardView::drawKey(QPainter &p, const Zone &z)
         else drawLanguageFlash(p, box);
         break;
     case Kind::Shift:
-        // A number field has no capitals and no alternates: those keys go blank.
-        if (digitMode()) break;
         // On, Shift takes the style's colour: the Pre's orange, or in the White
         // style white, where an outline says it is off.
         if (m_settings.style == Style::White)
@@ -419,10 +420,10 @@ void KeyboardView::drawKey(QPainter &p, const Zone &z)
     case Kind::Return: m_painter.icon(p, Painter::Icon::Return, c.x(), c.y(), iconSize); break;
     case Kind::Globe: m_painter.icon(p, Painter::Icon::Globe, c.x(), c.y(), iconSize); break;
     case Kind::Emoji: m_painter.icon(p, Painter::Icon::Emoji, c.x(), c.y(), iconSize); break;
-    case Kind::Orange: if (!digitMode()) m_painter.orange(p, box, m_settings.style, m_alt); break;
+    case Kind::Orange: m_painter.orange(p, box, m_settings.style, m_alt); break;
     case Kind::Sym: functionLabel(p, key.label, box); break;
     }
-    if (key.corner == Corner::Gear || (key.corner == Corner::Mic && m_voiceMic && !digitMode()))
+    if (key.corner == Corner::Gear || (key.corner == Corner::Mic && m_voiceMic))
         cornerIcon(p, key.corner, box);
     if (holds(key)) holdDot(p, key, box);
 }
@@ -450,10 +451,11 @@ void KeyboardView::cornerIcon(QPainter &p, Corner corner, const QRectF &r)
     }
 }
 
-//! Whether holding [key] opens its list: only with "Hold for more" on.
+//! Whether holding [key] opens its list: with "Hold for more" on, and always on the number pad,
+//! where the 0 holds what else the field takes.
 bool KeyboardView::holds(const Key &key) const
 {
-    return m_settings.holdForMore && !key.extended.isEmpty() && !digitMode();
+    return (m_settings.holdForMore || m_page == Page::Pad) && !key.extended.isEmpty();
 }
 
 //! The mark of a key with more under it: a small dot in the style's colour, in the top corner the alternate leaves free.
@@ -521,45 +523,54 @@ void KeyboardView::functionLabel(QPainter &p, const QString &s, const QRectF &bo
     centred(p, s, box);
 }
 
-//! The letter's size: big and bold, but held to the key's width and to half its height.
-qreal KeyboardView::letterSize() const { return std::min(rowHeight() * 0.5, keysWidth() / 10 * 0.56); }
+//! The letter's size: big and bold, but held to the key's width and to half its height. The
+//! number pad's digits, three to a row, are bigger still.
+qreal KeyboardView::letterSize() const
+{
+    if (m_page == Page::Pad) return std::min(rowHeight() * 0.56, keysWidth() / 3 * 0.42);
+    return std::min(rowHeight() * 0.5, keysWidth() / 10 * 0.56);
+}
 
 //! Inset of the glyphs' ink from the key's edges.
 qreal KeyboardView::inset(const QRectF &r) const { return 2.5 * m_dp + r.width() * 0.08; }
 
+/*!
+ * The field takes only [allowed] (a number, a phone number), or anything when
+ * it is empty: the number pad comes up in place of the letters, or the
+ * letters come back.
+ */
 void KeyboardView::setDigits(const QString &allowed)
 {
     if (allowed == m_digits) return;
     m_digits = allowed;
     m_alt = Alt::Off;
-    layoutKeys();
+    if (!allowed.isEmpty()) barChange([this] { show(Page::Pad); });
+    else if (m_page == Page::Pad) barChange([this] { show(Page::Letters); });
+    else layoutKeys();
     update();
 }
 
 /*!
  * What a character key shows: letters as capitals, as printed on the Pre, or
- * small till Shift is on when the owner wants them to follow it; in a number
- * field, only what the field takes.
+ * small till Shift is on when the owner wants them to follow it.
  */
 QString KeyboardView::capText(const Key &key) const
 {
-    if (m_page == Page::Symbols) return key.text;
-    if (digitMode()) return digitOf(key);
+    if (m_page != Page::Letters) return key.text;
     if (m_settings.followShift && m_shift == Shift::Off) return key.text;
     return key.text.toUpper();
 }
 
-//! The alternate printed in [key]'s corner: none in a number field, where it is the key's one character,
-//! nor where the number row has it and the owner wants it off the letters.
+//! The alternate printed in [key]'s corner: none where the number row has it and the owner wants it off the letters.
 QString KeyboardView::altText(const Key &key) const
 {
-    return digitMode() || key.hideAlt ? QString() : key.alt;
+    return key.hideAlt ? QString() : key.alt;
 }
 
 //! Whether [key] is laid out with an alternate: printed, or left off for the number row with the letter where it was.
 bool KeyboardView::hasAlt(const Key &key) const
 {
-    return !digitMode() && !key.alt.isEmpty();
+    return !key.alt.isEmpty();
 }
 
 /*!
@@ -569,23 +580,11 @@ bool KeyboardView::hasAlt(const Key &key) const
  */
 QStringList KeyboardView::faces(const Key &key) const
 {
-    if (m_page == Page::Letters && !digitMode() && m_settings.followShift) {
+    if (m_page == Page::Letters && m_settings.followShift) {
         const QString up = key.text.toUpper();
         return up == key.text ? QStringList{ up } : QStringList{ key.text, up };
     }
     return { capText(key) };
-}
-
-//! In a number field, what [key] types: its alternate, or itself, where the field takes that; else nothing.
-QString KeyboardView::digitOf(const Key &key) const
-{
-    auto taken = [this](const QString &s) {
-        for (QChar c : s) if (!m_digits.contains(c)) return false;
-        return !s.isEmpty();
-    };
-    if (taken(key.alt)) return key.alt;
-    if (taken(key.text)) return key.text;
-    return QString();
 }
 
 /*!
@@ -599,7 +598,7 @@ void KeyboardView::fitLetters()
     // The same page at the same size comes out the same: work it out once.
     QString id = QStringLiteral("%1|%2|%3|%4|%5|%6|%7|%8|%9").arg(m_settings.language.id).arg(int(m_page))
                      .arg(width()).arg(rowHeight()).arg(m_dp).arg(m_landscape)
-                     .arg(m_settings.followShift).arg(digitMode() ? m_digits : QString())
+                     .arg(m_settings.followShift).arg(m_page == Page::Pad ? m_digits : QString())
                      .arg(int(m_settings.numberRow) + 2 * int(m_settings.hideKeyDigits));
     // The keys as laid out, whole pixels each: two rows of the same nominal
     // height can come out a pixel apart.
@@ -855,9 +854,7 @@ void KeyboardView::drawCap(QPainter &p, const Zone &z, const QRectF &box)
     p.setFont(f);
     const QString s = capText(key);
     const QString a = altText(key);
-    // In a number field its digits are the ones printed in colour, as the alternates were.
-    const bool coloured = key.accent || (digitMode() && s.length() == 1 && s[0].isDigit());
-    QColor letter = coloured ? accent(m_settings.style) : QColor(Qt::white);
+    QColor letter = key.accent ? accent(m_settings.style) : QColor(Qt::white);
     // The letter steps back while the orange key says the alternate is what will be typed.
     if (!a.isEmpty() && m_alt != Alt::Off) letter.setAlpha(89);
     p.setPen(letter);
@@ -894,7 +891,6 @@ qreal KeyboardView::fitted(const QString &s, qreal size, qreal room) const
 //! What a character key would type right now.
 QString KeyboardView::output(const Key &key) const
 {
-    if (digitMode()) return digitOf(key);
     if (m_alt != Alt::Off && !key.alt.isEmpty() && !key.hideAlt) return key.alt;
     if (m_shift == Shift::Off) return key.text;
     return key.shifted.isEmpty() ? key.text.toUpper() : key.shifted;
@@ -914,7 +910,7 @@ void KeyboardView::drawPreview(QPainter &p)
     QFont f = m_bold;
     f.setPixelSize(std::max(1, int(fitted(s, rowHeight() * 0.7, w - 8 * m_dp))));
     p.setFont(f);
-    p.setPen(z.slot.key->accent || ((m_alt != Alt::Off || digitMode()) && s.length() == 1 && s[0].isDigit())
+    p.setPen(z.slot.key->accent || (m_alt != Alt::Off && s.length() == 1 && s[0].isDigit())
              ? accent(m_settings.style) : QColor(Qt::white));
     centred(p, s, r);
 }
@@ -1465,7 +1461,7 @@ bool KeyboardView::menuTouch(int phase, qreal x, qreal y)
 bool KeyboardView::canSwipe(const Zone &z) const
 {
     const Key &k = *z.slot.key;
-    return m_settings.swipe && m_wordsAllowed && m_page == Page::Letters && !digitMode() && !m_searching && m_alt == Alt::Off &&
+    return m_settings.swipe && m_wordsAllowed && m_page == Page::Letters && !m_searching && m_alt == Alt::Off &&
            k.kind == Kind::Char && k.text.length() == 1 && k.text[0].isLetter();
 }
 
@@ -1595,7 +1591,7 @@ void KeyboardView::onHold()
     if (m_pressed < 0) return;
     const Zone z = m_zones[m_pressed];
     const Key &key = *z.slot.key;
-    if (key.corner == Corner::Mic && m_voiceMic && !m_searching && !digitMode()) {
+    if (key.corner == Corner::Mic && m_voiceMic && !m_searching) {
         m_held = true;
         m_preview = -1;
         if (m_controller) { m_controller->hapticLongPress(); m_controller->onVoice(); }
@@ -1665,7 +1661,7 @@ void KeyboardView::press(int zone)
         m_holdTimer.start(HOLD_FOR_SETTING);
         break;
     default:
-        if (key.corner == Corner::Mic && m_voiceMic && !m_searching && !digitMode()) m_holdTimer.start(HOLD_FOR_VOICE);
+        if (key.corner == Corner::Mic && m_voiceMic && !m_searching) m_holdTimer.start(HOLD_FOR_VOICE);
         else if (key.corner == Corner::Gear) m_holdTimer.start(HOLD_FOR_SETTING);
         else if (holds(key)) m_holdTimer.start(HOLD_FOR_EXTENDED);
         break;
@@ -1802,8 +1798,6 @@ void KeyboardView::commit()
     }
     if (m_held || m_pressed < 0) return;
     const Key &key = *m_zones[m_pressed].slot.key;
-    // In a number field shift and the orange key have nothing to do.
-    if (digitMode() && (key.kind == Kind::Shift || key.kind == Kind::Orange)) return;
     switch (key.kind) {
     case Kind::Shift: {
         const qint64 t = now();
@@ -1834,7 +1828,7 @@ void KeyboardView::commit()
     case Kind::Space: send(QStringLiteral(" ")); break;
     case Kind::Char: {
         const QString s = output(key);
-        if (!s.isEmpty()) type(s, !digitMode() && m_alt != Alt::Off && !key.alt.isEmpty() && !key.hideAlt);
+        if (!s.isEmpty()) type(s, m_alt != Alt::Off && !key.alt.isEmpty() && !key.hideAlt);
         break;
     }
     }
@@ -1865,7 +1859,9 @@ void KeyboardView::reset()
     m_lastShiftTap = NEVER;
     m_lastAltTap = NEVER;
     if (m_searching) barChange([this] { m_searching = false; m_searchText.clear(); });
-    if (m_page != Page::Letters) show(Page::Letters);
+    // A number field starts on the number pad.
+    const Page start = m_digits.isEmpty() ? Page::Letters : Page::Pad;
+    if (m_page != start) barChange([this, start] { show(start); });
     m_extended.clear();
     m_extendedFrame = QRectF();
     m_pressed = -1;

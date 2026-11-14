@@ -109,6 +109,13 @@ const Rows &letters(const Language &lang, bool numberRow = false, bool hideDigit
  * page is as tall as the letters and nothing moves when it changes.
  */
 const Rows &symbols(bool numberRow = false);
+/*!
+ * For a field that takes only a number (a PIN, a code, an amount, a phone
+ * number): big digits three across as on a phone's dial pad, with backspace
+ * and Return either side of the 0. Whatever else the field takes, [extra]
+ * (a sign, the decimal separators, the dial pad's * # +), is held on the 0.
+ */
+const Rows &pad(const QString &extra);
 }
 
 } // namespace Pre

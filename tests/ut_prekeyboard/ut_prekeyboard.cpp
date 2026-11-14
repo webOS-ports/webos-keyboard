@@ -2312,79 +2312,114 @@ private Q_SLOTS:
     void numberFields_data()
     {
         QTest::addColumn<QString>("allowed");
+        QTest::addColumn<QStringList>("held");
         // InputMethod::digitsForContentType's.
-        QTest::newRow("number") << QStringLiteral("0123456789+-.,");
-        QTest::newRow("phone") << QStringLiteral("0123456789*#+");
+        QTest::newRow("number") << QStringLiteral("0123456789+-.,")
+                                << QStringList{ QStringLiteral("0"), QStringLiteral("+"), QStringLiteral("-"),
+                                                QStringLiteral("."), QStringLiteral(",") };
+        QTest::newRow("phone") << QStringLiteral("0123456789*#+")
+                               << QStringList{ QStringLiteral("0"), QStringLiteral("*"), QStringLiteral("#"),
+                                               QStringLiteral("+") };
     }
 
     /*
-     * A number field, on every phone either way up: the keys show only what it
-     * takes, each alone and big, and type just that; every digit is there, in
-     * every language, and in the same place in every one, the Pre's grid; the
-     * rest are blank and type nothing; the Sym page is as it was.
+     * A number field, on every phone either way up and in every language: the
+     * number pad, as on a phone's dial pad - 1 2 3, 4 5 6, 7 8 9, then
+     * backspace, 0 and Return - its digits big and in the style's colour, and
+     * what else the field takes held on the 0 whether Hold for More is on or
+     * not. No bar, as the field takes no words. Leaving the field brings the
+     * letters back as they were.
      */
     void numberFields()
     {
         QFETCH(QString, allowed);
+        QFETCH(QStringList, held);
         QStringList problems;
-        // Where each key's character is in English, as the field shows it.
-        const auto placed = [](const Pre::KeyboardView &view) {
-            QMap<QString, QRectF> at;
-            for (const auto &z : view.m_zones)
-                if (z.slot.drawn && z.slot.key->kind == Pre::Kind::Char && !view.capText(*z.slot.key).isEmpty())
-                    at.insert(view.capText(*z.slot.key), z.rect);
-            return at;
-        };
         for (const Screen &sc : screens())
         for (const Pre::Language &l : Pre::Language::all()) {
             if (!sc.measured) continue;
-            Pre::KeyboardView english;
-            showKeys(english, Pre::Language::byId(QStringLiteral("en")), sc.shortSide, sc.width, sc.landscape,
-                     Pre::Settings::Height::Medium);
-            english.setDigits(allowed);
             Pre::KeyboardView view;
             showKeys(view, l, sc.shortSide, sc.width, sc.landscape, Pre::Settings::Height::Medium);
+            Pre::Settings s = view.settings();
+            s.suggestions = true;
+            view.applySettings(s);
+            const qreal lettersHeight = view.keysHeight();
             qreal letters = 0;
             for (const auto &z : view.m_zones)
                 if (z.slot.drawn && z.slot.key->kind == Pre::Kind::Char) letters = z.letterPx;
             view.setDigits(allowed);
             const QString where = sc.name + QLatin1Char(' ') + l.id + QStringLiteral(": ");
-            // A digit is no wider than the letters were: as big as them, at least.
-            for (const auto &z : view.m_zones)
-                if (z.slot.drawn && z.slot.key->kind == Pre::Kind::Char && z.letterPx < letters) {
-                    problems << where + QStringLiteral("%1 px, smaller than the letters' %2").arg(z.letterPx).arg(letters);
-                    break;
-                }
-            QSet<QChar> shown;
-            int blank = 0;
+            if (view.m_page != Pre::KeyboardView::Page::Pad) { problems << where + QStringLiteral("no pad"); continue; }
+            if (view.barShown()) problems << where + QStringLiteral("a bar over the pad");
+            if (view.keysHeight() != view.rowHeight() * 4 + view.topBorder() + view.bottomPad())
+                problems << where + QStringLiteral("not four rows high");
+            if (view.keysHeight() >= lettersHeight) problems << where + QStringLiteral("not lower than the letters with their bar");
+            QStringList faces;
             for (const auto &z : view.m_zones) {
-                if (!z.slot.drawn || z.slot.key->kind != Pre::Kind::Char) continue;
-                const QString s = view.capText(*z.slot.key);
-                if (s != view.output(*z.slot.key)) problems << where + s + QStringLiteral(": types ") + view.output(*z.slot.key);
-                if (!view.altText(*z.slot.key).isEmpty()) problems << where + s + QStringLiteral(": an alternate still printed");
-                if (s.isEmpty()) ++blank;
-                for (QChar c : s) {
-                    if (!allowed.contains(c)) problems << where + s + QStringLiteral(": not for this field");
-                    shown.insert(c);
+                const Pre::Key &k = *z.slot.key;
+                if (k.kind == Pre::Kind::Backspace) faces << QStringLiteral("<");
+                else if (k.kind == Pre::Kind::Return) faces << QStringLiteral(">");
+                else faces << view.capText(k);
+                if (k.kind != Pre::Kind::Char) continue;
+                if (view.output(k) != k.text) problems << where + k.text + QStringLiteral(": types ") + view.output(k);
+                if (!k.accent) problems << where + k.text + QStringLiteral(": not in the style's colour");
+                if (z.letterPx <= letters) problems << where + QStringLiteral("%1 px, not bigger than the letters' %2").arg(z.letterPx).arg(letters);
+                if (k.text == QLatin1String("0")) {
+                    if (k.extended != held) problems << where + QStringLiteral("0 holds ") + k.extended.join(QLatin1Char(' '));
+                    if (!view.holds(k)) problems << where + QStringLiteral("the 0 does not hold with Hold for More off");
+                } else if (view.holds(k)) {
+                    problems << where + k.text + QStringLiteral(": holds something");
                 }
             }
-            for (QChar d : QStringLiteral("0123456789"))
-                if (!shown.contains(d)) problems << where + QStringLiteral("no ") + d;
-            if (placed(view) != placed(english)) problems << where + QStringLiteral("the keys are not where English has them");
-            if (!blank) problems << where + QStringLiteral("no key went blank");
-            problems << printingProblems(view, where) << centringProblems(view, where);
-            view.show(Pre::KeyboardView::Page::Symbols);
-            for (const auto &z : view.m_zones)
-                if (z.slot.drawn && z.slot.key->kind == Pre::Kind::Char && view.capText(*z.slot.key) != z.slot.key->text)
-                    problems << where + QStringLiteral("Sym page changed: ") + view.capText(*z.slot.key);
+            if (faces.join(QString()) != QStringLiteral("123456789<0>"))
+                problems << where + QStringLiteral("the pad is ") + faces.join(QString());
+            problems << layoutProblems(view, where) << printingProblems(view, where) << centringProblems(view, where);
+            // The three keys of a row are the same size.
+            for (int r = 0; r < 4; ++r)
+                if (view.m_zones[3 * r].rect.width() < view.m_zones[3 * r + 1].rect.width() - 1)
+                    problems << where + QStringLiteral("row %1 uneven").arg(r);
+            // A new field of the same kind starts on the pad again.
+            view.reset();
+            if (view.m_page != Pre::KeyboardView::Page::Pad) problems << where + QStringLiteral("reset left the pad");
             view.setDigits(QString());
-            view.show(Pre::KeyboardView::Page::Letters);
+            if (view.m_page != Pre::KeyboardView::Page::Letters) problems << where + QStringLiteral("the letters are not back");
+            if (view.keysHeight() != lettersHeight) problems << where + QStringLiteral("the letters' height is not back");
             for (const auto &z : view.m_zones)
                 if (z.slot.drawn && z.slot.key->kind == Pre::Kind::Char && view.capText(*z.slot.key).isEmpty())
-                    problems << where + QStringLiteral("a key still blank after the number field");
+                    problems << where + QStringLiteral("a key blank after the number field");
         }
         if (!problems.isEmpty()) qWarning().noquote() << problems.mid(0, 40).join(QLatin1Char('\n'));
         QCOMPARE(problems.size(), 0);
+    }
+
+    // The pad's 0 held: what else the field takes, and the one picked is typed.
+    void numberPadHold()
+    {
+        Recorder rec;
+        Field field;
+        Pre::Controller c;
+        c.setBridge(field.bridge(rec));
+        Pre::KeyboardView view;
+        showKeys(view, Pre::Language::byId(QStringLiteral("en")), 1080, 1080, false, Pre::Settings::Height::Medium);
+        view.setControllerObject(&c);
+        c.setDigits(QStringLiteral("0123456789*#+"));
+        QCOMPARE(view.m_page, Pre::KeyboardView::Page::Pad);
+        int zero = -1;
+        for (int i = 0; i < view.m_zones.size(); ++i)
+            if (view.m_zones[i].slot.key->text == QLatin1String("0")) zero = i;
+        QVERIFY(zero >= 0);
+        const QPointF at = view.m_zones[zero].rect.center();
+        view.pointerDown(1, at.x(), at.y());
+        view.onHold();
+        QCOMPARE(view.m_extended, (QStringList{ QStringLiteral("0"), QStringLiteral("*"), QStringLiteral("#"), QStringLiteral("+") }));
+        const QPointF plus = view.cell(3, 4, view.m_extendedFrame).center();
+        view.pointerMove(1, plus.x(), plus.y());
+        view.pointerUp(1, plus.x(), plus.y());
+        // A tap on a digit types it.
+        const QPointF five = view.m_zones[4].rect.center();
+        view.pointerDown(1, five.x(), five.y());
+        view.pointerUp(1, five.x(), five.y());
+        QCOMPARE(field.text, QStringLiteral("+5"));
     }
 
     /*
@@ -3150,9 +3185,13 @@ private:
                     out << where + key + QStringLiteral(": on top of another key");
             // In landscape the screen is twice as wide as ten keys of the
             // portrait shape: a key may be a little wider, not stretched. Its
-            // share of ten such keys, rounded to whole pixels as the keys are.
+            // share of its row, the row at most ten such keys, rounded to
+            // whole pixels as the keys are (the number pad's three share it).
+            qreal units = 0;
+            for (const auto &z : view.m_zones)
+                if (z.rect.top() == r.top()) units += z.slot.weight;
             if (view.m_zones[i].slot.key->kind == Pre::Kind::Char
-                && r.width() > view.m_zones[i].slot.weight * std::round(10 * 1.35 * view.rowHeight()) / 10 + 1)
+                && r.width() > view.m_zones[i].slot.weight / units * std::round(10 * 1.35 * view.rowHeight()) + 1)
                 out << where + key + QStringLiteral(": stretched, %1 wide in a row %2 tall")
                                          .arg(r.width()).arg(view.rowHeight());
         }
