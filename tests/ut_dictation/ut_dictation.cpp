@@ -176,6 +176,36 @@ private Q_SLOTS:
 
     // --- Speech: the helpers -------------------------------------------------------------------
 
+    /*
+     * The microphone is named, never left to the default: on LuneOS
+     * module-palm-policy puts an unnamed recording on the "record" virtual
+     * source, silent until audiod binds it, and the mako refused it outright.
+     * Its sources as the mako's PulseAudio lists them.
+     */
+    void recordingSource()
+    {
+        const QList<QPair<QString, QString>> mako = {
+            { QStringLiteral("sink.primary_output.monitor"), QStringLiteral("monitor") },
+            { QStringLiteral("source.droid"), QStringLiteral("sound") },
+            { QStringLiteral("pcm_output.monitor"), QStringLiteral("monitor") },
+            { QStringLiteral("record"), QStringLiteral("abstract") },
+            { QStringLiteral("precord"), QStringLiteral("abstract") },
+        };
+        QCOMPARE(Pre::Speech::recordingSource(QStringLiteral("source.droid"), mako), QStringLiteral("source.droid"));
+        // The default set to something that isn't a microphone, or not known yet: still the microphone.
+        QCOMPARE(Pre::Speech::recordingSource(QStringLiteral("pcm_output.monitor"), mako), QStringLiteral("source.droid"));
+        QCOMPARE(Pre::Speech::recordingSource(QString(), mako), QStringLiteral("source.droid"));
+        // Another phone's name for it, and the default where there are two.
+        const QList<QPair<QString, QString>> two = {
+            { QStringLiteral("source.primary_input"), QStringLiteral("sound") },
+            { QStringLiteral("source.usb_headset"), QStringLiteral("sound") },
+        };
+        QCOMPARE(Pre::Speech::recordingSource(QStringLiteral("source.usb_headset"), two), QStringLiteral("source.usb_headset"));
+        QCOMPARE(Pre::Speech::recordingSource(QStringLiteral("record"), two), QStringLiteral("source.primary_input"));
+        // Only virtual ones: none named.
+        QVERIFY(Pre::Speech::recordingSource(QStringLiteral("record"), mako.mid(3)).isEmpty());
+    }
+
     void modelFor_data()
     {
         QTest::addColumn<QString>("language");
