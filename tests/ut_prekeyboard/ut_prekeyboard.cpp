@@ -2658,6 +2658,37 @@ private Q_SLOTS:
     }
 
     // The pad's 0 held: what else the field takes, and the one picked is typed.
+    /*
+     * Return held on the Sym page, where it carries the gear: Text Assist
+     * opens, by the application manager's name MaliitServer may call, and the
+     * keyboard goes. Nothing is typed when it lets go.
+     */
+    void symReturnHeldOpensTextAssist()
+    {
+        Recorder rec;
+        Field field;
+        Pre::Controller c;
+        c.setBridge(field.bridge(rec));
+        Pre::KeyboardView view;
+        showKeys(view, Pre::Language::byId(QStringLiteral("en")), 1080, 1080, false, Pre::Settings::Height::Medium);
+        view.setControllerObject(&c);
+        view.show(Pre::KeyboardView::Page::Symbols);
+        int ret = -1;
+        for (int i = 0; i < view.m_zones.size(); ++i)
+            if (view.m_zones[i].slot.key->kind == Pre::Kind::Return) ret = i;
+        QVERIFY(ret >= 0);
+        QCOMPARE(view.m_zones[ret].slot.key->corner, Pre::Corner::Gear);
+        const QPointF at = view.m_zones[ret].rect.center();
+        view.pointerDown(1, at.x(), at.y());
+        view.onHold();
+        view.pointerUp(1, at.x(), at.y());
+        QVERIFY2(rec.calls.contains(QStringLiteral("hide")), qPrintable(rec.calls.join(QLatin1Char(','))));
+        QVERIFY2(rec.calls.contains(QStringLiteral(
+                     "luna palm://com.webos.service.applicationmanager/launch {\"id\":\"org.webosports.app.settings.textassist\"}")),
+                 qPrintable(rec.calls.join(QLatin1Char(','))));
+        QVERIFY(field.text.isEmpty());
+    }
+
     void numberPadHold()
     {
         Recorder rec;

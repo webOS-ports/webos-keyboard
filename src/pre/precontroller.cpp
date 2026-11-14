@@ -1077,8 +1077,11 @@ void Controller::onOpenSettings()
 {
     endDictation(false);
     if (m_bridge.hide) m_bridge.hide();
+    // The application manager by the name MaliitServer's role lets it call
+    // (com.webos.service.ime.role.json): the bus is case-sensitive, and asked as
+    // "applicationManager" it refused the call and Text Assist never opened.
     if (m_bridge.luna)
-        m_bridge.luna(QStringLiteral("palm://com.webos.service.applicationManager/launch"),
+        m_bridge.luna(QStringLiteral("palm://com.webos.service.applicationmanager/launch"),
                       QStringLiteral("{\"id\":\"org.webosports.app.settings.textassist\"}"));
 }
 
