@@ -291,6 +291,8 @@ void Controller::update()
     const int position = m_bridge.position ? m_bridge.position() : -1;
     if (position != m_position) {
         m_position = position;
+        // A held backspace's repeats are the keyboard's own doing too.
+        if (m_deleting) m_ownEditAt = now();
         if (position >= 0 && now() - m_ownEditAt > OWN_EDIT_MS) {
             m_tapped = true;
             m_fixTyped.clear();
@@ -329,8 +331,16 @@ void Controller::setCandidates(const QString &typed, const QString &primary, con
     showBar();
 }
 
+/*!
+ * The bar with no word being typed: the tapped word's fixes, else the next
+ * words. Nothing while backspace is held: every deletion would ask presage
+ * again, and the deleting would fall behind the finger. As on Android, the bar
+ * stays as it was for a single tap, empties once backspace repeats, and is
+ * asked once when it lets go (onBackspaceHeld()).
+ */
 QStringList Controller::idleWords()
 {
+    if (m_deleting) return QStringList();
     const QStringList fixes = wordFixes();
     return fixes.isEmpty() ? nextWords() : fixes;
 }
@@ -855,11 +865,15 @@ void Controller::onBackspaceHeld(bool held, bool lifted)
     }
     if (!m_deleting) return;
     m_deleting = false;
+    // What the repeats deleted moved the cursor: the keyboard's doing, not a tap.
+    m_ownEditAt = now();
     if (lifted) {
         if (m_bridge.release) m_bridge.release(QString(), BACKSPACE);
     } else if (m_bridge.cancelRepeat) {
         m_bridge.cancelRepeat();
     }
+    // The bar waited (idleWords()): now it is asked, once, about what is left.
+    update();
 }
 
 void Controller::onEnter()

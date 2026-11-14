@@ -1063,6 +1063,71 @@ private Q_SLOTS:
         QCOMPARE(editor.committed + editor.preedit, field);
     }
 
+    /*!
+     * Backspace held: the editor repeats it, and every deletion moved the
+     * cursor and asked presage for the next words again, which on the phone
+     * left the deleting behind the finger. As on Android the bar stays for a
+     * single tap, empties once backspace repeats, and is asked once when it
+     * lets go. Nor are the repeats taken for the owner tapping the text.
+     */
+    void heldBackspaceWaitsToPredict()
+    {
+        Recorder rec;
+        Field field;
+        field.set(QStringLiteral("I think so "));
+        Pre::Bridge b = field.bridge(rec);
+        // The editor: a tap deletes as backspace comes up; after repeats, nothing more.
+        bool repeated = false;
+        const auto release = b.release;
+        b.release = [&, release](const QString &l, const QString &a) { if (!repeated) release(l, a); };
+        int asked = 0;
+        b.nextWords = [&](const QString &) { ++asked; return QStringList{ QStringLiteral("think"), QStringLiteral("know") }; };
+        qint64 clock = 10000;
+        Pre::Controller c;
+        c.setClock([&] { return clock; });
+        c.setBridge(b);
+        c.setKeyboardState(true, false, { QStringLiteral("en") }, QStringLiteral("en"));
+        c.m_position = field.cursor;
+        c.setCandidates(QString(), QString(), {});
+        QCOMPARE(asked, 1);
+        const QStringList before = c.m_bar;
+        QCOMPARE(before.value(1), QStringLiteral("think"));
+
+        // A tap: the bar stays while it is down, and is asked about what is left.
+        c.onBackspaceHeld(true);
+        QCOMPARE(c.m_bar, before);
+        c.onBackspaceHeld(false, true);
+        QCOMPARE(field.text, QStringLiteral("I think so"));
+        c.update();
+        QVERIFY(c.m_bar.value(1).isEmpty());  // Right after a word: that word's, no next words.
+
+        // Held: the editor's repeats delete and the field tells of each; nobody asks.
+        field.set(QStringLiteral("I think so "));
+        c.m_position = field.cursor;
+        c.setCandidates(QString(), QString(), {});
+        const int atPress = asked;
+        c.onBackspaceHeld(true);
+        repeated = true;
+        for (int i = 0; i < 9; ++i) {
+            clock += 120;
+            field.text.chop(1);
+            --field.cursor;
+            c.update();
+            c.setCandidates(QString(), QString(), {});
+        }
+        QCOMPARE(field.text, QStringLiteral("I "));
+        QCOMPARE(asked, atPress);
+        QCOMPARE(c.m_bar, (QStringList{ QString(), QString(), QString() }));
+        // Let go: asked about what is left, once.
+        clock += 120;
+        c.onBackspaceHeld(false, true);
+        QCOMPARE(field.text, QStringLiteral("I "));
+        QCOMPARE(asked, atPress + 1);
+        QCOMPARE(c.m_bar.value(1), QStringLiteral("think"));
+        // A second of repeats was the keyboard's doing, not a tap on the text.
+        QVERIFY(!c.m_tapped);
+    }
+
     /*
      * Before a word is started - after a space, or at the start - the bar
      * offers the likeliest next words, the likeliest in the middle; tapping

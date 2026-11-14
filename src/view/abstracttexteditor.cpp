@@ -290,6 +290,9 @@ public:
     //! Set while autoRepeatBackspace() is re-sending a key, so the release
     //! handler does not mistake that for the user letting go.
     bool in_auto_repeat;
+    //! A held backspace is repeating: the word engine waits till it lets go
+    //! (updateCandidates()), as every deletion would look the word up again.
+    bool deleting;
     EditorOptions options;
     QScopedPointer<Model::Text> text;
     QScopedPointer<Logic::AbstractWordEngine> word_engine;
@@ -312,6 +315,7 @@ AbstractTextEditorPrivate::AbstractTextEditorPrivate(const EditorOptions &new_op
     , backspace_sent(false)
     , repeating_action(Key::ActionInsert)
     , in_auto_repeat(false)
+    , deleting(false)
     , options(new_options)
     , text(new_text)
     , word_engine(new_word_engine)
@@ -428,6 +432,8 @@ void AbstractTextEditor::cancelRepeat()
     // Should the release turn up after all, it must not take one more
     // character: a cancelled backspace deletes nothing.
     d->backspace_sent = true;
+    // Cancelled, nobody is waiting for the word engine; the next key asks it.
+    d->deleting = false;
 }
 
 //! \brief Keys the reference keyboard repeats while they are held.
@@ -505,6 +511,11 @@ void AbstractTextEditor::onKeyReleased(const Key &key)
 
         d->auto_repeat_backspace_timer.stop();
         d->repeating_action = Key::ActionInsert;
+        // Let go after a repeat: the word engine, once, for what is left.
+        if (d->deleting) {
+            d->deleting = false;
+            refreshCandidates();
+        }
     } break;
 
     case Key::ActionSpace: {
@@ -662,6 +673,29 @@ void AbstractTextEditor::refreshCandidates()
     if (not d->text->preedit().isEmpty()) {
         sendPreeditString(d->text->preedit(), d->text->preeditFace());
     }
+}
+
+/*!
+ * \brief The word engine on the word being typed, after a deletion - unless a
+ * held backspace is repeating.
+ *
+ * Every repeat would look the word up again, spelling and predictions both,
+ * and on a slow phone that is what holding backspace waits for: the deleting
+ * fell behind the finger. So while it repeats, the candidates are cleared and
+ * the word has no correction (one left from before, "hello" for "helo", must
+ * not replace what is left of it); refreshCandidates() asks once the key lets
+ * go. A single tap is not a repeat and is looked up as before.
+ */
+void AbstractTextEditor::updateCandidates()
+{
+    Q_D(AbstractTextEditor);
+
+    if (d->deleting) {
+        d->text->setPrimaryCandidate(QString());
+        d->word_engine->clearCandidates();
+        return;
+    }
+    d->word_engine->computeCandidates(d->text.data());
 }
 
 //! \brief Replaces current preedit with given replacement and then
@@ -858,6 +892,13 @@ void AbstractTextEditor::autoRepeatBackspace()
 {
     Q_D(AbstractTextEditor);
 
+    // From the first repeat until the key lets go, deleting is all there is to
+    // do: the word engine waits (updateCandidates()).
+    if (d->repeating_action == Key::ActionBackspace
+        || d->repeating_action == Key::ActionBackspaceWord) {
+        d->deleting = true;
+    }
+
     // Shift held: whole words from the first repeat, not after backspace_word_delay.
     if (d->repeating_action == Key::ActionBackspaceWord) {
         autoRepeatWordBackspace();
@@ -971,7 +1012,7 @@ void AbstractTextEditor::singleBackspace()
         sendKeyEvent(ev);
     } else {
         d->text->removeFromPreedit(1);
-        d->word_engine->computeCandidates(d->text.data());
+        updateCandidates();
         sendPreeditString(d->text->preedit(), d->text->preeditFace(),
                           Replacement());
     }
@@ -1015,7 +1056,7 @@ void AbstractTextEditor::onCursorPositionChanged(int cursor_position,
         d->text->setPreedit(word, word_begin_relative_cursor_pos);
         // computeCandidates can change preedit face, so needs to happen
         // before sending preedit:
-        d->word_engine->computeCandidates(d->text.data());
+        updateCandidates();
         sendPreeditString(d->text->preedit(), d->text->preeditFace(), word_r);
         // Qt is going to send us an event with cursor position places
         // at the beginning of replaced word and surrounding text

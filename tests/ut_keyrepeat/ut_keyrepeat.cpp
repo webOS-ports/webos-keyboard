@@ -48,12 +48,30 @@ private:
     NoFeatures features;
 };
 
+//! Counts the times the word being typed is looked up, and corrects it to "hello".
+class CountingWords : public Logic::AbstractWordEngine
+{
+public:
+    CountingWords() { setEnabled(true); }
+    AbstractLanguageFeatures *languageFeature() override { return &features; }
+    int lookups = 0;
+
+private:
+    WordCandidateList fetchCandidates(Model::Text *text) override
+    {
+        ++lookups;
+        text->setPrimaryCandidate(QStringLiteral("hello"));
+        return WordCandidateList() << WordCandidate(WordCandidate::SourcePrediction, QStringLiteral("hello"));
+    }
+    NoFeatures features;
+};
+
 //! Counts the backspaces the editor sends to the application.
 class CountingEditor : public AbstractTextEditor
 {
 public:
-    CountingEditor()
-        : AbstractTextEditor(EditorOptions(), new Model::Text, new NoWords)
+    explicit CountingEditor(Logic::AbstractWordEngine *words = new NoWords)
+        : AbstractTextEditor(EditorOptions(), new Model::Text, words)
     {}
 
     int backspaces = 0;
@@ -143,6 +161,66 @@ private Q_SLOTS:
         editor.onKeyReleased(backspaceKey());
         QTest::qWait(quietPeriod);
         QCOMPARE(editor.backspaces, 0);
+    }
+
+    // A tap in a word being typed: the word is looked up again, as it always was.
+    void tapLooksTheWordUp()
+    {
+        auto *words = new CountingWords;
+        CountingEditor editor(words);
+        editor.text()->setPreedit(QStringLiteral("helo"));
+        editor.onKeyPressed(backspaceKey());
+        editor.onKeyReleased(backspaceKey());
+        QCOMPARE(editor.text()->preedit(), QStringLiteral("hel"));
+        QCOMPARE(words->lookups, 1);
+    }
+
+    // Held: every repeat would look the word up again, and on a phone the
+    // deleting fell behind the finger. The word is looked up once, when it lets go.
+    void holdLooksTheWordUpWhenLetGo()
+    {
+        auto *words = new CountingWords;
+        CountingEditor editor(words);
+        editor.text()->setPreedit(QStringLiteral("abcdefghijklmnop"));
+        editor.text()->setPrimaryCandidate(QStringLiteral("hello"));
+        int shown = 0;
+        WordCandidateList last;
+        connect(&editor, &AbstractTextEditor::wordCandidatesChanged, this,
+                [&](const WordCandidateList &c) { ++shown; last = c; });
+        editor.onKeyPressed(backspaceKey());
+        QTest::qWait(pastFirstRepeat);
+        const int deleted = 16 - editor.text()->preedit().size();
+        QVERIFY2(deleted >= 2, qPrintable(QString::number(deleted)));
+        QCOMPARE(words->lookups, 0);
+        // Its correction from before must not replace what is left of it.
+        QVERIFY(editor.text()->primaryCandidate().isEmpty());
+        // The candidates went: they were for a word no longer there.
+        QVERIFY(shown > 0);
+        QVERIFY(last.isEmpty());
+
+        editor.onKeyReleased(backspaceKey());
+        QCOMPARE(words->lookups, 1);
+        QCOMPARE(editor.text()->primaryCandidate(), QStringLiteral("hello"));
+
+        // And the next tap is looked up as ever.
+        editor.onKeyPressed(backspaceKey());
+        editor.onKeyReleased(backspaceKey());
+        QCOMPARE(words->lookups, 2);
+    }
+
+    // Cancelled mid-repeat (the field went away): the next key is looked up as ever.
+    void cancelledHoldLooksUpAgainAfter()
+    {
+        auto *words = new CountingWords;
+        CountingEditor editor(words);
+        editor.text()->setPreedit(QStringLiteral("abcdefghijklmnop"));
+        editor.onKeyPressed(backspaceKey());
+        QTest::qWait(pastFirstRepeat);
+        editor.cancelRepeat();
+        QCOMPARE(words->lookups, 0);
+        editor.onKeyPressed(backspaceKey());
+        editor.onKeyReleased(backspaceKey());
+        QCOMPARE(words->lookups, 1);
     }
 
     // Nothing held: harmless, and the next tap still works.
