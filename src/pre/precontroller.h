@@ -93,8 +93,8 @@ struct Bridge
      * Asked of the field each time, not of what the input method last saw.
      */
     std::function<bool()> wordsWanted;
-    //! The likeliest next words before any of the next is typed, best first.
-    std::function<QStringList()> nextWords;
+    //! The likeliest words to come after [left] (the text before the cursor, or that and a swiped word), best first.
+    std::function<QStringList(const QString &left)> nextWords;
     //! Whether [word] could be added to the owner's dictionary: it is not known.
     std::function<bool(const QString &word)> canAdd;
     std::function<void(const QString &word)> addWord;
@@ -267,17 +267,18 @@ public:
 private:
     /*!
      * The Pre's punctuation, between the keys and the editor: a double space
-     * after a word is ". ", a period brings its own space (which a space typed
-     * on top of is absorbed by), and sentence punctuation typed after a space
-     * goes against the word ("word ," is "word, "). True when it typed [text]
+     * after a word is ". ", a period, comma, question or exclamation mark,
+     * colon or semicolon brings its own space (which a space typed on top of
+     * is absorbed by), and sentence punctuation typed after a space goes
+     * against the word ("word ," is "word, "). True when it typed [text]
      * itself; false leaves [text] to be typed as it is.
      */
     bool punctuate(const QString &text);
     //! A character or a space, through the event handler, as a key of LuneOS's own.
     void key(const QString &text);
     void backspaceKey();
-    //! Whether text ending in [before] wants a space after the period that ends it.
-    static bool periodWantsSpace(const QString &before, const QString &after);
+    //! Whether text ending in [before] wants a space after the punctuation (. , ? ! : ;) that ends it.
+    static bool punctuationWantsSpace(const QString &before, const QString &after);
     //! The keyboard's own space ([m_autoTail]) is still the last thing typed.
     bool autoSpaced() const;
     //! A space typed after a word is the last thing typed; [digit]: after a number.
@@ -300,6 +301,10 @@ private:
     void showBar();
     //! With no word typed, after a space or at the start: the likeliest next words for the bar.
     QStringList nextWords();
+    //! After a swipe: the likeliest words to come after the swiped one.
+    QStringList nextAfterSwipe();
+    //! The likeliest next words after [left], asked once for the same text.
+    QStringList nextFor(const QString &left);
     //! With no word typed: what the word at the cursor might be, if it was tapped; else the next words.
     QStringList idleWords();
     //! The word at the cursor was tapped, or the cursor is inside it: what else it might be.
@@ -406,6 +411,12 @@ private:
     //! The swiped word standing as the word being typed, and the other guesses for it.
     QString m_swiped;
     QStringList m_swipeGuesses;
+    /*!
+     * The bar after a swipe holds the next words: its left place is the
+     * swipe's other guess, to swap in, and the middle and right go after the
+     * swiped word.
+     */
+    bool m_barAfterSwipe = false;
     //! The guesses while the finger is still moving.
     QStringList m_live;
     //! Which swipe the guesses being worked out are for: any newer one makes them moot.

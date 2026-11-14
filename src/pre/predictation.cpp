@@ -62,6 +62,17 @@ QString modelFor(const QString &root, const QString &language)
     return QString();
 }
 
+QString recordingSource(const QString &defaultSource, const QList<QPair<QString, QString>> &sources)
+{
+    QString first;
+    for (const auto &s : sources) {
+        if (s.second != QLatin1String("sound")) continue;
+        if (s.first == defaultSource) return s.first;
+        if (first.isEmpty()) first = s.first;
+    }
+    return first;
+}
+
 QString resultText(const QByteArray &json, const char *key)
 {
     const QJsonDocument doc = QJsonDocument::fromJson(json);

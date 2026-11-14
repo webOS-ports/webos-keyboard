@@ -35,6 +35,8 @@
 
 class QPainter;
 
+class TestPreKeyboard;
+
 namespace Pre {
 
 class MediaPanel;
@@ -54,6 +56,8 @@ class MediaPanel;
  */
 class EmojiPanel
 {
+    friend class ::TestPreKeyboard;
+
 public:
     struct Actions
     {
@@ -88,11 +92,20 @@ public:
     //! Whether the device's emoji font draws [emoji]: every code point in it, joiners and selectors aside.
     static bool canDraw(const QString &emoji);
     /*!
+     * The emoji font at the Android Pre Keyboard's text size [size]: drawn as
+     * big as Android draws it. Noto Color Emoji is a font of pictures, and the
+     * two scale them differently: Android draws 😀 1.06 times its text size
+     * tall, Qt 0.84 times on a mako. So the same sizes as Android's gave emoji a
+     * fifth smaller; this works out the pixel size that draws them as tall.
+     */
+    static QFont emojiFont(qreal size);
+    /*!
      * [top] is where the page starts (the suggestion bar's place, if it shows),
      * [rows] the top three rows of keys, [bar] the bottom row.
      */
-    void layout(qreal top, const QRectF &rows, const QRectF &bar);
-    void draw(QPainter &p, Painter &painter, Style style, const std::function<void(QPainter &, const QString &, const QRectF &)> &label);
+    //! [rowHeight]: a row of keys, as laid out before rounding to whole pixels: what the strip and emoji are sized from.
+    void layout(qreal top, const QRectF &rows, const QRectF &bar, qreal rowHeight);
+    void draw(QPainter &p, Painter &painter, Style style);
 
     void down(qreal x, qreal y);
     void move(qreal x, qreal y);
@@ -107,6 +120,8 @@ private:
     struct Category { QString id; QString icon; QStringList emoji; };
 
     void relayout();
+    //! ABC's letters: as big as its key allows, as on Android.
+    qreal abcTextSize() const;
     qreal cellHeight() const;
     qreal maxScroll() const;
     MediaPanel *media() const;
@@ -116,7 +131,11 @@ private:
     void setScroll(qreal y);
     qreal maxScrollNow() const;
     void drawStrip(QPainter &p, Painter &painter, Style style);
-    qreal tabWidth() const;
+    qreal edge() const;
+    qreal gap() const;
+    QRectF item() const;
+    qreal tabText() const;
+    qreal tabWidth(int i) const;
     QRectF topTab(int i) const;
     //! The tabs above the grid: Emoji, and GIFs and stickers when KLIPY has a key.
     int tabCount() const;
@@ -144,6 +163,7 @@ private:
     QRectF m_mediaGrid;
     //! The tabs (and on KLIPY's, the search field) above the grid.
     QRectF m_strip;
+    qreal m_rowHeight = 0;
     int m_cols = 8;
     qreal m_cell = 48;
     QVector<qreal> m_starts;

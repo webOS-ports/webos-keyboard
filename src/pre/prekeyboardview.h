@@ -103,8 +103,8 @@ public:
     /*!
      * The field takes only [allowed] (a number: digits, sign and separators; a
      * phone number: the dial characters), or anything when it is empty. The
-     * letters then give way to what the field takes: each key that has one of
-     * those characters shows it alone, big, and types it; the rest go blank.
+     * letters then give way to the number pad: the digits, big, three across,
+     * with what else the field takes held on the 0.
      */
     void setDigits(const QString &allowed);
     //! The language just changed: its name shows bright on the space bar, then fades.
@@ -147,7 +147,7 @@ private:
     friend class ::TestPreKeyboard;
 
     enum class Shift { Off, Once, Lock };
-    enum class Page { Letters, Symbols, Emoji };
+    enum class Page { Letters, Symbols, Emoji, Pad };
 
     /*!
      * A key and where it is. A character key also has its printing worked out
@@ -166,6 +166,7 @@ private:
     qreal popupPad() const;
     qreal keyboardTop() const;
     qreal keysWidth() const;
+    int keyRows() const;
     static bool placedMark(const QString &s);
     qreal keysLeft() const;
     QRectF rowRect(int i) const;
@@ -184,9 +185,8 @@ private:
     qreal inset(const QRectF &r) const;
     QString capText(const Key &key) const;
     QString altText(const Key &key) const;
+    bool hasAlt(const Key &key) const;
     QStringList faces(const Key &key) const;
-    QString digitOf(const Key &key) const;
-    bool digitMode() const { return !m_digits.isEmpty() && m_page == Page::Letters; }
     void fitLetters();
     bool placeLetters(qreal px);
     QPointF letterAt(const Zone &z, const QRectF &box, const QFontMetricsF &fm) const;

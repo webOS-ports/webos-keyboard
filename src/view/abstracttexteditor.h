@@ -181,6 +181,7 @@ private:
     virtual void invokeAction(const QString &action, const QKeySequence &sequence) = 0;
 
     virtual void singleBackspace();
+    void updateCandidates();
 
     static bool canRepeat(Key::Action action);
 

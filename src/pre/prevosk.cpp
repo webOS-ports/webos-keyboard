@@ -22,7 +22,10 @@
 #include <QMetaObject>
 #include <QPointer>
 
+#include <pulse/context.h>
 #include <pulse/error.h>
+#include <pulse/introspect.h>
+#include <pulse/mainloop.h>
 #include <pulse/simple.h>
 
 #include <atomic>
@@ -86,6 +89,56 @@ struct Vosk
     }
 };
 
+/*!
+ * The microphone to name to [server] (nullptr: the default one), chosen by
+ * Speech::recordingSource() from what the server says it has; empty when it
+ * could not be asked or has none, and then none is named.
+ */
+QByteArray microphone(const char *server)
+{
+    struct Answer {
+        QString defaultSource;
+        QList<QPair<QString, QString>> sources;
+    } answer;
+    pa_mainloop *loop = pa_mainloop_new();
+    if (!loop) return QByteArray();
+    pa_context *context = pa_context_new(pa_mainloop_get_api(loop), "LuneOS keyboard");
+    // Runs the loop until [op] is done; false if the connection went.
+    auto wait = [&](pa_operation *op) -> bool {
+        if (!op) return false;
+        while (pa_operation_get_state(op) == PA_OPERATION_RUNNING)
+            if (pa_mainloop_iterate(loop, 1, nullptr) < 0) break;
+        pa_operation_unref(op);
+        return PA_CONTEXT_IS_GOOD(pa_context_get_state(context));
+    };
+    bool ready = false;
+    if (context && pa_context_connect(context, server, PA_CONTEXT_NOFLAGS, nullptr) >= 0) {
+        for (;;) {
+            const pa_context_state_t state = pa_context_get_state(context);
+            if (state == PA_CONTEXT_READY) { ready = true; break; }
+            if (!PA_CONTEXT_IS_GOOD(state) || pa_mainloop_iterate(loop, 1, nullptr) < 0) break;
+        }
+    }
+    if (ready
+        && wait(pa_context_get_server_info(context, [](pa_context *, const pa_server_info *info, void *data) {
+               if (info && info->default_source_name)
+                   static_cast<Answer *>(data)->defaultSource = QString::fromUtf8(info->default_source_name);
+           }, &answer))) {
+        wait(pa_context_get_source_info_list(context, [](pa_context *, const pa_source_info *info, int eol, void *data) {
+            if (eol || !info || !info->name) return;
+            const char *cls = pa_proplist_gets(info->proplist, PA_PROP_DEVICE_CLASS);
+            static_cast<Answer *>(data)->sources << qMakePair(QString::fromUtf8(info->name),
+                                                              QString::fromUtf8(cls ? cls : ""));
+        }, &answer));
+    }
+    if (context) {
+        pa_context_disconnect(context);
+        pa_context_unref(context);
+    }
+    pa_mainloop_free(loop);
+    return Speech::recordingSource(answer.defaultSource, answer.sources).toUtf8();
+}
+
 class PulseMicrophone : public AudioSource
 {
 public:
@@ -108,7 +161,10 @@ public:
         // The default server first; LuneOS's is the system one, whose socket
         // a client that isn't its user may not look for.
         for (const char *server : { static_cast<const char *>(nullptr), "unix:/run/pulse/native" }) {
-            m_stream = pa_simple_new(server, "LuneOS keyboard", PA_STREAM_RECORD, nullptr, "Dictation",
+            // Named, never left to the default (see Speech::recordingSource).
+            const QByteArray device = microphone(server);
+            m_stream = pa_simple_new(server, "LuneOS keyboard", PA_STREAM_RECORD,
+                                     device.isEmpty() ? nullptr : device.constData(), "Dictation",
                                      &spec, nullptr, &attr, &error);
             if (m_stream) return true;
         }

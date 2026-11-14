@@ -35,6 +35,9 @@
 #include "models/text.h"
 
 #include <QDir>
+#include <QFontDatabase>
+#include <QImage>
+#include <QPainter>
 #include <QFileInfo>
 #include <QJSEngine>
 #include <QJSValueIterator>
@@ -367,6 +370,131 @@ private Q_SLOTS:
         QCOMPARE(charKeys(de, 1).first()->extended.value(1), QStringLiteral("ä"));
     }
 
+    /*
+     * Every key on both pages is in the same place on both, in every language:
+     * backspace, Return, the space bar, the period, and the key that changes
+     * page (Sym there, ABC back) at the bottom right. Switching page never
+     * moves one from under the thumb. Where shift is, the Sym page has the
+     * globe.
+     */
+    void keysOnBothPagesSitInTheSamePlace_data()
+    {
+        QTest::addColumn<bool>("numberRow");
+        QTest::newRow("four rows") << false;
+        QTest::newRow("number row") << true;
+    }
+
+    void keysOnBothPagesSitInTheSamePlace()
+    {
+        QFETCH(bool, numberRow);
+        const auto place = [](const Pre::KeyboardView &view, Pre::Kind kind, const QString &text = QString()) {
+            for (const auto &z : view.m_zones)
+                if (z.slot.drawn && z.slot.key->kind == kind && (text.isEmpty() || z.slot.key->text == text))
+                    return z.rect;
+            return QRectF();
+        };
+        QStringList problems;
+        for (const Pre::Language &l : Pre::Language::all()) {
+            Pre::KeyboardView view;
+            showKeys(view, l, 1080, 1080, false, Pre::Settings::Height::Medium);
+            Pre::Settings numbered = view.settings();
+            numbered.numberRow = numberRow;
+            view.applySettings(numbered);
+            QList<QRectF> letters;
+            QList<QPair<Pre::Kind, QString>> keys = {
+                { Pre::Kind::Backspace, QString() }, { Pre::Kind::Return, QString() },
+                { Pre::Kind::Space, QString() }, { Pre::Kind::Char, QStringLiteral(".") },
+                { Pre::Kind::Sym, QString() } };
+            // With the number row, its digits are where the Sym page has them.
+            if (numberRow)
+                for (QChar d : QStringLiteral("1234567890")) keys << qMakePair(Pre::Kind::Char, QString(d));
+            for (const auto &k : keys) letters << place(view, k.first, k.second);
+            const QRectF shift = place(view, Pre::Kind::Shift);
+            view.show(Pre::KeyboardView::Page::Symbols);
+            for (int i = 0; i < keys.size(); ++i) {
+                const QRectF there = place(view, keys[i].first, keys[i].second);
+                if (letters[i].isEmpty() || there != letters[i])
+                    problems << QStringLiteral("%1: key %2 at %3,%4 on the letters, %5,%6 on Sym")
+                                    .arg(l.id).arg(i).arg(letters[i].x()).arg(letters[i].y()).arg(there.x()).arg(there.y());
+            }
+            if (place(view, Pre::Kind::Globe) != shift) problems << l.id + QStringLiteral(": the globe is not where shift is");
+        }
+        if (!problems.isEmpty()) qWarning().noquote() << problems.mid(0, 40).join(QLatin1Char('\n'));
+        QCOMPARE(problems.size(), 0);
+    }
+
+    // The Sym page's labels: ABC on the key that goes back, and the gear on its Return (Text Assist).
+    void symPageKeys()
+    {
+        const Pre::Rows &sym = Pre::Keymap::symbols();
+        QCOMPARE(sym.size(), 4);
+        QCOMPARE(sym[1].last().key->kind, Pre::Kind::Backspace);
+        QCOMPARE(sym[2].last().key->kind, Pre::Kind::Return);
+        QCOMPARE(sym[2].last().key->corner, Pre::Corner::Gear);
+        QCOMPARE(sym[3][1].key->kind, Pre::Kind::Globe);
+        QCOMPARE(sym[3][5].key->label, QStringLiteral("ABC"));
+        // Still the ASCII symbols the letters page lacks.
+        QString typed;
+        for (const auto &row : sym)
+            for (const Pre::Slot &s : row) typed += s.key->text;
+        for (QChar ch : QStringLiteral("^~`|\\<>[]{}")) QVERIFY2(typed.contains(ch), qPrintable(QString(ch)));
+    }
+
+    /*
+     * Backspace, Return, the orange key and the whole bottom row are the same
+     * size and in the same place in every language: a row with more letters
+     * than the Pre's (Russian's twelve, Hungarian's) shares the Pre's room
+     * among them rather than squeezing the keys at its ends.
+     */
+    void functionKeysKeepTheirPlace()
+    {
+        const auto functions = [](const Pre::KeyboardView &view) {
+            QList<QRectF> out;
+            for (const auto &z : view.m_zones)
+                if (z.slot.key->kind != Pre::Kind::Char || z.rect.top() == view.m_zones.last().rect.top())
+                    out << z.rect;
+            return out;
+        };
+        Pre::KeyboardView english;
+        showKeys(english, Pre::Language::byId(QStringLiteral("en")), 1080, 1080, false, Pre::Settings::Height::Medium);
+        const QList<QRectF> want = functions(english);
+        QCOMPARE(want.size(), 3 + 7);
+        for (const Pre::Language &l : Pre::Language::all()) {
+            Pre::KeyboardView view;
+            showKeys(view, l, 1080, 1080, false, Pre::Settings::Height::Medium);
+            QVERIFY2(functions(view) == want, qPrintable(l.id));
+        }
+    }
+
+    /*
+     * Arabic writes its comma, question mark and semicolon its own way: the
+     * comma key prints and types ، (a plain comma held after it), and the
+     * orange key's ? and ; are ؟ and ؛. Every other language keeps the plain
+     * ones.
+     */
+    void arabicPunctuation()
+    {
+        const auto find = [](const Pre::Rows &rows, const QString &text) -> const Pre::Key * {
+            for (const auto &row : rows)
+                for (const Pre::Slot &s : row)
+                    if (s.drawn && (s.key->text == text || s.key->alt == text)) return s.key.data();
+            return nullptr;
+        };
+        const Pre::Rows &ar = Pre::Keymap::letters(Pre::Language::byId(QStringLiteral("ar")));
+        const Pre::Key *comma = find(ar, QStringLiteral(u"\u060C"));
+        QVERIFY(comma);
+        QCOMPARE(comma->text, QStringLiteral(u"\u060C"));
+        QCOMPARE(comma->extended.value(1), QStringLiteral(","));
+        QVERIFY(find(ar, QStringLiteral(u"\u061F")));
+        QVERIFY(find(ar, QStringLiteral(u"\u061B")));
+        QVERIFY(!find(ar, QStringLiteral("?")));
+        for (const Pre::Language &l : Pre::Language::all()) {
+            if (l.id == QLatin1String("ar")) continue;
+            const Pre::Rows &rows = Pre::Keymap::letters(l);
+            QVERIFY2(find(rows, QStringLiteral(",")) && find(rows, QStringLiteral("?")), qPrintable(l.id));
+        }
+    }
+
     // Shift is not always a capital: Arabic shifts to other letters, Hebrew to
     // Latin ones. Those come from the layout; a capital is left to the view.
     void shiftComesFromTheLayout()
@@ -430,7 +558,8 @@ private Q_SLOTS:
                  (QSet<QString>{ QStringLiteral("style"), QStringLiteral("holdForMore"),
                                  QStringLiteral("vibrate"), QStringLiteral("vibrateLevel"),
                                  QStringLiteral("followShift"), QStringLiteral("doubleSpacePeriod"),
-                                 QStringLiteral("emojiSuggestions"),
+                                 QStringLiteral("emojiSuggestions"), QStringLiteral("numberRow"),
+                                 QStringLiteral("hideKeyDigits"),
                                  QStringLiteral("swipe"), QStringLiteral("recentEmoji") }));
         const Pre::Settings back = Pre::Settings::fromJson(pre);
         QCOMPARE(back.style, Pre::Style::White);
@@ -876,12 +1005,31 @@ private Q_SLOTS:
         QTest::newRow("comma after a space") << "hi ,yo" << "hi, yo" << true << true;
         QTest::newRow("question after a space") << "hi ?" << "hi? " << true << true;
         QTest::newRow("ellipsis") << "hi..." << "hi... " << true << true;
-        // Against the period, as on Android: the owner typed no space to move after it.
-        QTest::newRow("question on the period") << "hi.?" << "hi.?" << true << true;
+        // Against the period, as on Android, then a space of its own: ?! and ... stay together.
+        QTest::newRow("question on the period") << "hi.?" << "hi.? " << true << true;
         QTest::newRow("a number's period stays") << "3 .5" << "3 .5" << true << true;
-        QTest::newRow("double space, then a comma") << "hi  ," << "hi.," << true << true;
+        QTest::newRow("double space, then a comma") << "hi  ," << "hi., " << true << true;
         QTest::newRow("backspace takes the period's space") << "hi.<x" << "hi.x" << true << true;
         QTest::newRow("return drops the period's space") << "hi.>" << "hi.\r" << true << true;
+        // , ; : ! ? bring their own space as the period does (Android's 1.4.0).
+        QTest::newRow("comma brings a space") << "hi,yo" << "hi, yo" << true << true;
+        QTest::newRow("question brings a space") << "hi?yo" << "hi? yo" << true << true;
+        QTest::newRow("exclamation brings a space") << "hi!yo" << "hi! yo" << true << true;
+        QTest::newRow("colon brings a space") << "note:yes" << "note: yes" << true << true;
+        QTest::newRow("semicolon brings a space") << "so;then" << "so; then" << true << true;
+        QTest::newRow("space on the comma's") << "hi, yo" << "hi, yo" << true << true;
+        QTest::newRow("?! together") << "hi?!" << "hi?! " << true << true;
+        QTest::newRow("backspace takes the comma's space") << "hi,<x" << "hi,x" << true << true;
+        QTest::newRow("return drops the comma's space") << "hi,>" << "hi,\r" << true << true;
+        QTest::newRow("no space in a thousand") << "1,000" << "1,000" << true << true;
+        QTest::newRow("no space in a time") << "10:30" << "10:30" << true << true;
+        QTest::newRow("no space after https:") << "https://x.org" << "https://x.org" << true << true;
+        QTest::newRow("no space after mailto:") << "mailto:a@b" << "mailto:a@b" << true << true;
+        QTest::newRow("no comma space in an address") << "a@b,c" << "a@b,c" << true << true;
+        QTest::newRow("no comma space at the start") << ",x" << ",x" << true << true;
+        QTest::newRow("no comma space outside prose") << "a,b" << "a,b" << false << true;
+        QTest::newRow("Arabic comma brings a space") << QStringLiteral(u"ب،ت") << QStringLiteral(u"ب، ت") << true << true;
+        QTest::newRow("Arabic question mark brings a space") << QStringLiteral(u"ب؟ت") << QStringLiteral(u"ب؟ ت") << true << true;
     }
 
     void punctuation()
@@ -918,6 +1066,71 @@ private Q_SLOTS:
         QCOMPARE(editor.committed + editor.preedit, field);
     }
 
+    /*!
+     * Backspace held: the editor repeats it, and every deletion moved the
+     * cursor and asked presage for the next words again, which on the phone
+     * left the deleting behind the finger. As on Android the bar stays for a
+     * single tap, empties once backspace repeats, and is asked once when it
+     * lets go. Nor are the repeats taken for the owner tapping the text.
+     */
+    void heldBackspaceWaitsToPredict()
+    {
+        Recorder rec;
+        Field field;
+        field.set(QStringLiteral("I think so "));
+        Pre::Bridge b = field.bridge(rec);
+        // The editor: a tap deletes as backspace comes up; after repeats, nothing more.
+        bool repeated = false;
+        const auto release = b.release;
+        b.release = [&, release](const QString &l, const QString &a) { if (!repeated) release(l, a); };
+        int asked = 0;
+        b.nextWords = [&](const QString &) { ++asked; return QStringList{ QStringLiteral("think"), QStringLiteral("know") }; };
+        qint64 clock = 10000;
+        Pre::Controller c;
+        c.setClock([&] { return clock; });
+        c.setBridge(b);
+        c.setKeyboardState(true, false, { QStringLiteral("en") }, QStringLiteral("en"));
+        c.m_position = field.cursor;
+        c.setCandidates(QString(), QString(), {});
+        QCOMPARE(asked, 1);
+        const QStringList before = c.m_bar;
+        QCOMPARE(before.value(1), QStringLiteral("think"));
+
+        // A tap: the bar stays while it is down, and is asked about what is left.
+        c.onBackspaceHeld(true);
+        QCOMPARE(c.m_bar, before);
+        c.onBackspaceHeld(false, true);
+        QCOMPARE(field.text, QStringLiteral("I think so"));
+        c.update();
+        QVERIFY(c.m_bar.value(1).isEmpty());  // Right after a word: that word's, no next words.
+
+        // Held: the editor's repeats delete and the field tells of each; nobody asks.
+        field.set(QStringLiteral("I think so "));
+        c.m_position = field.cursor;
+        c.setCandidates(QString(), QString(), {});
+        const int atPress = asked;
+        c.onBackspaceHeld(true);
+        repeated = true;
+        for (int i = 0; i < 9; ++i) {
+            clock += 120;
+            field.text.chop(1);
+            --field.cursor;
+            c.update();
+            c.setCandidates(QString(), QString(), {});
+        }
+        QCOMPARE(field.text, QStringLiteral("I "));
+        QCOMPARE(asked, atPress);
+        QCOMPARE(c.m_bar, (QStringList{ QString(), QString(), QString() }));
+        // Let go: asked about what is left, once.
+        clock += 120;
+        c.onBackspaceHeld(false, true);
+        QCOMPARE(field.text, QStringLiteral("I "));
+        QCOMPARE(asked, atPress + 1);
+        QCOMPARE(c.m_bar.value(1), QStringLiteral("think"));
+        // A second of repeats was the keyboard's doing, not a tap on the text.
+        QVERIFY(!c.m_tapped);
+    }
+
     /*
      * Before a word is started - after a space, or at the start - the bar
      * offers the likeliest next words, the likeliest in the middle; tapping
@@ -933,7 +1146,7 @@ private Q_SLOTS:
         Pre::Bridge b = rec.bridge();
         b.before = [&](int n) { return before.right(n); };
         b.prose = [&] { return prose; };
-        b.nextWords = [&] { ++asked; return QStringList{ QStringLiteral("think"), QStringLiteral("don't"),
+        b.nextWords = [&](const QString &) { ++asked; return QStringList{ QStringLiteral("think"), QStringLiteral("don't"),
                                                          QStringLiteral("know") }; };
         Pre::Controller c;
         c.setBridge(b);
@@ -1024,13 +1237,22 @@ private Q_SLOTS:
             const QStringList parts = line.split(QLatin1Char('\t'));
             if (parts.size() == 3) page.insert(parts.at(2));
         }
-        for (const char *id : { "en", "de", "es", "fr", "it" }) {
+        // Every language but Chinese (whose words are not its keys' letters) has its own.
+        for (const Pre::Language &l : Pre::Language::all()) {
+            if (l.id == QLatin1String("zh")) continue;
             const Pre::EmojiWords lang =
-                Pre::EmojiWords::load(QStringLiteral(PRE_DATA_DIR "/%1/emoji_words.txt").arg(QLatin1String(id)), page);
-            QVERIFY2(lang.size() > 2500, id);
+                Pre::EmojiWords::load(QStringLiteral(PRE_DATA_DIR "/%1/emoji_words.txt").arg(l.id), page);
+            QVERIFY2(lang.size() > 2500, qPrintable(l.id));
         }
-        const Pre::EmojiWords en = Pre::EmojiWords::load(QStringLiteral(PRE_DATA_DIR "/en/emoji_words.txt"), page);
-        QCOMPARE(en.forWord(QStringLiteral("pizza")), pizza);
+        const QList<QPair<QString, QString>> pizzas = {
+            { QStringLiteral("en"), QStringLiteral("pizza") }, { QStringLiteral("da"), QStringLiteral("pizza") },
+            { QStringLiteral("pl"), QStringLiteral("pizza") }, { QStringLiteral("uk"), QStringLiteral(u"піца") },
+            { QStringLiteral("ar"), QStringLiteral(u"بيتزا") }, { QStringLiteral("nl"), QStringLiteral("pepperoni") } };
+        for (const auto &p : pizzas) {
+            const Pre::EmojiWords lang =
+                Pre::EmojiWords::load(QStringLiteral(PRE_DATA_DIR "/%1/emoji_words.txt").arg(p.first), page);
+            QCOMPARE(lang.forWord(p.second), pizza);
+        }
     }
 
     /*
@@ -1068,13 +1290,13 @@ private Q_SLOTS:
         // Nor for the words that might come next.
         Pre::Bridge b = rec.bridge();
         b.before = [](int) { return QStringLiteral("I like "); };
-        b.nextWords = [] { return QStringList{ QStringLiteral("pizza"), QStringLiteral("it") }; };
+        b.nextWords = [](const QString &) { return QStringList{ QStringLiteral("pizza"), QStringLiteral("it") }; };
         c.setBridge(b);
         c.setCandidates(QString(), QString(), {});
         QCOMPARE(c.m_bar.value(1), QStringLiteral("pizza"));
         QCOMPARE(c.m_bar.value(2), QString());
-        // A language without them.
-        c.setKeyboardState(true, false, { QStringLiteral("nl") }, QStringLiteral("nl"));
+        // A language without them (Chinese).
+        c.setKeyboardState(true, false, { QStringLiteral("zh") }, QStringLiteral("zh"));
         c.setCandidates(QStringLiteral("pizza"), QString(), { QStringLiteral("pizza") });
         QCOMPARE(c.m_bar.value(2), QString());
         // The bar is up for them with suggestions off; not in a field without words.
@@ -1836,6 +2058,90 @@ private Q_SLOTS:
     }
 
     /*
+     * After a swipe, with suggestions on, as the Android Pre Keyboard's 1.4.1:
+     * the bar's left place holds the swipe's likeliest other word (Choose,
+     * where it took Course), and tapping it swaps it in, the word it replaced
+     * offered there in its turn; the middle and right hold the likeliest next
+     * words after the swiped one, and tapping one types it after the swiped
+     * word. No emoji then: the right is a word. Space still puts the swiped
+     * word in as it was.
+     */
+    void swipeBarPredictsTheNextWord()
+    {
+        QTemporaryDir dir;
+        writePresage(dir.filePath(QStringLiteral("lib/en/database_en.db")),
+                     { { QStringLiteral("course"), 60 }, { QStringLiteral("choose"), 40 }, { QStringLiteral("chose"), 20 },
+                       { QStringLiteral("the"), 400 } });
+        Recorder rec;
+        Pre::Controller c;
+        Pre::Bridge b = rec.bridge();
+        QString text = QStringLiteral("I ");
+        QString preedit;
+        QStringList askedWith;
+        b.setWord = [&](const QString &w) { rec.calls << QStringLiteral("set ") + w; preedit = w; c.setCandidates(w, QString(), { w }); };
+        b.pick = [&](const QString &w) {
+            rec.calls << QStringLiteral("pick ") + w;
+            text += w + QLatin1Char(' ');
+            preedit.clear();
+            c.setCandidates(QString(), QString(), {});
+        };
+        b.before = [&](int n) { return (text + preedit).right(n); };
+        b.prose = [] { return true; };
+        b.nextWords = [&](const QString &left) {
+            askedWith << left;
+            if (left.endsWith(QLatin1String("Course ")) || left.endsWith(QLatin1String("Choose ")))
+                return QStringList{ QStringLiteral("the"), QStringLiteral("a"), QStringLiteral("to") };
+            return QStringList{ QStringLiteral("think"), QStringLiteral("know") };
+        };
+        c.setBridge(b);
+        Pre::KeyboardView view;
+        showKeys(view, Pre::Language::byId(QStringLiteral("en")), 1080, 1080, false, Pre::Settings::Height::Medium);
+        c.setView(&view);
+        c.setPrefs(QJsonObject{ { QStringLiteral("emojiSuggestions"), true } });
+        c.setKeyboardState(true, false, { QStringLiteral("en") }, QStringLiteral("en"));
+        QSignalSpy loaded(&c, &Pre::Controller::swipeWordsLoaded);
+        c.setWordDirs(dir.filePath(QStringLiteral("lib")), dir.filePath(QStringLiteral("dict")));
+        QVERIFY(loaded.wait(5000));
+        Pre::SwipeDecoder::Layout layout;
+        QVERIFY(view.swipeLayout(layout));
+        QVector<float> xs, ys;
+        for (const QPointF &p : swipePath(layout, QStringLiteral("course"), 0, 1)) { xs << float(p.x()); ys << float(p.y()); }
+        c.onSwipe(xs, ys, Pre::KeyboardView::CAPS_FIRST);
+        QTRY_VERIFY(!rec.calls.isEmpty());
+        QCOMPARE(rec.calls, QStringList{ QStringLiteral("set Course") });
+        // The swiped word asked for as if it had gone in, and no emoji in the right place.
+        QCOMPARE(askedWith.last(), QStringLiteral("I Course "));
+        QCOMPARE(view.m_words, (QStringList{ QStringLiteral("Choose"), QStringLiteral("the"), QStringLiteral("a") }));
+        QVERIFY(!view.m_barEmoji);
+        // The left swaps: Choose in, Course offered back.
+        rec.calls.clear();
+        c.onPick(0, Pre::KeyboardView::CAPS_NONE);
+        QCOMPARE(rec.calls, QStringList{ QStringLiteral("set Choose") });
+        QCOMPARE(view.m_words, (QStringList{ QStringLiteral("Course"), QStringLiteral("the"), QStringLiteral("a") }));
+        // A next word goes in after the swiped one.
+        rec.calls.clear();
+        c.onPick(1, Pre::KeyboardView::CAPS_NONE);
+        QCOMPARE(rec.calls, (QStringList{ QStringLiteral("pick Choose"), QStringLiteral("pick the") }));
+        QCOMPARE(text, QStringLiteral("I Choose the "));
+        // Space after a swipe still puts it in as swiped.
+        rec.calls.clear();
+        xs.clear();
+        ys.clear();
+        for (const QPointF &p : swipePath(layout, QStringLiteral("course"), 0, 1)) { xs << float(p.x()); ys << float(p.y()); }
+        c.onSwipe(xs, ys, Pre::KeyboardView::CAPS_NONE);
+        QTRY_VERIFY(!rec.calls.isEmpty());
+        c.onText(QStringLiteral(" "));
+        QCOMPARE(rec.calls, (QStringList{ QStringLiteral("set course"), QStringLiteral("pick course") }));
+        // With suggestions off there are no next words: the swipe's guesses either side, as before.
+        rec.calls.clear();
+        c.setKeyboardState(false, false, { QStringLiteral("en") }, QStringLiteral("en"));
+        c.onSwipe(xs, ys, Pre::KeyboardView::CAPS_NONE);
+        QTRY_VERIFY(!rec.calls.isEmpty());
+        QCOMPARE(view.m_words.value(1), QStringLiteral("course"));
+        QVERIFY(view.m_words.contains(QStringLiteral("choose")));
+    }
+
+    /*
      * The language plugins' own words (PRE_SWIPE_LIB, PRE_SWIPE_DICT; the
      * device's paths by default): common words swiped a little off their keys,
      * as a finger does, come out first nearly always. Prints how often.
@@ -1997,6 +2303,262 @@ private Q_SLOTS:
     }
 
     /*
+     * The number row: the Sym page's digits above the letters, in the accent
+     * colour with the same holds; the keyboard a row taller, and the Sym page
+     * too, its digits on top and a row of arrows and signs below them. Every
+     * other key of the page is as it was. With the digits hidden on the
+     * letters, E R T, D F G, X C V and @ print no digit and the orange key
+     * types nothing else on them, while the other alternates stay.
+     */
+    void numberRow()
+    {
+        const Pre::Language en = Pre::Language::byId(QStringLiteral("en"));
+        const Pre::Rows &plain = Pre::Keymap::letters(en);
+        const Pre::Rows &numbered = Pre::Keymap::letters(en, true);
+        QCOMPARE(numbered.size(), 5);
+        QCOMPARE(numbered.mid(1).size(), plain.size());
+        for (int r = 0; r < plain.size(); ++r)
+            for (int k = 0; k < plain[r].size(); ++k) QCOMPARE(numbered[r + 1][k].key, plain[r][k].key);
+        const Pre::Rows &sym = Pre::Keymap::symbols(true);
+        QCOMPARE(sym.size(), 5);
+        QStringList top, symTop, arrows;
+        for (const Pre::Slot &s : numbered[0]) { top << s.key->text; QVERIFY(s.key->accent); }
+        for (const Pre::Slot &s : sym[0]) symTop << s.key->text;
+        for (const Pre::Slot &s : sym[1]) arrows << s.key->text;
+        QCOMPARE(top, QStringLiteral("1 2 3 4 5 6 7 8 9 0").split(QLatin1Char(' ')));
+        QCOMPARE(symTop, top);
+        QCOMPARE(arrows.join(QString()), QStringLiteral("←→↑↓↔✓✗★♥♪"));
+        // Nothing on the arrow row is typed anywhere else on either page.
+        QSet<QString> elsewhere;
+        for (const Pre::Rows *page : { &numbered, &sym })
+            for (int r = 0; r < page->size(); ++r)
+                for (const Pre::Slot &s : (*page)[r])
+                    if (!(page == &sym && r == 1))
+                        for (const QString &t : QStringList{ s.key->text, s.key->alt } + s.key->extended) elsewhere << t;
+        for (const Pre::Slot &s : sym[1])
+            for (const QString &t : s.key->extended) QVERIFY2(!elsewhere.contains(t), qPrintable(t));
+
+        Pre::KeyboardView view;
+        showKeys(view, en, 1080, 1080, false, Pre::Settings::Height::Medium);
+        const qreal fourRows = view.keysHeight();
+        Pre::Settings s = view.settings();
+        s.numberRow = true;
+        view.applySettings(s);
+        QCOMPARE(view.keysHeight(), fourRows + view.rowHeight());
+        view.show(Pre::KeyboardView::Page::Symbols);
+        QCOMPARE(view.keysHeight(), fourRows + view.rowHeight());
+        view.show(Pre::KeyboardView::Page::Letters);
+        const auto key = [&](const QString &text) -> const Pre::Key & {
+            for (const auto &z : view.m_zones)
+                if (z.slot.drawn && z.slot.key->text == text && !z.slot.key->accent) return *z.slot.key;
+            return *view.m_zones.first().slot.key;
+        };
+        QCOMPARE(view.altText(key(QStringLiteral("e"))), QStringLiteral("1"));
+        QStringList printed;
+        for (const auto &z : view.m_zones) printed << view.capText(*z.slot.key) + view.altText(*z.slot.key);
+
+        // Hidden: the digits, not the other alternates, and the letters stay put.
+        QVector<QPair<qreal, qreal>> where;
+        for (const auto &z : view.m_zones) where << qMakePair(z.letterPx, z.baseline);
+        s.hideKeyDigits = true;
+        view.applySettings(s);
+        QCOMPARE(view.keysHeight(), fourRows + view.rowHeight());
+        for (const QString &l : { "e", "r", "t", "d", "f", "g", "x", "c", "v", "@" }) {
+            QVERIFY2(view.altText(key(l)).isEmpty(), qPrintable(l));
+            view.m_alt = Pre::Alt::Once;
+            QCOMPARE(view.output(key(l)), l);
+            view.m_alt = Pre::Alt::Off;
+        }
+        QCOMPARE(view.altText(key(QStringLiteral("q"))), QStringLiteral("/"));
+        QCOMPARE(view.altText(key(QStringLiteral("k"))), QStringLiteral(":"));
+        view.m_alt = Pre::Alt::Once;
+        QCOMPARE(view.output(key(QStringLiteral("k"))), QStringLiteral(":"));
+        view.m_alt = Pre::Alt::Off;
+        for (int k = 0; k < view.m_zones.size(); ++k) {
+            const auto &z = view.m_zones[k];
+            if (!z.slot.drawn || z.slot.key->kind != Pre::Kind::Char || z.slot.key->accent) continue;
+            QVERIFY2(qMakePair(z.letterPx, z.baseline) == where[k],
+                     qPrintable(z.slot.key->text));
+        }
+        QStringList problems = printingProblems(view, QStringLiteral("hidden digits: "));
+        QVERIFY2(problems.isEmpty(), qPrintable(problems.join(QLatin1Char('\n'))));
+        // Off with the number row: the digits are back, whatever the setting says.
+        s.numberRow = false;
+        view.applySettings(s);
+        QCOMPARE(view.keysHeight(), fourRows);
+        QCOMPARE(view.altText(key(QStringLiteral("e"))), QStringLiteral("1"));
+        QCOMPARE(Pre::Settings::fromJson(s.toJson(QJsonObject())).numberRow, false);
+        s.numberRow = true;
+        QVERIFY(Pre::Settings::fromJson(s.toJson(QJsonObject())).numberRow);
+        QVERIFY(Pre::Settings::fromJson(s.toJson(QJsonObject())).hideKeyDigits);
+    }
+
+    // The number row fits every phone, in every language, either way up, its digits hidden or not.
+    void numberRowFitsEveryScreen()
+    {
+        QStringList wrong;
+        for (const Screen &sc : screens()) {
+            if (!sc.measured) continue;
+            for (const Pre::Language &l : Pre::Language::all())
+                for (bool hide : { false, true }) {
+                    Pre::KeyboardView view;
+                    showKeys(view, l, sc.shortSide, sc.width, sc.landscape, Pre::Settings::Height::Medium);
+                    Pre::Settings s = view.settings();
+                    s.numberRow = true;
+                    s.hideKeyDigits = hide;
+                    view.applySettings(s);
+                    view.setHeight(view.headroom() + view.keysHeight());
+                    for (auto page : { Pre::KeyboardView::Page::Letters, Pre::KeyboardView::Page::Symbols }) {
+                        view.show(page);
+                        const QString where = QStringLiteral("%1 %2 %3%4: ").arg(sc.name, l.id)
+                                                  .arg(int(page)).arg(hide ? QStringLiteral(" hidden") : QString());
+                        wrong << layoutProblems(view, where) << printingProblems(view, where) << centringProblems(view, where);
+                    }
+                }
+        }
+        for (const QString &w : wrong.mid(0, 30)) qWarning().noquote() << w;
+        QVERIFY2(wrong.isEmpty(), qPrintable(QStringLiteral("%1 problems").arg(wrong.size())));
+    }
+
+    /*
+     * The emoji page's strip, as the Android Pre Keyboard's 1.4.0 has it: two
+     * thirds of a row high, ABC, the tabs and the search field on one centre
+     * line, the tabs as wide as their labels, and the search field filling
+     * the rest to as far from the right edge as ABC is from the left. Emoji
+     * are sized from the row, so the number row's taller page shows more of
+     * them, not bigger ones.
+     */
+    /*
+     * As on Android: a row of letters keeps room under its line for g, j, p,
+     * q and y's tails, shown or not, so the capitals sit where Android's do
+     * (a capital Q's tail alone left them lower), and the period with its
+     * microphone is printed left of centre, away from it, as I, K and M are.
+     */
+    void lettersAndPeriodAsAndroid()
+    {
+        for (const Screen &sc : screens()) {
+            if (!sc.measured) continue;
+            Pre::KeyboardView view;
+            showKeys(view, Pre::Language::byId(QStringLiteral("en")), sc.shortSide, sc.width, sc.landscape,
+                     Pre::Settings::Height::Medium);
+            int e = -1, period = -1;
+            for (int k = 0; k < view.m_zones.size(); ++k) {
+                const QString t = view.m_zones[k].slot.key->text;
+                if (t == QLatin1String("e")) e = k;
+                if (t == QLatin1String(".")) period = k;
+            }
+            QVERIFY(e >= 0 && period >= 0);
+            const Pre::KeyboardView::Zone &ez = view.m_zones[e];
+            QFont f = view.m_bold;
+            f.setPixelSize(std::max(1, int(ez.letterPx)));
+            const QFontMetricsF fm(f);
+            const QRectF local(0, 0, ez.rect.width(), ez.rect.height());
+            const qreal floor = view.m_painter.capFace(local).bottom() - 1 * view.m_dp;
+            QVERIFY2(ez.baseline + fm.tightBoundingRect(QStringLiteral("gjpqy")).bottom() <= floor + 0.5,
+                     qPrintable(sc.name + QStringLiteral(": no room for a tail under E's line")));
+
+            const Pre::KeyboardView::Zone &pz = view.m_zones[period];
+            const QRectF box(0, 0, pz.rect.width(), pz.rect.height());
+            QFont pf = view.m_bold;
+            pf.setPixelSize(std::max(1, int(pz.letterPx)));
+            const QFontMetricsF pm(pf);
+            auto inkCentre = [&] {
+                const QRectF ink = pm.tightBoundingRect(QStringLiteral("."));
+                return view.letterAt(pz, box, pm).x() + (ink.left() + ink.right()) / 2;
+            };
+            QVERIFY2(std::abs(inkCentre() - box.center().x()) <= 1, qPrintable(sc.name + QStringLiteral(": no microphone, not centred")));
+            view.setVoice(true, false, QString());
+            QVERIFY2(inkCentre() < box.center().x() - box.width() * 0.04,
+                     qPrintable(sc.name + QStringLiteral(": the period not left of its microphone")));
+        }
+    }
+
+    /*
+     * The emoji page drawn the size of the Android Pre Keyboard's 1.4.0: ABC
+     * sized to its key, and emoji as tall as Android draws them for the same
+     * text size (1.06 times it: Qt draws Noto Color Emoji smaller for its size,
+     * a fifth smaller on a mako, so the same numbers gave smaller emoji). With
+     * the device's fonts (FONTCONFIG_FILE, as for the shots); skipped without.
+     */
+    void emojiPageSizedAsAndroid()
+    {
+        Pre::KeyboardView view;
+        showKeys(view, Pre::Language::byId(QStringLiteral("en")), 768, 768, false, Pre::Settings::Height::Medium);
+        view.show(Pre::KeyboardView::Page::Emoji);
+        const Pre::EmojiPanel &e = view.m_emoji;
+        const QRectF abc = e.abcRect();
+        QCOMPARE(e.abcTextSize(), std::min(abc.height() * 0.46, abc.width() * 0.3));
+
+        if (!QFontDatabase::families().contains(QStringLiteral("Noto Color Emoji")))
+            QSKIP("no Noto Color Emoji: set FONTCONFIG_FILE to the device's fonts");
+        for (const qreal size : { 20.0, 47.6, 66.8 }) {
+            QImage img(int(size * 3), int(size * 3), QImage::Format_ARGB32_Premultiplied);
+            img.fill(Qt::transparent);
+            {
+                QPainter p(&img);
+                p.setFont(Pre::EmojiPanel::emojiFont(size));
+                p.drawText(img.rect(), Qt::AlignCenter, QStringLiteral("😀"));
+            }
+            int top = -1, bottom = -1;
+            for (int y = 0; y < img.height(); ++y)
+                for (int x = 0; x < img.width(); ++x)
+                    if (qAlpha(img.pixel(x, y)) > 32) { if (top < 0) top = y; bottom = y; break; }
+            QVERIFY2(top >= 0, "nothing drawn");
+            const qreal ink = bottom - top + 1;
+            QVERIFY2(std::abs(ink - size * 71.0 / 67.0) <= std::max(2.0, size * 0.04),
+                     qPrintable(QStringLiteral("😀 at %1: %2 px tall, Android %3").arg(size).arg(ink).arg(size * 71.0 / 67.0)));
+        }
+    }
+
+    void emojiPageStrip()
+    {
+        for (bool klipy : { false, true }) {
+            Pre::Klipy::instance().setKey(klipy ? QStringLiteral("test") : QString());
+            for (const Screen &sc : screens()) {
+                if (!sc.measured) continue;
+                const QString where = sc.name + (klipy ? QStringLiteral(" (KLIPY): ") : QStringLiteral(": "));
+                Pre::KeyboardView view;
+                showKeys(view, Pre::Language::byId(QStringLiteral("en")), sc.shortSide, sc.width, sc.landscape,
+                         Pre::Settings::Height::Medium);
+                view.show(Pre::KeyboardView::Page::Emoji);
+                const Pre::EmojiPanel &e = view.m_emoji;
+                QCOMPARE(e.m_strip.height(), std::round(view.rowHeight() * 0.68));
+                const qreal middle = e.m_strip.center().y();
+                QVERIFY2(std::abs(e.abcRect().center().y() - middle) < 0.5, qPrintable(where));
+                QCOMPARE(e.tabCount(), klipy ? 3 : 1);
+                qreal right = e.abcRect().right();
+                for (int i = 0; i < e.tabCount(); ++i) {
+                    const QRectF r = e.topTab(i);
+                    QVERIFY2(std::abs(r.center().y() - middle) < 0.5, qPrintable(where));
+                    QVERIFY2(r.left() >= right, qPrintable(where + QStringLiteral("tab %1 overlaps").arg(i)));
+                    right = r.right();
+                }
+                if (klipy) {
+                    const QRectF s = e.searchRect();
+                    QVERIFY2(std::abs(s.center().y() - middle) < 0.5, qPrintable(where));
+                    QVERIFY2(s.left() >= right, qPrintable(where));
+                    QVERIFY2(std::abs((e.m_strip.right() - s.right()) - (e.abcRect().left() - e.m_strip.left())) < 0.5,
+                             qPrintable(where));
+                    QVERIFY2(s.width() > e.m_strip.width() * 0.3, qPrintable(where + QStringLiteral("search too narrow")));
+                }
+                // The number row: the same emoji, more of them.
+                const int cols = e.m_cols;
+                const qreal cell = e.cellHeight(), grid = e.m_grid.height();
+                Pre::Settings s = view.settings();
+                s.numberRow = true;
+                view.applySettings(s);
+                view.setHeight(view.headroom() + view.keysHeight());
+                view.show(Pre::KeyboardView::Page::Emoji);
+                QCOMPARE(view.m_emoji.m_cols, cols);
+                QCOMPARE(view.m_emoji.cellHeight(), cell);
+                QVERIFY2(view.m_emoji.m_grid.height() > grid + view.rowHeight() - 2,
+                         qPrintable(where + QStringLiteral("grid %1 then %2, row %3").arg(grid).arg(view.m_emoji.m_grid.height()).arg(view.rowHeight())));
+            }
+        }
+        Pre::Klipy::instance().setKey(QString());
+    }
+
+    /*
      * Letters that follow Shift: small with it off, capitals with it on, and
      * in the same place at the same size either way, on every phone and in
      * every language, with nothing out of its key in either.
@@ -2073,9 +2635,12 @@ private Q_SLOTS:
             Pre::KeyboardView view;
             showKeys(view, l, 1080, 1080, false, Pre::Settings::Height::Medium);
             QMap<QString, int> seen;
+            // Arabic writes ? and ; its own way (؟ ؛): the same alternates, as it prints them.
+            QHash<QString, QString> plain;
+            for (auto it = l.punctuation.cbegin(); it != l.punctuation.cend(); ++it) plain.insert(it.value(), it.key());
             for (const auto &z : view.m_zones) {
                 if (!z.slot.drawn || z.slot.key->kind != Pre::Kind::Char || z.slot.key->alt.isEmpty()) continue;
-                const QString a = z.slot.key->alt;
+                const QString a = plain.value(z.slot.key->alt, z.slot.key->alt);
                 ++seen[a];
                 if (!preAt.contains(a)) continue;
                 const QString where = l.id + QStringLiteral(" ") + a + QStringLiteral(": ");
@@ -2097,79 +2662,145 @@ private Q_SLOTS:
     void numberFields_data()
     {
         QTest::addColumn<QString>("allowed");
+        QTest::addColumn<QStringList>("held");
         // InputMethod::digitsForContentType's.
-        QTest::newRow("number") << QStringLiteral("0123456789+-.,");
-        QTest::newRow("phone") << QStringLiteral("0123456789*#+");
+        QTest::newRow("number") << QStringLiteral("0123456789+-.,")
+                                << QStringList{ QStringLiteral("0"), QStringLiteral("+"), QStringLiteral("-"),
+                                                QStringLiteral("."), QStringLiteral(",") };
+        QTest::newRow("phone") << QStringLiteral("0123456789*#+")
+                               << QStringList{ QStringLiteral("0"), QStringLiteral("*"), QStringLiteral("#"),
+                                               QStringLiteral("+") };
     }
 
     /*
-     * A number field, on every phone either way up: the keys show only what it
-     * takes, each alone and big, and type just that; every digit is there, in
-     * every language, and in the same place in every one, the Pre's grid; the
-     * rest are blank and type nothing; the Sym page is as it was.
+     * A number field, on every phone either way up and in every language: the
+     * number pad, as on a phone's dial pad - 1 2 3, 4 5 6, 7 8 9, then
+     * backspace, 0 and Return - its digits big and in the style's colour, and
+     * what else the field takes held on the 0 whether Hold for More is on or
+     * not. No bar, as the field takes no words. Leaving the field brings the
+     * letters back as they were.
      */
     void numberFields()
     {
         QFETCH(QString, allowed);
+        QFETCH(QStringList, held);
         QStringList problems;
-        // Where each key's character is in English, as the field shows it.
-        const auto placed = [](const Pre::KeyboardView &view) {
-            QMap<QString, QRectF> at;
-            for (const auto &z : view.m_zones)
-                if (z.slot.drawn && z.slot.key->kind == Pre::Kind::Char && !view.capText(*z.slot.key).isEmpty())
-                    at.insert(view.capText(*z.slot.key), z.rect);
-            return at;
-        };
         for (const Screen &sc : screens())
         for (const Pre::Language &l : Pre::Language::all()) {
             if (!sc.measured) continue;
-            Pre::KeyboardView english;
-            showKeys(english, Pre::Language::byId(QStringLiteral("en")), sc.shortSide, sc.width, sc.landscape,
-                     Pre::Settings::Height::Medium);
-            english.setDigits(allowed);
             Pre::KeyboardView view;
             showKeys(view, l, sc.shortSide, sc.width, sc.landscape, Pre::Settings::Height::Medium);
+            Pre::Settings s = view.settings();
+            s.suggestions = true;
+            view.applySettings(s);
+            const qreal lettersHeight = view.keysHeight();
             qreal letters = 0;
             for (const auto &z : view.m_zones)
                 if (z.slot.drawn && z.slot.key->kind == Pre::Kind::Char) letters = z.letterPx;
             view.setDigits(allowed);
             const QString where = sc.name + QLatin1Char(' ') + l.id + QStringLiteral(": ");
-            // A digit is no wider than the letters were: as big as them, at least.
-            for (const auto &z : view.m_zones)
-                if (z.slot.drawn && z.slot.key->kind == Pre::Kind::Char && z.letterPx < letters) {
-                    problems << where + QStringLiteral("%1 px, smaller than the letters' %2").arg(z.letterPx).arg(letters);
-                    break;
-                }
-            QSet<QChar> shown;
-            int blank = 0;
+            if (view.m_page != Pre::KeyboardView::Page::Pad) { problems << where + QStringLiteral("no pad"); continue; }
+            if (view.barShown()) problems << where + QStringLiteral("a bar over the pad");
+            if (view.keysHeight() != view.rowHeight() * 4 + view.topBorder() + view.bottomPad())
+                problems << where + QStringLiteral("not four rows high");
+            if (view.keysHeight() >= lettersHeight) problems << where + QStringLiteral("not lower than the letters with their bar");
+            QStringList faces;
             for (const auto &z : view.m_zones) {
-                if (!z.slot.drawn || z.slot.key->kind != Pre::Kind::Char) continue;
-                const QString s = view.capText(*z.slot.key);
-                if (s != view.output(*z.slot.key)) problems << where + s + QStringLiteral(": types ") + view.output(*z.slot.key);
-                if (!view.altText(*z.slot.key).isEmpty()) problems << where + s + QStringLiteral(": an alternate still printed");
-                if (s.isEmpty()) ++blank;
-                for (QChar c : s) {
-                    if (!allowed.contains(c)) problems << where + s + QStringLiteral(": not for this field");
-                    shown.insert(c);
+                const Pre::Key &k = *z.slot.key;
+                if (k.kind == Pre::Kind::Backspace) faces << QStringLiteral("<");
+                else if (k.kind == Pre::Kind::Return) faces << QStringLiteral(">");
+                else faces << view.capText(k);
+                if (k.kind != Pre::Kind::Char) continue;
+                if (view.output(k) != k.text) problems << where + k.text + QStringLiteral(": types ") + view.output(k);
+                if (!k.accent) problems << where + k.text + QStringLiteral(": not in the style's colour");
+                if (z.letterPx <= letters) problems << where + QStringLiteral("%1 px, not bigger than the letters' %2").arg(z.letterPx).arg(letters);
+                if (k.text == QLatin1String("0")) {
+                    if (k.extended != held) problems << where + QStringLiteral("0 holds ") + k.extended.join(QLatin1Char(' '));
+                    if (!view.holds(k)) problems << where + QStringLiteral("the 0 does not hold with Hold for More off");
+                } else if (view.holds(k)) {
+                    problems << where + k.text + QStringLiteral(": holds something");
                 }
             }
-            for (QChar d : QStringLiteral("0123456789"))
-                if (!shown.contains(d)) problems << where + QStringLiteral("no ") + d;
-            if (placed(view) != placed(english)) problems << where + QStringLiteral("the keys are not where English has them");
-            if (!blank) problems << where + QStringLiteral("no key went blank");
-            problems << printingProblems(view, where) << centringProblems(view, where);
-            view.show(Pre::KeyboardView::Page::Symbols);
-            for (const auto &z : view.m_zones)
-                if (z.slot.drawn && z.slot.key->kind == Pre::Kind::Char && view.capText(*z.slot.key) != z.slot.key->text)
-                    problems << where + QStringLiteral("Sym page changed: ") + view.capText(*z.slot.key);
+            if (faces.join(QString()) != QStringLiteral("123456789<0>"))
+                problems << where + QStringLiteral("the pad is ") + faces.join(QString());
+            problems << layoutProblems(view, where) << printingProblems(view, where) << centringProblems(view, where);
+            // The three keys of a row are the same size.
+            for (int r = 0; r < 4; ++r)
+                if (view.m_zones[3 * r].rect.width() < view.m_zones[3 * r + 1].rect.width() - 1)
+                    problems << where + QStringLiteral("row %1 uneven").arg(r);
+            // A new field of the same kind starts on the pad again.
+            view.reset();
+            if (view.m_page != Pre::KeyboardView::Page::Pad) problems << where + QStringLiteral("reset left the pad");
             view.setDigits(QString());
-            view.show(Pre::KeyboardView::Page::Letters);
+            if (view.m_page != Pre::KeyboardView::Page::Letters) problems << where + QStringLiteral("the letters are not back");
+            if (view.keysHeight() != lettersHeight) problems << where + QStringLiteral("the letters' height is not back");
             for (const auto &z : view.m_zones)
                 if (z.slot.drawn && z.slot.key->kind == Pre::Kind::Char && view.capText(*z.slot.key).isEmpty())
-                    problems << where + QStringLiteral("a key still blank after the number field");
+                    problems << where + QStringLiteral("a key blank after the number field");
         }
         if (!problems.isEmpty()) qWarning().noquote() << problems.mid(0, 40).join(QLatin1Char('\n'));
         QCOMPARE(problems.size(), 0);
+    }
+
+    // The pad's 0 held: what else the field takes, and the one picked is typed.
+    /*
+     * Return held on the Sym page, where it carries the gear: Text Assist
+     * opens, by the application manager's name MaliitServer may call, and the
+     * keyboard goes. Nothing is typed when it lets go.
+     */
+    void symReturnHeldOpensTextAssist()
+    {
+        Recorder rec;
+        Field field;
+        Pre::Controller c;
+        c.setBridge(field.bridge(rec));
+        Pre::KeyboardView view;
+        showKeys(view, Pre::Language::byId(QStringLiteral("en")), 1080, 1080, false, Pre::Settings::Height::Medium);
+        view.setControllerObject(&c);
+        view.show(Pre::KeyboardView::Page::Symbols);
+        int ret = -1;
+        for (int i = 0; i < view.m_zones.size(); ++i)
+            if (view.m_zones[i].slot.key->kind == Pre::Kind::Return) ret = i;
+        QVERIFY(ret >= 0);
+        QCOMPARE(view.m_zones[ret].slot.key->corner, Pre::Corner::Gear);
+        const QPointF at = view.m_zones[ret].rect.center();
+        view.pointerDown(1, at.x(), at.y());
+        view.onHold();
+        view.pointerUp(1, at.x(), at.y());
+        QVERIFY2(rec.calls.contains(QStringLiteral("hide")), qPrintable(rec.calls.join(QLatin1Char(','))));
+        QVERIFY2(rec.calls.contains(QStringLiteral(
+                     "luna palm://com.webos.service.applicationmanager/launch {\"id\":\"org.webosports.app.settings.textassist\"}")),
+                 qPrintable(rec.calls.join(QLatin1Char(','))));
+        QVERIFY(field.text.isEmpty());
+    }
+
+    void numberPadHold()
+    {
+        Recorder rec;
+        Field field;
+        Pre::Controller c;
+        c.setBridge(field.bridge(rec));
+        Pre::KeyboardView view;
+        showKeys(view, Pre::Language::byId(QStringLiteral("en")), 1080, 1080, false, Pre::Settings::Height::Medium);
+        view.setControllerObject(&c);
+        c.setDigits(QStringLiteral("0123456789*#+"));
+        QCOMPARE(view.m_page, Pre::KeyboardView::Page::Pad);
+        int zero = -1;
+        for (int i = 0; i < view.m_zones.size(); ++i)
+            if (view.m_zones[i].slot.key->text == QLatin1String("0")) zero = i;
+        QVERIFY(zero >= 0);
+        const QPointF at = view.m_zones[zero].rect.center();
+        view.pointerDown(1, at.x(), at.y());
+        view.onHold();
+        QCOMPARE(view.m_extended, (QStringList{ QStringLiteral("0"), QStringLiteral("*"), QStringLiteral("#"), QStringLiteral("+") }));
+        const QPointF plus = view.cell(3, 4, view.m_extendedFrame).center();
+        view.pointerMove(1, plus.x(), plus.y());
+        view.pointerUp(1, plus.x(), plus.y());
+        // A tap on a digit types it.
+        const QPointF five = view.m_zones[4].rect.center();
+        view.pointerDown(1, five.x(), five.y());
+        view.pointerUp(1, five.x(), five.y());
+        QCOMPARE(field.text, QStringLiteral("+5"));
     }
 
     /*
@@ -2251,11 +2882,34 @@ private Q_SLOTS:
             save(view, QStringLiteral("en-white-shift"));
             view.m_shift = Pre::KeyboardView::Shift::Off;
             s.style = Pre::Style::Orange;
+            // The number row, with the letters' digits and without, and the Sym page under it.
+            s.numberRow = true;
             view.applySettings(s);
+            view.setHeight(view.headroom() + view.keysHeight());
+            save(view, QStringLiteral("en-numbers"));
+            view.show(Pre::KeyboardView::Page::Symbols);
+            save(view, QStringLiteral("en-numbers-sym"));
+            view.show(Pre::KeyboardView::Page::Letters);
+            s.hideKeyDigits = true;
+            view.applySettings(s);
+            save(view, QStringLiteral("en-numbers-plain"));
+            s.numberRow = s.hideKeyDigits = false;
+            view.applySettings(s);
+            view.setHeight(view.headroom() + view.keysHeight());
             view.setDigits(QStringLiteral("0123456789+-.,"));
             save(view, QStringLiteral("en-number"));
             view.setDigits(QStringLiteral("0123456789*#+"));
             save(view, QStringLiteral("en-phone"));
+            // The emoji page, with and without KLIPY's tabs and search.
+            for (bool klipy : { false, true }) {
+                Pre::Klipy::instance().setKey(klipy ? QStringLiteral("test") : QString());
+                Pre::KeyboardView emoji;
+                showKeys(emoji, en, sc.shortSide, sc.width, sc.landscape, Pre::Settings::Height::Medium);
+                emoji.show(Pre::KeyboardView::Page::Emoji);
+                if (klipy) emoji.m_emoji.select(Pre::EmojiPanel::Tab::Gif);
+                save(emoji, klipy ? QStringLiteral("en-emoji-gif") : QStringLiteral("en-emoji"));
+            }
+            Pre::Klipy::instance().setKey(QString());
             // The bar: the next words before a word, and a word with its emoji.
             {
                 Pre::KeyboardView bar;
@@ -2921,9 +3575,14 @@ private:
                     && r.intersected(view.m_zones[j].rect).height() > 0.5)
                     out << where + key + QStringLiteral(": on top of another key");
             // In landscape the screen is twice as wide as ten keys of the
-            // portrait shape: a key may be a little wider, not stretched.
+            // portrait shape: a key may be a little wider, not stretched. Its
+            // share of its row, the row at most ten such keys, rounded to
+            // whole pixels as the keys are (the number pad's three share it).
+            qreal units = 0;
+            for (const auto &z : view.m_zones)
+                if (z.rect.top() == r.top()) units += z.slot.weight;
             if (view.m_zones[i].slot.key->kind == Pre::Kind::Char
-                && r.width() > view.m_zones[i].slot.weight * 1.35 * view.rowHeight() + 1)
+                && r.width() > view.m_zones[i].slot.weight / units * std::round(10 * 1.35 * view.rowHeight()) + 1)
                 out << where + key + QStringLiteral(": stretched, %1 wide in a row %2 tall")
                                          .arg(r.width()).arg(view.rowHeight());
         }
@@ -2960,7 +3619,7 @@ private:
             bool alts = false;
             for (int k = a; k < b; ++k)
                 if (view.m_zones[k].slot.drawn && view.m_zones[k].slot.key->kind == Pre::Kind::Char)
-                    alts = alts || !view.altText(*view.m_zones[k].slot.key).isEmpty();
+                    alts = alts || view.hasAlt(*view.m_zones[k].slot.key);
             for (int k = a; !alts && k < b; ++k) {
                 const auto &z = view.m_zones[k];
                 if (!z.slot.drawn || z.slot.key->kind != Pre::Kind::Char) continue;

@@ -25,19 +25,27 @@ namespace MaliitKeyboard {
 
 /*! \brief Whether the panel window can keep the geometry it was configured to.
  *
- * The window is meant to be screen-sized: the keys are drawn along its bottom
- * and the rest is masked away. A window the shell shrank in portrait - 2220 to
- * 2145 to 2045 on a sargo, as a status bar or an inset arrived - stopped being
- * shown, so anything else is put back to [screen] (InputMethod's
- * syncPanelWindowToScreen()).
+ * The keys are drawn along the bottom of the panel window and the rest is
+ * masked away. The shell (luna-next-cardshell's KeyboardOverlay) configures
+ * the window to the strip between its status bar and gesture area, and
+ * stretches whatever the window is across that strip. So the strip is kept,
+ * and the keyboard is drawn 1:1:
  *
- * Except in landscape. The shell turns its own interface on its side rather
- * than the output, so the screen stays portrait, and configures the panel to
- * the strip between its status bar and gesture area as that now stands: 2220
- * by 905 on a sargo. Put back to portrait, the window was stretched by the
- * shell across that strip, every key twice as wide and half as tall. So a
- * window as wide as the screen is long, and no taller than it is wide, is
- * kept: the keyboard then lays itself out for landscape, 1:1.
+ * - upright, the screen's width across and less than its height down: 768 by
+ *   1154 on a mako. Put back to the screen's 1280, the keyboard was squeezed
+ *   into 1154, every key at 90% of its height: shorter than the Android Pre
+ *   Keyboard's, and its letters squat;
+ * - in landscape. The shell turns its own interface on its side rather than
+ *   the output, so the screen stays portrait, and the strip is 2220 by 905 on
+ *   a sargo. Put back to portrait, every key was twice as wide and half as
+ *   tall. So a window as wide as the screen is long, and no taller than it is
+ *   wide, is kept: the keyboard then lays itself out for landscape.
+ *
+ * Anything else - no size yet, moved, no height - is put back to [screen]
+ * (InputMethod's syncPanelWindowToScreen()). Shrunk windows were once put back
+ * too, as on a sargo (2220 to 2145 to 2045) those stopped being shown; the
+ * mask then stayed where the old size had it, outside the smaller window,
+ * which maskPanelStrip() has since moved with the window.
  */
 bool panelWindowKeepsGeometry(const QRect &window, const QRect &screen);
 

@@ -49,12 +49,19 @@ const int KEEP_WORDS = 2;
 const int LEARNED_SCORE = 14;
 //! Long before any space: no double space with it.
 const qint64 NEVER = std::numeric_limits<qint64>::min() / 2;
-//! Punctuation that goes against the word before it, never after a space.
-const QString SENTENCE = QStringLiteral(".,?!:;");
+//! Punctuation that goes against the word before it, never after a space, and brings its own
+//! space after it (Arabic's comma, question mark and semicolon too).
+const QString SENTENCE = QStringLiteral(".,?!:;\u060C\u061F\u061B");
+//! Words a colon makes the start of a link or an address, not the end of a phrase.
+const QStringList SCHEMES = { QStringLiteral("http"), QStringLiteral("https"), QStringLiteral("ftp"),
+                              QStringLiteral("mailto"), QStringLiteral("tel"), QStringLiteral("sms"),
+                              QStringLiteral("file"), QStringLiteral("geo") };
 //! What may close a word, for a space after it to be the word's.
 const QString CLOSERS = QStringLiteral(")\"']}”’");
 //! How far back to look for the address a period may be in.
 const int MAX_TOKEN = 64;
+//! How much of the text before the cursor the next words are asked with.
+const int MAX_CONTEXT = 256;
 
 //! [c] ends a word: a space after it is a word's.
 bool endsWord(QChar c) { return c.isLetterOrNumber() || CLOSERS.contains(c); }
@@ -284,6 +291,8 @@ void Controller::update()
     const int position = m_bridge.position ? m_bridge.position() : -1;
     if (position != m_position) {
         m_position = position;
+        // A held backspace's repeats are the keyboard's own doing too.
+        if (m_deleting) m_ownEditAt = now();
         if (position >= 0 && now() - m_ownEditAt > OWN_EDIT_MS) {
             m_tapped = true;
             m_fixTyped.clear();
@@ -322,8 +331,16 @@ void Controller::setCandidates(const QString &typed, const QString &primary, con
     showBar();
 }
 
+/*!
+ * The bar with no word being typed: the tapped word's fixes, else the next
+ * words. Nothing while backspace is held: every deletion would ask presage
+ * again, and the deleting would fall behind the finger. As on Android, the bar
+ * stays as it was for a single tap, empties once backspace repeats, and is
+ * asked once when it lets go (onBackspaceHeld()).
+ */
 QStringList Controller::idleWords()
 {
+    if (m_deleting) return QStringList();
     const QStringList fixes = wordFixes();
     return fixes.isEmpty() ? nextWords() : fixes;
 }
@@ -438,12 +455,30 @@ QStringList Controller::nextWords()
     if (!m_settings.suggestions || !m_wordsAllowed || !m_bridge.nextWords || !m_bridge.before
         || (m_bridge.prose && !m_bridge.prose()))
         return QStringList();
-    const QString before = m_bridge.before(MAX_TOKEN);
+    const QString before = m_bridge.before(MAX_CONTEXT);
     // Right after a word, or in one, it is that word that is being typed.
     if (!before.isEmpty() && !before.at(before.size() - 1).isSpace()) return QStringList();
-    if (before != m_nextFor || m_next.isEmpty()) {
-        m_nextFor = before;
-        m_next = m_bridge.nextWords();
+    return nextFor(before);
+}
+
+/*!
+ * As the Android Pre Keyboard's 1.4.1: after a swipe the bar predicts what
+ * comes next, as after a word and a space. The swiped word is still the word
+ * being typed, so it is asked for as if it had gone in.
+ */
+QStringList Controller::nextAfterSwipe()
+{
+    if (!m_settings.suggestions || !m_wordsAllowed || !m_bridge.nextWords || !m_bridge.before
+        || m_swiped.isEmpty() || m_typed != m_swiped || (m_bridge.prose && !m_bridge.prose()))
+        return QStringList();
+    return nextFor(m_bridge.before(MAX_CONTEXT) + QLatin1Char(' '));
+}
+
+QStringList Controller::nextFor(const QString &left)
+{
+    if (left != m_nextFor || m_next.isEmpty()) {
+        m_nextFor = left;
+        m_next = m_bridge.nextWords(left);
     }
     return m_next;
 }
@@ -457,7 +492,17 @@ void Controller::showBar()
 {
     QStringList bar;
     const QStringList &guesses = !m_live.isEmpty() ? m_live : m_swipeGuesses;
-    if (shown().showsBar() && m_wordsAllowed && !guesses.isEmpty()) {
+    m_barAfterSwipe = false;
+    const QStringList afterSwipe = m_live.isEmpty() && !guesses.isEmpty() ? nextAfterSwipe() : QStringList();
+    if (shown().showsBar() && m_wordsAllowed && !afterSwipe.isEmpty()) {
+        // After a swipe: on the left, its likeliest other word (Choose, where it took Course),
+        // to swap in for it; in the middle and on the right, what may come next.
+        QString other;
+        for (const QString &w : m_swipeGuesses)
+            if (w.compare(m_swiped, Qt::CaseInsensitive) != 0) { other = w; break; }
+        bar = { other, afterSwipe.value(0), afterSwipe.value(1) };
+        m_barAfterSwipe = true;
+    } else if (shown().showsBar() && m_wordsAllowed && !guesses.isEmpty()) {
         // A swipe: the word it typed (or would, lifted now) in the middle, the next guesses either side.
         const QString best = m_live.isEmpty() ? m_swiped : m_live.value(0);
         QStringList others;
@@ -478,7 +523,7 @@ void Controller::showBar()
     }
     // An emoji for the word being typed or swiped (not for the next words).
     m_barEmoji = false;
-    if (m_settings.emojiSuggestions && m_wordsAllowed && !bar.value(1).isEmpty()
+    if (m_settings.emojiSuggestions && m_wordsAllowed && !m_barAfterSwipe && !bar.value(1).isEmpty()
         && (!m_typed.isEmpty() || !guesses.isEmpty())) {
         const QString e = emojiWords().forWord(bar.value(1));
         if (!e.isEmpty()) {
@@ -564,6 +609,17 @@ void Controller::onPick(int i, int caps)
         }
         showBar();
         return;
+    }
+    if (m_barAfterSwipe && !m_swiped.isEmpty() && m_typed == m_swiped) {
+        if (i == 0) {
+            // The swipe's other word in place of the one it took; that one is offered back.
+            m_swiped = w;
+            m_bridge.setWord(w);
+            showBar();
+            return;
+        }
+        // A next word: after the swiped one, which goes in as it was swiped.
+        m_bridge.pick(m_swiped);
     }
     if (i == 2 && m_barEmoji) {
         // In place of the word, as it is: shift is nothing to an emoji.
@@ -683,10 +739,18 @@ bool Controller::spaceAfterWord(bool *digit) const
     return is;
 }
 
-bool Controller::periodWantsSpace(const QString &before, const QString &after)
+/*!
+ * Sentence punctuation brings its own space, as the period does: not after a
+ * digit (3.14, 1,000, 10:30), after a space or at the start of the text (.net,
+ * :-) on its own), in an address or a link (name@mail.com, www.site, a/b.c),
+ * after a link's scheme (https:), nor when a space already follows. The
+ * period alone also leaves out an abbreviation's first periods (e.g.).
+ */
+bool Controller::punctuationWantsSpace(const QString &before, const QString &after)
 {
-    // [before] ends in the period itself.
+    // [before] ends in the punctuation itself.
     if (before.size() < 2) return false;
+    const QChar mark = before.back();
     const QChar prev = before.at(before.size() - 2);
     if (prev.isSpace() || prev.isDigit()) return false;
     QString token = before.left(before.size() - 1);
@@ -695,6 +759,8 @@ bool Controller::periodWantsSpace(const QString &before, const QString &after)
     if (token.contains(QLatin1Char('@')) || token.contains(QLatin1Char('/'))
         || token.startsWith(QLatin1String("www"), Qt::CaseInsensitive))
         return false;
+    if (mark == QLatin1Char(':') && SCHEMES.contains(token.toLower())) return false;
+    if (mark != QLatin1Char('.')) return after.isEmpty() || !after.at(0).isSpace();
     // A small letter on its own starts an abbreviation (e.g., i.e., z.B., d.h.): its period gets no
     // space, and the abbreviation's last period does ("e.g" is not a letter on its own). A capital
     // on its own keeps the space, in every language: "I." ends a sentence, "J. Smith" is an initial.
@@ -752,9 +818,9 @@ bool Controller::punctuate(const QString &text)
     }
     key(text);
     before += text;
-    if (text == QLatin1String(".") && periodWantsSpace(before, m_bridge.after ? m_bridge.after(1) : QString())) {
+    if (SENTENCE.contains(text.at(0)) && punctuationWantsSpace(before, m_bridge.after ? m_bridge.after(1) : QString())) {
         key(QStringLiteral(" "));
-        m_autoTail = QStringLiteral(". ");
+        m_autoTail = text + QLatin1Char(' ');
     } else if (snap && typedSpace) {
         // The owner's space moves to after the punctuation, where it belongs.
         key(QStringLiteral(" "));
@@ -799,11 +865,15 @@ void Controller::onBackspaceHeld(bool held, bool lifted)
     }
     if (!m_deleting) return;
     m_deleting = false;
+    // What the repeats deleted moved the cursor: the keyboard's doing, not a tap.
+    m_ownEditAt = now();
     if (lifted) {
         if (m_bridge.release) m_bridge.release(QString(), BACKSPACE);
     } else if (m_bridge.cancelRepeat) {
         m_bridge.cancelRepeat();
     }
+    // The bar waited (idleWords()): now it is asked, once, about what is left.
+    update();
 }
 
 void Controller::onEnter()
@@ -1007,8 +1077,11 @@ void Controller::onOpenSettings()
 {
     endDictation(false);
     if (m_bridge.hide) m_bridge.hide();
+    // The application manager by the name MaliitServer's role lets it call
+    // (com.webos.service.ime.role.json): the bus is case-sensitive, and asked as
+    // "applicationManager" it refused the call and Text Assist never opened.
     if (m_bridge.luna)
-        m_bridge.luna(QStringLiteral("palm://com.webos.service.applicationManager/launch"),
+        m_bridge.luna(QStringLiteral("palm://com.webos.service.applicationmanager/launch"),
                       QStringLiteral("{\"id\":\"org.webosports.app.settings.textassist\"}"));
 }
 
