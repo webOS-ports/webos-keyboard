@@ -374,8 +374,16 @@ private Q_SLOTS:
      * moves one from under the thumb. Where shift is, the Sym page has the
      * globe.
      */
+    void keysOnBothPagesSitInTheSamePlace_data()
+    {
+        QTest::addColumn<bool>("numberRow");
+        QTest::newRow("four rows") << false;
+        QTest::newRow("number row") << true;
+    }
+
     void keysOnBothPagesSitInTheSamePlace()
     {
+        QFETCH(bool, numberRow);
         const auto place = [](const Pre::KeyboardView &view, Pre::Kind kind, const QString &text = QString()) {
             for (const auto &z : view.m_zones)
                 if (z.slot.drawn && z.slot.key->kind == kind && (text.isEmpty() || z.slot.key->text == text))
@@ -386,11 +394,17 @@ private Q_SLOTS:
         for (const Pre::Language &l : Pre::Language::all()) {
             Pre::KeyboardView view;
             showKeys(view, l, 1080, 1080, false, Pre::Settings::Height::Medium);
+            Pre::Settings numbered = view.settings();
+            numbered.numberRow = numberRow;
+            view.applySettings(numbered);
             QList<QRectF> letters;
-            const QList<QPair<Pre::Kind, QString>> keys = {
+            QList<QPair<Pre::Kind, QString>> keys = {
                 { Pre::Kind::Backspace, QString() }, { Pre::Kind::Return, QString() },
                 { Pre::Kind::Space, QString() }, { Pre::Kind::Char, QStringLiteral(".") },
                 { Pre::Kind::Sym, QString() } };
+            // With the number row, its digits are where the Sym page has them.
+            if (numberRow)
+                for (QChar d : QStringLiteral("1234567890")) keys << qMakePair(Pre::Kind::Char, QString(d));
             for (const auto &k : keys) letters << place(view, k.first, k.second);
             const QRectF shift = place(view, Pre::Kind::Shift);
             view.show(Pre::KeyboardView::Page::Symbols);
@@ -512,7 +526,8 @@ private Q_SLOTS:
                  (QSet<QString>{ QStringLiteral("style"), QStringLiteral("holdForMore"),
                                  QStringLiteral("vibrate"), QStringLiteral("vibrateLevel"),
                                  QStringLiteral("followShift"), QStringLiteral("doubleSpacePeriod"),
-                                 QStringLiteral("emojiSuggestions"),
+                                 QStringLiteral("emojiSuggestions"), QStringLiteral("numberRow"),
+                                 QStringLiteral("hideKeyDigits"),
                                  QStringLiteral("swipe"), QStringLiteral("recentEmoji") }));
         const Pre::Settings back = Pre::Settings::fromJson(pre);
         QCOMPARE(back.style, Pre::Style::White);
@@ -2079,6 +2094,124 @@ private Q_SLOTS:
     }
 
     /*
+     * The number row: the Sym page's digits above the letters, in the accent
+     * colour with the same holds; the keyboard a row taller, and the Sym page
+     * too, its digits on top and a row of arrows and signs below them. Every
+     * other key of the page is as it was. With the digits hidden on the
+     * letters, E R T, D F G, X C V and @ print no digit and the orange key
+     * types nothing else on them, while the other alternates stay.
+     */
+    void numberRow()
+    {
+        const Pre::Language en = Pre::Language::byId(QStringLiteral("en"));
+        const Pre::Rows &plain = Pre::Keymap::letters(en);
+        const Pre::Rows &numbered = Pre::Keymap::letters(en, true);
+        QCOMPARE(numbered.size(), 5);
+        QCOMPARE(numbered.mid(1).size(), plain.size());
+        for (int r = 0; r < plain.size(); ++r)
+            for (int k = 0; k < plain[r].size(); ++k) QCOMPARE(numbered[r + 1][k].key, plain[r][k].key);
+        const Pre::Rows &sym = Pre::Keymap::symbols(true);
+        QCOMPARE(sym.size(), 5);
+        QStringList top, symTop, arrows;
+        for (const Pre::Slot &s : numbered[0]) { top << s.key->text; QVERIFY(s.key->accent); }
+        for (const Pre::Slot &s : sym[0]) symTop << s.key->text;
+        for (const Pre::Slot &s : sym[1]) arrows << s.key->text;
+        QCOMPARE(top, QStringLiteral("1 2 3 4 5 6 7 8 9 0").split(QLatin1Char(' ')));
+        QCOMPARE(symTop, top);
+        QCOMPARE(arrows.join(QString()), QStringLiteral("←→↑↓↔✓✗★♥♪"));
+        // Nothing on the arrow row is typed anywhere else on either page.
+        QSet<QString> elsewhere;
+        for (const Pre::Rows *page : { &numbered, &sym })
+            for (int r = 0; r < page->size(); ++r)
+                for (const Pre::Slot &s : (*page)[r])
+                    if (!(page == &sym && r == 1))
+                        for (const QString &t : QStringList{ s.key->text, s.key->alt } + s.key->extended) elsewhere << t;
+        for (const Pre::Slot &s : sym[1])
+            for (const QString &t : s.key->extended) QVERIFY2(!elsewhere.contains(t), qPrintable(t));
+
+        Pre::KeyboardView view;
+        showKeys(view, en, 1080, 1080, false, Pre::Settings::Height::Medium);
+        const qreal fourRows = view.keysHeight();
+        Pre::Settings s = view.settings();
+        s.numberRow = true;
+        view.applySettings(s);
+        QCOMPARE(view.keysHeight(), fourRows + view.rowHeight());
+        view.show(Pre::KeyboardView::Page::Symbols);
+        QCOMPARE(view.keysHeight(), fourRows + view.rowHeight());
+        view.show(Pre::KeyboardView::Page::Letters);
+        const auto key = [&](const QString &text) -> const Pre::Key & {
+            for (const auto &z : view.m_zones)
+                if (z.slot.drawn && z.slot.key->text == text && !z.slot.key->accent) return *z.slot.key;
+            return *view.m_zones.first().slot.key;
+        };
+        QCOMPARE(view.altText(key(QStringLiteral("e"))), QStringLiteral("1"));
+        QStringList printed;
+        for (const auto &z : view.m_zones) printed << view.capText(*z.slot.key) + view.altText(*z.slot.key);
+
+        // Hidden: the digits, not the other alternates, and the letters stay put.
+        QVector<QPair<qreal, qreal>> where;
+        for (const auto &z : view.m_zones) where << qMakePair(z.letterPx, z.baseline);
+        s.hideKeyDigits = true;
+        view.applySettings(s);
+        QCOMPARE(view.keysHeight(), fourRows + view.rowHeight());
+        for (const QString &l : { "e", "r", "t", "d", "f", "g", "x", "c", "v", "@" }) {
+            QVERIFY2(view.altText(key(l)).isEmpty(), qPrintable(l));
+            view.m_alt = Pre::Alt::Once;
+            QCOMPARE(view.output(key(l)), l);
+            view.m_alt = Pre::Alt::Off;
+        }
+        QCOMPARE(view.altText(key(QStringLiteral("q"))), QStringLiteral("/"));
+        QCOMPARE(view.altText(key(QStringLiteral("k"))), QStringLiteral(":"));
+        view.m_alt = Pre::Alt::Once;
+        QCOMPARE(view.output(key(QStringLiteral("k"))), QStringLiteral(":"));
+        view.m_alt = Pre::Alt::Off;
+        for (int k = 0; k < view.m_zones.size(); ++k) {
+            const auto &z = view.m_zones[k];
+            if (!z.slot.drawn || z.slot.key->kind != Pre::Kind::Char || z.slot.key->accent) continue;
+            QVERIFY2(qMakePair(z.letterPx, z.baseline) == where[k],
+                     qPrintable(z.slot.key->text));
+        }
+        QStringList problems = printingProblems(view, QStringLiteral("hidden digits: "));
+        QVERIFY2(problems.isEmpty(), qPrintable(problems.join(QLatin1Char('\n'))));
+        // Off with the number row: the digits are back, whatever the setting says.
+        s.numberRow = false;
+        view.applySettings(s);
+        QCOMPARE(view.keysHeight(), fourRows);
+        QCOMPARE(view.altText(key(QStringLiteral("e"))), QStringLiteral("1"));
+        QCOMPARE(Pre::Settings::fromJson(s.toJson(QJsonObject())).numberRow, false);
+        s.numberRow = true;
+        QVERIFY(Pre::Settings::fromJson(s.toJson(QJsonObject())).numberRow);
+        QVERIFY(Pre::Settings::fromJson(s.toJson(QJsonObject())).hideKeyDigits);
+    }
+
+    // The number row fits every phone, in every language, either way up, its digits hidden or not.
+    void numberRowFitsEveryScreen()
+    {
+        QStringList wrong;
+        for (const Screen &sc : screens()) {
+            if (!sc.measured) continue;
+            for (const Pre::Language &l : Pre::Language::all())
+                for (bool hide : { false, true }) {
+                    Pre::KeyboardView view;
+                    showKeys(view, l, sc.shortSide, sc.width, sc.landscape, Pre::Settings::Height::Medium);
+                    Pre::Settings s = view.settings();
+                    s.numberRow = true;
+                    s.hideKeyDigits = hide;
+                    view.applySettings(s);
+                    view.setHeight(view.headroom() + view.keysHeight());
+                    for (auto page : { Pre::KeyboardView::Page::Letters, Pre::KeyboardView::Page::Symbols }) {
+                        view.show(page);
+                        const QString where = QStringLiteral("%1 %2 %3%4: ").arg(sc.name, l.id)
+                                                  .arg(int(page)).arg(hide ? QStringLiteral(" hidden") : QString());
+                        wrong << layoutProblems(view, where) << printingProblems(view, where) << centringProblems(view, where);
+                    }
+                }
+        }
+        for (const QString &w : wrong.mid(0, 30)) qWarning().noquote() << w;
+        QVERIFY2(wrong.isEmpty(), qPrintable(QStringLiteral("%1 problems").arg(wrong.size())));
+    }
+
+    /*
      * Letters that follow Shift: small with it off, capitals with it on, and
      * in the same place at the same size either way, on every phone and in
      * every language, with nothing out of its key in either.
@@ -2333,7 +2466,20 @@ private Q_SLOTS:
             save(view, QStringLiteral("en-white-shift"));
             view.m_shift = Pre::KeyboardView::Shift::Off;
             s.style = Pre::Style::Orange;
+            // The number row, with the letters' digits and without, and the Sym page under it.
+            s.numberRow = true;
             view.applySettings(s);
+            view.setHeight(view.headroom() + view.keysHeight());
+            save(view, QStringLiteral("en-numbers"));
+            view.show(Pre::KeyboardView::Page::Symbols);
+            save(view, QStringLiteral("en-numbers-sym"));
+            view.show(Pre::KeyboardView::Page::Letters);
+            s.hideKeyDigits = true;
+            view.applySettings(s);
+            save(view, QStringLiteral("en-numbers-plain"));
+            s.numberRow = s.hideKeyDigits = false;
+            view.applySettings(s);
+            view.setHeight(view.headroom() + view.keysHeight());
             view.setDigits(QStringLiteral("0123456789+-.,"));
             save(view, QStringLiteral("en-number"));
             view.setDigits(QStringLiteral("0123456789*#+"));
@@ -3043,7 +3189,7 @@ private:
             bool alts = false;
             for (int k = a; k < b; ++k)
                 if (view.m_zones[k].slot.drawn && view.m_zones[k].slot.key->kind == Pre::Kind::Char)
-                    alts = alts || !view.altText(*view.m_zones[k].slot.key).isEmpty();
+                    alts = alts || view.hasAlt(*view.m_zones[k].slot.key);
             for (int k = a; !alts && k < b; ++k) {
                 const auto &z = view.m_zones[k];
                 if (!z.slot.drawn || z.slot.key->kind != Pre::Kind::Char) continue;

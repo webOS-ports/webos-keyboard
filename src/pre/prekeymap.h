@@ -70,6 +70,12 @@ struct Key
     QString label;
     //! Printed in the top right: Return's gear on the Sym page, the period's microphone.
     Corner corner = Corner::None;
+    /*!
+     * The printed alternate is left off (a digit, while the number row has
+     * them): nothing is printed there, the orange key types nothing else on
+     * it, and the letter stays where it is.
+     */
+    bool hideAlt = false;
 };
 
 typedef QSharedPointer<const Key> KeyPtr;
@@ -90,10 +96,19 @@ struct Slot
 typedef QList<QList<Slot>> Rows;
 
 namespace Keymap {
-//! The letters page for [lang]: its layout, and its accents first in the holds.
-const Rows &letters(const Language &lang);
-//! The Sym page.
-const Rows &symbols();
+/*!
+ * The letters page for [lang]: its layout, and its accents first in the
+ * holds. With [numberRow], the Sym page's digits sit above the letters as
+ * well, key for key as they are there; with [hideDigits] too, the digits
+ * printed on the letters are left off.
+ */
+const Rows &letters(const Language &lang, bool numberRow = false, bool hideDigits = false);
+/*!
+ * The Sym page. With [numberRow] its digits stay in the same top row as the
+ * letters', and a row of arrows and signs takes the place they leave, so the
+ * page is as tall as the letters and nothing moves when it changes.
+ */
+const Rows &symbols(bool numberRow = false);
 }
 
 } // namespace Pre

@@ -166,6 +166,7 @@ private:
     qreal popupPad() const;
     qreal keyboardTop() const;
     qreal keysWidth() const;
+    int keyRows() const;
     static bool placedMark(const QString &s);
     qreal keysLeft() const;
     QRectF rowRect(int i) const;
@@ -184,6 +185,7 @@ private:
     qreal inset(const QRectF &r) const;
     QString capText(const Key &key) const;
     QString altText(const Key &key) const;
+    bool hasAlt(const Key &key) const;
     QStringList faces(const Key &key) const;
     QString digitOf(const Key &key) const;
     bool digitMode() const { return !m_digits.isEmpty() && m_page == Page::Letters; }

@@ -252,6 +252,35 @@ Slot digit(QChar d, const QString &ext)
                               words(QString(d) + QLatin1Char(' ') + ext), true));
 }
 
+//! The digits, in the accent colour: the Sym page's top row, and the number row above the letters.
+QList<Slot> digitRow()
+{
+    return { digit(QLatin1Char('1'), QStringLiteral("¹ ½ ⅓ ¼ ⅛")), digit(QLatin1Char('2'), QStringLiteral("² ⅔")),
+             digit(QLatin1Char('3'), QStringLiteral("³ ¾ ⅜")), digit(QLatin1Char('4'), QStringLiteral("⁴")),
+             digit(QLatin1Char('5'), QStringLiteral("⁵ ⅝")), digit(QLatin1Char('6'), QStringLiteral("⁶")),
+             digit(QLatin1Char('7'), QStringLiteral("⁷ ⅞")), digit(QLatin1Char('8'), QStringLiteral("⁸")),
+             digit(QLatin1Char('9'), QStringLiteral("⁹")), digit(QLatin1Char('0'), QStringLiteral("⁰ ⁿ ∅")) };
+}
+
+/*!
+ * [page] with the digits printed on its letters (E R T, D F G, X C V and the
+ * @'s 0) left off, for the owner who has them in the number row and wants
+ * the keys plainer. The other alternates stay.
+ */
+Rows withoutDigits(const Rows &page)
+{
+    Rows out = page;
+    for (QList<Slot> &row : out)
+        for (Slot &s : row) {
+            const QString &a = s.key->alt;
+            if (a.size() != 1 || !a.at(0).isDigit()) continue;
+            QSharedPointer<Key> k(new Key(*s.key));
+            k->hideAlt = true;
+            s.key = k;
+        }
+    return out;
+}
+
 //! A symbol; [ext] is its press-and-hold list after itself.
 Slot s(const QString &t, const QString &ext = QString())
 {
@@ -273,11 +302,7 @@ Rows symbolsOf()
     // The globe, where shift is on the letters: the languages, held the style.
     const KeyPtr globe = makeKey(Kind::Globe);
     return {
-        { digit(QLatin1Char('1'), QStringLiteral("¹ ½ ⅓ ¼ ⅛")), digit(QLatin1Char('2'), QStringLiteral("² ⅔")),
-          digit(QLatin1Char('3'), QStringLiteral("³ ¾ ⅜")), digit(QLatin1Char('4'), QStringLiteral("⁴")),
-          digit(QLatin1Char('5'), QStringLiteral("⁵ ⅝")), digit(QLatin1Char('6'), QStringLiteral("⁶")),
-          digit(QLatin1Char('7'), QStringLiteral("⁷ ⅞")), digit(QLatin1Char('8'), QStringLiteral("⁸")),
-          digit(QLatin1Char('9'), QStringLiteral("⁹")), digit(QLatin1Char('0'), QStringLiteral("⁰ ⁿ ∅")) },
+        digitRow(),
         { s(QStringLiteral("[")), s(QStringLiteral("]")), s(QStringLiteral("{")), s(QStringLiteral("}")),
           s(QStringLiteral("<"), QStringLiteral("‹ « ≤")), s(QStringLiteral(">"), QStringLiteral("› » ≥")),
           s(QStringLiteral("^")), s(QStringLiteral("~"), QStringLiteral("≈")),
@@ -312,9 +337,23 @@ Rows symbolsOf()
     };
 }
 
+/*!
+ * The row that takes the digits' place on the Sym page when the letters have
+ * a number row: arrows, ticks and a few signs, none of them anywhere else on
+ * either page.
+ */
+QList<Slot> moreSymbols()
+{
+    return { s(QStringLiteral("←"), QStringLiteral("⇐ ↖ ↙")), s(QStringLiteral("→"), QStringLiteral("⇒ ↗ ↘")),
+             s(QStringLiteral("↑"), QStringLiteral("⇑")), s(QStringLiteral("↓"), QStringLiteral("⇓")),
+             s(QStringLiteral("↔"), QStringLiteral("⇔ ↕")), s(QStringLiteral("✓"), QStringLiteral("✔ ☑")),
+             s(QStringLiteral("✗"), QStringLiteral("✘ ☐")), s(QStringLiteral("★"), QStringLiteral("☆")),
+             s(QStringLiteral("♥"), QStringLiteral("♡ ♦ ♣ ♠")), s(QStringLiteral("♪"), QStringLiteral("♫")) };
+}
+
 } // namespace
 
-const Rows &Keymap::letters(const Language &lang)
+const Rows &Keymap::letters(const Language &lang, bool numberRow, bool hideDigits)
 {
     // std::map: a reference handed out stays good however many languages come after.
     static QMutex lock;
@@ -323,13 +362,27 @@ const Rows &Keymap::letters(const Language &lang)
     auto it = built.find(lang.id);
     if (it == built.end())
         it = built.emplace(lang.id, lettersOf(lang.isValid() ? lang : Language::orEnglish(lang.id))).first;
-    return it->second;
+    if (!numberRow) return it->second;
+    // The same keys under the number row; with the digits hidden, new ones only where a digit was.
+    const QString page = lang.id + (hideDigits ? QStringLiteral("/numbers/plain") : QStringLiteral("/numbers"));
+    auto numbered = built.find(page);
+    if (numbered == built.end()) {
+        Rows rows = hideDigits ? withoutDigits(it->second) : it->second;
+        rows.prepend(digitRow());
+        numbered = built.emplace(page, rows).first;
+    }
+    return numbered->second;
 }
 
-const Rows &Keymap::symbols()
+const Rows &Keymap::symbols(bool numberRow)
 {
-    static const Rows rows = symbolsOf();
-    return rows;
+    static const Rows plain = symbolsOf();
+    static const Rows numbered = [] {
+        Rows rows = symbolsOf();
+        rows.insert(1, moreSymbols());
+        return rows;
+    }();
+    return numberRow ? numbered : plain;
 }
 
 } // namespace Pre

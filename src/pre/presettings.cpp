@@ -46,6 +46,8 @@ Settings Settings::fromJson(const QJsonObject &pre, Settings into)
     s.swipe = flag(pre, "swipe", true);
     s.doubleSpacePeriod = flag(pre, "doubleSpacePeriod", true);
     s.emojiSuggestions = flag(pre, "emojiSuggestions", false);
+    s.numberRow = flag(pre, "numberRow", false);
+    s.hideKeyDigits = flag(pre, "hideKeyDigits", false);
     return s;
 }
 
@@ -64,6 +66,8 @@ QJsonObject Settings::toJson(QJsonObject pre) const
     pre.insert(QLatin1String("swipe"), swipe);
     pre.insert(QLatin1String("doubleSpacePeriod"), doubleSpacePeriod);
     pre.insert(QLatin1String("emojiSuggestions"), emojiSuggestions);
+    pre.insert(QLatin1String("numberRow"), numberRow);
+    pre.insert(QLatin1String("hideKeyDigits"), hideKeyDigits);
     return pre;
 }
 
@@ -73,6 +77,7 @@ bool Settings::operator==(const Settings &o) const
            vibrateLevel == o.vibrateLevel &&
            followShift == o.followShift && suggestions == o.suggestions && sound == o.sound && swipe == o.swipe &&
            doubleSpacePeriod == o.doubleSpacePeriod && emojiSuggestions == o.emojiSuggestions &&
+           numberRow == o.numberRow && hideKeyDigits == o.hideKeyDigits &&
            languages == o.languages && language == o.language;
 }
 

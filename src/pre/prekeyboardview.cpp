@@ -225,8 +225,10 @@ void KeyboardView::setLandscape(bool landscape)
 
 void KeyboardView::applySettings(const Settings &s)
 {
-    const bool resize = s.height != m_settings.height || s.showsBar() != m_settings.showsBar();
-    const bool relayout = s.language != m_settings.language || s.followShift != m_settings.followShift;
+    const bool resize = s.height != m_settings.height || s.showsBar() != m_settings.showsBar()
+                        || s.numberRow != m_settings.numberRow;
+    const bool relayout = s.language != m_settings.language || s.followShift != m_settings.followShift
+                          || s.hideKeyDigits != m_settings.hideKeyDigits;
     m_settings = s;
     if (resize) {
         m_painter.clear();
@@ -261,7 +263,13 @@ qreal KeyboardView::bottomPad() const { return 2 * m_dp; }
 //! The suggestion bar, above the keys, when it is switched on.
 bool KeyboardView::barShown() const { return m_settings.showsBar() || m_searching || !m_voiceLine.isEmpty(); }
 qreal KeyboardView::barHeight() const { return barShown() ? std::round(rowHeight() * 0.72) : 0; }
-qreal KeyboardView::keysHeight() const { return barHeight() + rowHeight() * 4 + topBorder() + bottomPad(); }
+qreal KeyboardView::keysHeight() const { return barHeight() + rowHeight() * keyRows() + topBorder() + bottomPad(); }
+
+/*!
+ * Rows of keys: four, or five with the number row over the letters (the Sym
+ * and emoji pages then have five as well, so the keyboard keeps its height).
+ */
+int KeyboardView::keyRows() const { return digitMode() ? 4 : m_settings.keyRows(); }
 qreal KeyboardView::cellH() const { return rowHeight() * 0.85; }
 qreal KeyboardView::popupPad() const { return 5 * m_dp; }
 //! Room above the keys for the tallest popup: two lines of accents.
@@ -290,12 +298,12 @@ QRectF KeyboardView::rowRect(int i) const
 
 const Rows &KeyboardView::rows() const
 {
-    if (m_page == Page::Symbols) return Keymap::symbols();
+    if (m_page == Page::Symbols) return Keymap::symbols(m_settings.numberRow);
     // A number field shows only the digits, which are the alternates of the Pre's grid: on its
     // grid whatever the language, so they stand in the same columns in every one. A language's
     // own rows (more keys to a row, Russian, Arabic) would move them about.
     if (digitMode()) return Keymap::letters(Language::orEnglish(QStringLiteral("en")));
-    return Keymap::letters(m_settings.language);
+    return Keymap::letters(m_settings.language, m_settings.numberRow, m_settings.hideKeyDigits);
 }
 
 void KeyboardView::geometryChange(const QRectF &newGeometry, const QRectF &oldGeometry)
@@ -314,8 +322,10 @@ void KeyboardView::layoutKeys()
     m_preview = -1;
     if (width() <= 0) return;
     if (m_page == Page::Emoji) {
-        const QRectF top = rowRect(0), bottom = rowRect(2);
-        m_emoji.layout(keyboardTop() + topBorder(), QRectF(0, top.top(), width(), bottom.bottom() - top.top()), rowRect(3));
+        // The grid over every row but the last, which has the categories: as tall as the letters.
+        const int last = keyRows() - 1;
+        const QRectF top = rowRect(0), bottom = rowRect(last - 1);
+        m_emoji.layout(keyboardTop() + topBorder(), QRectF(0, top.top(), width(), bottom.bottom() - top.top()), rowRect(last));
         return;
     }
     const Rows &rs = rows();
@@ -539,10 +549,17 @@ QString KeyboardView::capText(const Key &key) const
     return key.text.toUpper();
 }
 
-//! The alternate printed in [key]'s corner: none in a number field, where it is the key's one character.
+//! The alternate printed in [key]'s corner: none in a number field, where it is the key's one character,
+//! nor where the number row has it and the owner wants it off the letters.
 QString KeyboardView::altText(const Key &key) const
 {
-    return digitMode() ? QString() : key.alt;
+    return digitMode() || key.hideAlt ? QString() : key.alt;
+}
+
+//! Whether [key] is laid out with an alternate: printed, or left off for the number row with the letter where it was.
+bool KeyboardView::hasAlt(const Key &key) const
+{
+    return !digitMode() && !key.alt.isEmpty();
 }
 
 /*!
@@ -580,9 +597,10 @@ QString KeyboardView::digitOf(const Key &key) const
 void KeyboardView::fitLetters()
 {
     // The same page at the same size comes out the same: work it out once.
-    QString id = QStringLiteral("%1|%2|%3|%4|%5|%6|%7|%8").arg(m_settings.language.id).arg(int(m_page))
+    QString id = QStringLiteral("%1|%2|%3|%4|%5|%6|%7|%8|%9").arg(m_settings.language.id).arg(int(m_page))
                      .arg(width()).arg(rowHeight()).arg(m_dp).arg(m_landscape)
-                     .arg(m_settings.followShift).arg(digitMode() ? m_digits : QString());
+                     .arg(m_settings.followShift).arg(digitMode() ? m_digits : QString())
+                     .arg(int(m_settings.numberRow) + 2 * int(m_settings.hideKeyDigits));
     // The keys as laid out, whole pixels each: two rows of the same nominal
     // height can come out a pixel apart.
     for (const Zone &z : std::as_const(m_zones))
@@ -725,7 +743,7 @@ bool KeyboardView::placeLetters(qreal px)
         qreal i = 0;
         for (int k = a; k < b; ++k) {
             if (!isChar(m_zones[k])) continue;
-            low = low || !altText(*m_zones[k].slot.key).isEmpty();
+            low = low || hasAlt(*m_zones[k].slot.key);
             i = std::max(i, inset(m_zones[k].rect));
         }
         const qreal h = m_zones[a].rect.height();
@@ -796,7 +814,7 @@ QPointF KeyboardView::letterAt(const Zone &z, const QRectF &box, const QFontMetr
     const Key &key = *z.slot.key;
     const QRectF ink = fm.tightBoundingRect(s);
     qreal x;
-    if (altText(key).isEmpty()) {
+    if (!hasAlt(key)) {
         x = box.center().x() - (ink.left() + ink.right()) / 2;
     } else {
         const qreal nudge = box.width() * LETTER_NUDGE * (key.altPos == AltPos::Left ? 1 : -1);
@@ -877,7 +895,7 @@ qreal KeyboardView::fitted(const QString &s, qreal size, qreal room) const
 QString KeyboardView::output(const Key &key) const
 {
     if (digitMode()) return digitOf(key);
-    if (m_alt != Alt::Off && !key.alt.isEmpty()) return key.alt;
+    if (m_alt != Alt::Off && !key.alt.isEmpty() && !key.hideAlt) return key.alt;
     if (m_shift == Shift::Off) return key.text;
     return key.shifted.isEmpty() ? key.text.toUpper() : key.shifted;
 }
@@ -1816,7 +1834,7 @@ void KeyboardView::commit()
     case Kind::Space: send(QStringLiteral(" ")); break;
     case Kind::Char: {
         const QString s = output(key);
-        if (!s.isEmpty()) type(s, !digitMode() && m_alt != Alt::Off && !key.alt.isEmpty());
+        if (!s.isEmpty()) type(s, !digitMode() && m_alt != Alt::Off && !key.alt.isEmpty() && !key.hideAlt);
         break;
     }
     }
