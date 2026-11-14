@@ -463,6 +463,35 @@ private Q_SLOTS:
         }
     }
 
+    /*
+     * Arabic writes its comma, question mark and semicolon its own way: the
+     * comma key prints and types ، (a plain comma held after it), and the
+     * orange key's ? and ; are ؟ and ؛. Every other language keeps the plain
+     * ones.
+     */
+    void arabicPunctuation()
+    {
+        const auto find = [](const Pre::Rows &rows, const QString &text) -> const Pre::Key * {
+            for (const auto &row : rows)
+                for (const Pre::Slot &s : row)
+                    if (s.drawn && (s.key->text == text || s.key->alt == text)) return s.key.data();
+            return nullptr;
+        };
+        const Pre::Rows &ar = Pre::Keymap::letters(Pre::Language::byId(QStringLiteral("ar")));
+        const Pre::Key *comma = find(ar, QStringLiteral(u"\u060C"));
+        QVERIFY(comma);
+        QCOMPARE(comma->text, QStringLiteral(u"\u060C"));
+        QCOMPARE(comma->extended.value(1), QStringLiteral(","));
+        QVERIFY(find(ar, QStringLiteral(u"\u061F")));
+        QVERIFY(find(ar, QStringLiteral(u"\u061B")));
+        QVERIFY(!find(ar, QStringLiteral("?")));
+        for (const Pre::Language &l : Pre::Language::all()) {
+            if (l.id == QLatin1String("ar")) continue;
+            const Pre::Rows &rows = Pre::Keymap::letters(l);
+            QVERIFY2(find(rows, QStringLiteral(",")) && find(rows, QStringLiteral("?")), qPrintable(l.id));
+        }
+    }
+
     // Shift is not always a capital: Arabic shifts to other letters, Hebrew to
     // Latin ones. Those come from the layout; a capital is left to the view.
     void shiftComesFromTheLayout()
@@ -2307,9 +2336,12 @@ private Q_SLOTS:
             Pre::KeyboardView view;
             showKeys(view, l, 1080, 1080, false, Pre::Settings::Height::Medium);
             QMap<QString, int> seen;
+            // Arabic writes ? and ; its own way (؟ ؛): the same alternates, as it prints them.
+            QHash<QString, QString> plain;
+            for (auto it = l.punctuation.cbegin(); it != l.punctuation.cend(); ++it) plain.insert(it.value(), it.key());
             for (const auto &z : view.m_zones) {
                 if (!z.slot.drawn || z.slot.key->kind != Pre::Kind::Char || z.slot.key->alt.isEmpty()) continue;
-                const QString a = z.slot.key->alt;
+                const QString a = plain.value(z.slot.key->alt, z.slot.key->alt);
                 ++seen[a];
                 if (!preAt.contains(a)) continue;
                 const QString where = l.id + QStringLiteral(" ") + a + QStringLiteral(": ");

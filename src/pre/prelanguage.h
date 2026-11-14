@@ -20,6 +20,7 @@
 #ifndef PRE_LANGUAGE_H
 #define PRE_LANGUAGE_H
 
+#include <QHash>
 #include <QList>
 #include <QString>
 #include <QStringList>
@@ -67,7 +68,11 @@ struct Language
     //! Layout::Own: its letter rows.
     LetterRows letters;
     bool rightToLeft = false;
+    //! Punctuation as the language writes it, for the keys' own: Arabic's ، ؟ ؛ for , ? ;.
+    QHash<QString, QString> punctuation;
 
+    //! [s] as the language writes it: its own punctuation mark, or [s].
+    QString written(const QString &s) const { return punctuation.value(s, s); }
     bool isValid() const { return !id.isEmpty(); }
     bool operator==(const Language &o) const { return id == o.id; }
     bool operator!=(const Language &o) const { return id != o.id; }

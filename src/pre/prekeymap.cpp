@@ -125,7 +125,7 @@ bool printedLeft(int row, int col) { return row == 2 ? col < 4 : col < 5; }
 //! [letter]'s key in row [row], place [col] (on the bottom letter row, counted after the orange key).
 Slot letter(QChar letter, int row, int col, const Language &lang)
 {
-    const QString alt = alts()[row][col];
+    const QString alt = lang.written(alts()[row][col]);
     const bool leftHalf = printedLeft(row, col);
     QStringList own;
     for (QChar a : lang.accentsOf(letter))
@@ -176,11 +176,11 @@ QVector<int> altColumns(int row, int n)
 }
 
 //! A letter of a language with its own rows, place [index] of [rowLength]: its phone layout's key, with
-//! the Pre's alternate [col] of [row] (-1: none).
-Slot ownLetter(const LetterKey &lk, int row, int col, int index, int rowLength)
+//! the Pre's alternate [col] of [row] (-1: none), as [lang] writes it.
+Slot ownLetter(const Language &lang, const LetterKey &lk, int row, int col, int index, int rowLength)
 {
     const QStringList &a = alts()[row];
-    const QString alt = col >= 0 && col < a.size() ? a[col] : QString();
+    const QString alt = col >= 0 && col < a.size() ? lang.written(a[col]) : QString();
     QSharedPointer<Key> k(new Key);
     k->kind = Kind::Char;
     k->text = lk.text;
@@ -212,7 +212,7 @@ Rows lettersOf(const Language &lang)
             const int n = int(r[row].size());
             const QVector<int> cols = altColumns(row, n);
             if (row == 2) bottom << f(Kind::Orange);
-            for (int i = 0; i < n; ++i) *out[row] << ownLetter(r[row][i], row, cols[i], i, n);
+            for (int i = 0; i < n; ++i) *out[row] << ownLetter(lang, r[row][i], row, cols[i], i, n);
             if (row == 1) middle << f(Kind::Backspace);
         }
         commaWeight = letterWeight(2, int(r[2].size()));
@@ -225,7 +225,10 @@ Rows lettersOf(const Language &lang)
         for (int i = 0; i < rows[2].length(); ++i) bottom << letter(rows[2][i], 2, i, lang);
     }
     // The comma holds what the Pre's period did.
-    Slot comma = c(QStringLiteral(","), QStringLiteral("_"), AltPos::Right, QStringLiteral(", … • ¿"));
+    // A language's own comma (Arabic's ،) first, the plain one held after it.
+    const QString own = lang.written(QStringLiteral(","));
+    Slot comma = c(own, QStringLiteral("_"), AltPos::Right,
+                   own == QLatin1String(",") ? QStringLiteral(", … • ¿") : own + QStringLiteral(" , … • ¿"));
     comma.weight = commaWeight;
     bottom << comma;
     bottom << f(Kind::Return);
