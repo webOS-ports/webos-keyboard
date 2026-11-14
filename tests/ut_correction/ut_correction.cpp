@@ -217,6 +217,18 @@ private Q_SLOTS:
         QCOMPARE(Correction::choose(typed, language, fake.dictionary(), predicted), expected);
     }
 
+    // Rule 1 on its own, for presage's next words: English only, other words untouched.
+    void english()
+    {
+        QCOMPARE(Correction::english(QStringLiteral("i"), QStringLiteral("en")), QStringLiteral("I"));
+        QCOMPARE(Correction::english(QStringLiteral("dont"), QStringLiteral("en_GB")), QStringLiteral("don't"));
+        QCOMPARE(Correction::english(QStringLiteral("i'm"), QStringLiteral("en")), QStringLiteral("I'm"));
+        QCOMPARE(Correction::english(QStringLiteral("Dont"), QStringLiteral("en")), QStringLiteral("Don't"));
+        QVERIFY(Correction::english(QStringLiteral("think"), QStringLiteral("en")).isEmpty());
+        QVERIFY(Correction::english(QStringLiteral("i"), QStringLiteral("it")).isEmpty());
+        QVERIFY(Correction::english(QString(), QStringLiteral("en")).isEmpty());
+    }
+
     void withoutADictionary()
     {
         QCOMPARE(Correction::choose(QStringLiteral("teh"), QStringLiteral("en"), Correction::Dictionary(), {}),

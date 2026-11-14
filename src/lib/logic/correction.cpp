@@ -175,6 +175,18 @@ QString Correction::casedLike(const QString &like, const QString &word)
     return word.left(1).toUpper() + word.mid(1);
 }
 
+QString Correction::english(const QString &word, const QString &language)
+{
+    if (word.isEmpty() || language.left(2).toLower() != QLatin1String("en")) return QString();
+    const QString lower = word.toLower();
+    const QString c = contractions().value(lower);
+    if (!c.isEmpty()) return casedLike(word, c);
+    if (lower == QLatin1String("i")) return QStringLiteral("I");
+    if (lower.size() > 2 && lower.startsWith(QLatin1Char('i')) && isApostrophe(lower.at(1)))
+        return QLatin1Char('I') + word.mid(1);
+    return QString();
+}
+
 QString Correction::choose(const QString &typed, const QString &language, const Dictionary &dictionary,
                            const QStringList &predictions)
 {
@@ -183,13 +195,8 @@ QString Correction::choose(const QString &typed, const QString &language, const 
     const QString family = language.left(2).toLower();
     const QString lower = typed.toLower();
 
-    if (family == QLatin1String("en")) {
-        const QString c = contractions().value(lower);
-        if (!c.isEmpty()) return casedLike(typed, c);
-        if (lower == QLatin1String("i")) return QStringLiteral("I");
-        if (lower.size() > 2 && lower.startsWith(QLatin1Char('i')) && isApostrophe(lower.at(1)))
-            return QLatin1Char('I') + typed.mid(1);
-    }
+    const QString spelledOut = english(typed, language);
+    if (!spelledOut.isEmpty()) return spelledOut;
     if (d.spell(typed)) return typed;
 
     const QStringList suggested = d.suggest(typed);
