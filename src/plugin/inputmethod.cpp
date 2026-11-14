@@ -240,9 +240,12 @@ InputMethod::~InputMethod()
 
 /*! \brief Put the panel window back on the whole screen if it has drifted off.
  *
- * The window is deliberately screen-sized: the keyboard is drawn into a strip
- * of it and the rest is masked away (maskPanelStrip()), so the size the
- * compositor is given has to be the screen's and not the keyboard's.
+ * The keyboard is drawn into a strip along the bottom of the window and the
+ * rest is masked away (maskPanelStrip()), so the window is the screen's size,
+ * or the strip the shell gives it between its status bar and gesture area -
+ * not the keyboard's. The shell stretches the window across that strip, so a
+ * window put back to the screen from it was drawn squeezed:
+ * panelWindowKeepsGeometry() says which sizes are kept.
  *
  * It was set once, at construction, and then left alone - which is wrong,
  * because it is not ours alone to decide. The webos shell integration resizes
@@ -257,7 +260,9 @@ InputMethod::~InputMethod()
  * says yes, the window is told to show, and nothing arrives.
  *
  * So it is re-asserted before every show rather than trusted to have survived.
- * Cheap, and it cannot be got wrong by a configure we did not expect.
+ * Cheap, and it cannot be got wrong by a configure we did not expect. (The
+ * shell's own strip is kept since the mask follows the window's size: see
+ * panelWindowKeepsGeometry().)
  */
 void InputMethod::syncPanelWindowToScreen()
 {
