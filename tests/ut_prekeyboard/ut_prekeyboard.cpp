@@ -1169,13 +1169,22 @@ private Q_SLOTS:
             const QStringList parts = line.split(QLatin1Char('\t'));
             if (parts.size() == 3) page.insert(parts.at(2));
         }
-        for (const char *id : { "en", "de", "es", "fr", "it" }) {
+        // Every language but Chinese (whose words are not its keys' letters) has its own.
+        for (const Pre::Language &l : Pre::Language::all()) {
+            if (l.id == QLatin1String("zh")) continue;
             const Pre::EmojiWords lang =
-                Pre::EmojiWords::load(QStringLiteral(PRE_DATA_DIR "/%1/emoji_words.txt").arg(QLatin1String(id)), page);
-            QVERIFY2(lang.size() > 2500, id);
+                Pre::EmojiWords::load(QStringLiteral(PRE_DATA_DIR "/%1/emoji_words.txt").arg(l.id), page);
+            QVERIFY2(lang.size() > 2500, qPrintable(l.id));
         }
-        const Pre::EmojiWords en = Pre::EmojiWords::load(QStringLiteral(PRE_DATA_DIR "/en/emoji_words.txt"), page);
-        QCOMPARE(en.forWord(QStringLiteral("pizza")), pizza);
+        const QList<QPair<QString, QString>> pizzas = {
+            { QStringLiteral("en"), QStringLiteral("pizza") }, { QStringLiteral("da"), QStringLiteral("pizza") },
+            { QStringLiteral("pl"), QStringLiteral("pizza") }, { QStringLiteral("uk"), QStringLiteral(u"піца") },
+            { QStringLiteral("ar"), QStringLiteral(u"بيتزا") }, { QStringLiteral("nl"), QStringLiteral("pepperoni") } };
+        for (const auto &p : pizzas) {
+            const Pre::EmojiWords lang =
+                Pre::EmojiWords::load(QStringLiteral(PRE_DATA_DIR "/%1/emoji_words.txt").arg(p.first), page);
+            QCOMPARE(lang.forWord(p.second), pizza);
+        }
     }
 
     /*
@@ -1218,8 +1227,8 @@ private Q_SLOTS:
         c.setCandidates(QString(), QString(), {});
         QCOMPARE(c.m_bar.value(1), QStringLiteral("pizza"));
         QCOMPARE(c.m_bar.value(2), QString());
-        // A language without them.
-        c.setKeyboardState(true, false, { QStringLiteral("nl") }, QStringLiteral("nl"));
+        // A language without them (Chinese).
+        c.setKeyboardState(true, false, { QStringLiteral("zh") }, QStringLiteral("zh"));
         c.setCandidates(QStringLiteral("pizza"), QString(), { QStringLiteral("pizza") });
         QCOMPARE(c.m_bar.value(2), QString());
         // The bar is up for them with suggestions off; not in a field without words.
