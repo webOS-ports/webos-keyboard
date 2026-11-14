@@ -973,12 +973,31 @@ private Q_SLOTS:
         QTest::newRow("comma after a space") << "hi ,yo" << "hi, yo" << true << true;
         QTest::newRow("question after a space") << "hi ?" << "hi? " << true << true;
         QTest::newRow("ellipsis") << "hi..." << "hi... " << true << true;
-        // Against the period, as on Android: the owner typed no space to move after it.
-        QTest::newRow("question on the period") << "hi.?" << "hi.?" << true << true;
+        // Against the period, as on Android, then a space of its own: ?! and ... stay together.
+        QTest::newRow("question on the period") << "hi.?" << "hi.? " << true << true;
         QTest::newRow("a number's period stays") << "3 .5" << "3 .5" << true << true;
-        QTest::newRow("double space, then a comma") << "hi  ," << "hi.," << true << true;
+        QTest::newRow("double space, then a comma") << "hi  ," << "hi., " << true << true;
         QTest::newRow("backspace takes the period's space") << "hi.<x" << "hi.x" << true << true;
         QTest::newRow("return drops the period's space") << "hi.>" << "hi.\r" << true << true;
+        // , ; : ! ? bring their own space as the period does (Android's 1.4.0).
+        QTest::newRow("comma brings a space") << "hi,yo" << "hi, yo" << true << true;
+        QTest::newRow("question brings a space") << "hi?yo" << "hi? yo" << true << true;
+        QTest::newRow("exclamation brings a space") << "hi!yo" << "hi! yo" << true << true;
+        QTest::newRow("colon brings a space") << "note:yes" << "note: yes" << true << true;
+        QTest::newRow("semicolon brings a space") << "so;then" << "so; then" << true << true;
+        QTest::newRow("space on the comma's") << "hi, yo" << "hi, yo" << true << true;
+        QTest::newRow("?! together") << "hi?!" << "hi?! " << true << true;
+        QTest::newRow("backspace takes the comma's space") << "hi,<x" << "hi,x" << true << true;
+        QTest::newRow("return drops the comma's space") << "hi,>" << "hi,\r" << true << true;
+        QTest::newRow("no space in a thousand") << "1,000" << "1,000" << true << true;
+        QTest::newRow("no space in a time") << "10:30" << "10:30" << true << true;
+        QTest::newRow("no space after https:") << "https://x.org" << "https://x.org" << true << true;
+        QTest::newRow("no space after mailto:") << "mailto:a@b" << "mailto:a@b" << true << true;
+        QTest::newRow("no comma space in an address") << "a@b,c" << "a@b,c" << true << true;
+        QTest::newRow("no comma space at the start") << ",x" << ",x" << true << true;
+        QTest::newRow("no comma space outside prose") << "a,b" << "a,b" << false << true;
+        QTest::newRow("Arabic comma brings a space") << QStringLiteral(u"ب،ت") << QStringLiteral(u"ب، ت") << true << true;
+        QTest::newRow("Arabic question mark brings a space") << QStringLiteral(u"ب؟ت") << QStringLiteral(u"ب؟ ت") << true << true;
     }
 
     void punctuation()

@@ -49,8 +49,13 @@ const int KEEP_WORDS = 2;
 const int LEARNED_SCORE = 14;
 //! Long before any space: no double space with it.
 const qint64 NEVER = std::numeric_limits<qint64>::min() / 2;
-//! Punctuation that goes against the word before it, never after a space.
-const QString SENTENCE = QStringLiteral(".,?!:;");
+//! Punctuation that goes against the word before it, never after a space, and brings its own
+//! space after it (Arabic's comma, question mark and semicolon too).
+const QString SENTENCE = QStringLiteral(".,?!:;\u060C\u061F\u061B");
+//! Words a colon makes the start of a link or an address, not the end of a phrase.
+const QStringList SCHEMES = { QStringLiteral("http"), QStringLiteral("https"), QStringLiteral("ftp"),
+                              QStringLiteral("mailto"), QStringLiteral("tel"), QStringLiteral("sms"),
+                              QStringLiteral("file"), QStringLiteral("geo") };
 //! What may close a word, for a space after it to be the word's.
 const QString CLOSERS = QStringLiteral(")\"']}”’");
 //! How far back to look for the address a period may be in.
@@ -683,10 +688,18 @@ bool Controller::spaceAfterWord(bool *digit) const
     return is;
 }
 
-bool Controller::periodWantsSpace(const QString &before, const QString &after)
+/*!
+ * Sentence punctuation brings its own space, as the period does: not after a
+ * digit (3.14, 1,000, 10:30), after a space or at the start of the text (.net,
+ * :-) on its own), in an address or a link (name@mail.com, www.site, a/b.c),
+ * after a link's scheme (https:), nor when a space already follows. The
+ * period alone also leaves out an abbreviation's first periods (e.g.).
+ */
+bool Controller::punctuationWantsSpace(const QString &before, const QString &after)
 {
-    // [before] ends in the period itself.
+    // [before] ends in the punctuation itself.
     if (before.size() < 2) return false;
+    const QChar mark = before.back();
     const QChar prev = before.at(before.size() - 2);
     if (prev.isSpace() || prev.isDigit()) return false;
     QString token = before.left(before.size() - 1);
@@ -695,6 +708,8 @@ bool Controller::periodWantsSpace(const QString &before, const QString &after)
     if (token.contains(QLatin1Char('@')) || token.contains(QLatin1Char('/'))
         || token.startsWith(QLatin1String("www"), Qt::CaseInsensitive))
         return false;
+    if (mark == QLatin1Char(':') && SCHEMES.contains(token.toLower())) return false;
+    if (mark != QLatin1Char('.')) return after.isEmpty() || !after.at(0).isSpace();
     // A small letter on its own starts an abbreviation (e.g., i.e., z.B., d.h.): its period gets no
     // space, and the abbreviation's last period does ("e.g" is not a letter on its own). A capital
     // on its own keeps the space, in every language: "I." ends a sentence, "J. Smith" is an initial.
@@ -752,9 +767,9 @@ bool Controller::punctuate(const QString &text)
     }
     key(text);
     before += text;
-    if (text == QLatin1String(".") && periodWantsSpace(before, m_bridge.after ? m_bridge.after(1) : QString())) {
+    if (SENTENCE.contains(text.at(0)) && punctuationWantsSpace(before, m_bridge.after ? m_bridge.after(1) : QString())) {
         key(QStringLiteral(" "));
-        m_autoTail = QStringLiteral(". ");
+        m_autoTail = text + QLatin1Char(' ');
     } else if (snap && typedSpace) {
         // The owner's space moves to after the punctuation, where it belongs.
         key(QStringLiteral(" "));

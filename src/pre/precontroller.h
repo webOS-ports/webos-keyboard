@@ -267,17 +267,18 @@ public:
 private:
     /*!
      * The Pre's punctuation, between the keys and the editor: a double space
-     * after a word is ". ", a period brings its own space (which a space typed
-     * on top of is absorbed by), and sentence punctuation typed after a space
-     * goes against the word ("word ," is "word, "). True when it typed [text]
+     * after a word is ". ", a period, comma, question or exclamation mark,
+     * colon or semicolon brings its own space (which a space typed on top of
+     * is absorbed by), and sentence punctuation typed after a space goes
+     * against the word ("word ," is "word, "). True when it typed [text]
      * itself; false leaves [text] to be typed as it is.
      */
     bool punctuate(const QString &text);
     //! A character or a space, through the event handler, as a key of LuneOS's own.
     void key(const QString &text);
     void backspaceKey();
-    //! Whether text ending in [before] wants a space after the period that ends it.
-    static bool periodWantsSpace(const QString &before, const QString &after);
+    //! Whether text ending in [before] wants a space after the punctuation (. , ? ! : ;) that ends it.
+    static bool punctuationWantsSpace(const QString &before, const QString &after);
     //! The keyboard's own space ([m_autoTail]) is still the last thing typed.
     bool autoSpaced() const;
     //! A space typed after a word is the last thing typed; [digit]: after a number.
