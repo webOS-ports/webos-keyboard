@@ -70,16 +70,21 @@ private:
 class CountingEditor : public AbstractTextEditor
 {
 public:
-    explicit CountingEditor(Logic::AbstractWordEngine *words = new NoWords)
-        : AbstractTextEditor(EditorOptions(), new Model::Text, words)
+    explicit CountingEditor(Logic::AbstractWordEngine *words = new NoWords,
+                            const EditorOptions &options = EditorOptions())
+        : AbstractTextEditor(options, new Model::Text, words)
     {}
 
     int backspaces = 0;
+    //! What each word repeat deleted before the cursor, in one edit.
+    QList<int> deletes;
+    int preeditsSent = 0;
 
 private:
     void sendPreeditString(const QString &, Model::Text::PreeditFace,
-                           const Replacement &) override {}
+                           const Replacement &) override { ++preeditsSent; }
     void sendCommitString(const QString &) override {}
+    void deleteBeforeCursor(int n) override { deletes << n; }
     void sendKeyEvent(const QKeyEvent &ev) override
     {
         if (ev.type() == QEvent::KeyPress && ev.key() == Qt::Key_Backspace)
@@ -93,6 +98,15 @@ Key backspaceKey()
     Key key;
     key.setAction(Key::ActionBackspace);
     return key;
+}
+
+//! Whole words from the first word repeat on: 350ms in, then one every 50ms.
+EditorOptions quickWords()
+{
+    EditorOptions options;
+    options.backspace_word_delay = 0;
+    options.backspace_word_interval = 50;
+    return options;
 }
 
 } // namespace
@@ -232,6 +246,92 @@ private Q_SLOTS:
         editor.onKeyReleased(backspaceKey());
         QTest::qWait(quietPeriod);
         QCOMPARE(editor.backspaces, 1);
+    }
+
+    // A word and the spaces after it, punctuation with the word, and no more
+    // than 64 characters of a run with no space.
+    void wordBeforeCursorLength_data()
+    {
+        QTest::addColumn<QString>("left");
+        QTest::addColumn<int>("length");
+        QTest::newRow("empty") << QString() << 0;
+        QTest::newRow("word") << QStringLiteral("the lazy dog") << 3;
+        QTest::newRow("word and space") << QStringLiteral("the lazy dog ") << 4;
+        QTest::newRow("spaces") << QStringLiteral("the lazy dog   ") << 6;
+        QTest::newRow("period") << QStringLiteral("a dog.") << 4;
+        QTest::newRow("comma and space") << QStringLiteral("Hello, ") << 7;
+        QTest::newRow("line") << QStringLiteral("one\ntwo\n") << 4;
+        QTest::newRow("only spaces") << QStringLiteral("   ") << 3;
+        QTest::newRow("long") << QString(100, QLatin1Char('x')) << 64;
+    }
+    void wordBeforeCursorLength()
+    {
+        QFETCH(QString, left);
+        QFETCH(int, length);
+        QCOMPARE(AbstractTextEditor::wordBeforeCursorLength(left), length);
+    }
+
+    // Held past the word delay: each repeat takes a word and its space in one
+    // edit, going by what is left, not the text as it was.
+    void wordRepeatTakesAWordAnEdit()
+    {
+        CountingEditor editor(new NoWords, quickWords());
+        editor.text()->setSurrounding(QStringLiteral("the lazy dog and"));
+        editor.text()->setSurroundingOffset(16);
+        editor.onKeyPressed(backspaceKey());
+        QTRY_VERIFY_WITH_TIMEOUT(editor.deletes.size() >= 3, 2000);
+        editor.onKeyReleased(backspaceKey());
+        QCOMPARE(editor.deletes.mid(0, 3), (QList<int>{3, 4, 5}));
+        QCOMPARE(editor.text()->surroundingLeft(), QStringLiteral("the "));
+        QCOMPARE(editor.backspaces, 0);
+    }
+
+    // The word being typed goes in one, as an empty preedit.
+    void wordRepeatDropsTheWordBeingTyped()
+    {
+        CountingEditor editor(new NoWords, quickWords());
+        editor.text()->setSurrounding(QStringLiteral("the "));
+        editor.text()->setSurroundingOffset(4);
+        editor.text()->setPreedit(QStringLiteral("laz"));
+        editor.onKeyPressed(backspaceKey());
+        QTRY_VERIFY_WITH_TIMEOUT(editor.text()->preedit().isEmpty(), 2000);
+        QTRY_VERIFY_WITH_TIMEOUT(!editor.deletes.isEmpty(), 2000);
+        editor.onKeyReleased(backspaceKey());
+        QCOMPARE(editor.deletes.first(), 4);
+        QCOMPARE(editor.backspaces, 0);
+    }
+
+    // The field says nothing of its text: a backspace a repeat, as before.
+    void wordRepeatWithoutSurroundingSendsBackspaces()
+    {
+        CountingEditor editor(new NoWords, quickWords());
+        editor.onKeyPressed(backspaceKey());
+        QTRY_VERIFY_WITH_TIMEOUT(editor.backspaces >= 2, 2000);
+        editor.onKeyReleased(backspaceKey());
+        QVERIFY(editor.deletes.isEmpty());
+    }
+
+    // Repeating, then let go or cancelled: said once each way.
+    void deletingChangedOnRepeatAndRelease()
+    {
+        CountingEditor editor;
+        QList<bool> changes;
+        connect(&editor, &AbstractTextEditor::deletingChanged, this,
+                [&](bool deleting) { changes << deleting; });
+        editor.onKeyPressed(backspaceKey());
+        QTest::qWait(pastFirstRepeat);
+        QVERIFY(editor.isDeleting());
+        editor.onKeyReleased(backspaceKey());
+        QVERIFY(!editor.isDeleting());
+        editor.onKeyPressed(backspaceKey());
+        QTest::qWait(pastFirstRepeat);
+        editor.cancelRepeat();
+        QCOMPARE(changes, (QList<bool>{true, false, true, false}));
+
+        // A tap is not a repeat.
+        editor.onKeyPressed(backspaceKey());
+        editor.onKeyReleased(backspaceKey());
+        QCOMPARE(changes.size(), 4);
     }
 };
 

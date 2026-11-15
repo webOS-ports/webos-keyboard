@@ -125,6 +125,13 @@ public:
     Q_SLOT void resetPreedit();
     Q_SLOT void refreshCandidates();
 
+    bool isDeleting() const;
+    //! A held backspace started or stopped repeating.
+    Q_SIGNAL void deletingChanged(bool deleting);
+    //! The characters a held backspace's word repeat takes from [left], the
+    //! text before the cursor: the spaces at its end and the word before them.
+    static int wordBeforeCursorLength(const QString &left);
+
     bool isPreeditEnabled() const;
     Q_SLOT void setPreeditEnabled(bool enabled);
     Q_SIGNAL void preeditEnabledChanged(bool enabled);
@@ -181,13 +188,14 @@ private:
     virtual void invokeAction(const QString &action, const QKeySequence &sequence) = 0;
 
     virtual void singleBackspace();
+    virtual void deleteBeforeCursor(int n);
     void updateCandidates();
 
     static bool canRepeat(Key::Action action);
 
     Q_SLOT void autoRepeatBackspace();
     void autoRepeatWordBackspace();
-    QString wordLeftOfCursor() const;
+    void setDeleting(bool deleting);
 };
 
 } // namespace MaliitKeyboard

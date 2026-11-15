@@ -134,6 +134,18 @@ InputMethod::InputMethod(MAbstractInputMethodHost *host)
     // FIXME: Reconnect feedback instance.
     Setup::connectAll(&d->event_handler, &d->editor);
     connect(&d->editor,  SIGNAL(autoCapsActivated()), this, SIGNAL(activateAutocaps()));
+    // A held backspace let go: the word at the cursor is looked up once, for
+    // what is left (updateSpellingSuggestions() waited).
+    connect(&d->editor, &AbstractTextEditor::deletingChanged, this, [this](bool deleting) {
+        Q_D(InputMethod);
+
+        if (deleting)
+            return;
+        QString text;
+        int position;
+        const bool ok = d->host->surroundingText(text, position);
+        updateSpellingSuggestions(ok ? text : QString(), ok ? position : -1);
+    });
     connect(&d->editor, &AbstractTextEditor::autoCorrected, this,
             [this](const QString &original, const QString &corrected, const QString &left) {
         Q_D(InputMethod);
@@ -1542,10 +1554,14 @@ void InputMethod::updateSpellingSuggestions(const QString &text, int position)
     QStringList suggestions;
     bool canLearn = false;
 
+    // Not while a held backspace repeats: every word it went through was
+    // misspelled half way ("quic") and looked up for suggestions nobody saw.
+    // deletingChanged() asks once it lets go.
     const bool wanted = position >= 0 && position <= text.length()
         && d->panel.wordEngine()
         && d->contentType == FreeTextContentType
-        && d->editor.text()->preedit().isEmpty();
+        && d->editor.text()->preedit().isEmpty()
+        && !d->editor.isDeleting();
 
     if (wanted) {
         int start = position;

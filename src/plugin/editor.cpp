@@ -103,6 +103,19 @@ void Editor::sendKeyEvent(const QKeyEvent &ev)
     m_host->sendKeyEvent(ev);
 }
 
+//! One edit, nothing put in place of the [n] characters before the cursor:
+//! the application deletes them at once, as the Pre Keyboard's corrections do.
+void Editor::deleteBeforeCursor(int n)
+{
+    if (!m_host) {
+        qWarning() << __PRETTY_FUNCTION__
+                   << "Host not set, ignoring.";
+        return;
+    }
+
+    m_host->sendCommitString(QString(), -n, n);
+}
+
 void Editor::invokeAction(const QString &action, const QKeySequence &sequence)
 {
     if (!m_host) {
