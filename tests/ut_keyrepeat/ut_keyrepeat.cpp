@@ -25,6 +25,8 @@
 #include "logic/abstractlanguagefeatures.h"
 #include "models/text.h"
 
+#include <QThread>
+#include <QTimer>
 #include <QtTest>
 
 using namespace MaliitKeyboard;
@@ -79,12 +81,38 @@ public:
     //! What each word repeat deleted before the cursor, in one edit.
     QList<int> deletes;
     int preeditsSent = 0;
+    //! How long each word deletion keeps the editor busy, and when each came.
+    int busyMs = 0;
+    QElapsedTimer clock;
+    QList<qint64> deletedAt;
+    //! The application: answers each deletion this long after (-1: never).
+    int replyMs = 0;
+    QList<qint64> repliedAt;
+    //! Deletions sent while one before was still unanswered.
+    int overtaken = 0;
+    bool unanswered = false;
 
 private:
     void sendPreeditString(const QString &, Model::Text::PreeditFace,
                            const Replacement &) override { ++preeditsSent; }
     void sendCommitString(const QString &) override {}
-    void deleteBeforeCursor(int n) override { deletes << n; }
+    void deleteBeforeCursor(int n) override
+    {
+        deletes << n;
+        deletedAt << (clock.isValid() ? clock.elapsed() : 0);
+        if (unanswered)
+            ++overtaken;
+        unanswered = true;
+        if (busyMs > 0)
+            QThread::msleep(busyMs);
+        if (replyMs >= 0) {
+            QTimer::singleShot(replyMs, this, [this] {
+                unanswered = false;
+                repliedAt << (clock.isValid() ? clock.elapsed() : 0);
+                surroundingTextUpdated();
+            });
+        }
+    }
     void sendKeyEvent(const QKeyEvent &ev) override
     {
         if (ev.type() == QEvent::KeyPress && ev.key() == Qt::Key_Backspace)
@@ -309,6 +337,72 @@ private Q_SLOTS:
         QTRY_VERIFY_WITH_TIMEOUT(editor.backspaces >= 2, 2000);
         editor.onKeyReleased(backspaceKey());
         QVERIFY(editor.deletes.isEmpty());
+    }
+
+    // Each word an interval after the application took the last one in:
+    // however long it takes (here 30 ms busy, or a reply 120 ms after), the
+    // gaps are the same every time and nothing goes before the last is in.
+    void wordRepeatGoesEvenly_data()
+    {
+        QTest::addColumn<int>("busyMs");
+        QTest::addColumn<int>("replyMs");
+        QTest::newRow("quick") << 0 << 0;
+        QTest::newRow("busy") << 30 << 0;
+        QTest::newRow("slow application") << 0 << 120;
+    }
+    void wordRepeatGoesEvenly()
+    {
+        QFETCH(int, busyMs);
+        QFETCH(int, replyMs);
+        CountingEditor editor(new NoWords, quickWords());
+        editor.text()->setSurrounding(QStringLiteral("a b c d e f g h i j k l"));
+        editor.text()->setSurroundingOffset(23);
+        editor.busyMs = busyMs;
+        editor.replyMs = replyMs;
+        editor.clock.start();
+        editor.onKeyPressed(backspaceKey());
+        QTRY_VERIFY_WITH_TIMEOUT(editor.deletedAt.size() >= 7, 4000);
+        editor.onKeyReleased(backspaceKey());
+        QCOMPARE(editor.overtaken, 0);
+        const auto &at = editor.deletedAt;
+        qint64 least = 1 << 30, most = 0;
+        for (int i = 2; i < 7; ++i) {
+            least = qMin(least, at[i] - at[i - 1]);
+            most = qMax(most, at[i] - at[i - 1]);
+        }
+        const qint64 expected = busyMs + replyMs + 50;
+        QVERIFY2(least >= expected - 5 && most <= expected + 25,
+                 qPrintable(QStringLiteral("gaps %1..%2 ms, expected %3").arg(least).arg(most).arg(expected)));
+    }
+
+    // A reply after the key is let go starts nothing.
+    void replyAfterReleaseDeletesNothing()
+    {
+        CountingEditor editor(new NoWords, quickWords());
+        editor.text()->setSurrounding(QStringLiteral("a b c d e f"));
+        editor.text()->setSurroundingOffset(11);
+        editor.replyMs = 100;
+        editor.onKeyPressed(backspaceKey());
+        QTRY_VERIFY_WITH_TIMEOUT(!editor.deletes.isEmpty(), 2000);
+        editor.onKeyReleased(backspaceKey());
+        const int atRelease = editor.deletes.size();
+        QTest::qWait(400);
+        QCOMPARE(editor.deletes.size(), atRelease);
+    }
+
+    // An application that never says: a deletion every kReplyWaitMs (600 ms).
+    void wordRepeatGoesOnWithoutAnAnswer()
+    {
+        CountingEditor editor(new NoWords, quickWords());
+        editor.text()->setSurrounding(QStringLiteral("a b c d e f"));
+        editor.text()->setSurroundingOffset(11);
+        editor.replyMs = -1;
+        editor.clock.start();
+        editor.onKeyPressed(backspaceKey());
+        QTRY_VERIFY_WITH_TIMEOUT(editor.deletedAt.size() >= 3, 3000);
+        editor.onKeyReleased(backspaceKey());
+        const qint64 gap = editor.deletedAt[2] - editor.deletedAt[1];
+        QVERIFY2(gap >= 590 && gap < 700, qPrintable(QString::number(gap)));
     }
 
     // Repeating, then let go or cancelled: said once each way.

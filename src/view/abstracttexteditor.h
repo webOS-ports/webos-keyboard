@@ -126,6 +126,8 @@ public:
     Q_SLOT void refreshCandidates();
 
     bool isDeleting() const;
+    //! The application told what its text is now (a held backspace waits for it).
+    Q_SLOT void surroundingTextUpdated();
     //! A held backspace started or stopped repeating.
     Q_SIGNAL void deletingChanged(bool deleting);
     //! The characters a held backspace's word repeat takes from [left], the

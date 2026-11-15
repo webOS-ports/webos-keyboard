@@ -1513,6 +1513,7 @@ void InputMethod::update()
 
         d->editor.text()->setSurrounding(text);
         d->editor.text()->setSurroundingOffset(position);
+        d->editor.surroundingTextUpdated();
     }
 
     updateSpellingSuggestions(ok ? text : QString(), ok ? position : -1);
