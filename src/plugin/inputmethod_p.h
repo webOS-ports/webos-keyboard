@@ -370,10 +370,7 @@ public:
             const bool hidden = host->hiddenText(hiddenValid) && hiddenValid;
             return predictionWanted(asked, askedValid, hidden, !typeValid || type == InputMethod::FreeTextContentType);
         };
-        b.nextWords = [this] {
-            const Model::Text *t = editor.text();
-            return t ? editor.wordEngine()->nextWords(t->surroundingLeft(), 3) : QStringList();
-        };
+        b.nextWords = [this](const QString &left) { return editor.wordEngine()->nextWords(left, 3); };
         b.replace = [this](int before, int after, const QString &text) {
             host->sendCommitString(text, -before, before + after);
         };

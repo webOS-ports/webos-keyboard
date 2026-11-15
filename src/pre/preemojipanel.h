@@ -35,6 +35,8 @@
 
 class QPainter;
 
+class TestPreKeyboard;
+
 namespace Pre {
 
 class MediaPanel;
@@ -44,31 +46,39 @@ class MediaPanel;
  * a row of category tabs along the bottom, then backspace. Tapping a tab jumps to
  * its category, and the tab lights as you scroll.
  *
+ * The first category is the ones used last, newest first.
+ *
  * Along the top, where the suggestion bar was: ABC, then Emoji, GIF and a
- * sticker. The other two are KLIPY's (MediaPanel): there a "Search KLIPY" field
- * follows the tabs, and the GIFs take everything below, down to the bottom of the
- * keys; ABC is the only key left.
+ * sticker, then a search field: "Search Emojis" finds them by the words the
+ * suggestion bar offers them for, all of them at once in the grid. The other
+ * two tabs are KLIPY's (MediaPanel): there the field says "Search KLIPY", and
+ * the GIFs take everything below, down to the bottom of the keys; ABC is the
+ * only key left.
  *
  * The keyboard view owns it, gives it the keys' area, and hands it every touch
  * while it shows.
  */
 class EmojiPanel
 {
+    friend class ::TestPreKeyboard;
+
 public:
+    enum Area { None = 0, Grid = 1, Abc = 2, Back = 3, Tabs = 4, Strip = 5, Search = 6 };
+    enum class Tab { Emoji, Gif, Sticker };
+
     struct Actions
     {
         std::function<void(const QString &)> emoji;
         std::function<void()> backspace;
         std::function<void()> letters;
         std::function<void()> update;
-        //! The search field was tapped: type a search for [kind], starting from [query].
-        std::function<void(Klipy::Kind, const QString &)> search;
+        //! The search field was tapped: type a search for [tab], starting from [query].
+        std::function<void(Tab, const QString &)> search;
+        //! Every emoji for [query], likeliest first.
+        std::function<QStringList(const QString &query)> findEmoji;
         //! A GIF or sticker was tapped, found by searching for [query] (empty: trending).
         std::function<void(Klipy::Kind, const Klipy::Item &, const QString &)> media;
     };
-
-    enum Area { None = 0, Grid = 1, Abc = 2, Back = 3, Tabs = 4, Strip = 5, Search = 6 };
-    enum class Tab { Emoji, Gif, Sticker };
 
     EmojiPanel(qreal dp, const Actions &actions);
     ~EmojiPanel();
@@ -77,9 +87,11 @@ public:
     void setFont(const QFont &font) { m_font = font; }
     Tab tab() const { return m_tab; }
     void select(Tab t);
-    //! A search was typed for [kind]: its tab, showing what was found.
-    void searched(Klipy::Kind kind, const QString &q);
-    //! The page is going away: the GIFs stop moving.
+    //! A search was typed for [t]: its tab, showing what was found.
+    void searched(Tab t, const QString &q);
+    //! What the emoji grid shows searched for (empty: every category).
+    QString emojiQuery() const { return m_emojiQuery; }
+    //! The page is going away: the GIFs stop moving, an emoji search is put away.
     void close();
     //! A word for a moment over the GIFs or stickers.
     void say(Klipy::Kind kind, const QString &s, int ms = 2500);
@@ -88,11 +100,20 @@ public:
     //! Whether the device's emoji font draws [emoji]: every code point in it, joiners and selectors aside.
     static bool canDraw(const QString &emoji);
     /*!
+     * The emoji font at the Android Pre Keyboard's text size [size]: drawn as
+     * big as Android draws it. Noto Color Emoji is a font of pictures, and the
+     * two scale them differently: Android draws 😀 1.06 times its text size
+     * tall, Qt 0.84 times on a mako. So the same sizes as Android's gave emoji a
+     * fifth smaller; this works out the pixel size that draws them as tall.
+     */
+    static QFont emojiFont(qreal size);
+    /*!
      * [top] is where the page starts (the suggestion bar's place, if it shows),
      * [rows] the top three rows of keys, [bar] the bottom row.
      */
-    void layout(qreal top, const QRectF &rows, const QRectF &bar);
-    void draw(QPainter &p, Painter &painter, Style style, const std::function<void(QPainter &, const QString &, const QRectF &)> &label);
+    //! [rowHeight]: a row of keys, as laid out before rounding to whole pixels: what the strip and emoji are sized from.
+    void layout(qreal top, const QRectF &rows, const QRectF &bar, qreal rowHeight);
+    void draw(QPainter &p, Painter &painter, Style style);
 
     void down(qreal x, qreal y);
     void move(qreal x, qreal y);
@@ -107,6 +128,12 @@ private:
     struct Category { QString id; QString icon; QStringList emoji; };
 
     void relayout();
+    //! The emoji grid shows what was searched for: [q], or every category again (empty).
+    void searchEmoji(const QString &q);
+    //! What the grid shows: the categories, or what was searched for.
+    const QList<Category> &shown() const;
+    //! ABC's letters: as big as its key allows, as on Android.
+    qreal abcTextSize() const;
     qreal cellHeight() const;
     qreal maxScroll() const;
     MediaPanel *media() const;
@@ -116,7 +143,11 @@ private:
     void setScroll(qreal y);
     qreal maxScrollNow() const;
     void drawStrip(QPainter &p, Painter &painter, Style style);
-    qreal tabWidth() const;
+    qreal edge() const;
+    qreal gap() const;
+    QRectF item() const;
+    qreal tabText() const;
+    qreal tabWidth(int i) const;
     QRectF topTab(int i) const;
     //! The tabs above the grid: Emoji, and GIFs and stickers when KLIPY has a key.
     int tabCount() const;
@@ -139,11 +170,15 @@ private:
     static Tab s_lastTab;
     QList<Category> m_all;
     QList<Category> m_categories;
+    //! An emoji search: what was searched for, and what it found (one category).
+    QString m_emojiQuery;
+    QList<Category> m_found;
     QRectF m_grid, m_bar;
     //! The GIFs' and stickers' grid: under the strip, all the way down.
     QRectF m_mediaGrid;
     //! The tabs (and on KLIPY's, the search field) above the grid.
     QRectF m_strip;
+    qreal m_rowHeight = 0;
     int m_cols = 8;
     qreal m_cell = 48;
     QVector<qreal> m_starts;

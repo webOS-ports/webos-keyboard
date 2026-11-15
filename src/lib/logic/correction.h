@@ -66,6 +66,14 @@ public:
     static QString choose(const QString &typed, const QString &language, const Dictionary &dictionary,
                           const QStringList &predictions);
 
+    /*!
+     * Rule 1 alone: [word] as English writes it when it is a contraction
+     * without its apostrophe or the letter "i" ("dont" -> "don't", "i" ->
+     * "I"); empty for any other word, or another language. Presage's next
+     * words come out of its lower-case tokens, and get this too.
+     */
+    static QString english(const QString &word, const QString &language);
+
     //! [word] lower case without accents, apostrophes, hyphens or spaces: what was typed for it.
     static QString fold(const QString &word);
     //! [word] with its first letter a capital when [like]'s is.

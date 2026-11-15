@@ -52,6 +52,16 @@ QString preAccents(const QString &id)
     return QString();
 }
 
+//! The punctuation a language writes its own way: the comma key types it, and the orange key's ? and ;.
+QHash<QString, QString> ownPunctuation(const QString &id)
+{
+    if (id == QLatin1String("ar"))
+        return { { QStringLiteral(","), QStringLiteral(u"\u060C") },    // ،
+                 { QStringLiteral("?"), QStringLiteral(u"\u061F") },    // ؟
+                 { QStringLiteral(";"), QStringLiteral(u"\u061B") } };  // ؛
+    return {};
+}
+
 } // namespace
 
 Language Language::preGrid(const QString &id, const QString &name, Layout layout)
@@ -61,6 +71,7 @@ Language Language::preGrid(const QString &id, const QString &name, Layout layout
     l.name = name;
     l.layout = layout;
     l.accents = preAccents(id);
+    l.punctuation = ownPunctuation(id);
     return l;
 }
 
@@ -72,6 +83,7 @@ Language Language::ownRows(const QString &id, const QString &name, bool rightToL
     l.layout = Layout::Own;
     l.letters = rows;
     l.rightToLeft = rightToLeft;
+    l.punctuation = ownPunctuation(id);
     return l;
 }
 

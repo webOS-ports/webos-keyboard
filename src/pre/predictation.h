@@ -20,6 +20,8 @@
 #define PRE_DICTATION_H
 
 #include <QObject>
+#include <QList>
+#include <QPair>
 #include <QString>
 
 namespace Pre {
@@ -77,6 +79,20 @@ QString resultText(const QByteArray &json, const char *key);
  * and its contractions as "I".
  */
 QString join(const QString &spoken, const QString &before, bool capital, const QString &language);
+
+/*!
+ * The PulseAudio source to listen on, out of [sources] (each a name and its
+ * device.class) and the server's [defaultSource]: the default where it is a
+ * microphone ("sound"), else the first one that is; empty when none is.
+ *
+ * On LuneOS it has to be named. module-palm-policy puts a recording that names
+ * no source on the "record" virtual source, a null source until audiod binds
+ * it to an input, so dictation heard silence or was refused ("Not
+ * supported"), and the virtual sources (device.class "abstract") are the same.
+ * The microphone's own name differs from phone to phone (source.droid,
+ * source.primary_input), so it is asked for, as luneos-components' camera does.
+ */
+QString recordingSource(const QString &defaultSource, const QList<QPair<QString, QString>> &sources);
 
 } // namespace Speech
 

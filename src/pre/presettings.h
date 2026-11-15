@@ -38,6 +38,7 @@ namespace Pre {
  *                               "holdForMore": false, "vibrate": false,
  *                               "followShift": false, "swipe": true,
  *                               "doubleSpacePeriod": true, "emojiSuggestions": false,
+ *                               "numberRow": false, "hideKeyDigits": false,
  *                               "recentEmoji": ["🙂"] } }
  *
  * Everything about words - suggestions, autocorrect, the owner's dictionary -
@@ -80,6 +81,14 @@ struct Settings
     bool doubleSpacePeriod = true;
     //! An emoji for the word in the bar's right-hand place ("pizza" -> 🍕), for a language that has them.
     bool emojiSuggestions = false;
+    /*!
+     * The Sym page's digits in a row of their own above the letters, always
+     * there; the Sym page keeps them in that same top row, with a row of
+     * arrows and signs under them, so both pages are five rows tall.
+     */
+    bool numberRow = false;
+    //! With the number row: the digits printed on the letters (E R T, D F G, X C V, @) are left off.
+    bool hideKeyDigits = false;
 
     // From the LuneOS keyboard's settings.
     //! Prediction or spell checking is on: the suggestion bar shows.
@@ -97,6 +106,8 @@ struct Settings
     bool showsBar() const { return suggestions || swipe || emojiSuggestions; }
     //! Row heights in dp. Medium is close to a Pre key's proportions on a modern phone.
     int heightDp() const { return height == Height::Small ? 46 : height == Height::Large ? 62 : 54; }
+    //! Rows of keys on the letters, Sym and emoji pages: four, or five with the number row.
+    int keyRows() const { return numberRow ? 5 : 4; }
 
     //! [into] with the "pre" object's choices read over it.
     static Settings fromJson(const QJsonObject &pre, Settings into);

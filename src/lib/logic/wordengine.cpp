@@ -399,7 +399,13 @@ QStringList WordEngine::predictNext(const QString &left)
     if (!d->use_predictive_text || !d->languagePlugin)
         return QStringList();
     d->languagePlugin->parse(left, QString());
-    return d->languagePlugin->getWordCandidates();
+    // Presage's words are its lower-case tokens: English's "i" is "I", "dont" "don't".
+    QStringList out;
+    for (const QString &w : d->languagePlugin->getWordCandidates()) {
+        const QString english = Correction::english(w, d->language);
+        out << (english.isEmpty() ? w : english);
+    }
+    return out;
 }
 
 QStringList WordEngine::userWords()

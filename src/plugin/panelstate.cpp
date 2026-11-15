@@ -24,12 +24,17 @@ bool panelWindowKeepsGeometry(const QRect &window, const QRect &screen)
 {
     if (window == screen)
         return true;
+    if (window.topLeft() != screen.topLeft() or window.height() <= 0)
+        return false;
+
+    // Upright: the screen's width across, down to where the shell's strip ends.
+    if (window.width() == screen.width() and window.height() < screen.height())
+        return true;
 
     // On its side: the screen's long side across, at most its short side down.
     const bool portraitScreen = screen.height() > screen.width();
-    return portraitScreen and window.topLeft() == screen.topLeft()
-        and window.width() == screen.height()
-        and window.height() > 0 and window.height() <= screen.width();
+    return portraitScreen and window.width() == screen.height()
+        and window.height() <= screen.width();
 }
 
 void PanelState::setFocused(bool focused)

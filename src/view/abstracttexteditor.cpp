@@ -282,6 +282,63 @@ class AbstractTextEditorPrivate
 public:
     QTimer auto_repeat_backspace_timer;
     QElapsedTimer backspace_hold_timer;
+    /*!
+     * A held key repeats on a beat: each repeat is due an interval after the
+     * last one was due, not after it was done, so the time a repeat took (the
+     * word engine, the panel) is not added to the wait for the next. One that
+     * falls behind goes at once, the beat going on from there rather than
+     * making up for it in a burst.
+     *
+     * A held backspace keeps time with the application, too. Each deletion is
+     * answered with what the text is now (surroundingTextUpdated()), and the
+     * next is due an interval after that answer, not after the deletion went
+     * out; one due before the answer waits for it. Memos, a web page on a
+     * mako, answered one word in 10 ms and the next in 250, and took two
+     * deletions that came close together in one go: on the beat alone the
+     * words went two at once and then a pause, over and over. Counted from
+     * its answers, each word goes in by itself, at even gaps. A field that
+     * answers at once, as the QML ones do, goes at the interval and a little;
+     * one that says nothing is not waited for past kReplyWaitMs.
+     */
+    QElapsedTimer repeat_clock;
+    qint64 repeat_due = 0;
+    int repeat_interval = 0;
+    bool awaiting_reply = false;
+    bool repeat_held_back = false;
+    QElapsedTimer sent_at;
+    //! The text as it was before the deletion: an answer still showing it is
+    //! not the answer to the deletion.
+    QString sent_from;
+    static const int kReplyWaitMs = 600;
+    void sentToApplication(const QString &before)
+    {
+        awaiting_reply = true;
+        sent_from = before;
+        sent_at.start();
+    }
+    bool holdBackRepeat()
+    {
+        if (!awaiting_reply || sent_at.elapsed() >= kReplyWaitMs)
+            return false;
+        repeat_held_back = true;
+        auto_repeat_backspace_timer.start(int(kReplyWaitMs - sent_at.elapsed()));
+        return true;
+    }
+    void armRepeat(int delay)
+    {
+        repeat_clock.start();
+        repeat_due = delay;
+        auto_repeat_backspace_timer.start(delay);
+    }
+    void nextRepeat(int interval)
+    {
+        repeat_interval = interval;
+        repeat_due += interval;
+        const qint64 now = repeat_clock.elapsed();
+        if (repeat_due < now)
+            repeat_due = now;
+        auto_repeat_backspace_timer.start(int(repeat_due - now));
+    }
     bool backspace_sent;
     //! canRepeat() covers space, backspace and the two arrows; this is the one
     //! currently held, or ActionInsert when nothing is repeating.
@@ -290,6 +347,9 @@ public:
     //! Set while autoRepeatBackspace() is re-sending a key, so the release
     //! handler does not mistake that for the user letting go.
     bool in_auto_repeat;
+    //! A held backspace is repeating: the word engine waits till it lets go
+    //! (updateCandidates()), as every deletion would look the word up again.
+    bool deleting;
     EditorOptions options;
     QScopedPointer<Model::Text> text;
     QScopedPointer<Logic::AbstractWordEngine> word_engine;
@@ -312,6 +372,7 @@ AbstractTextEditorPrivate::AbstractTextEditorPrivate(const EditorOptions &new_op
     , backspace_sent(false)
     , repeating_action(Key::ActionInsert)
     , in_auto_repeat(false)
+    , deleting(false)
     , options(new_options)
     , text(new_text)
     , word_engine(new_word_engine)
@@ -322,6 +383,7 @@ AbstractTextEditorPrivate::AbstractTextEditorPrivate(const EditorOptions &new_op
     , ignore_next_surrounding_text()
 {
     auto_repeat_backspace_timer.setSingleShot(true);
+    auto_repeat_backspace_timer.setTimerType(Qt::PreciseTimer);
     (void) valid();
 }
 
@@ -403,13 +465,15 @@ void AbstractTextEditor::onKeyPressed(const Key &key)
             || key.action() == Key::ActionBackspaceWord) {
             d->backspace_sent = false;
             d->backspace_hold_timer.restart();
+            d->awaiting_reply = false;
+            d->repeat_held_back = false;
         }
 
         // A repeat runs until its key is released, so where one came from is
         // worth knowing when it does not stop.
         qCInfo(lcEditorKeys, "repeat armed: action=%d label='%s'",
                int(key.action()), qPrintable(key.label()));
-        d->auto_repeat_backspace_timer.start(d->options.auto_repeat_delay);
+        d->armRepeat(d->options.auto_repeat_delay);
     }
 }
 
@@ -428,6 +492,8 @@ void AbstractTextEditor::cancelRepeat()
     // Should the release turn up after all, it must not take one more
     // character: a cancelled backspace deletes nothing.
     d->backspace_sent = true;
+    // Cancelled, nobody is waiting for the word engine; the next key asks it.
+    setDeleting(false);
 }
 
 //! \brief Keys the reference keyboard repeats while they are held.
@@ -505,6 +571,11 @@ void AbstractTextEditor::onKeyReleased(const Key &key)
 
         d->auto_repeat_backspace_timer.stop();
         d->repeating_action = Key::ActionInsert;
+        // Let go after a repeat: the word engine, once, for what is left.
+        if (d->deleting) {
+            setDeleting(false);
+            refreshCandidates();
+        }
     } break;
 
     case Key::ActionSpace: {
@@ -606,7 +677,7 @@ void AbstractTextEditor::onKeyEntered(const Key &key)
 
     if (key.action() == Key::ActionBackspace) {
         d->backspace_sent = false;
-        d->auto_repeat_backspace_timer.start(d->options.auto_repeat_delay);
+        d->armRepeat(d->options.auto_repeat_delay);
     }
 }
 
@@ -662,6 +733,29 @@ void AbstractTextEditor::refreshCandidates()
     if (not d->text->preedit().isEmpty()) {
         sendPreeditString(d->text->preedit(), d->text->preeditFace());
     }
+}
+
+/*!
+ * \brief The word engine on the word being typed, after a deletion - unless a
+ * held backspace is repeating.
+ *
+ * Every repeat would look the word up again, spelling and predictions both,
+ * and on a slow phone that is what holding backspace waits for: the deleting
+ * fell behind the finger. So while it repeats, the candidates are cleared and
+ * the word has no correction (one left from before, "hello" for "helo", must
+ * not replace what is left of it); refreshCandidates() asks once the key lets
+ * go. A single tap is not a repeat and is looked up as before.
+ */
+void AbstractTextEditor::updateCandidates()
+{
+    Q_D(AbstractTextEditor);
+
+    if (d->deleting) {
+        d->text->setPrimaryCandidate(QString());
+        d->word_engine->clearCandidates();
+        return;
+    }
+    d->word_engine->computeCandidates(d->text.data());
 }
 
 //! \brief Replaces current preedit with given replacement and then
@@ -858,6 +952,22 @@ void AbstractTextEditor::autoRepeatBackspace()
 {
     Q_D(AbstractTextEditor);
 
+    // From the first repeat until the key lets go, deleting is all there is to
+    // do: the word engine waits (updateCandidates()).
+    if (d->repeating_action == Key::ActionBackspace
+        || d->repeating_action == Key::ActionBackspaceWord) {
+        setDeleting(true);
+    }
+
+    // The application has not taken the last deletion in yet: this one goes
+    // when it has (surroundingTextUpdated()).
+    if ((d->repeating_action == Key::ActionBackspace
+         || d->repeating_action == Key::ActionBackspaceWord)
+        && d->holdBackRepeat()) {
+        return;
+    }
+    d->repeat_held_back = false;
+
     // Shift held: whole words from the first repeat, not after backspace_word_delay.
     if (d->repeating_action == Key::ActionBackspaceWord) {
         autoRepeatWordBackspace();
@@ -870,55 +980,126 @@ void AbstractTextEditor::autoRepeatBackspace()
             d->in_auto_repeat = true;
             onKeyReleased(d->repeating_key);
             d->in_auto_repeat = false;
-            d->auto_repeat_backspace_timer.start(d->options.auto_repeat_interval);
+            d->nextRepeat(d->options.auto_repeat_interval);
         }
         return;
     }
 
     if (d->backspace_hold_timer.elapsed() < d->options.backspace_word_delay) {
+        const QString before = d->text->surrounding();
+        const bool toApplication = d->text->preedit().isEmpty() && !before.isEmpty();
         singleBackspace();
-        d->auto_repeat_backspace_timer.start(d->options.auto_repeat_interval);
+        if (toApplication)
+            d->sentToApplication(before);
+        d->nextRepeat(d->options.auto_repeat_interval);
     } else {
         autoRepeatWordBackspace();
     }
 }
 
 /*!
- * \brief AbstractTextEditor::autoRepeatWordBackspace same as autoRepeatBackspace()
- * but deletes whole words
+ * \brief A held backspace, past backspace_word_delay: the word before the
+ * cursor goes, with the spaces after it, in one edit (as the Pre Keyboard for
+ * Android does it, a word to a repeat). The word being typed goes whole.
+ *
+ * It took the word a letter at a time before, a key event each, and every one
+ * went to the application and back: on a phone the word was seen going, and
+ * each letter cost what a deletion costs. A word is what runs back to the last
+ * space, so "dog." goes with its period; [kMaxWordDelete] characters at most,
+ * a link with no space in it going in pieces.
  */
 void AbstractTextEditor::autoRepeatWordBackspace()
 {
     Q_D(AbstractTextEditor);
 
-    if (d->text->surroundingOffset() > 0) {
-        const QString word = wordLeftOfCursor();
-        for (int i=0; i<word.length(); ++i)
-            singleBackspace();
+    if (!d->text->preedit().isEmpty()) {
+        clearPreedit();
+        d->backspace_sent = true;
     } else {
-        singleBackspace();
+        const int n = wordBeforeCursorLength(d->text->surroundingLeft());
+        if (n > 0) {
+            deleteBeforeCursor(n);
+            // The application says what is left when it gets to it; the next
+            // repeat must not go by the text as it was, or it takes n again.
+            QString surrounding = d->text->surrounding();
+            const QString before = surrounding;
+            const int offset = int(d->text->surroundingOffset());
+            surrounding.remove(offset - n, n);
+            d->text->setSurrounding(surrounding);
+            d->text->setSurroundingOffset(uint(offset - n));
+            d->backspace_sent = true;
+            d->sentToApplication(before);
+        } else {
+            // Nothing known before the cursor: the application may not say.
+            singleBackspace();
+        }
     }
 
-    d->auto_repeat_backspace_timer.start(d->options.backspace_word_interval);
+    d->nextRepeat(d->options.backspace_word_interval);
 }
 
 /*!
- * \brief AbstractTextEditor::wordLeftOfCursor returns the word that is left to
- * to the cursor
- * \return
+ * \brief How much of [left], the text before the cursor, a word backspace
+ * takes: any spaces at its end and the word before them.
  */
-QString AbstractTextEditor::wordLeftOfCursor() const
+int AbstractTextEditor::wordBeforeCursorLength(const QString &left)
+{
+    static const int kMaxWordDelete = 64;
+    int i = left.length();
+    const int stop = qMax(0, i - kMaxWordDelete);
+    while (i > stop && left.at(i - 1).isSpace())
+        --i;
+    while (i > stop && !left.at(i - 1).isSpace())
+        --i;
+    return left.length() - i;
+}
+
+//! \brief Deletes the [n] characters before the cursor, no preedit being
+//! held. Here a backspace each; an editor that can, does it in one edit.
+void AbstractTextEditor::deleteBeforeCursor(int n)
+{
+    for (int i = 0; i < n; ++i) {
+        const QKeyEvent ev(QEvent::KeyPress, Qt::Key_Backspace, Qt::NoModifier);
+        sendKeyEvent(ev);
+    }
+}
+
+/*!
+ * \brief The application said what its text is now: the deletion sent is in.
+ * The next repeat of a held backspace is an interval from now, whether it
+ * was due before (held back, holdBackRepeat()) or after.
+ */
+void AbstractTextEditor::surroundingTextUpdated()
+{
+    Q_D(AbstractTextEditor);
+
+    // Not an answer to the deletion while it still shows the text as it was.
+    if (!d->awaiting_reply || d->text->surrounding() == d->sent_from)
+        return;
+    d->awaiting_reply = false;
+    d->repeat_held_back = false;
+    if (d->repeating_action != Key::ActionBackspace
+        && d->repeating_action != Key::ActionBackspaceWord)
+        return;
+    d->repeat_due = d->repeat_clock.elapsed() + d->repeat_interval;
+    d->auto_repeat_backspace_timer.start(d->repeat_interval);
+}
+
+void AbstractTextEditor::setDeleting(bool deleting)
+{
+    Q_D(AbstractTextEditor);
+    if (d->deleting == deleting)
+        return;
+    d->deleting = deleting;
+    Q_EMIT deletingChanged(deleting);
+}
+
+//! \brief Whether a held backspace is repeating: what depends on the word at
+//! the cursor waits till it lets go (deletingChanged()).
+bool AbstractTextEditor::isDeleting() const
 {
     Q_D(const AbstractTextEditor);
-
-    const QString leftSurrounding = d->text->surroundingLeft();
-    int idx = leftSurrounding.length() - 1;
-    while (idx >= 0 && !isSeparator(leftSurrounding.at(idx))) {
-        --idx;
-    }
-    const int length = d->text->surroundingOffset() - idx;
-
-    return leftSurrounding.right(length);
+    return d->deleting;
 }
 
 //! \brief Emits wordCandidatesChanged() signal with current preedit
@@ -971,7 +1152,7 @@ void AbstractTextEditor::singleBackspace()
         sendKeyEvent(ev);
     } else {
         d->text->removeFromPreedit(1);
-        d->word_engine->computeCandidates(d->text.data());
+        updateCandidates();
         sendPreeditString(d->text->preedit(), d->text->preeditFace(),
                           Replacement());
     }
@@ -1015,7 +1196,7 @@ void AbstractTextEditor::onCursorPositionChanged(int cursor_position,
         d->text->setPreedit(word, word_begin_relative_cursor_pos);
         // computeCandidates can change preedit face, so needs to happen
         // before sending preedit:
-        d->word_engine->computeCandidates(d->text.data());
+        updateCandidates();
         sendPreeditString(d->text->preedit(), d->text->preeditFace(), word_r);
         // Qt is going to send us an event with cursor position places
         // at the beginning of replaced word and surrounding text

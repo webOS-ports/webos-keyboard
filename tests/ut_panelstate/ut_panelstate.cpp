@@ -305,9 +305,15 @@ void ut_panelstate::testPanelWindowGeometry_data()
 
     // A sargo: 1080x2220, portrait as far as the output is concerned.
     QTest::newRow("the screen") << QRect(0, 0, 1080, 2220) << true;
-    // Shrunk in portrait by a status bar or an inset: never shown, put back.
-    QTest::newRow("portrait 2145") << QRect(0, 0, 1080, 2145) << false;
-    QTest::newRow("portrait 2045") << QRect(0, 0, 1080, 2045) << false;
+    // The shell upright: the strip under its status bar, and above its gesture area too.
+    QTest::newRow("portrait 2145") << QRect(0, 0, 1080, 2145) << true;
+    QTest::newRow("portrait strip") << QRect(0, 0, 1080, 2045) << true;
+    // Not the shell's: put back.
+    QTest::newRow("no size yet") << QRect(0, 0, 0, 0) << false;
+    QTest::newRow("narrower than the screen") << QRect(0, 0, 1000, 2045) << false;
+    QTest::newRow("taller than the screen") << QRect(0, 0, 1080, 2400) << false;
+    QTest::newRow("moved upright") << QRect(0, 75, 1080, 2045) << false;
+    QTest::newRow("no height upright") << QRect(0, 0, 1080, 0) << false;
     // The shell in landscape: the strip between its bars, as measured.
     QTest::newRow("landscape strip") << QRect(0, 0, 2220, 905) << true;
     QTest::newRow("screen on its side") << QRect(0, 0, 2220, 1080) << true;

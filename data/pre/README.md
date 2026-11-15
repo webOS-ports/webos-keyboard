@@ -6,7 +6,7 @@ What the Pre Keyboard (`src/pre`) reads at run time, installed to
 | File | What it is |
 |---|---|
 | `emoji.txt` | The emoji page: every emoji, by category |
-| `<language>/emoji_words.txt` | The emoji the bar offers for a word (`pizza` -> 🍕), for `en`, `de`, `es`, `fr` and `it`: `word<TAB>emoji ...`, the likeliest first |
+| `<language>/emoji_words.txt` | The emoji the bar offers for a word (`pizza` -> 🍕), for every language but Chinese: `word<TAB>emoji ...`, the likeliest first |
 
 The Pre Keyboard's words - prediction, spelling, autocorrect and the owner's
 dictionary - are the language plugins' (`plugins/<lang>`), the same as for every
@@ -26,4 +26,7 @@ Android Pre Keyboard from that language's Unicode CLDR emoji annotations
 `common/annotationsDerived/<language>.xml`), Copyright (c) Unicode, Inc., under
 the Unicode License v3 (https://www.unicode.org/license.txt). They are copied
 from that project's `app/src/main/assets` (`emoji_words.txt` for English,
-`<language>/emoji_words.txt` for the others) at its commit b585d7f.
+`<language>/emoji_words.txt` for the others): `en`, `de`, `es`, `fr` and `it`
+at its commit b585d7f, and `ar`, `cs`, `da`, `fi`, `he`, `hu`, `nl`, `no`,
+`pl`, `pt`, `ru`, `sv` and `uk` at 93d3d84 (1.4.0), where Norwegian's come
+from CLDR's `no` annotations and Portuguese's from its `pt`.

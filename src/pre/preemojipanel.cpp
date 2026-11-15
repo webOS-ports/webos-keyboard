@@ -25,6 +25,7 @@
 #include <QFontMetricsF>
 #include <QMutex>
 #include <QHash>
+#include <QImage>
 #include <QPainter>
 
 #include <algorithm>
@@ -36,16 +37,54 @@ namespace {
 const qreal SLOP_DP = 8;
 //! A fling slows by this share of its speed every millisecond.
 const qreal FRICTION = 0.0028;
+//! How tall Android draws 😀 for its text size: 71 px at 67 (the Android Pre Keyboard's own
+//! emoji page, docs/emoji.png: a line of 108 px, emoji at 0.62 of it).
+const qreal ANDROID_EMOJI_INK = 71.0 / 67.0;
 
-QFont emojiFont(qreal px)
+QFont fontAtPixels(qreal px)
 {
     QFont f(QStringLiteral("Noto Color Emoji"));
-    f.setPixelSize(std::max(1, int(px)));
+    f.setPixelSize(std::max(1, int(std::round(px))));
     f.setStyleStrategy(QFont::NoFontMerging);
     return f;
 }
 
+//! How tall this device's font draws 😀, for its pixel size: drawn once, and measured.
+qreal qtEmojiInk()
+{
+    static const qreal ink = [] {
+        const int px = 100;
+        QImage img(2 * px, 2 * px, QImage::Format_ARGB32_Premultiplied);
+        img.fill(Qt::transparent);
+        {
+            QPainter p(&img);
+            p.setFont(fontAtPixels(px));
+            p.setPen(Qt::white);
+            p.drawText(img.rect(), Qt::AlignCenter, QStringLiteral("😀"));
+        }
+        int top = -1, bottom = -1;
+        for (int y = 0; y < img.height(); ++y) {
+            const QRgb *line = reinterpret_cast<const QRgb *>(img.constScanLine(y));
+            for (int x = 0; x < img.width(); ++x) {
+                if (qAlpha(line[x]) > 32) {
+                    if (top < 0) top = y;
+                    bottom = y;
+                    break;
+                }
+            }
+        }
+        // No emoji font (a desktop without one): sized as asked.
+        return top < 0 ? ANDROID_EMOJI_INK : qreal(bottom - top + 1) / px;
+    }();
+    return ink;
+}
+
 } // namespace
+
+QFont EmojiPanel::emojiFont(qreal size)
+{
+    return fontAtPixels(size * ANDROID_EMOJI_INK / qtEmojiInk());
+}
 
 EmojiPanel::Tab EmojiPanel::s_lastTab = EmojiPanel::Tab::Emoji;
 
@@ -94,16 +133,37 @@ void EmojiPanel::select(Tab t)
     if (m_actions.update) m_actions.update();
 }
 
-void EmojiPanel::searched(Klipy::Kind kind, const QString &q)
+void EmojiPanel::searched(Tab t, const QString &q)
 {
-    select(kind == Klipy::Kind::Gif ? Tab::Gif : Tab::Sticker);
+    select(t);
     if (MediaPanel *m = media()) m->search(q);
+    else searchEmoji(q.trimmed());
+}
+
+void EmojiPanel::searchEmoji(const QString &q)
+{
+    m_emojiQuery = q;
+    m_found.clear();
+    if (!q.isEmpty())
+        m_found << Category{ QStringLiteral("search"), QStringLiteral("🔍"),
+                             m_actions.findEmoji ? m_actions.findEmoji(q) : QStringList() };
+    m_flinging = false;
+    m_scrollY = 0;
+    relayout();
+    if (m_actions.update) m_actions.update();
+}
+
+const QList<EmojiPanel::Category> &EmojiPanel::shown() const
+{
+    return m_emojiQuery.isEmpty() ? m_categories : m_found;
 }
 
 void EmojiPanel::close()
 {
     m_gifs->close();
     m_stickers->close();
+    m_emojiQuery.clear();
+    m_found.clear();
 }
 
 void EmojiPanel::say(Klipy::Kind kind, const QString &s, int ms)
@@ -165,7 +225,7 @@ bool EmojiPanel::canDraw(const QString &emoji)
     // One font, so one QFontMetrics for every thread that asks.
     static QMutex lock;
     QMutexLocker locker(&lock);
-    static const QFontMetrics metrics(emojiFont(32));
+    static const QFontMetrics metrics(fontAtPixels(32));
     for (const uint cp : emoji.toUcs4()) {
         // Joiners, variation selectors, skin tones and keycaps: not glyphs of their own.
         if (cp == 0x200D || cp == 0xFE0F || cp == 0xFE0E || cp == 0x20E3 || (cp >= 0x1F3FB && cp <= 0x1F3FF)
@@ -177,9 +237,11 @@ bool EmojiPanel::canDraw(const QString &emoji)
     return true;
 }
 
-void EmojiPanel::layout(qreal top, const QRectF &rows, const QRectF &bar)
+void EmojiPanel::layout(qreal top, const QRectF &rows, const QRectF &bar, qreal rowHeight)
 {
-    const qreal h = std::round(rows.height() * 0.2);
+    m_rowHeight = rowHeight > 0 ? rowHeight : bar.height();
+    // A little taller than two thirds of a row: room for a search field big enough to read.
+    const qreal h = std::round(m_rowHeight * 0.68);
     m_strip = QRectF(rows.left(), top, rows.width(), h);
     m_grid = QRectF(rows.left(), m_strip.bottom(), rows.width(), rows.bottom() - m_strip.bottom());
     m_mediaGrid = QRectF(rows.left(), m_strip.bottom(), rows.width(), bar.bottom() - m_strip.bottom());
@@ -192,41 +254,71 @@ void EmojiPanel::layout(qreal top, const QRectF &rows, const QRectF &bar)
 void EmojiPanel::relayout()
 {
     if (m_grid.width() <= 0) return;
-    m_cols = std::max(6, int(m_grid.width() / (m_grid.height() / 3.2)));
+    // Emoji about three quarters of a row high, however many rows the page has (five with the
+    // number row): a taller page shows more lines, not bigger emoji.
+    m_cols = std::max(6, int(m_grid.width() / (m_rowHeight * 0.75)));
     m_cell = m_grid.width() / m_cols;
     const qreal lineH = cellHeight();
-    m_starts.resize(m_categories.size());
+    const QList<Category> &cats = shown();
+    m_starts.resize(cats.size());
     qreal y = 0;
-    for (int i = 0; i < m_categories.size(); ++i) {
+    for (int i = 0; i < cats.size(); ++i) {
         m_starts[i] = y;
-        y += ((m_categories[i].emoji.size() + m_cols - 1) / m_cols) * lineH;
+        y += ((cats[i].emoji.size() + m_cols - 1) / m_cols) * lineH;
     }
     m_contentHeight = y;
     m_scrollY = std::max<qreal>(0, std::min(m_scrollY, maxScroll()));
 }
 
+qreal EmojiPanel::abcTextSize() const
+{
+    const QRectF abc = abcRect();
+    return std::min(abc.height() * 0.46, abc.width() * 0.3);
+}
+
 qreal EmojiPanel::cellHeight() const { return std::min(m_cell, m_grid.height() / 3); }
 qreal EmojiPanel::maxScroll() const { return std::max<qreal>(0, m_contentHeight - m_grid.height()); }
 
-// The strip: ABC, three tabs, then the search field.
+/*
+ * The strip: ABC, the tabs, then the search field, all on the strip's centre
+ * line. The tabs are as wide as their labels and a gap, so the search field
+ * gets the rest, and it ends as far from the right edge as ABC starts from the
+ * left. Nothing moves between tabs.
+ */
+qreal EmojiPanel::edge() const { return 6 * m_dp; }
+qreal EmojiPanel::gap() const { return std::min(12 * m_dp, m_strip.width() * 0.025); }
+//! ABC and the search field: the strip's height less a little above and below.
+QRectF EmojiPanel::item() const { return m_strip.adjusted(0, 3 * m_dp, 0, -3 * m_dp); }
 QRectF EmojiPanel::abcRect() const
 {
-    const qreal pad = 2 * m_dp;
-    return QRectF(m_strip.left() + pad, m_strip.top() + pad,
-                  std::min(m_strip.width() * 0.15, 72 * m_dp) - pad, m_strip.height() - 2 * pad);
+    const QRectF i = item();
+    return QRectF(m_strip.left() + edge(), i.top(), std::min(m_strip.width() * 0.14, 64 * m_dp), i.height());
 }
 int EmojiPanel::tabCount() const { return Klipy::instance().configured() ? 3 : 1; }
-qreal EmojiPanel::tabWidth() const { return std::min(m_strip.width() * 0.15, 70 * m_dp); }
+//! The tabs' labels' size.
+qreal EmojiPanel::tabText() const { return item().height() * 0.5; }
+qreal EmojiPanel::tabWidth(int i) const
+{
+    QFont f = m_font;
+    f.setPixelSize(std::max(1, int(tabText())));
+    const QFontMetricsF fm(f);
+    const qreal inner = i == 0 ? fm.horizontalAdvance(QStringLiteral("Emoji"))
+                      : i == 1 ? fm.horizontalAdvance(QStringLiteral("GIF"))
+                               : item().height() * 0.62;
+    return inner + 2 * gap();
+}
 QRectF EmojiPanel::topTab(int i) const
 {
-    const qreal l = abcRect().right() + 4 * m_dp;
-    return QRectF(l + i * tabWidth(), m_strip.top(), tabWidth(), m_strip.height());
+    qreal l = abcRect().right() + gap() / 2;
+    for (int j = 0; j < i; ++j) l += tabWidth(j);
+    return QRectF(l, m_strip.top(), tabWidth(i), m_strip.height());
 }
+//! After the last tab: right after Emoji in a build without KLIPY's key, which has no GIF or sticker tab.
 QRectF EmojiPanel::searchRect() const
 {
-    const qreal pad = m_strip.height() * 0.16;
-    const qreal l = topTab(2).right() + 8 * m_dp;
-    return QRectF(l, m_strip.top() + pad, m_strip.right() - 8 * m_dp - l, m_strip.height() - 2 * pad);
+    const QRectF i = item();
+    const qreal l = topTab(tabCount() - 1).right() + gap() / 2;
+    return QRectF(l, i.top(), m_strip.right() - edge() - l, i.height());
 }
 QRectF EmojiPanel::clearRect() const
 {
@@ -246,12 +338,20 @@ QRectF EmojiPanel::tabRect(int i) const
     return QRectF(l + i * w, m_bar.top(), w, m_bar.height());
 }
 
-void EmojiPanel::draw(QPainter &p, Painter &painter, Style style,
-                      const std::function<void(QPainter &, const QString &, const QRectF &)> &label)
+void EmojiPanel::draw(QPainter &p, Painter &painter, Style style)
 {
     const QRectF abc = abcRect();
-    p.drawImage(abc.topLeft(), painter.cap(int(abc.width()), int(abc.height()), m_pressed == Abc));
-    label(p, QStringLiteral("ABC"), abc);
+    const bool abcDown = m_pressed == Abc;
+    p.drawImage(abc.topLeft(), painter.cap(int(abc.width()), int(abc.height()), abcDown));
+    // Sized to its own key, as on Android: a function key's label (0.34 of a row) came out a
+    // quarter bigger than Android's in the strip's smaller key.
+    QFont abcFont = m_font;
+    abcFont.setPixelSize(std::max(1, int(abcTextSize())));
+    p.setFont(abcFont);
+    p.setPen(Qt::white);
+    const QString abcText = QStringLiteral("ABC");
+    p.drawText(QPointF(abc.center().x() - QFontMetricsF(abcFont).horizontalAdvance(abcText) / 2,
+                       abc.center().y() + abcTextSize() * 0.36 + (abcDown ? m_dp : 0)), abcText);
     drawStrip(p, painter, style);
     if (MediaPanel *m = media()) {
         m->draw(p, m_font);
@@ -261,10 +361,21 @@ void EmojiPanel::draw(QPainter &p, Painter &painter, Style style,
     p.save();
     p.setClipRect(m_grid);
     const qreal lineH = cellHeight();
+    const QList<Category> &cats = shown();
+    if (!m_emojiQuery.isEmpty() && m_found.value(0).emoji.isEmpty()) {
+        QFont f = m_font;
+        f.setPixelSize(std::max(1, int(lineH * 0.3)));
+        p.setFont(f);
+        const QFontMetricsF fm(f);
+        QString s = QStringLiteral("No emoji for “%1”").arg(m_emojiQuery);
+        while (s.length() > 2 && fm.horizontalAdvance(s) > m_grid.width() - 32 * m_dp) s = s.left(s.length() - 2) + QStringLiteral("…");
+        p.setPen(QColor(255, 255, 255, 140));
+        p.drawText(QPointF(m_grid.center().x() - fm.horizontalAdvance(s) / 2, m_grid.top() + lineH * 0.6), s);
+    }
     p.setFont(emojiFont(lineH * 0.62));
     p.setPen(Qt::white);
-    for (int ci = 0; ci < m_categories.size(); ++ci) {
-        const Category &cat = m_categories[ci];
+    for (int ci = 0; ci < cats.size(); ++ci) {
+        const Category &cat = cats[ci];
         const qreal top = m_grid.top() + m_starts[ci] - m_scrollY;
         const int lines = (cat.emoji.size() + m_cols - 1) / m_cols;
         if (top > m_grid.bottom() || top + lines * lineH < m_grid.top()) continue;
@@ -274,8 +385,8 @@ void EmojiPanel::draw(QPainter &p, Painter &painter, Style style,
             const qreal x = m_grid.left() + (i % m_cols) * m_cell;
             p.drawText(QRectF(x, y, m_cell, lineH), Qt::AlignCenter, cat.emoji[i]);
         }
-        // A hairline between categories.
-        if (ci > 0)
+        // A hairline between categories (none above the first with any emoji).
+        if (m_starts[ci] > 0)
             p.fillRect(QRectF(m_grid.left() + 8 * m_dp, top - 0.5 * m_dp, m_grid.width() - 16 * m_dp, m_dp),
                        QColor(255, 255, 255, 70));
     }
@@ -317,12 +428,12 @@ void EmojiPanel::drawStrip(QPainter &p, Painter &painter, Style style)
         const bool on = tabs[i] == m_tab;
         const int alpha = on ? 255 : 130;
         if (tabs[i] == Tab::Sticker) {
-            painter.icon(p, Painter::Icon::Sticker, r.center().x(), r.center().y(), r.height() * 0.58,
+            painter.icon(p, Painter::Icon::Sticker, r.center().x(), r.center().y(), item().height() * 0.62,
                          QColor(255, 255, 255, alpha));
         } else {
             const QString s = tabs[i] == Tab::Emoji ? QStringLiteral("Emoji") : QStringLiteral("GIF");
             QFont f = m_font;
-            f.setPixelSize(std::max(1, int(std::min(r.height() * 0.42, r.width() * 0.3))));
+            f.setPixelSize(std::max(1, int(tabText())));
             p.setFont(f);
             p.setPen(QColor(255, 255, 255, alpha));
             p.drawText(r, Qt::AlignCenter, s);
@@ -330,33 +441,29 @@ void EmojiPanel::drawStrip(QPainter &p, Painter &painter, Style style)
         if (on) {
             p.setPen(Qt::NoPen);
             p.setBrush(lit);
-            p.drawRoundedRect(QRectF(r.center().x() - r.width() * 0.28, r.bottom() - 3.5 * m_dp, r.width() * 0.56, 2 * m_dp),
+            // At least as wide as the label, so "Emoji" is underlined like "GIF".
+            const qreal half = std::max(r.width() * 0.28, r.width() / 2 - gap());
+            p.drawRoundedRect(QRectF(r.center().x() - half, r.bottom() - 3.5 * m_dp, 2 * half, 2 * m_dp),
                               m_dp, m_dp);
         }
     }
     MediaPanel *m = media();
-    if (!m) {
-        // A hairline under the strip, as between categories.
-        p.fillRect(QRectF(m_strip.left() + 8 * m_dp, m_strip.bottom() - 0.5 * m_dp, m_strip.width() - 16 * m_dp, m_dp),
-                   QColor(255, 255, 255, 70));
-        p.restore();
-        return;
-    }
-    // The search field: "Search KLIPY", as KLIPY asks, or what was searched for and an x.
+    // The search field: "Search Emojis", or "Search KLIPY" as KLIPY asks, or what
+    // was searched for and an x.
     const QRectF s = searchRect();
     p.setPen(Qt::NoPen);
     p.setBrush(m_pressed == Search ? QColor(255, 255, 255, 70) : QColor(255, 255, 255, 38));
     p.drawRoundedRect(s, s.height() / 2, s.height() / 2);
     painter.icon(p, Painter::Icon::Search, s.left() + s.height() * 0.6, s.center().y(), s.height() * 0.56,
                  QColor(255, 255, 255, 170));
-    const QString q = m->query();
+    const QString q = m ? m->query() : m_emojiQuery;
     QFont f = m_font;
-    f.setPixelSize(std::max(1, int(s.height() * 0.46)));
+    f.setPixelSize(std::max(1, int(s.height() * 0.5)));
     p.setFont(f);
     const QFontMetricsF fm(f);
     const qreal textLeft = s.left() + s.height() * 1.1;
     const qreal room = (q.isEmpty() ? s.right() : clearRect().left()) - textLeft - 4 * m_dp;
-    QString t = q.isEmpty() ? QStringLiteral("Search KLIPY") : q;
+    QString t = !q.isEmpty() ? q : m ? QStringLiteral("Search KLIPY") : QStringLiteral("Search Emojis");
     while (t.length() > 1 && fm.horizontalAdvance(t) > room) t = t.left(t.length() - 2) + QStringLiteral("…");
     p.setPen(QColor(255, 255, 255, q.isEmpty() ? 140 : 255));
     p.drawText(QPointF(textLeft, s.center().y() + (fm.ascent() - fm.descent()) / 2), t);
@@ -369,6 +476,7 @@ void EmojiPanel::drawStrip(QPainter &p, Painter &painter, Style style)
 
 int EmojiPanel::currentCategory() const
 {
+    if (!m_emojiQuery.isEmpty()) return -1;
     int cur = 0;
     for (int i = 0; i < m_starts.size(); ++i)
         if (m_starts[i] <= m_scrollY + 1 && !m_categories[i].emoji.isEmpty()) cur = i;
@@ -387,7 +495,7 @@ void EmojiPanel::down(qreal x, qreal y)
     const QPointF pt(x, y);
     MediaPanel *m = media();
     if (m_strip.contains(pt)) {
-        m_downIn = x < abcRect().right() + 2 * m_dp ? Abc : (m && searchRect().contains(pt)) ? Search : Strip;
+        m_downIn = x < abcRect().right() + 2 * m_dp ? Abc : searchRect().contains(pt) ? Search : Strip;
     } else if (m) {
         m_downIn = m_mediaGrid.contains(pt) ? Grid : None;
     } else {
@@ -439,16 +547,25 @@ void EmojiPanel::up(qreal x, qreal y)
         for (int i = 0; i < tabCount(); ++i)
             if (topTab(i).contains(pt)) { select(i == 0 ? Tab::Emoji : i == 1 ? Tab::Gif : Tab::Sticker); break; }
         break;
-    case Search:
-        if (m) {
-            if (!m->query().isEmpty() && clearRect().contains(pt)) m->search(QString());
-            else if (searchRect().contains(pt) && m_actions.search) m_actions.search(m->kind(), m->query());
+    case Search: {
+        const QString q = m ? m->query() : m_emojiQuery;
+        if (!q.isEmpty() && clearRect().contains(pt)) {
+            if (m) m->search(QString());
+            else searchEmoji(QString());
+        } else if (searchRect().contains(pt) && m_actions.search) {
+            m_actions.search(m_tab, q);
         }
         break;
+    }
     case Tabs:
         if (m) break;
         for (int i = 0; i < m_categories.size(); ++i)
-            if (tabRect(i).contains(pt)) { jumpTo(i); break; }
+            if (tabRect(i).contains(pt)) {
+                // A category from the bottom row puts the search away.
+                if (!m_emojiQuery.isEmpty()) searchEmoji(QString());
+                jumpTo(i);
+                break;
+            }
         break;
     default:
         break;
@@ -487,8 +604,9 @@ void EmojiPanel::tapGrid(qreal x, qreal y)
 {
     const qreal lineH = cellHeight();
     const qreal contentY = y - m_grid.top() + m_scrollY;
-    for (int ci = 0; ci < m_categories.size(); ++ci) {
-        const Category &cat = m_categories[ci];
+    const QList<Category> &cats = shown();
+    for (int ci = 0; ci < cats.size(); ++ci) {
+        const Category &cat = cats[ci];
         const int lines = (cat.emoji.size() + m_cols - 1) / m_cols;
         if (contentY < m_starts[ci] || contentY >= m_starts[ci] + lines * lineH) continue;
         const int i = int((contentY - m_starts[ci]) / lineH) * m_cols + int((x - m_grid.left()) / m_cell);

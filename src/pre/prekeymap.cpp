@@ -21,6 +21,9 @@
 #include <QHash>
 #include <QMutex>
 
+#include <algorithm>
+#include <cmath>
+
 #include <map>
 
 namespace Pre {
@@ -116,11 +119,14 @@ const QList<QStringList> &alts()
     return a;
 }
 
+//! Whether the Pre prints alternate [col] of [row] top left: the left half of the top three rows.
+bool printedLeft(int row, int col) { return row == 2 ? col < 4 : col < 5; }
+
 //! [letter]'s key in row [row], place [col] (on the bottom letter row, counted after the orange key).
 Slot letter(QChar letter, int row, int col, const Language &lang)
 {
-    const QString alt = alts()[row][col];
-    const bool leftHalf = (row == 2) ? col < 4 : col < 5;
+    const QString alt = lang.written(alts()[row][col]);
+    const bool leftHalf = printedLeft(row, col);
     QStringList own;
     for (QChar a : lang.accentsOf(letter))
         own << QString(a);
@@ -135,41 +141,53 @@ Slot letter(QChar letter, int row, int col, const Language &lang)
 }
 
 /*!
+ * The room a language's own letter row [row] of [n] keys has on the Pre's
+ * grid: ten keys across the top, nine beside backspace, eight (the comma's
+ * included) between the orange key and Return. A row with more letters than
+ * the Pre's shares that room among them, so backspace, Return, the orange key
+ * and the bottom row keep their size and place in every language, and stay
+ * where the Sym page has its own backspace and Return.
+ */
+int rowRoom(int row) { return row == 0 ? 10 : row == 1 ? 9 : 8; }
+//! The keys sharing [row]'s room: its [n] letters, and on the bottom row the comma.
+int rowKeys(int row, int n) { return row == 2 ? n + 1 : n; }
+//! A letter's width in [row] of [n]: one key, or less where there are more of them than the Pre's.
+float letterWeight(int row, int n) { return float(rowRoom(row)) / float(std::max(rowRoom(row), rowKeys(row, n))); }
+
+/*!
  * For a language's own letter row [row] of [n] keys: which of the Pre's
  * alternates for the row each key prints (an index into alts()[row]; -1 for
  * none). Each goes on the key over the middle of its column on the Pre's grid,
- * as the keys are laid out (each one wide, the orange key before the bottom
- * row's letters, backspace after the middle row's, comma and return after the
- * bottom row's), so the digits stand where they do in every other language. A
- * row with more keys than the Pre's has a few without; none has fewer.
+ * as the keys are laid out (see rowRoom), so the digits stand where they do in
+ * every other language. A row with more keys than the Pre's has a few
+ * without; none has fewer.
  */
 QVector<int> altColumns(int row, int n)
 {
-    const int lead = row == 2 ? 1 : 0;
-    const int trail = row == 0 ? 0 : row == 1 ? 1 : 2;
     const int pre = int(alts()[row].size());
-    const int preUnits = lead + pre + trail, ownUnits = lead + n + trail;
+    const float w = letterWeight(row, n);
     QVector<int> out(n, -1);
     for (int col = 0; col < pre; ++col) {
-        // The column's middle, in the own row's keys: centre * ownUnits / preUnits, in whole keys.
-        const int at = (2 * (lead + col) + 1) * ownUnits / (2 * preUnits) - lead;
+        // The column's middle, from where the row's letters start, in this row's keys.
+        const int at = int(std::floor((col + 0.5f) / w));
         if (at >= 0 && at < n && out[at] < 0) out[at] = col;
     }
     return out;
 }
 
 //! A letter of a language with its own rows, place [index] of [rowLength]: its phone layout's key, with
-//! the Pre's alternate [col] of [row] (-1: none).
-Slot ownLetter(const LetterKey &lk, int row, int col, int index, int rowLength)
+//! the Pre's alternate [col] of [row] (-1: none), as [lang] writes it.
+Slot ownLetter(const Language &lang, const LetterKey &lk, int row, int col, int index, int rowLength)
 {
     const QStringList &a = alts()[row];
-    const QString alt = col >= 0 && col < a.size() ? a[col] : QString();
+    const QString alt = col >= 0 && col < a.size() ? lang.written(a[col]) : QString();
     QSharedPointer<Key> k(new Key);
     k->kind = Kind::Char;
     k->text = lk.text;
     k->shifted = lk.shifted.isEmpty() || lk.shifted == lk.text.toUpper() ? QString() : lk.shifted;
     k->alt = alt;
-    k->altPos = index < (rowLength + 1) / 2 ? AltPos::Left : AltPos::Right;
+    // On the side the Pre prints it; a key without one by its half of the row.
+    k->altPos = (col >= 0 ? printedLeft(row, col) : index < (rowLength + 1) / 2) ? AltPos::Left : AltPos::Right;
     k->extended = lk.extended.size() > 1 ? lk.extended : QStringList();
     if (!k->extended.isEmpty()) {
         QStringList upper;
@@ -177,7 +195,7 @@ Slot ownLetter(const LetterKey &lk, int row, int col, int index, int rowLength)
         if (lk.extendedShifted.size() == k->extended.size() && lk.extendedShifted != upper)
             k->extendedShifted = lk.extendedShifted;
     }
-    return slot(1.0f, k);
+    return slot(letterWeight(row, rowLength), k);
 }
 
 Rows lettersOf(const Language &lang)
@@ -185,6 +203,8 @@ Rows lettersOf(const Language &lang)
     static const KeyPtr shift = makeKey(Kind::Shift);
     static const KeyPtr sym = makeKey(Kind::Sym, QString(), QString(), AltPos::Right, {}, false, QStringLiteral("Sym"));
     QList<Slot> top, middle, bottom, last;
+    // The comma, as wide as the bottom row's letters.
+    float commaWeight = 1.0f;
     if (lang.layout == Layout::Own && lang.letters.size() == 3) {
         const LetterRows &r = lang.letters;
         QList<Slot> *const out[3] = { &top, &middle, &bottom };
@@ -192,9 +212,10 @@ Rows lettersOf(const Language &lang)
             const int n = int(r[row].size());
             const QVector<int> cols = altColumns(row, n);
             if (row == 2) bottom << f(Kind::Orange);
-            for (int i = 0; i < n; ++i) *out[row] << ownLetter(r[row][i], row, cols[i], i, n);
+            for (int i = 0; i < n; ++i) *out[row] << ownLetter(lang, r[row][i], row, cols[i], i, n);
             if (row == 1) middle << f(Kind::Backspace);
         }
+        commaWeight = letterWeight(2, int(r[2].size()));
     } else {
         const QStringList rows = layoutRows(lang.layout == Layout::Own ? Layout::Qwerty : lang.layout);
         for (int i = 0; i < rows[0].length(); ++i) top << letter(rows[0][i], 0, i, lang);
@@ -204,7 +225,12 @@ Rows lettersOf(const Language &lang)
         for (int i = 0; i < rows[2].length(); ++i) bottom << letter(rows[2][i], 2, i, lang);
     }
     // The comma holds what the Pre's period did.
-    bottom << c(QStringLiteral(","), QStringLiteral("_"), AltPos::Right, QStringLiteral(", … • ¿"));
+    // A language's own comma (Arabic's ،) first, the plain one held after it.
+    const QString own = lang.written(QStringLiteral(","));
+    Slot comma = c(own, QStringLiteral("_"), AltPos::Right,
+                   own == QLatin1String(",") ? QStringLiteral(", … • ¿") : own + QStringLiteral(" , … • ¿"));
+    comma.weight = commaWeight;
+    bottom << comma;
     bottom << f(Kind::Return);
     // The Pre's bottom row, inset at each end. On the column grid above: shift
     // and Sym take two columns each (the same size, inset alike), @ is one key
@@ -229,6 +255,35 @@ Slot digit(QChar d, const QString &ext)
                               words(QString(d) + QLatin1Char(' ') + ext), true));
 }
 
+//! The digits, in the accent colour: the Sym page's top row, and the number row above the letters.
+QList<Slot> digitRow()
+{
+    return { digit(QLatin1Char('1'), QStringLiteral("¹ ½ ⅓ ¼ ⅛")), digit(QLatin1Char('2'), QStringLiteral("² ⅔")),
+             digit(QLatin1Char('3'), QStringLiteral("³ ¾ ⅜")), digit(QLatin1Char('4'), QStringLiteral("⁴")),
+             digit(QLatin1Char('5'), QStringLiteral("⁵ ⅝")), digit(QLatin1Char('6'), QStringLiteral("⁶")),
+             digit(QLatin1Char('7'), QStringLiteral("⁷ ⅞")), digit(QLatin1Char('8'), QStringLiteral("⁸")),
+             digit(QLatin1Char('9'), QStringLiteral("⁹")), digit(QLatin1Char('0'), QStringLiteral("⁰ ⁿ ∅")) };
+}
+
+/*!
+ * [page] with the digits printed on its letters (E R T, D F G, X C V and the
+ * @'s 0) left off, for the owner who has them in the number row and wants
+ * the keys plainer. The other alternates stay.
+ */
+Rows withoutDigits(const Rows &page)
+{
+    Rows out = page;
+    for (QList<Slot> &row : out)
+        for (Slot &s : row) {
+            const QString &a = s.key->alt;
+            if (a.size() != 1 || !a.at(0).isDigit()) continue;
+            QSharedPointer<Key> k(new Key(*s.key));
+            k->hideAlt = true;
+            s.key = k;
+        }
+    return out;
+}
+
 //! A symbol; [ext] is its press-and-hold list after itself.
 Slot s(const QString &t, const QString &ext = QString())
 {
@@ -236,24 +291,28 @@ Slot s(const QString &t, const QString &ext = QString())
                               ext.isEmpty() ? QStringList() : words(t + QLatin1Char(' ') + ext)));
 }
 
+/*
+ * The Sym page: digits in the accent colour, then the symbols the letters page
+ * does not type. Every key that is on both pages is in the same place on both,
+ * so switching never moves one from under the thumb: backspace at the end of
+ * the second row, Return at the end of the third (held, Text Assist), the
+ * space bar and the period where they are, and the key that changes page (Sym,
+ * ABC) at the bottom right, so the same spot goes there and back.
+ */
 Rows symbolsOf()
 {
-    const KeyPtr back = makeKey(Kind::Backspace);
     const KeyPtr abc = makeKey(Kind::Sym, QString(), QString(), AltPos::Right, {}, false, QStringLiteral("ABC"));
-    // Hold Return here for Text Assist, where the Pre Keyboard is set up.
-    const KeyPtr ret = makeKey(Kind::Return, QString(), QString(), AltPos::Right, {}, false, QString(), Corner::Gear);
+    // The globe, where shift is on the letters: the languages, held the style.
+    const KeyPtr globe = makeKey(Kind::Globe);
     return {
-        { digit(QLatin1Char('1'), QStringLiteral("¹ ½ ⅓ ¼ ⅛")), digit(QLatin1Char('2'), QStringLiteral("² ⅔")),
-          digit(QLatin1Char('3'), QStringLiteral("³ ¾ ⅜")), digit(QLatin1Char('4'), QStringLiteral("⁴")),
-          digit(QLatin1Char('5'), QStringLiteral("⁵ ⅝")), digit(QLatin1Char('6'), QStringLiteral("⁶")),
-          digit(QLatin1Char('7'), QStringLiteral("⁷ ⅞")), digit(QLatin1Char('8'), QStringLiteral("⁸")),
-          digit(QLatin1Char('9'), QStringLiteral("⁹")), digit(QLatin1Char('0'), QStringLiteral("⁰ ⁿ ∅")) },
+        digitRow(),
         { s(QStringLiteral("[")), s(QStringLiteral("]")), s(QStringLiteral("{")), s(QStringLiteral("}")),
           s(QStringLiteral("<"), QStringLiteral("‹ « ≤")), s(QStringLiteral(">"), QStringLiteral("› » ≥")),
           s(QStringLiteral("^")), s(QStringLiteral("~"), QStringLiteral("≈")),
-          s(QStringLiteral("|"), QStringLiteral("¦ ‖ ¬")), s(QStringLiteral("\\")) },
-        // The globe, where LuneOS's own keyboard has its language key: the keyboards and languages.
-        { f(Kind::Globe),
+          s(QStringLiteral("|"), QStringLiteral("¦ ‖ ¬")),
+          // Backspace where it is on the letters page, at the end of A to L's row.
+          f(Kind::Backspace) },
+        { s(QStringLiteral("\\")),
           s(QStringLiteral("`"), QStringLiteral("´ ‘ ’ “ ” ‚ „")),
           s(QStringLiteral("°"), QStringLiteral("′ ″ ‰")),
           s(QStringLiteral("£"), QStringLiteral("₹ ₩ ₽ ₺ ₪ ₱ ₿ ¤ ƒ")),
@@ -262,26 +321,42 @@ Rows symbolsOf()
           s(QStringLiteral("±"), QStringLiteral("∓")),
           s(QStringLiteral("≠"), QStringLiteral("≡")),
           s(QStringLiteral("¡"), QStringLiteral("‽")),
-          slot(1.0f, back) },
-        // Key for key the letters page's bottom row (ABC where shift is, emoji
-        // where @ is, the period where the period is, Return where Sym is), so
-        // nothing on it moves when the page changes.
-        { slot(EDGE, abc, false),
-          slot(WIDE, abc),
+          // Return where it is on the letters page, under backspace. Hold it for
+          // Text Assist, where the Pre Keyboard is set up.
+          slot(1.0f, makeKey(Kind::Return, QString(), QString(), AltPos::Right, {}, false, QString(), Corner::Gear)) },
+        // Key for key the letters page's bottom row (the globe where shift is,
+        // emoji where @ is, the period where the period is, ABC where Sym is),
+        // so nothing on it moves when the page changes.
+        { slot(EDGE, globe, false),
+          slot(WIDE, globe),
           // Tap for the emoji page; hold for LuneOS's text emoticons.
           slot(1.0f, makeKey(Kind::Emoji, QString(), QString(), AltPos::Right,
                              words(QStringLiteral(":-) ;-) :-( :'( :-P :-O <3")))),
           slot(4.0f, makeKey(Kind::Space, QStringLiteral(" "))),
           slot(1.0f, makeKey(Kind::Char, QStringLiteral("."), QString(), AltPos::Right, {}, false,
                              QString(), Corner::Mic)),
-          slot(WIDE, ret),
-          slot(EDGE, ret, false) },
+          slot(WIDE, abc),
+          slot(EDGE, abc, false) },
     };
+}
+
+/*!
+ * The row that takes the digits' place on the Sym page when the letters have
+ * a number row: arrows, ticks and a few signs, none of them anywhere else on
+ * either page.
+ */
+QList<Slot> moreSymbols()
+{
+    return { s(QStringLiteral("←"), QStringLiteral("⇐ ↖ ↙")), s(QStringLiteral("→"), QStringLiteral("⇒ ↗ ↘")),
+             s(QStringLiteral("↑"), QStringLiteral("⇑")), s(QStringLiteral("↓"), QStringLiteral("⇓")),
+             s(QStringLiteral("↔"), QStringLiteral("⇔ ↕")), s(QStringLiteral("✓"), QStringLiteral("✔ ☑")),
+             s(QStringLiteral("✗"), QStringLiteral("✘ ☐")), s(QStringLiteral("★"), QStringLiteral("☆")),
+             s(QStringLiteral("♥"), QStringLiteral("♡ ♦ ♣ ♠")), s(QStringLiteral("♪"), QStringLiteral("♫")) };
 }
 
 } // namespace
 
-const Rows &Keymap::letters(const Language &lang)
+const Rows &Keymap::letters(const Language &lang, bool numberRow, bool hideDigits)
 {
     // std::map: a reference handed out stays good however many languages come after.
     static QMutex lock;
@@ -290,13 +365,51 @@ const Rows &Keymap::letters(const Language &lang)
     auto it = built.find(lang.id);
     if (it == built.end())
         it = built.emplace(lang.id, lettersOf(lang.isValid() ? lang : Language::orEnglish(lang.id))).first;
-    return it->second;
+    if (!numberRow) return it->second;
+    // The same keys under the number row; with the digits hidden, new ones only where a digit was.
+    const QString page = lang.id + (hideDigits ? QStringLiteral("/numbers/plain") : QStringLiteral("/numbers"));
+    auto numbered = built.find(page);
+    if (numbered == built.end()) {
+        Rows rows = hideDigits ? withoutDigits(it->second) : it->second;
+        rows.prepend(digitRow());
+        numbered = built.emplace(page, rows).first;
+    }
+    return numbered->second;
 }
 
-const Rows &Keymap::symbols()
+const Rows &Keymap::pad(const QString &extra)
 {
-    static const Rows rows = symbolsOf();
-    return rows;
+    static QMutex lock;
+    static std::map<QString, Rows> built;
+    QMutexLocker locker(&lock);
+    auto it = built.find(extra);
+    if (it != built.end()) return it->second;
+    // A digit, big and in the accent colour; the 0 holds what else the field takes.
+    const auto key = [](QChar d, const QStringList &held = {}) {
+        return slot(1.0f, makeKey(Kind::Char, QString(d), QString(), AltPos::Right,
+                                  held.isEmpty() ? QStringList() : QStringList(QString(d)) + held, true));
+    };
+    QStringList held;
+    for (QChar c : extra)
+        if (!c.isDigit() && !held.contains(QString(c))) held << QString(c);
+    const Rows rows = {
+        { key(QLatin1Char('1')), key(QLatin1Char('2')), key(QLatin1Char('3')) },
+        { key(QLatin1Char('4')), key(QLatin1Char('5')), key(QLatin1Char('6')) },
+        { key(QLatin1Char('7')), key(QLatin1Char('8')), key(QLatin1Char('9')) },
+        { f(Kind::Backspace), key(QLatin1Char('0'), held), f(Kind::Return) },
+    };
+    return built.emplace(extra, rows).first->second;
+}
+
+const Rows &Keymap::symbols(bool numberRow)
+{
+    static const Rows plain = symbolsOf();
+    static const Rows numbered = [] {
+        Rows rows = symbolsOf();
+        rows.insert(1, moreSymbols());
+        return rows;
+    }();
+    return numberRow ? numbered : plain;
 }
 
 } // namespace Pre

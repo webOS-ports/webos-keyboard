@@ -134,6 +134,18 @@ InputMethod::InputMethod(MAbstractInputMethodHost *host)
     // FIXME: Reconnect feedback instance.
     Setup::connectAll(&d->event_handler, &d->editor);
     connect(&d->editor,  SIGNAL(autoCapsActivated()), this, SIGNAL(activateAutocaps()));
+    // A held backspace let go: the word at the cursor is looked up once, for
+    // what is left (updateSpellingSuggestions() waited).
+    connect(&d->editor, &AbstractTextEditor::deletingChanged, this, [this](bool deleting) {
+        Q_D(InputMethod);
+
+        if (deleting)
+            return;
+        QString text;
+        int position;
+        const bool ok = d->host->surroundingText(text, position);
+        updateSpellingSuggestions(ok ? text : QString(), ok ? position : -1);
+    });
     connect(&d->editor, &AbstractTextEditor::autoCorrected, this,
             [this](const QString &original, const QString &corrected, const QString &left) {
         Q_D(InputMethod);
@@ -240,9 +252,12 @@ InputMethod::~InputMethod()
 
 /*! \brief Put the panel window back on the whole screen if it has drifted off.
  *
- * The window is deliberately screen-sized: the keyboard is drawn into a strip
- * of it and the rest is masked away (maskPanelStrip()), so the size the
- * compositor is given has to be the screen's and not the keyboard's.
+ * The keyboard is drawn into a strip along the bottom of the window and the
+ * rest is masked away (maskPanelStrip()), so the window is the screen's size,
+ * or the strip the shell gives it between its status bar and gesture area -
+ * not the keyboard's. The shell stretches the window across that strip, so a
+ * window put back to the screen from it was drawn squeezed:
+ * panelWindowKeepsGeometry() says which sizes are kept.
  *
  * It was set once, at construction, and then left alone - which is wrong,
  * because it is not ours alone to decide. The webos shell integration resizes
@@ -257,7 +272,9 @@ InputMethod::~InputMethod()
  * says yes, the window is told to show, and nothing arrives.
  *
  * So it is re-asserted before every show rather than trusted to have survived.
- * Cheap, and it cannot be got wrong by a configure we did not expect.
+ * Cheap, and it cannot be got wrong by a configure we did not expect. (The
+ * shell's own strip is kept since the mask follows the window's size: see
+ * panelWindowKeepsGeometry().)
  */
 void InputMethod::syncPanelWindowToScreen()
 {
@@ -1496,6 +1513,7 @@ void InputMethod::update()
 
         d->editor.text()->setSurrounding(text);
         d->editor.text()->setSurroundingOffset(position);
+        d->editor.surroundingTextUpdated();
     }
 
     updateSpellingSuggestions(ok ? text : QString(), ok ? position : -1);
@@ -1537,10 +1555,14 @@ void InputMethod::updateSpellingSuggestions(const QString &text, int position)
     QStringList suggestions;
     bool canLearn = false;
 
+    // Not while a held backspace repeats: every word it went through was
+    // misspelled half way ("quic") and looked up for suggestions nobody saw.
+    // deletingChanged() asks once it lets go.
     const bool wanted = position >= 0 && position <= text.length()
         && d->panel.wordEngine()
         && d->contentType == FreeTextContentType
-        && d->editor.text()->preedit().isEmpty();
+        && d->editor.text()->preedit().isEmpty()
+        && !d->editor.isDeleting();
 
     if (wanted) {
         int start = position;
