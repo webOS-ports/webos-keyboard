@@ -1241,6 +1241,11 @@ QString Controller::emojiFile() const { return m_dataDir + QStringLiteral("/emoj
 
 QStringList Controller::recentEmoji() const { return Settings::recentEmoji(m_prefs); }
 
+QStringList Controller::emojiSearch(const QString &query)
+{
+    return emojiWords().search(query);
+}
+
 void Controller::addRecentEmoji(const QString &e)
 {
     writePrefs(Settings::withRecentEmoji(m_prefs, e));

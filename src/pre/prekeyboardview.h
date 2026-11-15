@@ -208,7 +208,7 @@ private:
     QRectF searchBack(const QRectF &bar) const;
 
     // Searching KLIPY: the letters type into a search field drawn in the bar.
-    void startSearch(Klipy::Kind kind, const QString &query);
+    void startSearch(EmojiPanel::Tab tab, const QString &query);
     void endSearch(bool go);
     //! Typed text: into the search while there is one, else the application.
     void send(const QString &s);
@@ -309,7 +309,7 @@ private:
 
     // A search for GIFs or stickers being typed (m_searching), and what is typed.
     bool m_searching = false;
-    Klipy::Kind m_searchKind = Klipy::Kind::Gif;
+    EmojiPanel::Tab m_searchTab = EmojiPanel::Tab::Gif;
     QString m_searchText;
 
     // Holding a word in the bar: add it to the dictionary, or delete one it has.

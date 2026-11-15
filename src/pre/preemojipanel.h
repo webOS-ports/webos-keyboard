@@ -46,10 +46,14 @@ class MediaPanel;
  * a row of category tabs along the bottom, then backspace. Tapping a tab jumps to
  * its category, and the tab lights as you scroll.
  *
+ * The first category is the ones used last, newest first.
+ *
  * Along the top, where the suggestion bar was: ABC, then Emoji, GIF and a
- * sticker. The other two are KLIPY's (MediaPanel): there a "Search KLIPY" field
- * follows the tabs, and the GIFs take everything below, down to the bottom of the
- * keys; ABC is the only key left.
+ * sticker, then a search field: "Search Emojis" finds them by the words the
+ * suggestion bar offers them for, all of them at once in the grid. The other
+ * two tabs are KLIPY's (MediaPanel): there the field says "Search KLIPY", and
+ * the GIFs take everything below, down to the bottom of the keys; ABC is the
+ * only key left.
  *
  * The keyboard view owns it, gives it the keys' area, and hands it every touch
  * while it shows.
@@ -59,20 +63,22 @@ class EmojiPanel
     friend class ::TestPreKeyboard;
 
 public:
+    enum Area { None = 0, Grid = 1, Abc = 2, Back = 3, Tabs = 4, Strip = 5, Search = 6 };
+    enum class Tab { Emoji, Gif, Sticker };
+
     struct Actions
     {
         std::function<void(const QString &)> emoji;
         std::function<void()> backspace;
         std::function<void()> letters;
         std::function<void()> update;
-        //! The search field was tapped: type a search for [kind], starting from [query].
-        std::function<void(Klipy::Kind, const QString &)> search;
+        //! The search field was tapped: type a search for [tab], starting from [query].
+        std::function<void(Tab, const QString &)> search;
+        //! Every emoji for [query], likeliest first.
+        std::function<QStringList(const QString &query)> findEmoji;
         //! A GIF or sticker was tapped, found by searching for [query] (empty: trending).
         std::function<void(Klipy::Kind, const Klipy::Item &, const QString &)> media;
     };
-
-    enum Area { None = 0, Grid = 1, Abc = 2, Back = 3, Tabs = 4, Strip = 5, Search = 6 };
-    enum class Tab { Emoji, Gif, Sticker };
 
     EmojiPanel(qreal dp, const Actions &actions);
     ~EmojiPanel();
@@ -81,9 +87,11 @@ public:
     void setFont(const QFont &font) { m_font = font; }
     Tab tab() const { return m_tab; }
     void select(Tab t);
-    //! A search was typed for [kind]: its tab, showing what was found.
-    void searched(Klipy::Kind kind, const QString &q);
-    //! The page is going away: the GIFs stop moving.
+    //! A search was typed for [t]: its tab, showing what was found.
+    void searched(Tab t, const QString &q);
+    //! What the emoji grid shows searched for (empty: every category).
+    QString emojiQuery() const { return m_emojiQuery; }
+    //! The page is going away: the GIFs stop moving, an emoji search is put away.
     void close();
     //! A word for a moment over the GIFs or stickers.
     void say(Klipy::Kind kind, const QString &s, int ms = 2500);
@@ -120,6 +128,10 @@ private:
     struct Category { QString id; QString icon; QStringList emoji; };
 
     void relayout();
+    //! The emoji grid shows what was searched for: [q], or every category again (empty).
+    void searchEmoji(const QString &q);
+    //! What the grid shows: the categories, or what was searched for.
+    const QList<Category> &shown() const;
     //! ABC's letters: as big as its key allows, as on Android.
     qreal abcTextSize() const;
     qreal cellHeight() const;
@@ -158,6 +170,9 @@ private:
     static Tab s_lastTab;
     QList<Category> m_all;
     QList<Category> m_categories;
+    //! An emoji search: what was searched for, and what it found (one category).
+    QString m_emojiQuery;
+    QList<Category> m_found;
     QRectF m_grid, m_bar;
     //! The GIFs' and stickers' grid: under the strip, all the way down.
     QRectF m_mediaGrid;

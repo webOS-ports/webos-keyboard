@@ -1256,6 +1256,101 @@ private Q_SLOTS:
     }
 
     /*
+     * The emoji page's search, as the Android Pre Keyboard 1.4.2's: every
+     * emoji for the word, as the bar would offer them, then those of the words
+     * it starts; several words, those they share.
+     */
+    void emojiSearchFindsEveryEmojiForAWord()
+    {
+        const QString pizza = QStringLiteral("🍕"), cat = QStringLiteral("🐈"), catFace = QStringLiteral("🐱");
+        const QString pig = QStringLiteral("🐷"), heart = QStringLiteral("❤️");
+        const Pre::EmojiWords made(
+            QStringLiteral("cat\t%1 %2\npizza\t%3\npig\t%4\npigs\t%4 X\nred\t%5\nheart\t%5 %3\n")
+                .arg(catFace, cat, pizza, pig, heart),
+            { pizza, cat, catFace, pig, heart });
+        QCOMPARE(made.search(QStringLiteral("cat")), (QStringList{ catFace, cat }));
+        QCOMPARE(made.search(QStringLiteral("Cats")), (QStringList{ catFace, cat }));
+        // The word's own first, then the words it starts, shortest first, each emoji once.
+        QCOMPARE(made.search(QStringLiteral("pi")), (QStringList{ pig, pizza }));
+        // Two words: what they share; nothing shared, what either has.
+        QCOMPARE(made.search(QStringLiteral("red heart")), QStringList{ heart });
+        QCOMPARE(made.search(QStringLiteral("cat pig")), (QStringList{ catFace, cat, pig }));
+        QCOMPARE(made.search(QStringLiteral("  ")), QStringList());
+        QCOMPARE(made.search(QStringLiteral("qqzzx")), QStringList());
+        QCOMPARE(made.search(QStringLiteral("pi"), 1), QStringList{ pig });
+
+        // English's, as Android's test has it.
+        const Pre::EmojiWords en = Pre::EmojiWords::load(QStringLiteral(PRE_DATA_DIR "/en/emoji_words.txt"), {});
+        const QStringList cats = en.search(QStringLiteral("cat"));
+        QCOMPARE(cats.mid(0, 3), (QStringList{ catFace, cat, QStringLiteral("😺") }));
+        QVERIFY(cats.size() > 3);
+        QVERIFY(en.search(QStringLiteral("piz")).contains(pizza));
+        QVERIFY(en.search(QStringLiteral("Red heart")).contains(heart));
+        QVERIFY(en.search(QStringLiteral("qqzzx")).isEmpty());
+    }
+
+    /*
+     * The Emoji tab's search field: typed on the letters like KLIPY's, Return
+     * shows what was found in the grid, a tap puts one in. Leaving the page
+     * puts the search away, and the one just used leads the recent ones.
+     */
+    void emojiTabSearchesEmoji()
+    {
+        Recorder rec;
+        Pre::Controller c;
+        c.setBridge(rec.bridge());
+        c.setDataDir(QStringLiteral(PRE_DATA_DIR));
+        c.setKeyboardState(true, false, { QStringLiteral("en") }, QStringLiteral("en"));
+        Pre::KeyboardView view;
+        view.setControllerObject(&c);
+        showKeys(view, Pre::Language::byId(QStringLiteral("en")), 1080, 1080, false, Pre::Settings::Height::Medium);
+        auto tapAt = [&](const QPointF &at) { view.pointerDown(1, at.x(), at.y()); view.pointerUp(1, at.x(), at.y()); };
+        auto key = [&](const std::function<bool(const Pre::Key &)> &is) {
+            for (const auto &z : view.m_zones)
+                if (z.slot.drawn && is(*z.slot.key)) return z.rect.center();
+            return QPointF(-1, -1);
+        };
+
+        view.show(Pre::KeyboardView::Page::Emoji);
+        QCOMPARE(view.m_emoji.tab(), Pre::EmojiPanel::Tab::Emoji);
+        tapAt(view.m_emoji.searchRect().center());
+        QVERIFY(view.m_searching);
+        QCOMPARE(view.m_searchTab, Pre::EmojiPanel::Tab::Emoji);
+        QCOMPARE(view.m_page, Pre::KeyboardView::Page::Letters);
+        for (const QChar ch : QStringLiteral("cat")) {
+            const QPointF at = key([&](const Pre::Key &k) { return k.kind == Pre::Kind::Char && k.text == QString(ch); });
+            QVERIFY2(at.x() >= 0, qPrintable(QString(ch)));
+            tapAt(at);
+        }
+        QCOMPARE(view.m_searchText, QStringLiteral("cat"));
+        QVERIFY(!rec.calls.join(QLatin1Char(',')).contains(QStringLiteral("press c")));
+        tapAt(key([](const Pre::Key &k) { return k.kind == Pre::Kind::Return; }));
+        QVERIFY(!view.m_searching);
+        QCOMPARE(view.m_page, Pre::KeyboardView::Page::Emoji);
+        QCOMPARE(view.m_emoji.emojiQuery(), QStringLiteral("cat"));
+        QCOMPARE(view.m_emoji.currentCategory(), -1);
+        // The first one found, as the bar would offer it.
+        const Pre::EmojiPanel &e = view.m_emoji;
+        rec.calls.clear();
+        tapAt(QPointF(e.m_grid.left() + e.m_cell / 2, e.m_grid.top() + e.cellHeight() / 2));
+        QVERIFY2(rec.calls.join(QLatin1Char(',')).contains(QStringLiteral("🐱")), qPrintable(rec.calls.join(QLatin1Char(','))));
+        QCOMPARE(c.recentEmoji().value(0), QStringLiteral("🐱"));
+        // Its x puts the search away: every category again.
+        const QRectF x = e.clearRect();
+        tapAt(x.center());
+        QVERIFY(view.m_emoji.emojiQuery().isEmpty());
+        QVERIFY(view.m_emoji.currentCategory() >= 0);
+        // Searched again, then the page left and opened: no search, 🐱 the first recent one.
+        view.m_emoji.searched(Pre::EmojiPanel::Tab::Emoji, QStringLiteral("qqzzx"));
+        QCOMPARE(view.m_emoji.emojiQuery(), QStringLiteral("qqzzx"));
+        QVERIFY(view.m_emoji.m_found.value(0).emoji.isEmpty());
+        view.show(Pre::KeyboardView::Page::Letters);
+        view.show(Pre::KeyboardView::Page::Emoji);
+        QVERIFY(view.m_emoji.emojiQuery().isEmpty());
+        QCOMPARE(view.m_emoji.m_categories.value(0).emoji.value(0), QStringLiteral("🐱"));
+    }
+
+    /*
      * Emoji suggestions on: the word being typed, or swiped, has its emoji in
      * the bar's right-hand place; tapping it puts the emoji in for the word,
      * as it is whatever shift says, and it is a recent emoji. Not for the next
@@ -2533,7 +2628,8 @@ private Q_SLOTS:
                     QVERIFY2(r.left() >= right, qPrintable(where + QStringLiteral("tab %1 overlaps").arg(i)));
                     right = r.right();
                 }
-                if (klipy) {
+                {
+                    // The search field, after the last tab: "Search Emojis" even without KLIPY.
                     const QRectF s = e.searchRect();
                     QVERIFY2(std::abs(s.center().y() - middle) < 0.5, qPrintable(where));
                     QVERIFY2(s.left() >= right, qPrintable(where));

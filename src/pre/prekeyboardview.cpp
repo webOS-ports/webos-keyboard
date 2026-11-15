@@ -144,7 +144,8 @@ KeyboardView::KeyboardView(QQuickItem *parent)
           [this] { if (m_controller) m_controller->onBackspace(false); },
           [this] { show(Page::Letters); },
           [this] { update(); },
-          [this](Klipy::Kind kind, const QString &query) { startSearch(kind, query); },
+          [this](EmojiPanel::Tab tab, const QString &query) { startSearch(tab, query); },
+          [this](const QString &query) { return m_controller ? m_controller->emojiSearch(query) : QStringList(); },
           [this](Klipy::Kind kind, const Klipy::Item &item, const QString &query) {
               const QString link = Klipy::link(item);
               if (!m_controller || link.isEmpty()) return;
@@ -1123,18 +1124,18 @@ void KeyboardView::drawBar(QPainter &p, const QRectF &r)
     }
 }
 
-// --- Searching KLIPY ---------------------------------------------------------------------
+// --- Searching emoji and KLIPY ------------------------------------------------------------
 
 /*!
- * A search for GIFs or stickers is being typed: the letters show, and what they
- * type goes into the search field drawn in the bar, not into the application.
- * Return searches; the bar's arrow, or the emoji key, goes back.
+ * A search for emoji, GIFs or stickers is being typed: the letters show, and
+ * what they type goes into the search field drawn in the bar, not into the
+ * application. Return searches; the bar's arrow, or the emoji key, goes back.
  */
-void KeyboardView::startSearch(Klipy::Kind kind, const QString &query)
+void KeyboardView::startSearch(EmojiPanel::Tab tab, const QString &query)
 {
     barChange([&] {
         m_searching = true;
-        m_searchKind = kind;
+        m_searchTab = tab;
         m_searchText = query;
     });
     m_shift = Shift::Off;
@@ -1142,15 +1143,15 @@ void KeyboardView::startSearch(Klipy::Kind kind, const QString &query)
     show(Page::Letters);
 }
 
-//! Back to the GIFs or stickers: what was typed is searched for ([go]), or put away.
+//! Back to the emoji, GIFs or stickers: what was typed is searched for ([go]), or put away.
 void KeyboardView::endSearch(bool go)
 {
     if (!m_searching) return;
-    const Klipy::Kind kind = m_searchKind;
+    const EmojiPanel::Tab tab = m_searchTab;
     const QString q = m_searchText;
     barChange([&] { m_searching = false; m_searchText.clear(); });
     show(Page::Emoji);
-    if (go) m_emoji.searched(kind, q);
+    if (go) m_emoji.searched(tab, q);
 }
 
 void KeyboardView::send(const QString &s)
@@ -1200,7 +1201,7 @@ QRectF KeyboardView::searchBack(const QRectF &bar) const
     return QRectF(bar.left(), bar.top(), bar.height() * 1.3, bar.height());
 }
 
-//! The search being typed: a back arrow, then the field, "Search KLIPY" till something is typed.
+//! The search being typed: a back arrow, then the field, "Search Emojis" or "Search KLIPY" till something is typed.
 void KeyboardView::drawSearch(QPainter &p, const QRectF &r)
 {
     const QRectF back = searchBack(r);
@@ -1225,7 +1226,8 @@ void KeyboardView::drawSearch(QPainter &p, const QRectF &r)
     const QRectF caret(0, field.top() + field.height() * 0.22, 2 * m_dp, field.height() * 0.56);
     if (m_searchText.isEmpty()) {
         p.setPen(QColor(255, 255, 255, 130));
-        p.drawText(QPointF(left, baseline), QStringLiteral("Search KLIPY"));
+        p.drawText(QPointF(left, baseline), m_searchTab == EmojiPanel::Tab::Emoji ? QStringLiteral("Search Emojis")
+                                                                                 : QStringLiteral("Search KLIPY"));
         p.fillRect(caret.translated(left - m_dp, 0), accent(Style::Orange));
     } else {
         // The end of what's typed, where the cursor is, when it's too long to show whole.

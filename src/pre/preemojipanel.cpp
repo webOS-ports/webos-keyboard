@@ -133,16 +133,37 @@ void EmojiPanel::select(Tab t)
     if (m_actions.update) m_actions.update();
 }
 
-void EmojiPanel::searched(Klipy::Kind kind, const QString &q)
+void EmojiPanel::searched(Tab t, const QString &q)
 {
-    select(kind == Klipy::Kind::Gif ? Tab::Gif : Tab::Sticker);
+    select(t);
     if (MediaPanel *m = media()) m->search(q);
+    else searchEmoji(q.trimmed());
+}
+
+void EmojiPanel::searchEmoji(const QString &q)
+{
+    m_emojiQuery = q;
+    m_found.clear();
+    if (!q.isEmpty())
+        m_found << Category{ QStringLiteral("search"), QStringLiteral("🔍"),
+                             m_actions.findEmoji ? m_actions.findEmoji(q) : QStringList() };
+    m_flinging = false;
+    m_scrollY = 0;
+    relayout();
+    if (m_actions.update) m_actions.update();
+}
+
+const QList<EmojiPanel::Category> &EmojiPanel::shown() const
+{
+    return m_emojiQuery.isEmpty() ? m_categories : m_found;
 }
 
 void EmojiPanel::close()
 {
     m_gifs->close();
     m_stickers->close();
+    m_emojiQuery.clear();
+    m_found.clear();
 }
 
 void EmojiPanel::say(Klipy::Kind kind, const QString &s, int ms)
@@ -238,11 +259,12 @@ void EmojiPanel::relayout()
     m_cols = std::max(6, int(m_grid.width() / (m_rowHeight * 0.75)));
     m_cell = m_grid.width() / m_cols;
     const qreal lineH = cellHeight();
-    m_starts.resize(m_categories.size());
+    const QList<Category> &cats = shown();
+    m_starts.resize(cats.size());
     qreal y = 0;
-    for (int i = 0; i < m_categories.size(); ++i) {
+    for (int i = 0; i < cats.size(); ++i) {
         m_starts[i] = y;
-        y += ((m_categories[i].emoji.size() + m_cols - 1) / m_cols) * lineH;
+        y += ((cats[i].emoji.size() + m_cols - 1) / m_cols) * lineH;
     }
     m_contentHeight = y;
     m_scrollY = std::max<qreal>(0, std::min(m_scrollY, maxScroll()));
@@ -291,10 +313,11 @@ QRectF EmojiPanel::topTab(int i) const
     for (int j = 0; j < i; ++j) l += tabWidth(j);
     return QRectF(l, m_strip.top(), tabWidth(i), m_strip.height());
 }
+//! After the last tab: right after Emoji in a build without KLIPY's key, which has no GIF or sticker tab.
 QRectF EmojiPanel::searchRect() const
 {
     const QRectF i = item();
-    const qreal l = topTab(2).right() + gap() / 2;
+    const qreal l = topTab(tabCount() - 1).right() + gap() / 2;
     return QRectF(l, i.top(), m_strip.right() - edge() - l, i.height());
 }
 QRectF EmojiPanel::clearRect() const
@@ -338,10 +361,21 @@ void EmojiPanel::draw(QPainter &p, Painter &painter, Style style)
     p.save();
     p.setClipRect(m_grid);
     const qreal lineH = cellHeight();
+    const QList<Category> &cats = shown();
+    if (!m_emojiQuery.isEmpty() && m_found.value(0).emoji.isEmpty()) {
+        QFont f = m_font;
+        f.setPixelSize(std::max(1, int(lineH * 0.3)));
+        p.setFont(f);
+        const QFontMetricsF fm(f);
+        QString s = QStringLiteral("No emoji for “%1”").arg(m_emojiQuery);
+        while (s.length() > 2 && fm.horizontalAdvance(s) > m_grid.width() - 32 * m_dp) s = s.left(s.length() - 2) + QStringLiteral("…");
+        p.setPen(QColor(255, 255, 255, 140));
+        p.drawText(QPointF(m_grid.center().x() - fm.horizontalAdvance(s) / 2, m_grid.top() + lineH * 0.6), s);
+    }
     p.setFont(emojiFont(lineH * 0.62));
     p.setPen(Qt::white);
-    for (int ci = 0; ci < m_categories.size(); ++ci) {
-        const Category &cat = m_categories[ci];
+    for (int ci = 0; ci < cats.size(); ++ci) {
+        const Category &cat = cats[ci];
         const qreal top = m_grid.top() + m_starts[ci] - m_scrollY;
         const int lines = (cat.emoji.size() + m_cols - 1) / m_cols;
         if (top > m_grid.bottom() || top + lines * lineH < m_grid.top()) continue;
@@ -351,8 +385,8 @@ void EmojiPanel::draw(QPainter &p, Painter &painter, Style style)
             const qreal x = m_grid.left() + (i % m_cols) * m_cell;
             p.drawText(QRectF(x, y, m_cell, lineH), Qt::AlignCenter, cat.emoji[i]);
         }
-        // A hairline between categories.
-        if (ci > 0)
+        // A hairline between categories (none above the first with any emoji).
+        if (m_starts[ci] > 0)
             p.fillRect(QRectF(m_grid.left() + 8 * m_dp, top - 0.5 * m_dp, m_grid.width() - 16 * m_dp, m_dp),
                        QColor(255, 255, 255, 70));
     }
@@ -407,33 +441,29 @@ void EmojiPanel::drawStrip(QPainter &p, Painter &painter, Style style)
         if (on) {
             p.setPen(Qt::NoPen);
             p.setBrush(lit);
-            p.drawRoundedRect(QRectF(r.center().x() - r.width() * 0.28, r.bottom() - 3.5 * m_dp, r.width() * 0.56, 2 * m_dp),
+            // At least as wide as the label, so "Emoji" is underlined like "GIF".
+            const qreal half = std::max(r.width() * 0.28, r.width() / 2 - gap());
+            p.drawRoundedRect(QRectF(r.center().x() - half, r.bottom() - 3.5 * m_dp, 2 * half, 2 * m_dp),
                               m_dp, m_dp);
         }
     }
     MediaPanel *m = media();
-    if (!m) {
-        // A hairline under the strip, as between categories.
-        p.fillRect(QRectF(m_strip.left() + 8 * m_dp, m_strip.bottom() - 0.5 * m_dp, m_strip.width() - 16 * m_dp, m_dp),
-                   QColor(255, 255, 255, 70));
-        p.restore();
-        return;
-    }
-    // The search field: "Search KLIPY", as KLIPY asks, or what was searched for and an x.
+    // The search field: "Search Emojis", or "Search KLIPY" as KLIPY asks, or what
+    // was searched for and an x.
     const QRectF s = searchRect();
     p.setPen(Qt::NoPen);
     p.setBrush(m_pressed == Search ? QColor(255, 255, 255, 70) : QColor(255, 255, 255, 38));
     p.drawRoundedRect(s, s.height() / 2, s.height() / 2);
     painter.icon(p, Painter::Icon::Search, s.left() + s.height() * 0.6, s.center().y(), s.height() * 0.56,
                  QColor(255, 255, 255, 170));
-    const QString q = m->query();
+    const QString q = m ? m->query() : m_emojiQuery;
     QFont f = m_font;
     f.setPixelSize(std::max(1, int(s.height() * 0.5)));
     p.setFont(f);
     const QFontMetricsF fm(f);
     const qreal textLeft = s.left() + s.height() * 1.1;
     const qreal room = (q.isEmpty() ? s.right() : clearRect().left()) - textLeft - 4 * m_dp;
-    QString t = q.isEmpty() ? QStringLiteral("Search KLIPY") : q;
+    QString t = !q.isEmpty() ? q : m ? QStringLiteral("Search KLIPY") : QStringLiteral("Search Emojis");
     while (t.length() > 1 && fm.horizontalAdvance(t) > room) t = t.left(t.length() - 2) + QStringLiteral("…");
     p.setPen(QColor(255, 255, 255, q.isEmpty() ? 140 : 255));
     p.drawText(QPointF(textLeft, s.center().y() + (fm.ascent() - fm.descent()) / 2), t);
@@ -446,6 +476,7 @@ void EmojiPanel::drawStrip(QPainter &p, Painter &painter, Style style)
 
 int EmojiPanel::currentCategory() const
 {
+    if (!m_emojiQuery.isEmpty()) return -1;
     int cur = 0;
     for (int i = 0; i < m_starts.size(); ++i)
         if (m_starts[i] <= m_scrollY + 1 && !m_categories[i].emoji.isEmpty()) cur = i;
@@ -464,7 +495,7 @@ void EmojiPanel::down(qreal x, qreal y)
     const QPointF pt(x, y);
     MediaPanel *m = media();
     if (m_strip.contains(pt)) {
-        m_downIn = x < abcRect().right() + 2 * m_dp ? Abc : (m && searchRect().contains(pt)) ? Search : Strip;
+        m_downIn = x < abcRect().right() + 2 * m_dp ? Abc : searchRect().contains(pt) ? Search : Strip;
     } else if (m) {
         m_downIn = m_mediaGrid.contains(pt) ? Grid : None;
     } else {
@@ -516,16 +547,25 @@ void EmojiPanel::up(qreal x, qreal y)
         for (int i = 0; i < tabCount(); ++i)
             if (topTab(i).contains(pt)) { select(i == 0 ? Tab::Emoji : i == 1 ? Tab::Gif : Tab::Sticker); break; }
         break;
-    case Search:
-        if (m) {
-            if (!m->query().isEmpty() && clearRect().contains(pt)) m->search(QString());
-            else if (searchRect().contains(pt) && m_actions.search) m_actions.search(m->kind(), m->query());
+    case Search: {
+        const QString q = m ? m->query() : m_emojiQuery;
+        if (!q.isEmpty() && clearRect().contains(pt)) {
+            if (m) m->search(QString());
+            else searchEmoji(QString());
+        } else if (searchRect().contains(pt) && m_actions.search) {
+            m_actions.search(m_tab, q);
         }
         break;
+    }
     case Tabs:
         if (m) break;
         for (int i = 0; i < m_categories.size(); ++i)
-            if (tabRect(i).contains(pt)) { jumpTo(i); break; }
+            if (tabRect(i).contains(pt)) {
+                // A category from the bottom row puts the search away.
+                if (!m_emojiQuery.isEmpty()) searchEmoji(QString());
+                jumpTo(i);
+                break;
+            }
         break;
     default:
         break;
@@ -564,8 +604,9 @@ void EmojiPanel::tapGrid(qreal x, qreal y)
 {
     const qreal lineH = cellHeight();
     const qreal contentY = y - m_grid.top() + m_scrollY;
-    for (int ci = 0; ci < m_categories.size(); ++ci) {
-        const Category &cat = m_categories[ci];
+    const QList<Category> &cats = shown();
+    for (int ci = 0; ci < cats.size(); ++ci) {
+        const Category &cat = cats[ci];
         const int lines = (cat.emoji.size() + m_cols - 1) / m_cols;
         if (contentY < m_starts[ci] || contentY >= m_starts[ci] + lines * lineH) continue;
         const int i = int((contentY - m_starts[ci]) / lineH) * m_cols + int((x - m_grid.left()) / m_cell);

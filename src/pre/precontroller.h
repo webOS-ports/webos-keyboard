@@ -235,6 +235,8 @@ public:
     QString emojiFile() const;
     QStringList recentEmoji() const;
     void addRecentEmoji(const QString &e);
+    //! The emoji page's search: the emoji the bar offers for words, all of them, for [query].
+    QStringList emojiSearch(const QString &query);
 
 Q_SIGNALS:
     void activeChanged();

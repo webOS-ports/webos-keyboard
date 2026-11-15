@@ -22,6 +22,7 @@
 #include <QHash>
 #include <QSet>
 #include <QString>
+#include <QStringList>
 
 namespace Pre {
 
@@ -30,7 +31,7 @@ namespace Pre {
  * emoji_words.txt (data/pre/<language>/, see data/pre/README.md): a line per
  * word, "word<TAB>emoji emoji ...", the likeliest emoji first. Of each word's
  * emoji the first the emoji page has is the one offered, so the bar never
- * shows one the page can't.
+ * shows one the page can't; the emoji page's search shows them all.
  */
 class EmojiWords
 {
@@ -43,10 +44,23 @@ public:
 
     //! The emoji for [word], or for the word it is the plural or possessive of; empty if none.
     QString forWord(const QString &word) const;
+    /*!
+     * Every emoji for what's typed in the emoji page's search: the word's own
+     * first, as the bar would offer them, then those of the words it starts
+     * ("pi" -> pizza, pig...). Several words: the emoji all of them share, or
+     * failing that, any of them's. [limit] at most.
+     */
+    QStringList search(const QString &query, int limit = 160) const;
     int size() const { return int(m_byWord.size()); }
 
 private:
-    QHash<QString, QString> m_byWord;
+    static QString clean(const QString &word);
+    //! Every emoji for [w] (cleaned), or for what it is the plural or possessive of.
+    QStringList allFor(const QString &w) const;
+
+    QHash<QString, QStringList> m_byWord;
+    //! Every word, shortest first: a search's nearest words come first.
+    QStringList m_words;
 };
 
 } // namespace Pre
