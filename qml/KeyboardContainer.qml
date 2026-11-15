@@ -77,10 +77,12 @@ Item {
              : internal.characterKeypadSource.indexOf("_prewhite.qml") >= 0 ? "white" : ""
     }
 
-    MediaPlayer {
+    // The key click: a SoundEffect, decoded once and played on a stream kept
+    // open, so it is heard as the key goes down (a MediaPlayer opened a new
+    // stream each time, 175-460 ms late on a mako).
+    SoundEffect {
         id: audioFeedback
         source: Qt.resolvedUrl("styles/ubuntu/sounds/key_tick2_quiet.wav")
-        audioOutput: AudioOutput {}
     }
 
     QtObject {

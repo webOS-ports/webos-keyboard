@@ -270,11 +270,13 @@ Item {
             onKeyClick: preClick.play()
 
             // The keyboard's own click (KeyboardContainer's audioFeedback), on
-            // the same "key press feedback" setting.
-            MediaPlayer {
+            // the same "key press feedback" setting. A SoundEffect, decoded
+            // once and played on a stream kept open: a MediaPlayer opened a
+            // new stream for every click, and on a mako it was heard 175-460
+            // ms after the key.
+            SoundEffect {
                 id: preClick
                 source: Qt.resolvedUrl("styles/ubuntu/sounds/key_tick2_quiet.wav")
-                audioOutput: AudioOutput {}
             }
         }
 
