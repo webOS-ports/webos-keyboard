@@ -22,6 +22,7 @@
 
 #include "predictation.h"
 #include "preemojiwords.h"
+#include "preemoticons.h"
 #include "presettings.h"
 #include "preswipedecoder.h"
 
@@ -66,6 +67,8 @@ struct Bridge
     std::function<bool()> atWordEnd;
     //! Text put in as it is, after the word being typed: emoji, a paste, a link.
     std::function<void(const QString &text)> commit;
+    //! The word being typed goes in as it is (no correction), and no word is being typed after.
+    std::function<void()> finish;
     /*!
      * [before] characters before the cursor and [after] after it give way to
      * [text], as it is, the cursor after it. No word is being typed.
@@ -272,7 +275,11 @@ private:
      * after a word is ". ", a period, comma, question or exclamation mark,
      * colon or semicolon brings its own space (which a space typed on top of
      * is absorbed by), and sentence punctuation typed after a space goes
-     * against the word ("word ," is "word, "). True when it typed [text]
+     * against the word ("word ," is "word, "). A colon or semicolon may start
+     * a text face instead (as Android's 1.4.3): when the next key carries one
+     * on, the colon goes back where it was typed and its space goes, so "hi :)"
+     * stays "hi :)"; a face's letter (":D") may as well start a word
+     * ("Note : Do"), so that waits for what ends it. True when it typed [text]
      * itself; false leaves [text] to be typed as it is.
      */
     bool punctuate(const QString &text);
@@ -285,6 +292,15 @@ private:
     bool autoSpaced() const;
     //! A space typed after a word is the last thing typed; [digit]: after a number.
     bool spaceAfterWord(bool *digit = nullptr) const;
+    /*!
+     * A face's letter waited for what ends it ("hi: D"): it was a face, so its
+     * colon goes against it ("hi :D"), unless a word goes on after the cursor.
+     */
+    void endFace();
+    //! Nothing typed may become a text face any more.
+    void forgetFace();
+    //! The text face the cursor is just past (a space after it allowed), for the bar to offer its emoji.
+    Emoticons::Face face() const;
     qint64 now() const;
 
     void applySettings();
@@ -360,12 +376,25 @@ private:
     QString m_autoTail;
     //! A space typed after a word is the last thing typed.
     bool m_spaceIsLast = false;
+    /*!
+     * After a colon or semicolon that brought its space: what it was typed as
+     * (" :" when it snapped from after the owner's space, ":" when not), and
+     * whether any text face may follow or only one that can't start a phrase
+     * (after a word, "note: (see)" is prose). See punctuate().
+     */
+    QString m_emote;
+    bool m_emoteLoose = false;
+    //! A face's letter typed after such a colon ("hi: D"), and what it becomes if the face ends there ("hi :D").
+    QString m_emoteTyped;
+    QString m_emoteFace;
 
     //! The bar's right-hand place holds an emoji for the middle word, not a word.
     bool m_barEmoji = false;
     //! With the word engine off (emojiWithoutWords()): the word in the field, ending at the
     //! cursor, the bar's emoji is for.
     QString m_bareWord;
+    //! The bar's emoji is for the text face before the cursor, which it replaces.
+    Emoticons::Face m_barFace;
 
     // Fixing words.
     //! When the keyboard last changed the text; and the cursor moved since by the owner's hand.

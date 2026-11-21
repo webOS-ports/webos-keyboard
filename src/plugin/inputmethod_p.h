@@ -330,6 +330,7 @@ public:
         b.cancelRepeat = [this] { editor.cancelRepeat(); };
         b.pick = [this](const QString &word) { event_handler.onWordCandidateReleased(word); };
         b.commit = [this](const QString &text) { q->commitEmoji(text); };
+        b.finish = [this] { editor.commit(); };
         b.setWord = [this](const QString &word) { editor.replacePreedit(word); };
         b.atWordEnd = [this] {
             const Model::Text *t = editor.text();
