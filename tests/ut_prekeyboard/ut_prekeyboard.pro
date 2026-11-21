@@ -20,6 +20,7 @@ SOURCES += \
     $$PWD/../../src/pre/predictation.cpp \
     $$PWD/../../src/pre/preemojipanel.cpp \
     $$PWD/../../src/pre/preemojiwords.cpp \
+    $$PWD/../../src/pre/preemoticons.cpp \
     $$PWD/../../src/pre/prekeyboardview.cpp \
     $$PWD/../../src/pre/prekeymap.cpp \
     $$PWD/../../src/pre/preklipy.cpp \
