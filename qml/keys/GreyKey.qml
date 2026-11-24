@@ -17,7 +17,6 @@
  */
 
 import QtQuick 2.0
-import QtMultimedia 5.0
 
 import LunaNext.Common 0.1
 

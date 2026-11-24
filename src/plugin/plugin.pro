@@ -73,6 +73,7 @@ HEADERS += \
     ../pre/presettings.h \
     ../pre/preswipedecoder.h \
     ../pre/preemojiwords.h \
+    ../pre/preemoticons.h \
     ../pre/preswipewords.h \
 
 SOURCES += \
@@ -101,6 +102,7 @@ SOURCES += \
     ../pre/presettings.cpp \
     ../pre/preswipedecoder.cpp \
     ../pre/preemojiwords.cpp \
+    ../pre/preemoticons.cpp \
     ../pre/preswipewords.cpp \
 
 target.path += $${MALIIT_PLUGINS_DIR}

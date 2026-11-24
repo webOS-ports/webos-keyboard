@@ -58,6 +58,14 @@ const QStringList SCHEMES = { QStringLiteral("http"), QStringLiteral("https"), Q
                               QStringLiteral("file"), QStringLiteral("geo") };
 //! What may close a word, for a space after it to be the word's.
 const QString CLOSERS = QStringLiteral(")\"']}”’");
+//! What ends a word as it is typed: a text face's letter waiting ("hi: D") is a face then.
+const QString SEPARATORS = QStringLiteral(" .,!?;:)]}\"…\u060C\u061F\u061B");
+//! What ends a text face and never starts a phrase after a colon: ":)", ":]", ":|".
+const QString EMOTE_CLOSE = QStringLiteral(")]|\\");
+//! What else carries a face on: ":(", ":-)", ":'(", ":/", ":*", ":@", ":$", ":3".
+const QString EMOTE_MARKS = QStringLiteral("([{}-'’/*@$#><^");
+//! Faces' letters, a face only when nothing follows them: ":D", ":P", ":p", ":O", ":o", ":X", ":x", ":S", ":b", ":c", ":3".
+const QString EMOTE_LETTERS = QStringLiteral("DPpOoXxSbc3");
 //! How far back to look for the address a period may be in.
 const int MAX_TOKEN = 64;
 //! How much of the text before the cursor the next words are asked with.
@@ -99,6 +107,7 @@ void Controller::setBridge(const Bridge &bridge)
     if (bridge.commit) m_bridge.commit = [own, f = bridge.commit](const QString &t) { own(); f(t); };
     if (bridge.replace)
         m_bridge.replace = [own, f = bridge.replace](int b, int a, const QString &t) { own(); f(b, a, t); };
+    if (bridge.finish) m_bridge.finish = [own, f = bridge.finish] { own(); f(); };
 }
 
 Controller::~Controller()
@@ -261,6 +270,7 @@ void Controller::startInput()
     m_lastSpaceAt = NEVER;
     m_autoTail.clear();
     m_spaceIsLast = false;
+    forgetFace();
     m_swiped.clear();
     m_swipeGuesses.clear();
     m_live.clear();
@@ -297,13 +307,16 @@ void Controller::update()
             m_tapped = true;
             m_fixTyped.clear();
             m_fixed.clear();
+            forgetFace();
         }
     }
     // The application told where its cursor is: the next words, or the tapped word's fixes, follow it.
     if (m_typed.isEmpty() && m_swiped.isEmpty()) {
         const QStringList next = idleWords();
         // Or a letter went straight into the field (the word engine off): the emoji follows the word it ends.
-        if (next != m_candidates || emojiWithoutWords() || !m_bareWord.isEmpty()) {
+        // Or a text face is before the cursor, or was.
+        if (next != m_candidates || emojiWithoutWords() || !m_bareWord.isEmpty() || !m_barFace.isNull()
+            || !face().isNull()) {
             m_candidates = next;
             showBar();
         }
@@ -544,6 +557,13 @@ void Controller::showBar()
             m_bareWord = word;
         }
     }
+    // After a text face (":)", or ":D" still waiting for what ends it), its emoji on the right, in its place.
+    m_barFace = face();
+    if (!m_barFace.isNull()) {
+        bar = { QString(), QString(), m_barFace.emoji };
+        m_barEmoji = true;
+        m_bareWord.clear();
+    }
     m_bar = { bar.value(0), bar.value(1), bar.value(2) };
     if (m_view) m_view->setSuggestions(m_bar, m_barEmoji);
 }
@@ -575,6 +595,22 @@ void Controller::onPick(int i, int caps)
     if (w.isEmpty() || !m_bridge.pick) return;
     m_fixTyped.clear();
     m_fixed.clear();
+    if (i == 2 && !m_barFace.isNull()) {
+        // The face's emoji takes its place, with a space after it, if the face is still there.
+        const Emoticons::Face f = m_barFace;
+        if (face() == f && m_bridge.replace) {
+            forgetFace();
+            if (m_bridge.finish) m_bridge.finish();
+            m_bridge.replace(f.length, 0, f.lead + f.emoji + QLatin1Char(' '));
+            addRecentEmoji(f.emoji);
+            m_autoTail.clear();
+            m_spaceIsLast = false;
+            m_lastSpaceAt = NEVER;
+        }
+        showBar();
+        return;
+    }
+    forgetFace();
     if (!m_barWord.isEmpty()) {
         // In place of the word tapped, if it is still there; the bar goes on offering for the new one.
         int nb = 0, na = 0;
@@ -686,6 +722,14 @@ void Controller::onText(const QString &text)
     // Anything typed moves on from the last correction (this may make another).
     m_fixTyped.clear();
     m_fixed.clear();
+    // A face's letter waiting ("hi: D") is a face if this ends it, and a word's start if not.
+    if (text.size() == 1 && SEPARATORS.contains(text.at(0))) {
+        endFace();
+    } else {
+        m_emoteTyped.clear();
+        m_emoteFace.clear();
+    }
+    if (text.size() != 1) m_emote.clear();
     // A character goes in as a LuneOS key's would, to be predicted and corrected;
     // anything longer (an emoji, an emoticon) as it is.
     if (text == QLatin1String(" ") && !m_swiped.isEmpty() && m_typed == m_swiped && m_bridge.pick) {
@@ -782,6 +826,9 @@ bool Controller::punctuate(const QString &text)
     m_autoTail.clear();
     m_spaceIsLast = false;
     m_lastSpaceAt = NEVER;
+    // The colon (or semicolon) before, with its space still the last thing typed.
+    const QString emoteFrom = spaced ? m_emote : QString();
+    m_emote.clear();
     const bool prose = m_bridge.prose ? m_bridge.prose() : m_wordsAllowed;
     if (!prose || !m_bridge.before) {
         if (space) m_lastSpaceAt = t;
@@ -806,6 +853,18 @@ bool Controller::punctuate(const QString &text)
         m_lastSpaceAt = t;
         return true;
     }
+    if (!emoteFrom.isEmpty()) {
+        const QChar c = text.at(0);
+        if (m_emoteLoose && EMOTE_LETTERS.contains(c)) {
+            // ":D", or a word ("Note : Do"): typed as it is till what follows tells (see endFace()).
+            m_emoteTyped = emoteFrom.back() + QLatin1Char(' ') + text;
+            m_emoteFace = emoteFrom + text;
+        } else if (m_bridge.replace && (EMOTE_CLOSE.contains(c) || (m_emoteLoose && EMOTE_MARKS.contains(c)))) {
+            // ": )" was a face: the colon back where it was typed, no space inside it.
+            m_bridge.replace(2, 0, emoteFrom + text);
+            return true;
+        }
+    }
 
     // A period after a number and a space starts something (3 .5); after a word, it ends it.
     const bool snap = SENTENCE.contains(text.at(0))
@@ -826,7 +885,53 @@ bool Controller::punctuate(const QString &text)
         key(QStringLiteral(" "));
         m_autoTail = text + QLatin1Char(' ');
     }
+    if (!m_autoTail.isEmpty() && (text == QLatin1String(":") || text == QLatin1String(";"))) {
+        // It may start a face. Snapped, the owner typed it apart from the word; after a symbol (">:(") it's no phrase.
+        m_emote = snap ? QLatin1Char(' ') + text : text;
+        const QChar prev = before.size() >= 2 ? before.at(before.size() - 2) : QChar();
+        m_emoteLoose = snap || (!prev.isNull() && !prev.isLetterOrNumber());
+    }
     return true;
+}
+
+void Controller::endFace()
+{
+    const QString typed = m_emoteTyped;
+    const QString face = m_emoteFace;
+    m_emoteTyped.clear();
+    m_emoteFace.clear();
+    if (typed.isEmpty() || !m_bridge.before || !m_bridge.replace || m_bridge.before(int(typed.size())) != typed)
+        return;
+    const QString after = m_bridge.after ? m_bridge.after(1) : QString();
+    if (!after.isEmpty() && after.at(0).isLetterOrNumber()) return;
+    // The letter is the word being typed: in it goes as it is, then the colon against it.
+    if (m_bridge.finish) m_bridge.finish();
+    m_bridge.replace(int(typed.size()), 0, face);
+}
+
+void Controller::forgetFace()
+{
+    m_emote.clear();
+    m_emoteTyped.clear();
+    m_emoteFace.clear();
+}
+
+Emoticons::Face Controller::face() const
+{
+    if (!m_settings.emojiSuggestions || !m_digits.isEmpty() || !m_live.isEmpty() || !m_swiped.isEmpty()
+        || !m_bridge.before || !m_bridge.replace || !m_bridge.prose || !m_bridge.prose()
+        || (!m_wordsAllowed && !(m_bridge.wordsWanted && m_bridge.wordsWanted())))
+        return Emoticons::Face();
+    const QString after = m_bridge.after ? m_bridge.after(1) : QString();
+    if (!after.isEmpty() && !after.at(0).isSpace()) return Emoticons::Face();
+    // A face's letter still waiting ("hi: D", to be "hi :D"): its emoji, put where the face goes.
+    if (!m_emoteTyped.isEmpty() && m_bridge.before(int(m_emoteTyped.size())) == m_emoteTyped) {
+        const Emoticons::Face f = Emoticons::at(m_emoteFace);
+        if (f.isNull()) return f;
+        return Emoticons::Face{ int(m_emoteTyped.size()), f.emoji,
+                                m_emoteFace.startsWith(QLatin1Char(' ')) ? QStringLiteral(" ") : QString() };
+    }
+    return Emoticons::at(m_bridge.before(Emoticons::longest() + 2));
 }
 
 void Controller::onBackspace(bool)
@@ -837,6 +942,7 @@ void Controller::onBackspace(bool)
         return;
     }
     const bool undone = undoCorrection();
+    forgetFace();
     // Straight after a period, it takes just the period's space.
     m_autoTail.clear();
     m_spaceIsLast = false;
@@ -859,6 +965,7 @@ void Controller::onBackspaceHeld(bool held, bool lifted)
         m_autoTail.clear();
         m_spaceIsLast = false;
         m_lastSpaceAt = NEVER;
+        forgetFace();
         m_deleting = true;
         if (m_bridge.press) m_bridge.press(QString(), BACKSPACE);
         return;
@@ -881,6 +988,8 @@ void Controller::onEnter()
     endDictation(true);
     m_fixTyped.clear();
     m_fixed.clear();
+    endFace();
+    m_emote.clear();
     // The keyboard's own space is not left at the end of the line.
     if (autoSpaced()) backspaceKey();
     m_autoTail.clear();
@@ -893,6 +1002,7 @@ void Controller::onEnter()
 void Controller::onCursor(int dx, int dy, bool select)
 {
     endDictation(true);
+    forgetFace();
     if (m_bridge.cursor) m_bridge.cursor(dx, dy, select);
 }
 
@@ -1199,6 +1309,7 @@ void Controller::dictationFinal(const QString &text)
         m_autoTail.clear();
         m_spaceIsLast = false;
         m_lastSpaceAt = NEVER;
+        forgetFace();
         m_bridge.commit(joined);
     }
     showVoice();

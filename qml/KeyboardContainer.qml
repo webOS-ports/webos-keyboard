@@ -17,7 +17,6 @@
  */
 
 import QtQuick 2.0
-import QtMultimedia 6.3
 import QtQuick.Window 2.0
 
 import keys 1.0
@@ -77,10 +76,12 @@ Item {
              : internal.characterKeypadSource.indexOf("_prewhite.qml") >= 0 ? "white" : ""
     }
 
-    MediaPlayer {
+    // The key click, played through audiod (systemsounds/playFeedback) rather
+    // than a QML MediaPlayer/SoundEffect, so the always-resident keyboard holds
+    // no PulseAudio stream of its own and the sink can still suspend on idle.
+    // The keys call audioFeedback.play() by id; see KeyFeedbackSound.qml.
+    KeyFeedbackSound {
         id: audioFeedback
-        source: Qt.resolvedUrl("styles/ubuntu/sounds/key_tick2_quiet.wav")
-        audioOutput: AudioOutput {}
     }
 
     QtObject {

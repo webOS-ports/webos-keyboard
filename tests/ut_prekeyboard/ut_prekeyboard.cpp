@@ -142,6 +142,9 @@ public:
         text()->setSurroundingOffset(uint(committed.length()));
     }
 
+    //! The word being typed goes in as it is (Bridge::finish).
+    using AbstractTextEditor::commitPreedit;
+
 private:
     void sendPreeditString(const QString &p, Model::Text::PreeditFace, const Replacement &) override { preedit = p; }
     void sendCommitString(const QString &s) override { committed += s; preedit.clear(); }
@@ -1064,6 +1067,147 @@ private Q_SLOTS:
         }
         // Whatever is still being typed, as the field shows it.
         QCOMPARE(editor.committed + editor.preedit, field);
+    }
+
+    /*
+     * Text faces after a space stay together (Android's 1.4.3): the colon
+     * that snapped onto the word goes back when the next key carries a face
+     * on; a face's letter (":D") waits for what ends it, so "Note : Do" still
+     * snaps. "\n" is Return.
+     */
+    void textFaces_data()
+    {
+        QTest::addColumn<QString>("typed");
+        QTest::addColumn<QString>("field");
+        for (const char *e : { ":)", ":(", ";)", ";-)", ":-(", ":'(", ":/", ":*", ":|", ":-P", ":'D" }) {
+            const QString face = QString::fromUtf8(e);
+            QTest::newRow(e) << QStringLiteral("hi ") + face << QStringLiteral("hi ") + face;
+        }
+        // A face's letter could start a word: it's a face once what follows ends it.
+        for (const char *e : { ":D", ":P", ":p", ":O", ":o", ":3", ";P", ";D" }) {
+            const QString face = QString::fromUtf8(e);
+            QTest::newRow(qPrintable(face + QStringLiteral(" waits")))
+                << QStringLiteral("hi ") + face << QStringLiteral("hi") + face.at(0) + QLatin1Char(' ') + face.at(1);
+            QTest::newRow(qPrintable(face + QStringLiteral(" ended")))
+                << QStringLiteral("hi ") + face + QStringLiteral(" there") << QStringLiteral("hi ") + face + QStringLiteral(" there");
+        }
+        QTest::newRow("a face's letter, then !") << "hi :D!" << "hi :D! ";
+        QTest::newRow("a face's letter, then Return") << "hi :P\n" << "hi :P\r";
+        QTest::newRow("a word after all") << "a :book" << "a: book";
+        QTest::newRow("Note : Do") << "Note : Do it" << "Note: Do it";
+        // It goes on as typed, and the colon still snaps when a word follows.
+        QTest::newRow("on after a face") << "hi :) there" << "hi :) there";
+        QTest::newRow("Note : see") << "Note : see" << "Note: see";
+        // Glued to a word, only a closing mark: "hi:)", but "Note: (see)" and "Note: Do".
+        QTest::newRow("glued") << "hi:)" << "hi:)";
+        QTest::newRow("glued, prose") << "Note:(see) Do: Done" << "Note: (see) Do: Done";
+        // After a symbol, any: ">:(".
+        QTest::newRow("after a symbol") << "grr >:(" << "grr >:(";
+        // A space typed on the colon's own is absorbed as before; then it's no face.
+        QTest::newRow("space on the colon's") << "Note: (see)" << "Note: (see)";
+        QTest::newRow("a time") << "at 10:30" << "at 10:30";
+    }
+
+    void textFaces()
+    {
+        QFETCH(QString, typed);
+        QFETCH(QString, field);
+        SetWords *words = new SetWords;
+        StringEditor editor(words);
+        Logic::EventHandler handler;
+        QObject::connect(&handler, &Logic::EventHandler::keyPressed, &editor, &AbstractTextEditor::onKeyPressed);
+        QObject::connect(&handler, &Logic::EventHandler::keyReleased, &editor, &AbstractTextEditor::onKeyReleased);
+        Pre::Bridge b;
+        b.press = [&](const QString &l, const QString &a) { handler.onKeyPressed(l, a); };
+        b.release = [&](const QString &l, const QString &a) { handler.onKeyReleased(l, a); };
+        b.before = [&](int n) { return (editor.committed + editor.preedit).right(n); };
+        b.after = [](int) { return QString(); };
+        b.prose = [] { return true; };
+        b.finish = [&] { editor.commitPreedit(); };
+        b.replace = [&](int before, int, const QString &t) {
+            QVERIFY(editor.preedit.isEmpty());
+            editor.committed.chop(before);
+            editor.committed += t;
+        };
+        qint64 clock = 0;
+        Pre::Controller c;
+        c.setBridge(b);
+        c.setClock([&] { return clock; });
+        c.startInput();
+        for (const QChar ch : typed) {
+            clock += 150;
+            if (ch == QLatin1Char('\n')) c.onEnter();
+            else c.onText(QString(ch));
+        }
+        QCOMPARE(editor.committed + editor.preedit, field);
+    }
+
+    //! After a text face its emoji is on the right of the bar, and picking it replaces the face.
+    void aFaceOffersItsEmoji()
+    {
+        Recorder rec;
+        Field field;
+        Pre::Controller c;
+        c.setBridge(field.bridge(rec));
+        c.setPrefs(QJsonObject{ { QStringLiteral("emojiSuggestions"), true } });
+        const QStringList none{ QString(), QString(), QString() };
+        const auto offered = [&](const QString &text) {
+            field.set(text);
+            c.update();
+            return c.m_bar.value(2);
+        };
+        QCOMPARE(offered(QStringLiteral("hi :)")), QStringLiteral("🙂"));
+        QCOMPARE(c.m_bar.value(0), QString());
+        QCOMPARE(c.m_bar.value(1), QString());
+        c.onPick(2, Pre::KeyboardView::CAPS_NONE);
+        QCOMPARE(field.text, QStringLiteral("hi 🙂 "));
+        QCOMPARE(Pre::Settings::recentEmoji(rec.saved).value(0), QStringLiteral("🙂"));
+        // With its space after it, and glued to a word; a heart.
+        QCOMPARE(offered(QStringLiteral("ok ;) ")), QStringLiteral("😉"));
+        QCOMPARE(offered(QStringLiteral("hi:)")), QStringLiteral("🙂"));
+        QCOMPARE(offered(QStringLiteral("love <3")), QStringLiteral("❤️"));
+        QCOMPARE(offered(QStringLiteral(":D")), QStringLiteral("😃"));
+        // Not in a link, a word, a number, nor with a word going on after the cursor.
+        for (const char *t : { "https:/", "hi", "10:30", "XDR", "a: bo" })
+            QCOMPARE(offered(QString::fromUtf8(t)), QString());
+        field.set(QStringLiteral("hi :)x"), 5);
+        c.update();
+        QCOMPARE(c.m_bar, none);
+        // Not with emoji suggestions off.
+        c.setPrefs(QJsonObject{ { QStringLiteral("emojiSuggestions"), false } });
+        QCOMPARE(offered(QStringLiteral("hi :)")), QString());
+    }
+
+    //! A face's letter still waiting ("hi: D"): its emoji, put where the face would go.
+    void aWaitingFaceOffersItsEmoji()
+    {
+        SetWords *words = new SetWords;
+        StringEditor editor(words);
+        Logic::EventHandler handler;
+        QObject::connect(&handler, &Logic::EventHandler::keyPressed, &editor, &AbstractTextEditor::onKeyPressed);
+        QObject::connect(&handler, &Logic::EventHandler::keyReleased, &editor, &AbstractTextEditor::onKeyReleased);
+        Recorder rec;
+        Pre::Bridge b;
+        b.press = [&](const QString &l, const QString &a) { handler.onKeyPressed(l, a); };
+        b.release = [&](const QString &l, const QString &a) { handler.onKeyReleased(l, a); };
+        b.before = [&](int n) { return (editor.committed + editor.preedit).right(n); };
+        b.after = [](int) { return QString(); };
+        b.prose = [] { return true; };
+        b.finish = [&] { editor.commitPreedit(); };
+        b.replace = [&](int before, int, const QString &t) { editor.committed.chop(before); editor.committed += t; };
+        b.savePrefs = [&](const QJsonObject &pre) { rec.saved = pre; };
+        b.pick = [](const QString &) { QFAIL("the face's emoji is no word for the editor"); };
+        Pre::Controller c;
+        c.setBridge(b);
+        c.setPrefs(QJsonObject{ { QStringLiteral("emojiSuggestions"), true } });
+        c.startInput();
+        for (const QChar ch : QStringLiteral("hi :D")) c.onText(QString(ch));
+        QCOMPARE(editor.committed + editor.preedit, QStringLiteral("hi: D"));
+        c.update();
+        QCOMPARE(c.m_bar.value(2), QStringLiteral("😃"));
+        c.onPick(2, Pre::KeyboardView::CAPS_NONE);
+        QCOMPARE(editor.committed + editor.preedit, QStringLiteral("hi 😃 "));
+        QCOMPARE(Pre::Settings::recentEmoji(rec.saved).value(0), QStringLiteral("😃"));
     }
 
     /*!

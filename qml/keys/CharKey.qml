@@ -17,7 +17,6 @@
  */
 
 import QtQuick 2.4
-import QtMultimedia 5.0
 
 import keys 1.0
 import LunaNext.Common 0.1
