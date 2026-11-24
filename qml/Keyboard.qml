@@ -33,7 +33,6 @@
 
 import QtQuick 2.0
 import QtQuick.Window 2.2
-import QtMultimedia 6.3
 import keys 1.0
 import LuneOSKeyboard 1.0
 
@@ -270,13 +269,11 @@ Item {
             onKeyClick: preClick.play()
 
             // The keyboard's own click (KeyboardContainer's audioFeedback), on
-            // the same "key press feedback" setting. A SoundEffect, decoded
-            // once and played on a stream kept open: a MediaPlayer opened a
-            // new stream for every click, and on a mako it was heard 175-460
-            // ms after the key.
-            SoundEffect {
+            // the same "key press feedback" setting. Played through audiod so
+            // the keyboard holds no PulseAudio stream of its own; see
+            // KeyFeedbackSound.qml.
+            KeyFeedbackSound {
                 id: preClick
-                source: Qt.resolvedUrl("styles/ubuntu/sounds/key_tick2_quiet.wav")
             }
         }
 
