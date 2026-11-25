@@ -220,6 +220,7 @@ Item {
                             width: parent.width
                             height: visible ? keypad.height : 0
                             visible: wordRibbon.emojiShown
+                            hideKey: wordRibbon.emojiWithoutKeys
 
                             onDismissed: wordRibbon.closeEmoji()
                         }

@@ -85,6 +85,8 @@ public:
 
     void setDp(qreal dp);
     void setFont(const QFont &font) { m_font = font; }
+    //! ABC's place holds the hide-keyboard key instead: the page is up for a physical keyboard.
+    void setHideKey(bool hide) { m_hideKey = hide; }
     Tab tab() const { return m_tab; }
     void select(Tab t);
     //! A search was typed for [t]: its tab, showing what was found.
@@ -163,6 +165,7 @@ private:
     qreal m_dp;
     Actions m_actions;
     QFont m_font;
+    bool m_hideKey = false;
     Tab m_tab;
     std::unique_ptr<MediaPanel> m_gifs;
     std::unique_ptr<MediaPanel> m_stickers;

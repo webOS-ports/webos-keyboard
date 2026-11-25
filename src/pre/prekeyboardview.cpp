@@ -379,6 +379,7 @@ void KeyboardView::paint(QPainter *pp)
     m_painter.deck(p, QRectF(0, deckTop, width(), height() - deckTop));
     if (barShown() && !emojiPage) drawBar(p, QRectF(0, top, width(), barHeight()));
     if (m_page == Page::Emoji) {
+        m_emoji.setHideKey(m_controller && m_controller->hardwareEmoji());
         m_emoji.draw(p, m_painter, m_settings.style);
         drawMenu(p);
         return;

@@ -1514,6 +1514,17 @@ private Q_SLOTS:
         showKeys(view, Pre::Language::byId(QStringLiteral("en")), 1080, 1080, false, Pre::Settings::Height::Medium);
         auto tapAt = [&](const QPointF &at) { view.pointerDown(1, at.x(), at.y()); view.pointerUp(1, at.x(), at.y()); };
         auto tapAbc = [&] { tapAt(view.m_emoji.abcRect().center()); };
+        // Drawn, as the panel draws it: ABC, or the hide key in its place. PRE_SHOTS=<dir> keeps the picture.
+        auto paint = [&](const QString &what) {
+            QImage img(int(view.width()), int(view.height()), QImage::Format_ARGB32_Premultiplied);
+            img.fill(Qt::black);
+            QPainter p(&img);
+            view.paint(&p);
+            p.end();
+            const QString dir = qEnvironmentVariable("PRE_SHOTS");
+            if (!dir.isEmpty()) img.save(QStringLiteral("%1/emoji-%2.png").arg(dir, what));
+            return view.m_emoji.m_hideKey;
+        };
 
         // Asked for while the keys are away: no view yet.
         c.openEmojiFromHardware();
@@ -1523,8 +1534,9 @@ private Q_SLOTS:
         QCOMPARE(view.m_page, Pre::KeyboardView::Page::Emoji);
         c.startInput();
         QCOMPARE(view.m_page, Pre::KeyboardView::Page::Emoji);
+        QVERIFY(paint(QStringLiteral("hardware")));
 
-        // ABC: back to the physical keyboard, not the letters.
+        // ABC, now the hide key: back to the physical keyboard, not the letters.
         rec.calls.clear();
         tapAbc();
         QCOMPARE(rec.calls, QStringList{ QStringLiteral("collapse") });
@@ -1545,6 +1557,7 @@ private Q_SLOTS:
 
         // From the keys' own emoji key, ABC is the letters and nothing else.
         view.show(Pre::KeyboardView::Page::Emoji);
+        QVERIFY(!paint(QStringLiteral("keys")));
         rec.calls.clear();
         tapAbc();
         QCOMPARE(view.m_page, Pre::KeyboardView::Page::Letters);
