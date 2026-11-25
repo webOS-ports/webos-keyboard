@@ -193,18 +193,24 @@ public:
     void endDictation(bool keep);
 
     /*!
-     * The emoji page, asked for while typing on a physical keyboard: the
-     * candidate bar's emoji button, or a key such as the Q25's Sym. The keys
-     * are not on screen then, and the page comes up in their place when they
-     * are brought back - on the emoji, not the letters. Leaving it (its ABC)
-     * goes back to the physical keyboard rather than to on-screen letters that
-     * were never wanted.
+     * A page of the keys asked for while typing on a physical keyboard: the
+     * emoji, from the candidate bar's emoji button; the symbols, from a key
+     * such as the Q25's Sym, for what its keys do not print. The keys are not
+     * on screen then, and the page comes up in their place when they are
+     * brought back - not the letters. Its way back to the letters (ABC) goes
+     * back to the physical keyboard instead, and shows the hide key.
      */
     Q_INVOKABLE void openEmojiFromHardware();
-    //! The emoji page is up for a physical keyboard (openEmojiFromHardware()).
-    bool hardwareEmoji() const { return m_hardwareEmoji; }
-    //! The emoji page's ABC: true when that put the keys away rather than showing the letters.
-    bool onEmojiLetters();
+    /*!
+     * The symbols page, as above. Asked again while it is up for a physical
+     * keyboard, the keys go away again: Sym toggles it. False then, so the
+     * caller does not bring the keys straight back.
+     */
+    Q_INVOKABLE bool openSymbolsFromHardware();
+    //! The keys are up only for a physical keyboard's request (above).
+    bool hardwareKeys() const { return m_hardwarePage != HardwarePage::None; }
+    //! A way back to the letters was taken: true when that put the keys away instead.
+    bool onBackToLetters();
 
     //! A field took the focus, or the keyboard came up for one.
     void startInput();
@@ -409,8 +415,11 @@ private:
 
     //! The bar's right-hand place holds an emoji for the middle word, not a word.
     bool m_barEmoji = false;
-    //! The emoji page was asked for from a physical keyboard; see openEmojiFromHardware().
-    bool m_hardwareEmoji = false;
+    //! The page a physical keyboard asked for; see openEmojiFromHardware().
+    enum class HardwarePage { None, Symbols, Emoji };
+    HardwarePage m_hardwarePage = HardwarePage::None;
+    void showHardwarePage();
+    void backToHardware();
     //! With the word engine off (emojiWithoutWords()): the word in the field, ending at the
     //! cursor, the bar's emoji is for.
     QString m_bareWord;

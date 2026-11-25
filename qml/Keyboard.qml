@@ -321,11 +321,11 @@ Item {
             //! physical keyboard they are not on screen, and the panel goes
             //! where they would be.
             function onEmojiPanelRequested() {
-                // The Pre Keyboard's own emoji page, where it is the keyboard;
-                // see WordRibbon's emoji button.
+                // The Pre Keyboard's symbols page, where it is the keyboard:
+                // what the physical keys do not print. Sym again puts it away.
                 if (pre_keyboard.active) {
-                    pre_keyboard.openEmojiFromHardware();
-                    fullScreenItem.input_method.expandKeys();
+                    if (pre_keyboard.openSymbolsFromHardware())
+                        fullScreenItem.input_method.expandKeys();
                     return;
                 }
                 wordRibbon.openEmoji();

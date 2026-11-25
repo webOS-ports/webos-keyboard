@@ -1528,7 +1528,7 @@ private Q_SLOTS:
 
         // Asked for while the keys are away: no view yet.
         c.openEmojiFromHardware();
-        QVERIFY(c.hardwareEmoji());
+        QVERIFY(c.hardwareKeys());
         // The keys come back, and the framework shows the panel again.
         view.setControllerObject(&c);
         QCOMPARE(view.m_page, Pre::KeyboardView::Page::Emoji);
@@ -1540,7 +1540,7 @@ private Q_SLOTS:
         rec.calls.clear();
         tapAbc();
         QCOMPARE(rec.calls, QStringList{ QStringLiteral("collapse") });
-        QVERIFY(!c.hardwareEmoji());
+        QVERIFY(!c.hardwareKeys());
         // Which takes the keys away.
         view.setControllerObject(nullptr);
 
@@ -1550,7 +1550,7 @@ private Q_SLOTS:
         view.setControllerObject(&c);
         QCOMPARE(view.m_page, Pre::KeyboardView::Page::Emoji);
         view.setControllerObject(nullptr);
-        QVERIFY(!c.hardwareEmoji());
+        QVERIFY(!c.hardwareKeys());
         view.setControllerObject(&c);
         c.startInput();
         QCOMPARE(view.m_page, Pre::KeyboardView::Page::Letters);
@@ -1566,6 +1566,56 @@ private Q_SLOTS:
         // Already on screen when asked for: straight to the page.
         c.openEmojiFromHardware();
         QCOMPARE(view.m_page, Pre::KeyboardView::Page::Emoji);
+        view.setControllerObject(nullptr);
+
+        // Sym on the physical keyboard: the symbols page, for what its keys do not print.
+        auto symKey = [&] {
+            for (const auto &z : view.m_zones)
+                if (z.slot.drawn && z.slot.key->kind == Pre::Kind::Sym) return z.rect.center();
+            return QPointF(-1, -1);
+        };
+        QVERIFY(c.openSymbolsFromHardware());
+        view.setControllerObject(&c);
+        QCOMPARE(view.m_page, Pre::KeyboardView::Page::Symbols);
+        c.startInput();
+        QCOMPARE(view.m_page, Pre::KeyboardView::Page::Symbols);
+        paint(QStringLiteral("symbols"));
+        // Its ABC, the hide key: back to the physical keyboard.
+        rec.calls.clear();
+        QVERIFY(symKey().x() >= 0);
+        tapAt(symKey());
+        QCOMPARE(rec.calls, QStringList{ QStringLiteral("collapse") });
+        QCOMPARE(view.m_page, Pre::KeyboardView::Page::Symbols);
+        QVERIFY(!c.hardwareKeys());
+        view.setControllerObject(nullptr);
+
+        // Sym again while the page is up puts the keys away, and says not to bring them back.
+        QVERIFY(c.openSymbolsFromHardware());
+        view.setControllerObject(&c);
+        rec.calls.clear();
+        QVERIFY(!c.openSymbolsFromHardware());
+        QCOMPARE(rec.calls, QStringList{ QStringLiteral("collapse") });
+        view.setControllerObject(nullptr);
+
+        // From the symbols on to the emoji: its ABC is the hide key as well.
+        QVERIFY(c.openSymbolsFromHardware());
+        view.setControllerObject(&c);
+        view.show(Pre::KeyboardView::Page::Emoji);
+        QVERIFY(paint(QStringLiteral("symbols-emoji")));
+        rec.calls.clear();
+        tapAbc();
+        QCOMPARE(rec.calls, QStringList{ QStringLiteral("collapse") });
+        view.setControllerObject(nullptr);
+
+        // The keys' own Sym, nothing asked for from outside: ABC is the letters.
+        view.setControllerObject(&c);
+        c.startInput();
+        tapAt(symKey());
+        QCOMPARE(view.m_page, Pre::KeyboardView::Page::Symbols);
+        rec.calls.clear();
+        tapAt(symKey());
+        QCOMPARE(view.m_page, Pre::KeyboardView::Page::Letters);
+        QVERIFY(!rec.calls.contains(QStringLiteral("collapse")));
     }
 
     /*
