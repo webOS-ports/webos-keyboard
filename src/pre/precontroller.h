@@ -111,6 +111,11 @@ struct Bridge
     std::function<void(const QJsonObject &pre)> savePrefs;
     //! Takes the keyboard down, as the keyboard's own choice (to open Text Assist).
     std::function<void()> hide;
+    /*!
+     * Puts the keys away and leaves the candidate bar: with a physical keyboard,
+     * hands typing back to it (the on-screen keys were only up because asked for).
+     */
+    std::function<void()> collapse;
 };
 
 /*!
@@ -186,6 +191,20 @@ public:
      * heard so far put in when [keep].
      */
     void endDictation(bool keep);
+
+    /*!
+     * The emoji page, asked for while typing on a physical keyboard: the
+     * candidate bar's emoji button, or a key such as the Q25's Sym. The keys
+     * are not on screen then, and the page comes up in their place when they
+     * are brought back - on the emoji, not the letters. Leaving it (its ABC)
+     * goes back to the physical keyboard rather than to on-screen letters that
+     * were never wanted.
+     */
+    Q_INVOKABLE void openEmojiFromHardware();
+    //! The emoji page is up for a physical keyboard (openEmojiFromHardware()).
+    bool hardwareEmoji() const { return m_hardwareEmoji; }
+    //! The emoji page's ABC: true when that put the keys away rather than showing the letters.
+    bool onEmojiLetters();
 
     //! A field took the focus, or the keyboard came up for one.
     void startInput();
@@ -390,6 +409,8 @@ private:
 
     //! The bar's right-hand place holds an emoji for the middle word, not a word.
     bool m_barEmoji = false;
+    //! The emoji page was asked for from a physical keyboard; see openEmojiFromHardware().
+    bool m_hardwareEmoji = false;
     //! With the word engine off (emojiWithoutWords()): the word in the field, ending at the
     //! cursor, the bar's emoji is for.
     QString m_bareWord;

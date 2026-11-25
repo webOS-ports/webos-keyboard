@@ -403,6 +403,9 @@ public:
         b.luna = [this](const QString &uri, const QString &payload) { m_settings.call(uri, payload); };
         b.savePrefs = [this](const QJsonObject &obj) { m_settings.savePre(obj); };
         b.hide = [this] { host->notifyImInitiatedHiding(); };
+        // After the touch that asked for it: going back to the physical keyboard
+        // takes the view's controller away, and the tap is still being handled.
+        b.collapse = [this] { QTimer::singleShot(0, q, [this] { q->collapseKeys(); }); };
         pre.setBridge(b);
         QObject::connect(&editor, &AbstractTextEditor::autoCorrected, &pre,
                          [this](const QString &typed, const QString &fixed) { pre.corrected(typed, fixed); });

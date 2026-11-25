@@ -42,6 +42,29 @@ Rectangle {
      */
     property alias emojiShown: emojiButton.checked
 
+    /*!
+     * \brief The emoji panel was opened while the keys were away (a physical
+     *        keyboard, or dragged off): putting it away puts them away again,
+     *        rather than leaving on-screen keys nobody asked for.
+     */
+    property bool emojiWithoutKeys: false
+
+    //! Opens the emoji panel, bringing the keys back for it to take the place of.
+    function openEmoji() {
+        emojiWithoutKeys = maliit_input_method.keysCollapsed;
+        emojiShown = true;
+        maliit_input_method.expandKeys();
+    }
+
+    //! Puts the emoji panel away, and the keys too where they were away before.
+    function closeEmoji() {
+        emojiShown = false;
+        if (emojiWithoutKeys) {
+            emojiWithoutKeys = false;
+            maliit_input_method.collapseKeys();
+        }
+    }
+
     ListView {
         id: listView
         objectName: "wordListView"
@@ -193,13 +216,24 @@ Rectangle {
         MouseArea {
             anchors.fill: parent
             onClicked: {
-                emojiButton.checked = !emojiButton.checked;
+                // The Pre Keyboard has an emoji page of its own, and this bar is
+                // only on screen above it while its keys are away - with a
+                // physical keyboard. Its page, then, not this one's panel:
+                // bringing the keys back alone left them on the letters, with
+                // nothing on screen to put them away again.
+                if (pre_keyboard.active) {
+                    pre_keyboard.openEmojiFromHardware();
+                    maliit_input_method.expandKeys();
+                    return;
+                }
 
                 // With a physical keyboard the keys are not on screen, and the
-                // panel goes where they would be - so ask for them back first,
-                // or there is nowhere for it to appear.
+                // panel goes where they would be - so openEmoji() asks for them
+                // back first, or there is nowhere for it to appear.
                 if (emojiButton.checked)
-                    maliit_input_method.expandKeys();
+                    closeEmoji();
+                else
+                    openEmoji();
             }
         }
     }

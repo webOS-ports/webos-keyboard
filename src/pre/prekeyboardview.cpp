@@ -142,7 +142,11 @@ KeyboardView::KeyboardView(QQuickItem *parent)
       m_emoji(2, EmojiPanel::Actions{
           [this](const QString &e) { if (m_controller) { m_controller->onText(e); m_controller->addRecentEmoji(e); } },
           [this] { if (m_controller) m_controller->onBackspace(false); },
-          [this] { show(Page::Letters); },
+          [this] {
+              // Opened for a physical keyboard: ABC goes back to it, not to on-screen letters.
+              if (m_controller && m_controller->onEmojiLetters()) return;
+              show(Page::Letters);
+          },
           [this] { update(); },
           [this](EmojiPanel::Tab tab, const QString &query) { startSearch(tab, query); },
           [this](const QString &query) { return m_controller ? m_controller->emojiSearch(query) : QStringList(); },
@@ -1183,6 +1187,17 @@ void KeyboardView::barChange(const std::function<void()> &change)
         Q_EMIT geometryChanged();
     }
     update();
+}
+
+void KeyboardView::showEmoji()
+{
+    if (m_searching) barChange([this] { m_searching = false; m_searchText.clear(); });
+    if (m_page == Page::Emoji) return;
+    m_extended.clear();
+    m_extendedFrame = QRectF();
+    // From the number pad the bar comes back, and the keys move.
+    barChange([this] { show(Page::Emoji); });
+    updatePopupRect();
 }
 
 void KeyboardView::hidden()

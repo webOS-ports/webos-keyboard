@@ -157,7 +157,29 @@ void Controller::setView(KeyboardView *view)
         offerPaste();
         m_voiceFor.clear();
         showVoice();
+        if (m_hardwareEmoji) m_view->showEmoji();
+    } else {
+        // The keys went away (back to the physical keyboard, or the Pre
+        // Keyboard is off): the next time they come up is for the letters.
+        m_hardwareEmoji = false;
     }
+}
+
+void Controller::openEmojiFromHardware()
+{
+    m_hardwareEmoji = true;
+    // Already on screen (the keys were up after all): straight there. Otherwise
+    // setView() shows it as the keys come back.
+    if (m_view) m_view->showEmoji();
+}
+
+bool Controller::onEmojiLetters()
+{
+    if (!m_hardwareEmoji) return false;
+    m_hardwareEmoji = false;
+    if (!m_bridge.collapse) return false;
+    m_bridge.collapse();
+    return true;
 }
 
 void Controller::setActive(bool active)
@@ -277,6 +299,9 @@ void Controller::startInput()
     if (m_view) {
         applySettings();
         m_view->reset();
+        // Brought up for the emoji page: the framework showing the panel again
+        // as the keys come back must not leave it on the letters.
+        if (m_hardwareEmoji) m_view->showEmoji();
     }
     showBar();
     offerPaste();

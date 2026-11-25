@@ -221,7 +221,7 @@ Item {
                             height: visible ? keypad.height : 0
                             visible: wordRibbon.emojiShown
 
-                            onDismissed: wordRibbon.emojiShown = false
+                            onDismissed: wordRibbon.closeEmoji()
                         }
                         Item {
                             width: parent.width
@@ -320,8 +320,14 @@ Item {
             //! physical keyboard they are not on screen, and the panel goes
             //! where they would be.
             function onEmojiPanelRequested() {
-                fullScreenItem.input_method.expandKeys();
-                wordRibbon.emojiShown = true;
+                // The Pre Keyboard's own emoji page, where it is the keyboard;
+                // see WordRibbon's emoji button.
+                if (pre_keyboard.active) {
+                    pre_keyboard.openEmojiFromHardware();
+                    fullScreenItem.input_method.expandKeys();
+                    return;
+                }
+                wordRibbon.openEmoji();
             }
 
             //! A capital is for a letter, so back to the letters first: the

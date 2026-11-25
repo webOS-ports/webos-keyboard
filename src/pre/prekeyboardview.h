@@ -115,6 +115,8 @@ public:
     void updateCaps();
     //! A new field: start from the letters, nothing held.
     void reset();
+    //! The emoji page, from outside the keys (a physical keyboard's request).
+    void showEmoji();
     //! Where the letters are, for the swipe decoder; false when they aren't all laid out.
     bool swipeLayout(SwipeDecoder::Layout &out) const;
     //! The keyboard went down: the GIFs stop moving.

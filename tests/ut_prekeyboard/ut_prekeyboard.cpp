@@ -1495,6 +1495,67 @@ private Q_SLOTS:
     }
 
     /*
+     * The emoji page asked for from a physical keyboard (the candidate bar's
+     * emoji, or the Q25's Sym): the keys come back on the emoji page, not the
+     * letters, and stay there through the panel being shown again. Its ABC
+     * goes back to the physical keyboard; asked for any other way, ABC is the
+     * letters as ever.
+     */
+    void emojiFromHardwareKeyboard()
+    {
+        Recorder rec;
+        Pre::Bridge b = rec.bridge();
+        b.collapse = [&rec] { rec.calls << QStringLiteral("collapse"); };
+        Pre::Controller c;
+        c.setBridge(b);
+        c.setDataDir(QStringLiteral(PRE_DATA_DIR));
+        c.setKeyboardState(true, false, { QStringLiteral("en") }, QStringLiteral("en"));
+        Pre::KeyboardView view;
+        showKeys(view, Pre::Language::byId(QStringLiteral("en")), 1080, 1080, false, Pre::Settings::Height::Medium);
+        auto tapAt = [&](const QPointF &at) { view.pointerDown(1, at.x(), at.y()); view.pointerUp(1, at.x(), at.y()); };
+        auto tapAbc = [&] { tapAt(view.m_emoji.abcRect().center()); };
+
+        // Asked for while the keys are away: no view yet.
+        c.openEmojiFromHardware();
+        QVERIFY(c.hardwareEmoji());
+        // The keys come back, and the framework shows the panel again.
+        view.setControllerObject(&c);
+        QCOMPARE(view.m_page, Pre::KeyboardView::Page::Emoji);
+        c.startInput();
+        QCOMPARE(view.m_page, Pre::KeyboardView::Page::Emoji);
+
+        // ABC: back to the physical keyboard, not the letters.
+        rec.calls.clear();
+        tapAbc();
+        QCOMPARE(rec.calls, QStringList{ QStringLiteral("collapse") });
+        QVERIFY(!c.hardwareEmoji());
+        // Which takes the keys away.
+        view.setControllerObject(nullptr);
+
+        // Asked for again, then the keys put away some other way: next time
+        // they come up it is for the letters.
+        c.openEmojiFromHardware();
+        view.setControllerObject(&c);
+        QCOMPARE(view.m_page, Pre::KeyboardView::Page::Emoji);
+        view.setControllerObject(nullptr);
+        QVERIFY(!c.hardwareEmoji());
+        view.setControllerObject(&c);
+        c.startInput();
+        QCOMPARE(view.m_page, Pre::KeyboardView::Page::Letters);
+
+        // From the keys' own emoji key, ABC is the letters and nothing else.
+        view.show(Pre::KeyboardView::Page::Emoji);
+        rec.calls.clear();
+        tapAbc();
+        QCOMPARE(view.m_page, Pre::KeyboardView::Page::Letters);
+        QVERIFY(!rec.calls.contains(QStringLiteral("collapse")));
+
+        // Already on screen when asked for: straight to the page.
+        c.openEmojiFromHardware();
+        QCOMPARE(view.m_page, Pre::KeyboardView::Page::Emoji);
+    }
+
+    /*
      * Emoji suggestions on: the word being typed, or swiped, has its emoji in
      * the bar's right-hand place; tapping it puts the emoji in for the word,
      * as it is whatever shift says, and it is a recent emoji. Not for the next
