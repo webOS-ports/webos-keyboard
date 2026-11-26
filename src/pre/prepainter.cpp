@@ -302,6 +302,18 @@ void Painter::icon(QPainter &p, Icon icon, qreal cx, qreal cy, qreal size, const
         p.drawLine(QPointF(12, 12), QPointF(52, 52));
         p.drawLine(QPointF(52, 12), QPointF(12, 52));
         break;
+    case Icon::HideKeyboard: {
+        // The tablet keyboard's hide key (qml/images/tablet/icon-hide-keyboard.png),
+        // drawn: a keyboard, two rows of keys and a space bar, over a point down.
+        stroke(4, Qt::FlatCap, Qt::RoundJoin);
+        p.drawRoundedRect(QRectF(5, 8, 54, 32), 5, 5);
+        fill();
+        for (int i = 0; i < 5; ++i) p.drawRect(QRectF(12.5 + i * 8.5, 14, 5.5, 4.5));
+        for (int i = 0; i < 4; ++i) p.drawRect(QRectF(16.75 + i * 8.5, 22, 5.5, 4.5));
+        p.drawRect(QRectF(21, 30, 22, 4.5));
+        p.drawPolygon(poly({ 20, 46, 44, 46, 32, 60 }));
+        break;
+    }
     }
     p.restore();
 }

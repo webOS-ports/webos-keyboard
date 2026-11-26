@@ -1495,6 +1495,130 @@ private Q_SLOTS:
     }
 
     /*
+     * The emoji page asked for from a physical keyboard (the candidate bar's
+     * emoji, or the Q25's Sym): the keys come back on the emoji page, not the
+     * letters, and stay there through the panel being shown again. Its ABC
+     * goes back to the physical keyboard; asked for any other way, ABC is the
+     * letters as ever.
+     */
+    void emojiFromHardwareKeyboard()
+    {
+        Recorder rec;
+        Pre::Bridge b = rec.bridge();
+        b.collapse = [&rec] { rec.calls << QStringLiteral("collapse"); };
+        Pre::Controller c;
+        c.setBridge(b);
+        c.setDataDir(QStringLiteral(PRE_DATA_DIR));
+        c.setKeyboardState(true, false, { QStringLiteral("en") }, QStringLiteral("en"));
+        Pre::KeyboardView view;
+        showKeys(view, Pre::Language::byId(QStringLiteral("en")), 1080, 1080, false, Pre::Settings::Height::Medium);
+        auto tapAt = [&](const QPointF &at) { view.pointerDown(1, at.x(), at.y()); view.pointerUp(1, at.x(), at.y()); };
+        auto tapAbc = [&] { tapAt(view.m_emoji.abcRect().center()); };
+        // Drawn, as the panel draws it: ABC, or the hide key in its place. PRE_SHOTS=<dir> keeps the picture.
+        auto paint = [&](const QString &what) {
+            QImage img(int(view.width()), int(view.height()), QImage::Format_ARGB32_Premultiplied);
+            img.fill(Qt::black);
+            QPainter p(&img);
+            view.paint(&p);
+            p.end();
+            const QString dir = qEnvironmentVariable("PRE_SHOTS");
+            if (!dir.isEmpty()) img.save(QStringLiteral("%1/emoji-%2.png").arg(dir, what));
+            return view.m_emoji.m_hideKey;
+        };
+
+        // Asked for while the keys are away: no view yet.
+        c.openEmojiFromHardware();
+        QVERIFY(c.hardwareKeys());
+        // The keys come back, and the framework shows the panel again.
+        view.setControllerObject(&c);
+        QCOMPARE(view.m_page, Pre::KeyboardView::Page::Emoji);
+        c.startInput();
+        QCOMPARE(view.m_page, Pre::KeyboardView::Page::Emoji);
+        QVERIFY(paint(QStringLiteral("hardware")));
+
+        // ABC, now the hide key: back to the physical keyboard, not the letters.
+        rec.calls.clear();
+        tapAbc();
+        QCOMPARE(rec.calls, QStringList{ QStringLiteral("collapse") });
+        QVERIFY(!c.hardwareKeys());
+        // Which takes the keys away.
+        view.setControllerObject(nullptr);
+
+        // Asked for again, then the keys put away some other way: next time
+        // they come up it is for the letters.
+        c.openEmojiFromHardware();
+        view.setControllerObject(&c);
+        QCOMPARE(view.m_page, Pre::KeyboardView::Page::Emoji);
+        view.setControllerObject(nullptr);
+        QVERIFY(!c.hardwareKeys());
+        view.setControllerObject(&c);
+        c.startInput();
+        QCOMPARE(view.m_page, Pre::KeyboardView::Page::Letters);
+
+        // From the keys' own emoji key, ABC is the letters and nothing else.
+        view.show(Pre::KeyboardView::Page::Emoji);
+        QVERIFY(!paint(QStringLiteral("keys")));
+        rec.calls.clear();
+        tapAbc();
+        QCOMPARE(view.m_page, Pre::KeyboardView::Page::Letters);
+        QVERIFY(!rec.calls.contains(QStringLiteral("collapse")));
+
+        // Already on screen when asked for: straight to the page.
+        c.openEmojiFromHardware();
+        QCOMPARE(view.m_page, Pre::KeyboardView::Page::Emoji);
+        view.setControllerObject(nullptr);
+
+        // Sym on the physical keyboard: the symbols page, for what its keys do not print.
+        auto symKey = [&] {
+            for (const auto &z : view.m_zones)
+                if (z.slot.drawn && z.slot.key->kind == Pre::Kind::Sym) return z.rect.center();
+            return QPointF(-1, -1);
+        };
+        QVERIFY(c.openSymbolsFromHardware());
+        view.setControllerObject(&c);
+        QCOMPARE(view.m_page, Pre::KeyboardView::Page::Symbols);
+        c.startInput();
+        QCOMPARE(view.m_page, Pre::KeyboardView::Page::Symbols);
+        paint(QStringLiteral("symbols"));
+        // Its ABC, the hide key: back to the physical keyboard.
+        rec.calls.clear();
+        QVERIFY(symKey().x() >= 0);
+        tapAt(symKey());
+        QCOMPARE(rec.calls, QStringList{ QStringLiteral("collapse") });
+        QCOMPARE(view.m_page, Pre::KeyboardView::Page::Symbols);
+        QVERIFY(!c.hardwareKeys());
+        view.setControllerObject(nullptr);
+
+        // Sym again while the page is up puts the keys away, and says not to bring them back.
+        QVERIFY(c.openSymbolsFromHardware());
+        view.setControllerObject(&c);
+        rec.calls.clear();
+        QVERIFY(!c.openSymbolsFromHardware());
+        QCOMPARE(rec.calls, QStringList{ QStringLiteral("collapse") });
+        view.setControllerObject(nullptr);
+
+        // From the symbols on to the emoji: its ABC is the hide key as well.
+        QVERIFY(c.openSymbolsFromHardware());
+        view.setControllerObject(&c);
+        view.show(Pre::KeyboardView::Page::Emoji);
+        QVERIFY(paint(QStringLiteral("symbols-emoji")));
+        rec.calls.clear();
+        tapAbc();
+        QCOMPARE(rec.calls, QStringList{ QStringLiteral("collapse") });
+        view.setControllerObject(nullptr);
+
+        // The keys' own Sym, nothing asked for from outside: ABC is the letters.
+        view.setControllerObject(&c);
+        c.startInput();
+        tapAt(symKey());
+        QCOMPARE(view.m_page, Pre::KeyboardView::Page::Symbols);
+        rec.calls.clear();
+        tapAt(symKey());
+        QCOMPARE(view.m_page, Pre::KeyboardView::Page::Letters);
+        QVERIFY(!rec.calls.contains(QStringLiteral("collapse")));
+    }
+
+    /*
      * Emoji suggestions on: the word being typed, or swiped, has its emoji in
      * the bar's right-hand place; tapping it puts the emoji in for the word,
      * as it is whatever shift says, and it is a recent emoji. Not for the next

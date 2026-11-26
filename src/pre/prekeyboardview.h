@@ -115,6 +115,9 @@ public:
     void updateCaps();
     //! A new field: start from the letters, nothing held.
     void reset();
+    //! The emoji page, or the symbols, from outside the keys (a physical keyboard's request).
+    void showEmoji();
+    void showSymbols();
     //! Where the letters are, for the swipe decoder; false when they aren't all laid out.
     bool swipeLayout(SwipeDecoder::Layout &out) const;
     //! The keyboard went down: the GIFs stop moving.
@@ -173,6 +176,7 @@ private:
     void layoutKeys();
     const Rows &rows() const;
     void show(Page p);
+    void showPage(Page p);
 
     // Drawing
     void drawKey(QPainter &p, const Zone &z);

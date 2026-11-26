@@ -343,15 +343,21 @@ void EmojiPanel::draw(QPainter &p, Painter &painter, Style style)
     const QRectF abc = abcRect();
     const bool abcDown = m_pressed == Abc;
     p.drawImage(abc.topLeft(), painter.cap(int(abc.width()), int(abc.height()), abcDown));
-    // Sized to its own key, as on Android: a function key's label (0.34 of a row) came out a
-    // quarter bigger than Android's in the strip's smaller key.
-    QFont abcFont = m_font;
-    abcFont.setPixelSize(std::max(1, int(abcTextSize())));
-    p.setFont(abcFont);
-    p.setPen(Qt::white);
-    const QString abcText = QStringLiteral("ABC");
-    p.drawText(QPointF(abc.center().x() - QFontMetricsF(abcFont).horizontalAdvance(abcText) / 2,
-                       abc.center().y() + abcTextSize() * 0.36 + (abcDown ? m_dp : 0)), abcText);
+    if (m_hideKey) {
+        // Back to the physical keyboard rather than to letters: the tablet's hide key.
+        painter.icon(p, Painter::Icon::HideKeyboard, abc.center().x(), abc.center().y() + (abcDown ? m_dp : 0),
+                     std::min(abc.width(), abc.height()) * 0.62);
+    } else {
+        // Sized to its own key, as on Android: a function key's label (0.34 of a row) came out a
+        // quarter bigger than Android's in the strip's smaller key.
+        QFont abcFont = m_font;
+        abcFont.setPixelSize(std::max(1, int(abcTextSize())));
+        p.setFont(abcFont);
+        p.setPen(Qt::white);
+        const QString abcText = QStringLiteral("ABC");
+        p.drawText(QPointF(abc.center().x() - QFontMetricsF(abcFont).horizontalAdvance(abcText) / 2,
+                           abc.center().y() + abcTextSize() * 0.36 + (abcDown ? m_dp : 0)), abcText);
+    }
     drawStrip(p, painter, style);
     if (MediaPanel *m = media()) {
         m->draw(p, m_font);

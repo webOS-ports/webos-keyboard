@@ -220,8 +220,9 @@ Item {
                             width: parent.width
                             height: visible ? keypad.height : 0
                             visible: wordRibbon.emojiShown
+                            hideKey: wordRibbon.emojiWithoutKeys
 
-                            onDismissed: wordRibbon.emojiShown = false
+                            onDismissed: wordRibbon.closeEmoji()
                         }
                         Item {
                             width: parent.width
@@ -320,8 +321,14 @@ Item {
             //! physical keyboard they are not on screen, and the panel goes
             //! where they would be.
             function onEmojiPanelRequested() {
-                fullScreenItem.input_method.expandKeys();
-                wordRibbon.emojiShown = true;
+                // The Pre Keyboard's symbols page, where it is the keyboard:
+                // what the physical keys do not print. Sym again puts it away.
+                if (pre_keyboard.active) {
+                    if (pre_keyboard.openSymbolsFromHardware())
+                        fullScreenItem.input_method.expandKeys();
+                    return;
+                }
+                wordRibbon.openEmoji();
             }
 
             //! A capital is for a letter, so back to the letters first: the

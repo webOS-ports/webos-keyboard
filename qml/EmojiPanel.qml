@@ -41,6 +41,10 @@ Item {
     //! Asked to go back to the keys.
     signal dismissed()
 
+    //! Opened for a physical keyboard: going back is to it, so ABC is the
+    //! tablet keyboard's hide key instead.
+    property bool hideKey: false
+
     //! Which of EmojiData.groups is showing.
     property int currentGroup: 0
 
@@ -117,8 +121,17 @@ Item {
                     height: tabRow.height
                     color: "#343434"
 
+                    Image {
+                        anchors.centerIn: parent
+                        visible: emojiPanel.hideKey
+                        source: "images/tablet/icon-hide-keyboard.png"
+                        height: Math.min(sourceSize.height, parent.height * 0.8)
+                        fillMode: Image.PreserveAspectFit
+                    }
+
                     Text {
                         anchors.centerIn: parent
+                        visible: !emojiPanel.hideKey
                         text: "ABC"
                         color: "#e5e5e5"
                         font.family: "Prelude"

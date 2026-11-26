@@ -157,7 +157,51 @@ void Controller::setView(KeyboardView *view)
         offerPaste();
         m_voiceFor.clear();
         showVoice();
+        showHardwarePage();
+    } else {
+        // The keys went away (back to the physical keyboard, or the Pre
+        // Keyboard is off): the next time they come up is for the letters.
+        m_hardwarePage = HardwarePage::None;
     }
+}
+
+void Controller::showHardwarePage()
+{
+    if (!m_view) return;
+    if (m_hardwarePage == HardwarePage::Emoji) m_view->showEmoji();
+    else if (m_hardwarePage == HardwarePage::Symbols) m_view->showSymbols();
+}
+
+void Controller::openEmojiFromHardware()
+{
+    m_hardwarePage = HardwarePage::Emoji;
+    // Already on screen (the keys were up after all): straight there. Otherwise
+    // setView() shows it as the keys come back.
+    showHardwarePage();
+}
+
+bool Controller::openSymbolsFromHardware()
+{
+    if (m_view && hardwareKeys()) {
+        backToHardware();
+        return false;
+    }
+    m_hardwarePage = HardwarePage::Symbols;
+    showHardwarePage();
+    return true;
+}
+
+void Controller::backToHardware()
+{
+    m_hardwarePage = HardwarePage::None;
+    if (m_bridge.collapse) m_bridge.collapse();
+}
+
+bool Controller::onBackToLetters()
+{
+    if (!hardwareKeys() || !m_bridge.collapse) return false;
+    backToHardware();
+    return true;
 }
 
 void Controller::setActive(bool active)
@@ -277,6 +321,9 @@ void Controller::startInput()
     if (m_view) {
         applySettings();
         m_view->reset();
+        // Brought up for a page by a physical keyboard: the framework showing
+        // the panel again as the keys come back must not leave it on the letters.
+        showHardwarePage();
     }
     showBar();
     offerPaste();

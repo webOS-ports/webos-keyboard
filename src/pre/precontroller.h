@@ -111,6 +111,11 @@ struct Bridge
     std::function<void(const QJsonObject &pre)> savePrefs;
     //! Takes the keyboard down, as the keyboard's own choice (to open Text Assist).
     std::function<void()> hide;
+    /*!
+     * Puts the keys away and leaves the candidate bar: with a physical keyboard,
+     * hands typing back to it (the on-screen keys were only up because asked for).
+     */
+    std::function<void()> collapse;
 };
 
 /*!
@@ -186,6 +191,26 @@ public:
      * heard so far put in when [keep].
      */
     void endDictation(bool keep);
+
+    /*!
+     * A page of the keys asked for while typing on a physical keyboard: the
+     * emoji, from the candidate bar's emoji button; the symbols, from a key
+     * such as the Q25's Sym, for what its keys do not print. The keys are not
+     * on screen then, and the page comes up in their place when they are
+     * brought back - not the letters. Its way back to the letters (ABC) goes
+     * back to the physical keyboard instead, and shows the hide key.
+     */
+    Q_INVOKABLE void openEmojiFromHardware();
+    /*!
+     * The symbols page, as above. Asked again while it is up for a physical
+     * keyboard, the keys go away again: Sym toggles it. False then, so the
+     * caller does not bring the keys straight back.
+     */
+    Q_INVOKABLE bool openSymbolsFromHardware();
+    //! The keys are up only for a physical keyboard's request (above).
+    bool hardwareKeys() const { return m_hardwarePage != HardwarePage::None; }
+    //! A way back to the letters was taken: true when that put the keys away instead.
+    bool onBackToLetters();
 
     //! A field took the focus, or the keyboard came up for one.
     void startInput();
@@ -390,6 +415,11 @@ private:
 
     //! The bar's right-hand place holds an emoji for the middle word, not a word.
     bool m_barEmoji = false;
+    //! The page a physical keyboard asked for; see openEmojiFromHardware().
+    enum class HardwarePage { None, Symbols, Emoji };
+    HardwarePage m_hardwarePage = HardwarePage::None;
+    void showHardwarePage();
+    void backToHardware();
     //! With the word engine off (emojiWithoutWords()): the word in the field, ending at the
     //! cursor, the bar's emoji is for.
     QString m_bareWord;

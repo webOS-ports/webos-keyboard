@@ -142,7 +142,11 @@ KeyboardView::KeyboardView(QQuickItem *parent)
       m_emoji(2, EmojiPanel::Actions{
           [this](const QString &e) { if (m_controller) { m_controller->onText(e); m_controller->addRecentEmoji(e); } },
           [this] { if (m_controller) m_controller->onBackspace(false); },
-          [this] { show(Page::Letters); },
+          [this] {
+              // Opened for a physical keyboard: ABC goes back to it, not to on-screen letters.
+              if (m_controller && m_controller->onBackToLetters()) return;
+              show(Page::Letters);
+          },
           [this] { update(); },
           [this](EmojiPanel::Tab tab, const QString &query) { startSearch(tab, query); },
           [this](const QString &query) { return m_controller ? m_controller->emojiSearch(query) : QStringList(); },
@@ -375,6 +379,7 @@ void KeyboardView::paint(QPainter *pp)
     m_painter.deck(p, QRectF(0, deckTop, width(), height() - deckTop));
     if (barShown() && !emojiPage) drawBar(p, QRectF(0, top, width(), barHeight()));
     if (m_page == Page::Emoji) {
+        m_emoji.setHideKey(m_controller && m_controller->hardwareKeys());
         m_emoji.draw(p, m_painter, m_settings.style);
         drawMenu(p);
         return;
@@ -422,7 +427,13 @@ void KeyboardView::drawKey(QPainter &p, const Zone &z)
     case Kind::Globe: m_painter.icon(p, Painter::Icon::Globe, c.x(), c.y(), iconSize); break;
     case Kind::Emoji: m_painter.icon(p, Painter::Icon::Emoji, c.x(), c.y(), iconSize); break;
     case Kind::Orange: m_painter.orange(p, box, m_settings.style, m_alt); break;
-    case Kind::Sym: functionLabel(p, key.label, box); break;
+    case Kind::Sym:
+        // ABC, up for a physical keyboard: it goes back to that, so it is the hide key.
+        if (m_page != Page::Letters && m_controller && m_controller->hardwareKeys())
+            m_painter.icon(p, Painter::Icon::HideKeyboard, c.x(), c.y(), std::min(r.width(), r.height()) * 0.62);
+        else
+            functionLabel(p, key.label, box);
+        break;
     }
     if (key.corner == Corner::Gear || (key.corner == Corner::Mic && m_voiceMic))
         cornerIcon(p, key.corner, box);
@@ -1185,6 +1196,20 @@ void KeyboardView::barChange(const std::function<void()> &change)
     update();
 }
 
+void KeyboardView::showPage(Page p)
+{
+    if (m_searching) barChange([this] { m_searching = false; m_searchText.clear(); });
+    if (m_page == p) return;
+    m_extended.clear();
+    m_extendedFrame = QRectF();
+    // From the number pad the bar comes back, and the keys move.
+    barChange([this, p] { show(p); });
+    updatePopupRect();
+}
+
+void KeyboardView::showEmoji() { showPage(Page::Emoji); }
+void KeyboardView::showSymbols() { showPage(Page::Symbols); }
+
 void KeyboardView::hidden()
 {
     if (m_page == Page::Emoji) m_emoji.close();
@@ -1833,7 +1858,11 @@ void KeyboardView::commit()
         m_lastAltTap = m_alt == Alt::Off ? NEVER : t;
         break;
     }
-    case Kind::Sym: show(m_page == Page::Letters ? Page::Symbols : Page::Letters); break;
+    case Kind::Sym:
+        // Up for a physical keyboard, the way back to the letters is the way back to it.
+        if (m_page != Page::Letters && m_controller && m_controller->onBackToLetters()) break;
+        show(m_page == Page::Letters ? Page::Symbols : Page::Letters);
+        break;
     case Kind::Emoji: if (m_searching) endSearch(false); else show(Page::Emoji); break;
     case Kind::Backspace: break;     // sent on the way down, and repeated since
     case Kind::Return: if (m_searching) endSearch(true); else if (m_controller) m_controller->onEnter(); break;
