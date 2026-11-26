@@ -732,6 +732,17 @@ void InputMethod::processKeyEvent(QEvent::Type keyType, Qt::Key keyCode,
 {
     Q_D(InputMethod);
 
+    // A release whose press went to the application instead - pressed while no
+    // field had focus, the application focusing one on it - is not ours to act
+    // on: on a keyboard that repeats it would type the key a second time.
+    if (keyType == QEvent::KeyPress) {
+        d->keyPairing.press(nativeScanCode);
+    } else if (keyType == QEvent::KeyRelease && !d->keyPairing.release(nativeScanCode)) {
+        qCInfo(lcKeys, "key release 0x%x without its press here (scancode=%u): dropped",
+               d->hiddenText ? 0 : int(keyCode), d->hiddenText ? 0u : unsigned(nativeScanCode));
+        return;
+    }
+
     // Set on the release of a letter auto-caps capitalised; see autocapUndoLetter.
     QString autocapLetter;
     Key key;
@@ -905,7 +916,10 @@ void InputMethod::processKeyEvent(QEvent::Type keyType, Qt::Key keyCode,
         // Commit first -- otherwise the application moves its cursor away from
         // a preedit the editor still holds, and every later keystroke is
         // applied against a stale position.
-        if (keyType == QEvent::KeyPress) {
+        // A modifier on its own moves nothing: Shift for a capital in the middle
+        // of a word ("LuneOS") finished "Lune" there, and the "OS" left held
+        // came back alone after a send.
+        if (keyType == QEvent::KeyPress && !isModifierKey(keyCode)) {
             d->editor.commit();
             d->autocapUndoLetter.clear();
         }

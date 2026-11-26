@@ -5,6 +5,7 @@ CONFIG += ordered
 SUBDIRS = \
     ut_correction \
     ut_hardwarekeyboard \
+    ut_keypairing \
     ut_keyrepeat \
     ut_klipy \
     ut_panelstate \

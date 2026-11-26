@@ -57,6 +57,7 @@ HEADERS += \
     keyboardsettings.h \
     keyboardlogging.h \
     panelstate.h \
+    keypairing.h \
     periodhold.h \
     t9multitap.h \
 #    updatenotifier.h \
