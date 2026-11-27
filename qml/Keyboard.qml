@@ -218,8 +218,8 @@ Item {
                          */
                         EmojiPanel {
                             width: parent.width
-                            height: visible ? keypad.height : 0
-                            visible: wordRibbon.emojiShown
+                            openHeight: keypad.height
+                            state: wordRibbon.emojiShown ? "visible" : "hidden"
                             hideKey: wordRibbon.emojiWithoutKeys
 
                             onDismissed: wordRibbon.closeEmoji()

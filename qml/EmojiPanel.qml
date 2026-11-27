@@ -45,6 +45,27 @@ Item {
     //! tablet keyboard's hide key instead.
     property bool hideKey: false
 
+    //! How tall the panel is while it is showing: the keys it stands in for.
+    property real openHeight: 0
+
+    /*!
+     * Showing or not, as two states rather than as bindings spread over the
+     * caller, so everything that changes with it is changed in one place.
+     * Hidden it takes no room in the keyboard's Column; shown it is the keys'
+     * height, which is what keeps the reported panel rectangle the same.
+     */
+    state: "hidden"
+    states: [
+        State {
+            name: "visible"
+            PropertyChanges { target: emojiPanel; visible: true; height: emojiPanel.openHeight }
+        },
+        State {
+            name: "hidden"
+            PropertyChanges { target: emojiPanel; visible: false; height: 0 }
+        }
+    ]
+
     //! Which of EmojiData.groups is showing.
     property int currentGroup: 0
 
@@ -121,17 +142,34 @@ Item {
                     height: tabRow.height
                     color: "#343434"
 
+                    //! Its two faces, one per place going back leads: the
+                    //! on-screen keys (ABC), or the physical keyboard (the
+                    //! tablet keyboard's hide key).
+                    state: emojiPanel.hideKey ? "hide" : "abc"
+                    states: [
+                        State {
+                            name: "abc"
+                            PropertyChanges { target: hideIcon; visible: false }
+                            PropertyChanges { target: abcLabel; visible: true }
+                        },
+                        State {
+                            name: "hide"
+                            PropertyChanges { target: hideIcon; visible: true }
+                            PropertyChanges { target: abcLabel; visible: false }
+                        }
+                    ]
+
                     Image {
+                        id: hideIcon
                         anchors.centerIn: parent
-                        visible: emojiPanel.hideKey
                         source: "images/tablet/icon-hide-keyboard.png"
                         height: Math.min(sourceSize.height, parent.height * 0.8)
                         fillMode: Image.PreserveAspectFit
                     }
 
                     Text {
+                        id: abcLabel
                         anchors.centerIn: parent
-                        visible: !emojiPanel.hideKey
                         text: "ABC"
                         color: "#e5e5e5"
                         font.family: "Prelude"
